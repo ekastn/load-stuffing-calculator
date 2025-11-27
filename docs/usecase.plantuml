@@ -1,0 +1,77 @@
+@startuml
+left to right direction
+
+skinparam packageStyle rectangle
+skinparam shadow false
+skinparam actorStyle awesome
+skinparam linetype ortho 
+
+skinparam usecase {
+    BackgroundColor White
+    BorderColor #333333
+    ArrowColor #333333
+}
+
+actor "Admin" as admin
+actor "Planner" as planner
+actor "Operator" as operator
+actor "IoT Hardware" as iot <<System>>
+
+' Layout trick: Urutkan aktor dari atas ke bawah
+admin -[hidden]-> planner
+planner -[hidden]-> operator
+
+rectangle "Load & Stuffing System" {
+
+    package "Administration" {
+        usecase "Manage Master Data" as UC_Master
+        usecase "Manage Container Profiles" as UC_Cont
+        usecase "Manage Product Catalog" as UC_Prod
+        usecase "Manage IoT Config" as UC_Dev
+        
+        UC_Cont --|> UC_Master
+        UC_Prod --|> UC_Master
+        UC_Dev --|> UC_Master
+    }
+
+    package "Load Planning" {
+        usecase "Create Shipment Plan" as UC_CreatePlan
+        usecase "Manage Items" as UC_ManageItems
+        usecase "Add Item via IoT" as UC_Scan
+        usecase "Calculate Load (Algo)" as UC_Calc
+        usecase "View 3D Result" as UC_3D
+        
+        UC_Scan .> UC_ManageItems : <<extend>>
+    }
+
+    package "Execution" {
+        usecase "Validate Loading Step" as UC_Validate
+    }
+
+    usecase "Login" as UC_Login
+    usecase "Read Sensor Data" as UC_Sensor
+}
+
+admin --> UC_Login
+admin --> UC_Master 
+
+planner --> UC_Login
+planner --> UC_CreatePlan
+planner --> UC_ManageItems
+planner --> UC_Calc
+planner --> UC_3D
+
+operator --> UC_Login
+operator --> UC_Validate
+operator --> UC_ManageItems
+
+UC_Scan ..> UC_Sensor : <<include>>
+
+UC_Validate ..> UC_Sensor : <<include>>
+
+UC_Sensor -- iot
+
+UC_Master -[hidden]-> UC_CreatePlan
+UC_ManageItems -[hidden]-> UC_Validate
+
+@enduml

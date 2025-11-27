@@ -1,0 +1,283 @@
+digraph system_architecture {
+    // ===========================
+    // GLOBAL SETTINGS
+    // ===========================
+    graph [
+        rankdir="LR"
+        nodesep=0.6
+        ranksep=1.2 
+        splines=ortho
+        fontname="Arial"
+        compound=true
+        label="System Architecture"
+        labelloc="t"
+        fontsize=24
+        bgcolor="#FFFFFF"
+        forcelabels=true
+    ];
+
+    node [
+        fontname="Arial"
+        fontsize=9
+        shape=rect
+        style="filled,rounded"
+        fillcolor="#FFFFFF"
+        penwidth=1.2
+    ];
+
+    edge [
+        fontname="Arial"
+        fontsize=8
+        color="#555555"
+        arrowsize=0.6
+        fontcolor="#444444"
+    ];
+
+    // ===========================
+    // 1. ACTORS
+    // ===========================
+    subgraph cluster_actors {
+        label="ACTORS"; style=invis;
+        User_Admin [label="Admin", shape=ellipse, fillcolor="#BDBDBD"];
+        User_Planner [label="Planner", shape=ellipse, fillcolor="#E0E0E0"];
+        User_Operator [label="Operator", shape=ellipse, fillcolor="#E0E0E0"];
+    }
+
+    // ===========================
+    // 2. CLIENT 
+    // ===========================
+    subgraph cluster_frontend {
+        label="CLIENT"
+        style=filled; color="#E3F2FD";
+
+        Page_Login [label="Login Page", fillcolor="#FFECB3"];
+        
+        // Admin Pages
+        Page_UserMgmt [label="User Mgmt", fillcolor="#B3E5FC"];
+        Page_ProdMgmt [label="Product Catalog", fillcolor="#B3E5FC"];
+        Page_ContMgmt [label="Container Profiles", fillcolor="#B3E5FC"];
+        Page_Audit [label="Audit Logs", fillcolor="#B3E5FC"];
+
+        // Planning Pages
+        Page_PlanForm [label="Plan Creator", fillcolor="#BBDEFB"];
+        Page_3DView [label="3D Visualizer", fillcolor="#BBDEFB"];
+
+        // Execution Pages
+        Page_StepGuide [label="Loading Steps", fillcolor="#BBDEFB"];
+        Page_Alert [label="Popup: Alert Box", fillcolor="#FFCDD2"];
+        
+        UI_Socket [label="Socket Listener", shape=parallelogram, fillcolor="#FFFFFF"];
+    }
+
+    // ===========================
+    // 3. INFRASTRUCTURE
+    // ===========================
+    
+    MQTT_Broker [label="MQTT Broker", shape=parallelogram, fillcolor="#E1BEE7", style="filled"];
+    
+    subgraph cluster_hw {
+        label="IoT Hardware"
+        style=dashed; color="#BDBDBD";
+        Sensor [label="Sensors", shape=note];
+        ESP32 [label="ESP32", shape=component, fillcolor="#FFCDD2"];
+        Sensor -> ESP32;
+    }
+
+    // ===========================
+    // 4. BACKEND SYSTEM
+    // ===========================
+    subgraph cluster_backend {
+        label="BACKEND"
+        style=filled; color="#FFF3E0"; bgcolor="#FFF8E1";
+
+        // --- Controllers ---
+        subgraph cluster_ctrl {
+            label="Gateway"
+            style=filled; color="#FFE0B2";
+            
+            Ctrl_Auth [label="Auth Ctrl"];
+            Ctrl_User [label="User Ctrl"];
+            Ctrl_Prod [label="Product Ctrl"];
+            Ctrl_Cont [label="Container Ctrl"];
+            Ctrl_Audit [label="Audit Ctrl"];
+            Ctrl_Plan [label="Plan Ctrl"];
+            Ctrl_Calc [label="Calc Ctrl"];
+        }
+
+        // --- Service Layer ---
+        
+        subgraph cluster_svc_auth {
+            label="Auth Service"
+            style=filled; color="#FFCC80";
+            Auth_Check [label="Verify Creds"];
+            Auth_Sign [label="Sign Token"];
+            Auth_Check -> Auth_Sign;
+        }
+
+        subgraph cluster_svc_master {
+            label="Master Data Services"
+            style=filled; color="#FFCC80";
+            Svc_Prod [label="Product Service"]; 
+            Svc_Cont [label="Container Service"]; 
+        }
+
+        // --- SNAPSHOT MANAGER ---
+        subgraph cluster_svc_snap {
+            label="Snapshot Manager"
+            style=filled; color="#90CAF9";
+            
+            Snap_Input [label="Receive Input", fillcolor="#FFFFFF"];
+            Snap_Check [label="Check Source", shape=diamond, fillcolor="#FFF59D"];
+            
+            Snap_FetchMaster [label="Fetch Catalog", fillcolor="#FFFFFF"];
+            Snap_ParseRaw [label="Parse Sensor", fillcolor="#FFFFFF"];
+            
+            Snap_Map [label="Map Object", fillcolor="#FFFFFF"];
+            Snap_Save [label="Persist DB", fillcolor="#FFFFFF"];
+            
+            Snap_Input -> Snap_Check;
+            Snap_Check -> Snap_FetchMaster [xlabel="Manual"];
+            Snap_Check -> Snap_ParseRaw [xlabel="IoT"];
+            
+            Snap_FetchMaster -> Snap_Map;
+            Snap_ParseRaw -> Snap_Map;
+            Snap_Map -> Snap_Save;
+        }
+
+        // --- BIN PACKING ENGINE ---
+        subgraph cluster_svc_algo {
+            label="Bin Packing Engine"
+            style=filled; color="#FFAB91";
+            
+            Algo_Fetch [label="Fetch Input", fillcolor="#FFFFFF"];
+            Algo_Sort [label="Sort (Heuristic)", fillcolor="#FFFFFF"];
+            
+            Algo_Try [label="Find Coord", shape=diamond, fillcolor="#FFCC80"];
+            Algo_Check [label="Collision?", shape=diamond, fillcolor="#FFCC80"];
+            
+            Algo_Buffer [label="Buffer Pos", fillcolor="#FFFFFF"];
+            Algo_Save [label="Batch Save", fillcolor="#FFFFFF"];
+            
+            Algo_Fetch -> Algo_Sort -> Algo_Try;
+            Algo_Try -> Algo_Check [xlabel="Candidate"];
+            Algo_Check -> Algo_Try [xlabel="Retry"];
+            Algo_Check -> Algo_Buffer [xlabel="Clear"];
+            Algo_Buffer -> Algo_Save [xlabel="Finish"];
+        }
+
+        // --- EXECUTION VALIDATOR ---
+        subgraph cluster_svc_val {
+            label="Execution Validator"
+            style=filled; color="#CE93D8";
+            
+            Val_Fetch [label="Get Expected", fillcolor="#FFFFFF"];
+            Val_Delta [label="Calc Delta", fillcolor="#FFFFFF"];
+            Val_Check [label="Within Tol?", shape=diamond, fillcolor="#E1BEE7"];
+            Val_Result [label="Set Status", fillcolor="#FFFFFF"];
+            Val_Log [label="Log DB", fillcolor="#FFFFFF"];
+            
+            Val_Fetch -> Val_Delta -> Val_Check;
+            Val_Check -> Val_Result [xlabel="Yes/No"];
+            Val_Result -> Val_Log;
+        }
+
+        Worker_MQTT [label="MQTT Ingestion", shape=cds, fillcolor="#FFCCBC"];
+        Socket_Hub [label="WebSocket Hub"];
+        Audit_Logger [label="Audit Logger", shape=note];
+    }
+
+    // ===========================
+    // 5. DATABASE
+    // ===========================
+    subgraph cluster_db {
+        label="DATABASE"
+        style=filled; color="#E8F5E9";
+        
+        Tbl_Users [shape=cylinder, label="Users", fillcolor="#C8E6C9"];
+        Tbl_Products [shape=cylinder, label="Products", fillcolor="#A5D6A7"];
+        Tbl_Containers [shape=cylinder, label="Containers", fillcolor="#A5D6A7"];
+        Tbl_Plans [shape=cylinder, label="Load Plans", fillcolor="#C8E6C9"];
+        Tbl_Results [shape=cylinder, label="Placements", fillcolor="#C8E6C9"];
+        Tbl_Logs [shape=cylinder, label="Exec Logs", fillcolor="#C8E6C9"];
+        Tbl_Audit [shape=cylinder, label="Audit Trails", fillcolor="#C8E6C9"];
+
+        // --- HORIZONTAL FORCING ---
+        edge [style=invis];
+        Tbl_Users -> Tbl_Products -> Tbl_Containers -> Tbl_Plans -> Tbl_Results -> Tbl_Logs -> Tbl_Audit;
+        edge [style=solid]; 
+    }
+
+    // ===========================
+    // FLOW CONNECTIONS
+    // ===========================
+
+    // --- LOGIN ---
+    User_Planner -> Page_Login;
+    Page_Login -> Ctrl_Auth -> Auth_Check;
+    Auth_Check -> Tbl_Users [xlabel="Read"];
+
+    // --- ADMIN ---
+    User_Admin -> Page_UserMgmt;
+    User_Admin -> Page_ProdMgmt;
+    User_Admin -> Page_ContMgmt;
+    User_Admin -> Page_Audit;
+    
+    Page_UserMgmt -> Ctrl_User [xlabel="POST"];
+    Ctrl_User -> Auth_Check [xlabel="Create"];
+    Auth_Sign -> Tbl_Users [xlabel="Write"];
+
+    Page_ProdMgmt -> Ctrl_Prod [xlabel="POST"];
+    Ctrl_Prod -> Svc_Prod -> Tbl_Products [xlabel="Write"];
+
+    Page_ContMgmt -> Ctrl_Cont [xlabel="POST"];
+    Ctrl_Cont -> Svc_Cont -> Tbl_Containers [xlabel="Write"];
+    
+    Page_Audit -> Ctrl_Audit;
+    Ctrl_Audit -> Tbl_Audit [xlabel="Read", style=dashed];
+
+    // Side Effect
+    Ctrl_User -> Audit_Logger [style=dotted];
+    Ctrl_Prod -> Audit_Logger [style=dotted];
+    Ctrl_Cont -> Audit_Logger [style=dotted];
+    Audit_Logger -> Tbl_Audit [xlabel="Insert"];
+
+    // --- PLANNING ---
+    User_Planner -> Page_PlanForm;
+    Page_PlanForm -> Ctrl_Plan [xlabel="Add"];
+    Ctrl_Plan -> Snap_Input [xlabel="Trigger"];
+    
+    // Snapshot Logic
+    Snap_FetchMaster -> Tbl_Products [xlabel="Read", color="blue"];
+    Snap_FetchMaster -> Tbl_Containers [xlabel="Read", color="blue"];
+    Snap_Save -> Tbl_Plans [xlabel="INSERT", color="blue", penwidth=2.0];
+
+    // --- CALCULATION ---
+    User_Planner -> Page_3DView -> Ctrl_Calc -> Algo_Fetch;
+    
+    // Algo Logic
+    Algo_Fetch -> Tbl_Plans [xlabel="Read Items", color="orange"];
+    Algo_Save -> Tbl_Results [xlabel="Write Batch", color="orange", penwidth=2.0];
+    
+    Page_3DView -> Tbl_Results [xlabel="Fetch", style=dashed, constraint=false];
+
+    // --- IOT FLOW ---
+    ESP32 -> MQTT_Broker -> Worker_MQTT;
+    
+    // Scan Flow
+    Worker_MQTT -> Snap_Input [xlabel="Scan"];
+    Snap_Save -> Socket_Hub [constraint=false]; // Feedback loop
+    Socket_Hub -> UI_Socket [constraint=false]; 
+    UI_Socket -> Page_PlanForm [xlabel="Pop-up", constraint=false];
+
+    // Validate Flow
+    User_Operator -> Page_StepGuide;
+    Worker_MQTT -> Val_Fetch [xlabel="Weight"];
+    
+    // Validator Logic
+    Val_Fetch -> Tbl_Plans [xlabel="Get Exp", color="red"];
+    Val_Log -> Tbl_Logs [xlabel="Log", color="red"];
+    
+    // Feedback Loop
+    Val_Log -> Socket_Hub [constraint=false];
+    UI_Socket -> Page_Alert [constraint=false];
+}
