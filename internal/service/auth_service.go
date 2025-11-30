@@ -10,19 +10,23 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
 )
 
-type AuthService struct {
+type AuthService interface {
+	Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error)
+}
+
+type authService struct {
 	q         store.Querier
 	jwtSecret string
 }
 
-func NewAuthService(q store.Querier, jwtSecret string) *AuthService {
-	return &AuthService{
+func NewAuthService(q store.Querier, jwtSecret string) AuthService {
+	return &authService{
 		q:         q,
 		jwtSecret: jwtSecret,
 	}
 }
 
-func (s *AuthService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
+func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
 	user, err := s.q.GetUserByUsername(ctx, req.Username)
 	if err != nil {
 		return nil, err // sqlc returns sql.ErrNoRows
