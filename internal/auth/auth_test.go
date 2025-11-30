@@ -51,11 +51,11 @@ func TestPasswordOperations(t *testing.T) {
 
 func TestGenerateAccessToken(t *testing.T) {
 	tests := []struct {
-		name      string
-		userID    string
-		role      string
-		secret    string
-		wantErr   bool
+		name    string
+		userID  string
+		role    string
+		secret  string
+		wantErr bool
 	}{
 		{
 			name:    "valid_token_admin",

@@ -14,12 +14,12 @@ type UpdateUserRequest struct {
 }
 
 type UserResponse struct {
-	ID        string      `json:"id"`
-	Username  string      `json:"username"`
-	Email     string      `json:"email"`
-	Role      string      `json:"role"`
+	ID        string               `json:"id"`
+	Username  string               `json:"username"`
+	Email     string               `json:"email"`
+	Role      string               `json:"role"`
 	Profile   *UserProfileResponse `json:"profile,omitempty"`
-	CreatedAt string      `json:"created_at"`
+	CreatedAt string               `json:"created_at"`
 }
 
 type UserProfileResponse struct {
