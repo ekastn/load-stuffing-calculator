@@ -8,6 +8,8 @@ import (
 
 	"github.com/ekastn/load-stuffing-calculator/internal/api"
 	"github.com/ekastn/load-stuffing-calculator/internal/config"
+	"github.com/ekastn/load-stuffing-calculator/internal/seeder"
+	"github.com/ekastn/load-stuffing-calculator/internal/store"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -27,6 +29,13 @@ func main() {
 		os.Exit(1)
 	}
 	log.Println("Database connected successfully!")
+
+	// Seed Admin User
+	querier := store.New(dbPool)
+	seed := seeder.New(querier, cfg)
+	if err := seed.SeedAdmin(context.Background()); err != nil {
+		log.Printf("Warning: Failed to seed admin user: %v", err)
+	}
 
 	app := api.NewApp(cfg, dbPool)
 	if err := app.Run(); err != nil {

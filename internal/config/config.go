@@ -8,9 +8,12 @@ import (
 )
 
 type Config struct {
-	Addr        string
-	DatabaseURL string
-	JWTSecret   string
+	Addr          string
+	DatabaseURL   string
+	JWTSecret     string
+	AdminUsername string
+	AdminEmail    string
+	AdminPassword string
 }
 
 func Load() Config {
@@ -21,8 +24,11 @@ func Load() Config {
 		}
 	}
 	return Config{
-		Addr:        env.GetString("SRV_ADDR", ":8080"),
-		DatabaseURL: env.GetString("DATABASE_URL", ""),
-		JWTSecret:   env.GetString("JWT_SECRET", "secret"),
+		Addr:          env.GetString("SRV_ADDR", ":8080"),
+		DatabaseURL:   env.GetString("DATABASE_URL", ""),
+		JWTSecret:     env.GetString("JWT_SECRET", "secret"),
+		AdminUsername: env.GetString("ADMIN_USERNAME", "admin"),
+		AdminEmail:    env.GetString("ADMIN_EMAIL", "admin@example.com"),
+		AdminPassword: env.GetString("ADMIN_PASSWORD", "admin123"),
 	}
 }
