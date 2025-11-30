@@ -1,5 +1,6 @@
 .env
 bin/
 tmp/
+testdata*
 .vscode/
 .DS_Store
