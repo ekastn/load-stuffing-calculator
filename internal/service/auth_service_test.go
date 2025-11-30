@@ -23,17 +23,17 @@ func TestAuthService_Login(t *testing.T) {
 
 	// Define test cases
 	tests := []struct {
-		name              string
-		loginRequest      dto.LoginRequest
-		expectedUser      store.GetUserByUsernameRow // Expected user from DB
-		getUserByUsernameErr error // Error to return from GetUserByUsername
-		createRefreshTokenErr error // Error to return from CreateRefreshToken
-		wantErr           bool
-		wantAccessToken   bool
-		wantRefreshToken  bool
+		name                  string
+		loginRequest          dto.LoginRequest
+		expectedUser          store.GetUserByUsernameRow // Expected user from DB
+		getUserByUsernameErr  error                      // Error to return from GetUserByUsername
+		createRefreshTokenErr error                      // Error to return from CreateRefreshToken
+		wantErr               bool
+		wantAccessToken       bool
+		wantRefreshToken      bool
 	}{
 		{
-			name: "successful_login",
+			name:         "successful_login",
 			loginRequest: dto.LoginRequest{Username: "testuser", Password: validPassword},
 			expectedUser: store.GetUserByUsernameRow{
 				UserID:       uuid.New(),
@@ -46,15 +46,15 @@ func TestAuthService_Login(t *testing.T) {
 			wantRefreshToken: true,
 		},
 		{
-			name: "user_not_found",
-			loginRequest: dto.LoginRequest{Username: "nonexistent", Password: "anypass"},
+			name:                 "user_not_found",
+			loginRequest:         dto.LoginRequest{Username: "nonexistent", Password: "anypass"},
 			getUserByUsernameErr: fmt.Errorf("sql: no rows in result set"),
-			wantErr:           true,
-			wantAccessToken:   false,
-			wantRefreshToken:  false,
+			wantErr:              true,
+			wantAccessToken:      false,
+			wantRefreshToken:     false,
 		},
 		{
-			name: "invalid_password",
+			name:         "invalid_password",
 			loginRequest: dto.LoginRequest{Username: "testuser", Password: "wrongpass"},
 			expectedUser: store.GetUserByUsernameRow{
 				UserID:       uuid.New(),
@@ -62,12 +62,12 @@ func TestAuthService_Login(t *testing.T) {
 				PasswordHash: hashedPassword,
 				RoleName:     "user",
 			},
-			wantErr:           true,
-			wantAccessToken:   false,
-			wantRefreshToken:  false,
+			wantErr:          true,
+			wantAccessToken:  false,
+			wantRefreshToken: false,
 		},
 		{
-			name: "error_creating_refresh_token",
+			name:         "error_creating_refresh_token",
 			loginRequest: dto.LoginRequest{Username: "testuser", Password: validPassword},
 			expectedUser: store.GetUserByUsernameRow{
 				UserID:       uuid.New(),
@@ -76,9 +76,9 @@ func TestAuthService_Login(t *testing.T) {
 				RoleName:     "user",
 			},
 			createRefreshTokenErr: fmt.Errorf("database error"),
-			wantErr:           true,
-			wantAccessToken:   true,
-			wantRefreshToken:  true, // Tokens are generated before DB call
+			wantErr:               true,
+			wantAccessToken:       true,
+			wantRefreshToken:      true, // Tokens are generated before DB call
 		},
 	}
 

@@ -16,7 +16,7 @@ type Meta struct {
 // ErrorDetail defines the structure for individual errors
 type ErrorDetail struct {
 	Code    string      `json:"code,omitempty"`
-	Message string      `json:"message"`	
+	Message string      `json:"message"`
 	Source  interface{} `json:"source,omitempty"`
 }
 

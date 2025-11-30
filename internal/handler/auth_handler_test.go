@@ -42,7 +42,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		
+
 		jsonBytes, _ := json.Marshal(reqPayload)
 		c.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonBytes))
 		c.Request.Header.Set("Content-Type", "application/json")
@@ -50,12 +50,12 @@ func TestAuthHandler_Login(t *testing.T) {
 		h.Login(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
-		
+
 		var responseBody map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &responseBody)
 		assert.NoError(t, err)
 		assert.Equal(t, true, responseBody["success"])
-		
+
 		data := responseBody["data"].(map[string]interface{})
 		assert.Equal(t, "access-token", data["access_token"])
 
@@ -68,7 +68,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		
+
 		c.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewBufferString("invalid-json"))
 		c.Request.Header.Set("Content-Type", "application/json")
 
@@ -91,7 +91,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		
+
 		jsonBytes, _ := json.Marshal(reqPayload)
 		c.Request = httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(jsonBytes))
 		c.Request.Header.Set("Content-Type", "application/json")
