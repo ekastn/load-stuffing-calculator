@@ -55,6 +55,24 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const getRoleByName = `-- name: GetRoleByName :one
+SELECT role_id, name, description FROM roles
+WHERE name = $1
+`
+
+type GetRoleByNameRow struct {
+	RoleID      uuid.UUID `json:"role_id"`
+	Name        string    `json:"name"`
+	Description *string   `json:"description"`
+}
+
+func (q *Queries) GetRoleByName(ctx context.Context, name string) (GetRoleByNameRow, error) {
+	row := q.db.QueryRow(ctx, getRoleByName, name)
+	var i GetRoleByNameRow
+	err := row.Scan(&i.RoleID, &i.Name, &i.Description)
+	return i, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT 
     u.user_id,
