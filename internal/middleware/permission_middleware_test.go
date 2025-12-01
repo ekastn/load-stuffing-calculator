@@ -30,16 +30,29 @@ func (m *MockQuerier) GetPermissionsByRole(ctx context.Context, name string) ([]
 }
 
 // Implement other interface methods to satisfy store.Querier (stubs)
-func (m *MockQuerier) CreateRefreshToken(ctx context.Context, arg store.CreateRefreshTokenParams) error { return nil }
-func (m *MockQuerier) CreateUser(ctx context.Context, arg store.CreateUserParams) (store.User, error) { return store.User{}, nil }
-func (m *MockQuerier) GetRefreshToken(ctx context.Context, token string) (store.GetRefreshTokenRow, error) { return store.GetRefreshTokenRow{}, nil }
-func (m *MockQuerier) GetRoleByName(ctx context.Context, name string) (store.GetRoleByNameRow, error) { return store.GetRoleByNameRow{}, nil }
-func (m *MockQuerier) GetUserByID(ctx context.Context, userID uuid.UUID) (store.GetUserByIDRow, error) { return store.GetUserByIDRow{}, nil }
-func (m *MockQuerier) GetUserByUsername(ctx context.Context, username string) (store.GetUserByUsernameRow, error) { return store.GetUserByUsernameRow{}, nil }
-func (m *MockQuerier) ListUsers(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error) { return nil, nil }
-func (m *MockQuerier) RevokeRefreshToken(ctx context.Context, token string) error { return nil }
+func (m *MockQuerier) CreateRefreshToken(ctx context.Context, arg store.CreateRefreshTokenParams) error {
+	return nil
+}
+func (m *MockQuerier) CreateUser(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
+	return store.User{}, nil
+}
+func (m *MockQuerier) GetRefreshToken(ctx context.Context, token string) (store.GetRefreshTokenRow, error) {
+	return store.GetRefreshTokenRow{}, nil
+}
+func (m *MockQuerier) GetRoleByName(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+	return store.GetRoleByNameRow{}, nil
+}
+func (m *MockQuerier) GetUserByID(ctx context.Context, userID uuid.UUID) (store.GetUserByIDRow, error) {
+	return store.GetUserByIDRow{}, nil
+}
+func (m *MockQuerier) GetUserByUsername(ctx context.Context, username string) (store.GetUserByUsernameRow, error) {
+	return store.GetUserByUsernameRow{}, nil
+}
+func (m *MockQuerier) ListUsers(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error) {
+	return nil, nil
+}
+func (m *MockQuerier) RevokeRefreshToken(ctx context.Context, token string) error       { return nil }
 func (m *MockQuerier) UpdateUser(ctx context.Context, arg store.UpdateUserParams) error { return nil }
-
 
 func TestPermissionMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -91,7 +104,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, w.Code)
 		mockQ.AssertExpectations(t)
 	})
-	
+
 	t.Run("db_error", func(t *testing.T) {
 		mockQ := new(MockQuerier)
 		permCache := cache.NewPermissionCache()
@@ -110,12 +123,12 @@ func TestPermissionMiddleware(t *testing.T) {
 	t.Run("authorized_cached", func(t *testing.T) {
 		mockQ := new(MockQuerier)
 		permCache := cache.NewPermissionCache()
-		
+
 		// Pre-fill cache
 		permCache.Set("editor", []string{"article:create"})
 
 		// Should NOT call GetPermissionsByRole
-		
+
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/", nil)

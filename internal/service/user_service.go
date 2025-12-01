@@ -84,7 +84,7 @@ func (s *userService) GetUserByID(ctx context.Context, id string) (*dto.UserResp
 			Address:     user.Address,
 			AvatarURL:   user.AvatarUrl,
 		}
-		
+
 		if user.DateOfBirth.Valid {
 			dob := user.DateOfBirth.Time.Format("2006-01-02")
 			profile.DateOfBirth = &dob
@@ -121,7 +121,7 @@ func (s *userService) ListUsers(ctx context.Context, page, limit int32) ([]dto.U
 			Role:      u.RoleName,
 			CreatedAt: u.CreatedAt.Format(time.RFC3339),
 		}
-		
+
 		if u.FullName != nil {
 			item.Profile = &dto.UserProfileResponse{
 				FullName:    u.FullName,
