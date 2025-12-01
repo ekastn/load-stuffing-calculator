@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -22,7 +23,9 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			auth.POST("/login", a.authHandler.Login)
 		}
 
-		users := v1.Group("/users")
+		v1.Use(middleware.JWT(a.jwtSecret))
+
+		users := v1.Group("/users", middleware.Role("admin"))
 		{
 			users.POST("", a.userHandler.CreateUser)
 			users.GET("/:id", a.userHandler.GetUser)

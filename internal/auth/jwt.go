@@ -35,6 +35,22 @@ func GenerateRefreshToken() (string, error) {
 	return "rf_" + time.Now().Format("20060102_150405.000000") + "_" + rnd, nil
 }
 
+func ValidateToken(tokenString, secret string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+
+	return nil, jwt.ErrTokenInvalidClaims
+}
+
 func randomString(n int) (string, error) {
 	b := make([]byte, n)
 	_, err := rand.Read(b)

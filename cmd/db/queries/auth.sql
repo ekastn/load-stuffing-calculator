@@ -20,3 +20,10 @@ WHERE token = $1;
 -- name: RevokeRefreshToken :exec
 DELETE FROM refresh_tokens 
 WHERE token = $1;
+
+-- name: GetPermissionsByRole :many
+SELECT p.name
+FROM permissions p
+JOIN role_permissions rp ON p.permission_id = rp.permission_id
+JOIN roles r ON rp.role_id = r.role_id
+WHERE r.name = $1;
