@@ -33,6 +33,7 @@ SELECT
     u.username,
     u.email,
     r.name AS role_name,
+    u.created_at,
     up.full_name,
     up.gender,
     up.date_of_birth,

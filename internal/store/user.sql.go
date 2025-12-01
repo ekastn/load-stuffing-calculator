@@ -79,6 +79,7 @@ SELECT
     u.username,
     u.email,
     r.name AS role_name,
+    u.created_at,
     up.full_name,
     up.gender,
     up.date_of_birth,
@@ -96,6 +97,7 @@ type GetUserByIDRow struct {
 	Username    string      `json:"username"`
 	Email       string      `json:"email"`
 	RoleName    string      `json:"role_name"`
+	CreatedAt   time.Time   `json:"created_at"`
 	FullName    *string     `json:"full_name"`
 	Gender      *string     `json:"gender"`
 	DateOfBirth pgtype.Date `json:"date_of_birth"`
@@ -112,6 +114,7 @@ func (q *Queries) GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByI
 		&i.Username,
 		&i.Email,
 		&i.RoleName,
+		&i.CreatedAt,
 		&i.FullName,
 		&i.Gender,
 		&i.DateOfBirth,

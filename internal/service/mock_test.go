@@ -12,6 +12,7 @@ import (
 type MockQuerier struct {
 	GetUserByUsernameFunc  func(ctx context.Context, username string) (store.GetUserByUsernameRow, error)
 	CreateRefreshTokenFunc func(ctx context.Context, arg store.CreateRefreshTokenParams) error
+	GetRoleByNameFunc      func(ctx context.Context, name string) (store.GetRoleByNameRow, error)
 
 	// Unused methods of Querier interface, implemented to satisfy the interface
 	CreateUserFunc         func(ctx context.Context, arg store.CreateUserParams) (store.User, error)
@@ -20,6 +21,13 @@ type MockQuerier struct {
 	ListUsersFunc          func(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error)
 	RevokeRefreshTokenFunc func(ctx context.Context, token string) error
 	UpdateUserFunc         func(ctx context.Context, arg store.UpdateUserParams) error
+}
+
+func (m *MockQuerier) GetRoleByName(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+	if m.GetRoleByNameFunc != nil {
+		return m.GetRoleByNameFunc(ctx, name)
+	}
+	return store.GetRoleByNameRow{}, fmt.Errorf("GetRoleByName not implemented")
 }
 
 // GetUserByUsername mocks the corresponding method from store.Querier.
