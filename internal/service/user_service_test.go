@@ -62,7 +62,7 @@ func TestUserService_CreateUser(t *testing.T) {
 				Password: validPassword,
 				Role:     validRole,
 			},
-			getRoleResp: store.GetRoleByNameRow{RoleID: validRoleID},
+			getRoleResp:   store.GetRoleByNameRow{RoleID: validRoleID},
 			createUserErr: fmt.Errorf("db error"),
 			wantErr:       true,
 		},
@@ -73,7 +73,7 @@ func TestUserService_CreateUser(t *testing.T) {
 			mockQ := &MockQuerier{
 				GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
 					if name != tt.req.Role {
-						// For tests where we expect success/db error, role matches. 
+						// For tests where we expect success/db error, role matches.
 						// For role_not_found, we return error directly or check name.
 						// Simplification: just return what test configures
 					}
@@ -198,8 +198,8 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 func TestUserService_ListUsers(t *testing.T) {
 	tests := []struct {
-		name         string
-		page, limit  int32
+		name          string
+		page, limit   int32
 		listUsersResp []store.ListUsersRow
 		listUsersErr  error
 		wantErr       bool

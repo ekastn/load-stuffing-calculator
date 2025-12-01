@@ -30,7 +30,7 @@ func JWT(secret string) gin.HandlerFunc {
 		if err != nil {
 			response.Error(c, http.StatusUnauthorized, "Invalid or expired token")
 			c.Abort()
-			return	
+			return
 		}
 
 		c.Set("user_id", claims.UserID)
