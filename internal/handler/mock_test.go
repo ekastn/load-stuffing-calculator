@@ -48,3 +48,42 @@ func (m *MockUserService) ListUsers(ctx context.Context, page, limit int32) ([]d
 	}
 	return args.Get(0).([]dto.UserResponse), args.Error(1)
 }
+
+// MockRoleService is a mock implementation of service.RoleService
+type MockRoleService struct {
+	mock.Mock
+}
+
+func (m *MockRoleService) CreateRole(ctx context.Context, req dto.CreateRoleRequest) (*dto.RoleResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.RoleResponse), args.Error(1)
+}
+
+func (m *MockRoleService) GetRole(ctx context.Context, id string) (*dto.RoleResponse, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.RoleResponse), args.Error(1)
+}
+
+func (m *MockRoleService) ListRoles(ctx context.Context, page, limit int32) ([]dto.RoleResponse, error) {
+	args := m.Called(ctx, page, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.RoleResponse), args.Error(1)
+}
+
+func (m *MockRoleService) UpdateRole(ctx context.Context, id string, req dto.UpdateRoleRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockRoleService) DeleteRole(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
