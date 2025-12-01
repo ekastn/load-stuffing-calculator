@@ -1,5 +1,17 @@
 basePath: /api/v1
 definitions:
+  dto.CreatePermissionRequest:
+    properties:
+      description:
+        maxLength: 200
+        type: string
+      name:
+        maxLength: 50
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
   dto.CreateRoleRequest:
     properties:
       description:
@@ -62,6 +74,15 @@ definitions:
       user:
         $ref: '#/definitions/dto.UserSummary'
     type: object
+  dto.PermissionResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+    type: object
   dto.RoleResponse:
     properties:
       description:
@@ -70,6 +91,18 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  dto.UpdatePermissionRequest:
+    properties:
+      description:
+        maxLength: 200
+        type: string
+      name:
+        maxLength: 50
+        minLength: 2
+        type: string
+    required:
+    - name
     type: object
   dto.UpdateRoleRequest:
     properties:
@@ -224,6 +257,183 @@ paths:
       summary: Health Check
       tags:
       - system
+  /permissions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of permissions.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PermissionResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List permissions
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      description: Creates a new permission. Requires admin privileges.
+      parameters:
+      - description: Permission Creation Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PermissionResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new permission
+      tags:
+      - permissions
+  /permissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a permission by ID. Requires admin privileges.
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a permission
+      tags:
+      - permissions
+    get:
+      consumes:
+      - application/json
+      description: Retrieves permission details by ID.
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PermissionResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a permission by ID
+      tags:
+      - permissions
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing permission. Requires admin privileges.
+      parameters:
+      - description: Permission ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permission Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePermissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a permission
+      tags:
+      - permissions
   /roles:
     get:
       consumes:

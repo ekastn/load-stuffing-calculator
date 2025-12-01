@@ -27,6 +27,46 @@ type MockQuerier struct {
 	ListRolesFunc          func(ctx context.Context, arg store.ListRolesParams) ([]store.Role, error)
 	UpdateRoleFunc         func(ctx context.Context, arg store.UpdateRoleParams) error
 	DeleteRoleFunc         func(ctx context.Context, id uuid.UUID) error
+	CreatePermissionFunc   func(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error)
+	GetPermissionFunc      func(ctx context.Context, id uuid.UUID) (store.Permission, error)
+	ListPermissionsFunc    func(ctx context.Context, arg store.ListPermissionsParams) ([]store.Permission, error)
+	UpdatePermissionFunc   func(ctx context.Context, arg store.UpdatePermissionParams) error
+	DeletePermissionFunc   func(ctx context.Context, id uuid.UUID) error
+}
+
+func (m *MockQuerier) CreatePermission(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error) {
+	if m.CreatePermissionFunc != nil {
+		return m.CreatePermissionFunc(ctx, arg)
+	}
+	return store.Permission{}, fmt.Errorf("CreatePermission not implemented")
+}
+
+func (m *MockQuerier) GetPermission(ctx context.Context, id uuid.UUID) (store.Permission, error) {
+	if m.GetPermissionFunc != nil {
+		return m.GetPermissionFunc(ctx, id)
+	}
+	return store.Permission{}, fmt.Errorf("GetPermission not implemented")
+}
+
+func (m *MockQuerier) ListPermissions(ctx context.Context, arg store.ListPermissionsParams) ([]store.Permission, error) {
+	if m.ListPermissionsFunc != nil {
+		return m.ListPermissionsFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListPermissions not implemented")
+}
+
+func (m *MockQuerier) UpdatePermission(ctx context.Context, arg store.UpdatePermissionParams) error {
+	if m.UpdatePermissionFunc != nil {
+		return m.UpdatePermissionFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdatePermission not implemented")
+}
+
+func (m *MockQuerier) DeletePermission(ctx context.Context, id uuid.UUID) error {
+	if m.DeletePermissionFunc != nil {
+		return m.DeletePermissionFunc(ctx, id)
+	}
+	return fmt.Errorf("DeletePermission not implemented")
 }
 
 func (m *MockQuerier) GetPermissionsByRole(ctx context.Context, name string) ([]string, error) {

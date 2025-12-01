@@ -28,6 +28,7 @@ type App struct {
 	authHandler *handler.AuthHandler
 	userHandler *handler.UserHandler
 	roleHandler *handler.RoleHandler
+	permHandler *handler.PermissionHandler
 	jwtSecret   string
 }
 
@@ -38,10 +39,12 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	authSvc := service.NewAuthService(querier, cfg.JWTSecret)
 	userSvc := service.NewUserService(querier)
 	roleSvc := service.NewRoleService(querier)
+	permSvc := service.NewPermissionService(querier)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	userHandler := handler.NewUserHandler(userSvc)
 	roleHandler := handler.NewRoleHandler(roleSvc)
+	permHandler := handler.NewPermissionHandler(permSvc)
 
 	app := &App{
 		config:      cfg,
@@ -51,6 +54,7 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 		authHandler: authHandler,
 		userHandler: userHandler,
 		roleHandler: roleHandler,
+		permHandler: permHandler,
 		jwtSecret:   cfg.JWTSecret,
 	}
 

@@ -87,3 +87,42 @@ func (m *MockRoleService) DeleteRole(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
+
+// MockPermissionService is a mock implementation of service.PermissionService
+type MockPermissionService struct {
+	mock.Mock
+}
+
+func (m *MockPermissionService) CreatePermission(ctx context.Context, req dto.CreatePermissionRequest) (*dto.PermissionResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.PermissionResponse), args.Error(1)
+}
+
+func (m *MockPermissionService) GetPermission(ctx context.Context, id string) (*dto.PermissionResponse, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.PermissionResponse), args.Error(1)
+}
+
+func (m *MockPermissionService) ListPermissions(ctx context.Context, page, limit int32) ([]dto.PermissionResponse, error) {
+	args := m.Called(ctx, page, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.PermissionResponse), args.Error(1)
+}
+
+func (m *MockPermissionService) UpdatePermission(ctx context.Context, id string, req dto.UpdatePermissionRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockPermissionService) DeletePermission(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}

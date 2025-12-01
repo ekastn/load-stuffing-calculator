@@ -11,19 +11,24 @@ import (
 )
 
 type Querier interface {
+	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeletePermission(ctx context.Context, permissionID uuid.UUID) error
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
+	GetPermission(ctx context.Context, permissionID uuid.UUID) (Permission, error)
 	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
 	GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error)
 	GetRole(ctx context.Context, roleID uuid.UUID) (Role, error)
 	GetRoleByName(ctx context.Context, name string) (GetRoleByNameRow, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
+	ListPermissions(ctx context.Context, arg ListPermissionsParams) ([]Permission, error)
 	ListRoles(ctx context.Context, arg ListRolesParams) ([]Role, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	RevokeRefreshToken(ctx context.Context, token string) error
+	UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error
 	UpdateRole(ctx context.Context, arg UpdateRoleParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) error
 }
