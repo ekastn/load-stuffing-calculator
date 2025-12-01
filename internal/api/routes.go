@@ -42,6 +42,15 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			roles.PUT("/:id", a.roleHandler.UpdateRole)
 			roles.DELETE("/:id", a.roleHandler.DeleteRole)
 		}
+
+		permissions := v1.Group("/permissions", middleware.Role("admin"))
+		{
+			permissions.POST("", a.permHandler.CreatePermission)
+			permissions.GET("", a.permHandler.ListPermissions)
+			permissions.GET("/:id", a.permHandler.GetPermission)
+			permissions.PUT("/:id", a.permHandler.UpdatePermission)
+			permissions.DELETE("/:id", a.permHandler.DeletePermission)
+		}
 	}
 }
 
