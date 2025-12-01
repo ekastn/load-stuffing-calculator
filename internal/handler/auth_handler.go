@@ -17,6 +17,18 @@ func NewAuthHandler(authSvc service.AuthService) *AuthHandler {
 	return &AuthHandler{authSvc}
 }
 
+// Login godoc
+//
+//	@Summary		User Login
+//	@Description	Authenticates a user and returns access and refresh tokens.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.LoginRequest	true	"Login Credentials"
+//	@Success		200		{object}	response.APIResponse{data=dto.LoginResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		401		{object}	response.APIResponse
+//	@Router			/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

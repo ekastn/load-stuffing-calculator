@@ -3,21 +3,23 @@ package api
 import (
 	"time"
 
+	_ "github.com/ekastn/load-stuffing-calculator/internal/docs"
 	"github.com/ekastn/load-stuffing-calculator/internal/middleware"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func (a *App) setupRoutes(r *gin.Engine) {
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "ok",
-			"time":    time.Now().Format(time.RFC3339),
-			"version": "1.0.0", // TODO: Get from build info
-		})
+	r.GET("/docs", func(c *gin.Context) {
+		c.Redirect(302, "/docs/index.html")
 	})
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, ginSwagger.URL("/docs/doc.json")))
 
 	v1 := r.Group("/api/v1")
 	{
+		v1.GET("/health", a.HealthCheck)
+
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/login", a.authHandler.Login)
@@ -32,4 +34,20 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			users.GET("", a.userHandler.ListUsers)
 		}
 	}
+}
+
+// HealthCheck godoc
+// @Summary      Health Check
+// @Description  Checks if the server is running and returns basic info.
+// @Tags         system
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]string
+// @Router       /health [get]
+func (a *App) HealthCheck(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status":  "ok",
+		"time":    time.Now().Format(time.RFC3339),
+		"version": "1.0.0", // TODO: Get from build info
+	})
 }

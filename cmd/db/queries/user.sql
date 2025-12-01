@@ -58,7 +58,7 @@ WHERE user_id = $1;
 SELECT u.user_id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name
 FROM users u
 JOIN roles r ON u.role_id = r.role_id
-WHERE u.username = $1 AND u.is_active = true;
+WHERE u.username = $1;
 
 -- name: GetRoleByName :one
 SELECT role_id, name, description FROM roles
