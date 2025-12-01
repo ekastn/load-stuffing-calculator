@@ -21,5 +21,12 @@ func (a *App) setupRoutes(r *gin.Engine) {
 		{
 			auth.POST("/login", a.authHandler.Login)
 		}
+
+		users := v1.Group("/users")
+		{
+			users.POST("", a.userHandler.CreateUser)
+			users.GET("/:id", a.userHandler.GetUser)
+			users.GET("", a.userHandler.ListUsers)
+		}
 	}
 }

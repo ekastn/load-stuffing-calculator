@@ -23,19 +23,23 @@ type App struct {
 	router      *gin.Engine
 	db          *pgxpool.Pool
 	authHandler *handler.AuthHandler
+	userHandler *handler.UserHandler
 }
 
 func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	querier := store.New(db)
 
 	authSvc := service.NewAuthService(querier, cfg.JWTSecret)
+	userSvc := service.NewUserService(querier)
 
 	authHandler := handler.NewAuthHandler(authSvc)
+	userHandler := handler.NewUserHandler(userSvc)
 
 	app := &App{
 		config:      cfg,
 		db:          db,
 		authHandler: authHandler,
+		userHandler: userHandler,
 	}
 
 	app.setupRouter()
