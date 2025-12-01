@@ -33,6 +33,15 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			users.GET("/:id", a.userHandler.GetUser)
 			users.GET("", a.userHandler.ListUsers)
 		}
+
+		roles := v1.Group("/roles", middleware.Role("admin"))
+		{
+			roles.POST("", a.roleHandler.CreateRole)
+			roles.GET("", a.roleHandler.ListRoles)
+			roles.GET("/:id", a.roleHandler.GetRole)
+			roles.PUT("/:id", a.roleHandler.UpdateRole)
+			roles.DELETE("/:id", a.roleHandler.DeleteRole)
+		}
 	}
 }
 

@@ -21,6 +21,54 @@ type MockQuerier struct {
 	ListUsersFunc          func(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error)
 	RevokeRefreshTokenFunc func(ctx context.Context, token string) error
 	UpdateUserFunc         func(ctx context.Context, arg store.UpdateUserParams) error
+	GetPermissionsByRoleFunc func(ctx context.Context, name string) ([]string, error)
+	CreateRoleFunc         func(ctx context.Context, arg store.CreateRoleParams) (store.Role, error)
+	GetRoleFunc            func(ctx context.Context, id uuid.UUID) (store.Role, error)
+	ListRolesFunc          func(ctx context.Context, arg store.ListRolesParams) ([]store.Role, error)
+	UpdateRoleFunc         func(ctx context.Context, arg store.UpdateRoleParams) error
+	DeleteRoleFunc         func(ctx context.Context, id uuid.UUID) error
+}
+
+func (m *MockQuerier) GetPermissionsByRole(ctx context.Context, name string) ([]string, error) {
+	if m.GetPermissionsByRoleFunc != nil {
+		return m.GetPermissionsByRoleFunc(ctx, name)
+	}
+	return nil, fmt.Errorf("GetPermissionsByRole not implemented")
+}
+
+func (m *MockQuerier) CreateRole(ctx context.Context, arg store.CreateRoleParams) (store.Role, error) {
+	if m.CreateRoleFunc != nil {
+		return m.CreateRoleFunc(ctx, arg)
+	}
+	return store.Role{}, fmt.Errorf("CreateRole not implemented")
+}
+
+func (m *MockQuerier) GetRole(ctx context.Context, id uuid.UUID) (store.Role, error) {
+	if m.GetRoleFunc != nil {
+		return m.GetRoleFunc(ctx, id)
+	}
+	return store.Role{}, fmt.Errorf("GetRole not implemented")
+}
+
+func (m *MockQuerier) ListRoles(ctx context.Context, arg store.ListRolesParams) ([]store.Role, error) {
+	if m.ListRolesFunc != nil {
+		return m.ListRolesFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListRoles not implemented")
+}
+
+func (m *MockQuerier) UpdateRole(ctx context.Context, arg store.UpdateRoleParams) error {
+	if m.UpdateRoleFunc != nil {
+		return m.UpdateRoleFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateRole not implemented")
+}
+
+func (m *MockQuerier) DeleteRole(ctx context.Context, id uuid.UUID) error {
+	if m.DeleteRoleFunc != nil {
+		return m.DeleteRoleFunc(ctx, id)
+	}
+	return fmt.Errorf("DeleteRole not implemented")
 }
 
 func (m *MockQuerier) GetRoleByName(ctx context.Context, name string) (store.GetRoleByNameRow, error) {

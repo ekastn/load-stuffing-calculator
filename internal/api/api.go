@@ -27,6 +27,7 @@ type App struct {
 	permCache   *cache.PermissionCache
 	authHandler *handler.AuthHandler
 	userHandler *handler.UserHandler
+	roleHandler *handler.RoleHandler
 	jwtSecret   string
 }
 
@@ -36,9 +37,11 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 
 	authSvc := service.NewAuthService(querier, cfg.JWTSecret)
 	userSvc := service.NewUserService(querier)
+	roleSvc := service.NewRoleService(querier)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	userHandler := handler.NewUserHandler(userSvc)
+	roleHandler := handler.NewRoleHandler(roleSvc)
 
 	app := &App{
 		config:      cfg,
@@ -47,6 +50,7 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 		permCache:   permCache,
 		authHandler: authHandler,
 		userHandler: userHandler,
+		roleHandler: roleHandler,
 		jwtSecret:   cfg.JWTSecret,
 	}
 
