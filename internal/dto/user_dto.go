@@ -23,10 +23,10 @@ type UserResponse struct {
 }
 
 type UserProfileResponse struct {
-	FullName    string  `json:"full_name,omitempty"`
-	Gender      string  `json:"gender,omitempty"`
-	DateOfBirth *string `json:"date_of_birth,omitempty"` // null → string pointer
-	PhoneNumber string  `json:"phone_number,omitempty"`
-	Address     string  `json:"address,omitempty"`
-	AvatarURL   string  `json:"avatar_url,omitempty"`
+	FullName    *string `json:"full_name,omitempty"`
+	Gender      *string `json:"gender,omitempty"`
+	DateOfBirth *string `json:"date_of_birth,omitempty"`
+	PhoneNumber *string `json:"phone_number,omitempty"`
+	Address     *string `json:"address,omitempty"`
+	AvatarURL   *string `json:"avatar_url,omitempty"`
 }
