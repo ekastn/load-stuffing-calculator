@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/config"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
@@ -22,12 +23,16 @@ type App struct {
 	config      config.Config
 	router      *gin.Engine
 	db          *pgxpool.Pool
+	querier     store.Querier
+	permCache   *cache.PermissionCache
 	authHandler *handler.AuthHandler
 	userHandler *handler.UserHandler
+	jwtSecret   string
 }
 
 func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	querier := store.New(db)
+	permCache := cache.NewPermissionCache()
 
 	authSvc := service.NewAuthService(querier, cfg.JWTSecret)
 	userSvc := service.NewUserService(querier)
@@ -38,8 +43,11 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	app := &App{
 		config:      cfg,
 		db:          db,
+		querier:     querier,
+		permCache:   permCache,
 		authHandler: authHandler,
 		userHandler: userHandler,
+		jwtSecret:   cfg.JWTSecret,
 	}
 
 	app.setupRouter()

@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
 	GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error)
 	GetRoleByName(ctx context.Context, name string) (GetRoleByNameRow, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByIDRow, error)

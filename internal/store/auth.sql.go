@@ -35,6 +35,34 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	return err
 }
 
+const getPermissionsByRole = `-- name: GetPermissionsByRole :many
+SELECT p.name
+FROM permissions p
+JOIN role_permissions rp ON p.permission_id = rp.permission_id
+JOIN roles r ON rp.role_id = r.role_id
+WHERE r.name = $1
+`
+
+func (q *Queries) GetPermissionsByRole(ctx context.Context, name string) ([]string, error) {
+	rows, err := q.db.Query(ctx, getPermissionsByRole, name)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getRefreshToken = `-- name: GetRefreshToken :one
 SELECT 
     user_id, 
