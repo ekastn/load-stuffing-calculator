@@ -15,23 +15,103 @@ type MockQuerier struct {
 	GetRoleByNameFunc      func(ctx context.Context, name string) (store.GetRoleByNameRow, error)
 
 	// Unused methods of Querier interface, implemented to satisfy the interface
-	CreateUserFunc         func(ctx context.Context, arg store.CreateUserParams) (store.User, error)
-	GetRefreshTokenFunc    func(ctx context.Context, token string) (store.GetRefreshTokenRow, error)
-	GetUserByIDFunc        func(ctx context.Context, userID uuid.UUID) (store.GetUserByIDRow, error)
-	ListUsersFunc          func(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error)
-	RevokeRefreshTokenFunc func(ctx context.Context, token string) error
-	UpdateUserFunc         func(ctx context.Context, arg store.UpdateUserParams) error
+	CreateUserFunc           func(ctx context.Context, arg store.CreateUserParams) (store.User, error)
+	GetRefreshTokenFunc      func(ctx context.Context, token string) (store.GetRefreshTokenRow, error)
+	GetUserByIDFunc          func(ctx context.Context, userID uuid.UUID) (store.GetUserByIDRow, error)
+	ListUsersFunc            func(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error)
+	RevokeRefreshTokenFunc   func(ctx context.Context, token string) error
+	UpdateUserFunc           func(ctx context.Context, arg store.UpdateUserParams) error
 	GetPermissionsByRoleFunc func(ctx context.Context, name string) ([]string, error)
-	CreateRoleFunc         func(ctx context.Context, arg store.CreateRoleParams) (store.Role, error)
-	GetRoleFunc            func(ctx context.Context, id uuid.UUID) (store.Role, error)
-	ListRolesFunc          func(ctx context.Context, arg store.ListRolesParams) ([]store.Role, error)
-	UpdateRoleFunc         func(ctx context.Context, arg store.UpdateRoleParams) error
-	DeleteRoleFunc         func(ctx context.Context, id uuid.UUID) error
-	CreatePermissionFunc   func(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error)
-	GetPermissionFunc      func(ctx context.Context, id uuid.UUID) (store.Permission, error)
-	ListPermissionsFunc    func(ctx context.Context, arg store.ListPermissionsParams) ([]store.Permission, error)
-	UpdatePermissionFunc   func(ctx context.Context, arg store.UpdatePermissionParams) error
-	DeletePermissionFunc   func(ctx context.Context, id uuid.UUID) error
+	CreateRoleFunc           func(ctx context.Context, arg store.CreateRoleParams) (store.Role, error)
+	GetRoleFunc              func(ctx context.Context, id uuid.UUID) (store.Role, error)
+	ListRolesFunc            func(ctx context.Context, arg store.ListRolesParams) ([]store.Role, error)
+	UpdateRoleFunc           func(ctx context.Context, arg store.UpdateRoleParams) error
+	DeleteRoleFunc           func(ctx context.Context, id uuid.UUID) error
+	CreatePermissionFunc     func(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error)
+	GetPermissionFunc        func(ctx context.Context, id uuid.UUID) (store.Permission, error)
+	ListPermissionsFunc      func(ctx context.Context, arg store.ListPermissionsParams) ([]store.Permission, error)
+	UpdatePermissionFunc     func(ctx context.Context, arg store.UpdatePermissionParams) error
+	DeletePermissionFunc     func(ctx context.Context, id uuid.UUID) error
+	CreateContainerFunc      func(ctx context.Context, arg store.CreateContainerParams) (store.Container, error)
+	GetContainerFunc         func(ctx context.Context, id uuid.UUID) (store.Container, error)
+	ListContainersFunc       func(ctx context.Context, arg store.ListContainersParams) ([]store.Container, error)
+	UpdateContainerFunc      func(ctx context.Context, arg store.UpdateContainerParams) error
+	DeleteContainerFunc      func(ctx context.Context, id uuid.UUID) error
+	CreateProductFunc        func(ctx context.Context, arg store.CreateProductParams) (store.Product, error)
+	GetProductFunc           func(ctx context.Context, id uuid.UUID) (store.Product, error)
+	ListProductsFunc         func(ctx context.Context, arg store.ListProductsParams) ([]store.Product, error)
+	UpdateProductFunc        func(ctx context.Context, arg store.UpdateProductParams) error
+	DeleteProductFunc        func(ctx context.Context, id uuid.UUID) error
+}
+
+func (m *MockQuerier) CreateProduct(ctx context.Context, arg store.CreateProductParams) (store.Product, error) {
+	if m.CreateProductFunc != nil {
+		return m.CreateProductFunc(ctx, arg)
+	}
+	return store.Product{}, fmt.Errorf("CreateProduct not implemented")
+}
+
+func (m *MockQuerier) GetProduct(ctx context.Context, id uuid.UUID) (store.Product, error) {
+	if m.GetProductFunc != nil {
+		return m.GetProductFunc(ctx, id)
+	}
+	return store.Product{}, fmt.Errorf("GetProduct not implemented")
+}
+
+func (m *MockQuerier) ListProducts(ctx context.Context, arg store.ListProductsParams) ([]store.Product, error) {
+	if m.ListProductsFunc != nil {
+		return m.ListProductsFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListProducts not implemented")
+}
+
+func (m *MockQuerier) UpdateProduct(ctx context.Context, arg store.UpdateProductParams) error {
+	if m.UpdateProductFunc != nil {
+		return m.UpdateProductFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateProduct not implemented")
+}
+
+func (m *MockQuerier) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+	if m.DeleteProductFunc != nil {
+		return m.DeleteProductFunc(ctx, id)
+	}
+	return fmt.Errorf("DeleteProduct not implemented")
+}
+
+func (m *MockQuerier) CreateContainer(ctx context.Context, arg store.CreateContainerParams) (store.Container, error) {
+	if m.CreateContainerFunc != nil {
+		return m.CreateContainerFunc(ctx, arg)
+	}
+	return store.Container{}, fmt.Errorf("CreateContainer not implemented")
+}
+
+func (m *MockQuerier) GetContainer(ctx context.Context, id uuid.UUID) (store.Container, error) {
+	if m.GetContainerFunc != nil {
+		return m.GetContainerFunc(ctx, id)
+	}
+	return store.Container{}, fmt.Errorf("GetContainer not implemented")
+}
+
+func (m *MockQuerier) ListContainers(ctx context.Context, arg store.ListContainersParams) ([]store.Container, error) {
+	if m.ListContainersFunc != nil {
+		return m.ListContainersFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListContainers not implemented")
+}
+
+func (m *MockQuerier) UpdateContainer(ctx context.Context, arg store.UpdateContainerParams) error {
+	if m.UpdateContainerFunc != nil {
+		return m.UpdateContainerFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateContainer not implemented")
+}
+
+func (m *MockQuerier) DeleteContainer(ctx context.Context, id uuid.UUID) error {
+	if m.DeleteContainerFunc != nil {
+		return m.DeleteContainerFunc(ctx, id)
+	}
+	return fmt.Errorf("DeleteContainer not implemented")
 }
 
 func (m *MockQuerier) CreatePermission(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error) {

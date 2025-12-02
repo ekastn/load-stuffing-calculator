@@ -1,5 +1,46 @@
 basePath: /api/v1
 definitions:
+  dto.ContainerResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      inner_height_mm:
+        type: number
+      inner_length_mm:
+        type: number
+      inner_width_mm:
+        type: number
+      max_weight_kg:
+        type: number
+      name:
+        type: string
+    type: object
+  dto.CreateContainerRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      inner_height_mm:
+        type: number
+      inner_length_mm:
+        type: number
+      inner_width_mm:
+        type: number
+      max_weight_kg:
+        type: number
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - inner_height_mm
+    - inner_length_mm
+    - inner_width_mm
+    - max_weight_kg
+    - name
+    type: object
   dto.CreatePermissionRequest:
     properties:
       description:
@@ -11,6 +52,29 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  dto.CreateProductRequest:
+    properties:
+      color_hex:
+        type: string
+      height_mm:
+        type: number
+      length_mm:
+        type: number
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+      weight_kg:
+        type: number
+      width_mm:
+        type: number
+    required:
+    - height_mm
+    - length_mm
+    - name
+    - weight_kg
+    - width_mm
     type: object
   dto.CreateRoleRequest:
     properties:
@@ -83,6 +147,23 @@ definitions:
       name:
         type: string
     type: object
+  dto.ProductResponse:
+    properties:
+      color_hex:
+        type: string
+      height_mm:
+        type: number
+      id:
+        type: string
+      length_mm:
+        type: number
+      name:
+        type: string
+      weight_kg:
+        type: number
+      width_mm:
+        type: number
+    type: object
   dto.RoleResponse:
     properties:
       description:
@@ -91,6 +172,30 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  dto.UpdateContainerRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      inner_height_mm:
+        type: number
+      inner_length_mm:
+        type: number
+      inner_width_mm:
+        type: number
+      max_weight_kg:
+        type: number
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - inner_height_mm
+    - inner_length_mm
+    - inner_width_mm
+    - max_weight_kg
+    - name
     type: object
   dto.UpdatePermissionRequest:
     properties:
@@ -103,6 +208,29 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  dto.UpdateProductRequest:
+    properties:
+      color_hex:
+        type: string
+      height_mm:
+        type: number
+      length_mm:
+        type: number
+      name:
+        maxLength: 150
+        minLength: 2
+        type: string
+      weight_kg:
+        type: number
+      width_mm:
+        type: number
+    required:
+    - height_mm
+    - length_mm
+    - name
+    - weight_kg
+    - width_mm
     type: object
   dto.UpdateRoleRequest:
     properties:
@@ -240,6 +368,183 @@ paths:
       summary: User Login
       tags:
       - auth
+  /containers:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of containers.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ContainerResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List containers
+      tags:
+      - containers
+    post:
+      consumes:
+      - application/json
+      description: Creates a new container type. Requires admin privileges.
+      parameters:
+      - description: Container Creation Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateContainerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ContainerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new container
+      tags:
+      - containers
+  /containers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a container by ID. Requires admin privileges.
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a container
+      tags:
+      - containers
+    get:
+      consumes:
+      - application/json
+      description: Retrieves container details by ID.
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ContainerResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a container by ID
+      tags:
+      - containers
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing container. Requires admin privileges.
+      parameters:
+      - description: Container ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Container Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateContainerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a container
+      tags:
+      - containers
   /health:
     get:
       consumes:
@@ -434,6 +739,183 @@ paths:
       summary: Update a permission
       tags:
       - permissions
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of products.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ProductResponse'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List products
+      tags:
+      - products
+    post:
+      consumes:
+      - application/json
+      description: Creates a new product. Requires admin privileges.
+      parameters:
+      - description: Product Creation Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new product
+      tags:
+      - products
+  /products/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a product by ID. Requires admin privileges.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a product
+      tags:
+      - products
+    get:
+      consumes:
+      - application/json
+      description: Retrieves product details by ID.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a product by ID
+      tags:
+      - products
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing product. Requires admin privileges.
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Product Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateProductRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a product
+      tags:
+      - products
   /roles:
     get:
       consumes:

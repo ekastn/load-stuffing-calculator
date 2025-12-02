@@ -11,11 +11,35 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Container struct {
+	ContainerID   uuid.UUID        `json:"container_id"`
+	Name          string           `json:"name"`
+	InnerLengthMm pgtype.Numeric   `json:"inner_length_mm"`
+	InnerWidthMm  pgtype.Numeric   `json:"inner_width_mm"`
+	InnerHeightMm pgtype.Numeric   `json:"inner_height_mm"`
+	MaxWeightKg   pgtype.Numeric   `json:"max_weight_kg"`
+	Description   *string          `json:"description"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
 type Permission struct {
 	PermissionID uuid.UUID `json:"permission_id"`
 	Name         string    `json:"name"`
 	Description  *string   `json:"description"`
 	CreatedAt    time.Time `json:"created_at"`
+}
+
+type Product struct {
+	ProductID uuid.UUID        `json:"product_id"`
+	Name      string           `json:"name"`
+	LengthMm  pgtype.Numeric   `json:"length_mm"`
+	WidthMm   pgtype.Numeric   `json:"width_mm"`
+	HeightMm  pgtype.Numeric   `json:"height_mm"`
+	WeightKg  pgtype.Numeric   `json:"weight_kg"`
+	ColorHex  *string          `json:"color_hex"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
 type RefreshToken struct {
