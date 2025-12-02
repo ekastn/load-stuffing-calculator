@@ -51,6 +51,24 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			permissions.PUT("/:id", a.permHandler.UpdatePermission)
 			permissions.DELETE("/:id", a.permHandler.DeletePermission)
 		}
+
+		containers := v1.Group("/containers", middleware.Role("admin"))
+		{
+			containers.POST("", a.containerHandler.CreateContainer)
+			containers.GET("", a.containerHandler.ListContainers)
+			containers.GET("/:id", a.containerHandler.GetContainer)
+			containers.PUT("/:id", a.containerHandler.UpdateContainer)
+			containers.DELETE("/:id", a.containerHandler.DeleteContainer)
+		}
+
+		products := v1.Group("/products", middleware.Role("admin"))
+		{
+			products.POST("", a.productHandler.CreateProduct)
+			products.GET("", a.productHandler.ListProducts)
+			products.GET("/:id", a.productHandler.GetProduct)
+			products.PUT("/:id", a.productHandler.UpdateProduct)
+			products.DELETE("/:id", a.productHandler.DeleteProduct)
+		}
 	}
 }
 

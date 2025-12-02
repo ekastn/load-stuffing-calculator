@@ -20,16 +20,18 @@ import (
 )
 
 type App struct {
-	config      config.Config
-	router      *gin.Engine
-	db          *pgxpool.Pool
-	querier     store.Querier
-	permCache   *cache.PermissionCache
-	authHandler *handler.AuthHandler
-	userHandler *handler.UserHandler
-	roleHandler *handler.RoleHandler
-	permHandler *handler.PermissionHandler
-	jwtSecret   string
+	config           config.Config
+	router           *gin.Engine
+	db               *pgxpool.Pool
+	querier          store.Querier
+	permCache        *cache.PermissionCache
+	authHandler      *handler.AuthHandler
+	userHandler      *handler.UserHandler
+	roleHandler      *handler.RoleHandler
+	permHandler      *handler.PermissionHandler
+	containerHandler *handler.ContainerHandler
+	productHandler   *handler.ProductHandler
+	jwtSecret        string
 }
 
 func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
@@ -40,22 +42,28 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	userSvc := service.NewUserService(querier)
 	roleSvc := service.NewRoleService(querier)
 	permSvc := service.NewPermissionService(querier)
+	containerSvc := service.NewContainerService(querier)
+	productSvc := service.NewProductService(querier)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	userHandler := handler.NewUserHandler(userSvc)
 	roleHandler := handler.NewRoleHandler(roleSvc)
 	permHandler := handler.NewPermissionHandler(permSvc)
+	containerHandler := handler.NewContainerHandler(containerSvc)
+	productHandler := handler.NewProductHandler(productSvc)
 
 	app := &App{
-		config:      cfg,
-		db:          db,
-		querier:     querier,
-		permCache:   permCache,
-		authHandler: authHandler,
-		userHandler: userHandler,
-		roleHandler: roleHandler,
-		permHandler: permHandler,
-		jwtSecret:   cfg.JWTSecret,
+		config:           cfg,
+		db:               db,
+		querier:          querier,
+		permCache:        permCache,
+		authHandler:      authHandler,
+		userHandler:      userHandler,
+		roleHandler:      roleHandler,
+		permHandler:      permHandler,
+		containerHandler: containerHandler,
+		productHandler:   productHandler,
+		jwtSecret:        cfg.JWTSecret,
 	}
 
 	app.setupRouter()

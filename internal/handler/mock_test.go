@@ -126,3 +126,81 @@ func (m *MockPermissionService) DeletePermission(ctx context.Context, id string)
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
+
+// MockContainerService is a mock implementation of service.ContainerService
+type MockContainerService struct {
+	mock.Mock
+}
+
+func (m *MockContainerService) CreateContainer(ctx context.Context, req dto.CreateContainerRequest) (*dto.ContainerResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.ContainerResponse), args.Error(1)
+}
+
+func (m *MockContainerService) GetContainer(ctx context.Context, id string) (*dto.ContainerResponse, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.ContainerResponse), args.Error(1)
+}
+
+func (m *MockContainerService) ListContainers(ctx context.Context, page, limit int32) ([]dto.ContainerResponse, error) {
+	args := m.Called(ctx, page, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.ContainerResponse), args.Error(1)
+}
+
+func (m *MockContainerService) UpdateContainer(ctx context.Context, id string, req dto.UpdateContainerRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockContainerService) DeleteContainer(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+// MockProductService is a mock implementation of service.ProductService
+type MockProductService struct {
+	mock.Mock
+}
+
+func (m *MockProductService) CreateProduct(ctx context.Context, req dto.CreateProductRequest) (*dto.ProductResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.ProductResponse), args.Error(1)
+}
+
+func (m *MockProductService) GetProduct(ctx context.Context, id string) (*dto.ProductResponse, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.ProductResponse), args.Error(1)
+}
+
+func (m *MockProductService) ListProducts(ctx context.Context, page, limit int32) ([]dto.ProductResponse, error) {
+	args := m.Called(ctx, page, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.ProductResponse), args.Error(1)
+}
+
+func (m *MockProductService) UpdateProduct(ctx context.Context, id string, req dto.UpdateProductRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockProductService) DeleteProduct(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}

@@ -11,24 +11,34 @@ import (
 )
 
 type Querier interface {
+	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
 	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
+	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteContainer(ctx context.Context, containerID uuid.UUID) error
 	DeletePermission(ctx context.Context, permissionID uuid.UUID) error
+	DeleteProduct(ctx context.Context, productID uuid.UUID) error
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
+	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)
 	GetPermission(ctx context.Context, permissionID uuid.UUID) (Permission, error)
 	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
+	GetProduct(ctx context.Context, productID uuid.UUID) (Product, error)
 	GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error)
 	GetRole(ctx context.Context, roleID uuid.UUID) (Role, error)
 	GetRoleByName(ctx context.Context, name string) (GetRoleByNameRow, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
+	ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error)
 	ListPermissions(ctx context.Context, arg ListPermissionsParams) ([]Permission, error)
+	ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error)
 	ListRoles(ctx context.Context, arg ListRolesParams) ([]Role, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	RevokeRefreshToken(ctx context.Context, token string) error
+	UpdateContainer(ctx context.Context, arg UpdateContainerParams) error
 	UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error
+	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateRole(ctx context.Context, arg UpdateRoleParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) error
 }

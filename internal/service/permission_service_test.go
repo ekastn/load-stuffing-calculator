@@ -16,11 +16,11 @@ func TestPermissionService_CreatePermission(t *testing.T) {
 	desc := "A new perm"
 
 	tests := []struct {
-		name        string
-		req         dto.CreatePermissionRequest
-		createErr   error
-		createResp  store.Permission
-		wantErr     bool
+		name       string
+		req        dto.CreatePermissionRequest
+		createErr  error
+		createResp store.Permission
+		wantErr    bool
 	}{
 		{
 			name: "success",
@@ -188,9 +188,9 @@ func TestPermissionService_UpdatePermission(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name: "success",
-			id:   id.String(),
-			req:  dto.UpdatePermissionRequest{Name: name},
+			name:    "success",
+			id:      id.String(),
+			req:     dto.UpdatePermissionRequest{Name: name},
 			wantErr: false,
 		},
 		{
@@ -230,8 +230,8 @@ func TestPermissionService_DeletePermission(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name: "success",
-			id:   id.String(),
+			name:    "success",
+			id:      id.String(),
 			wantErr: false,
 		},
 		{

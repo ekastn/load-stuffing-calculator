@@ -16,11 +16,11 @@ func TestRoleService_CreateRole(t *testing.T) {
 	desc := "A new role"
 
 	tests := []struct {
-		name        string
-		req         dto.CreateRoleRequest
-		createErr   error
-		createResp  store.Role
-		wantErr     bool
+		name       string
+		req        dto.CreateRoleRequest
+		createErr  error
+		createResp store.Role
+		wantErr    bool
 	}{
 		{
 			name: "success",
@@ -191,9 +191,9 @@ func TestRoleService_UpdateRole(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name: "success",
-			id:   id.String(),
-			req:  dto.UpdateRoleRequest{Name: name},
+			name:    "success",
+			id:      id.String(),
+			req:     dto.UpdateRoleRequest{Name: name},
 			wantErr: false,
 		},
 		{
@@ -238,8 +238,8 @@ func TestRoleService_DeleteRole(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name: "success",
-			id:   id.String(),
+			name:    "success",
+			id:      id.String(),
 			wantErr: false,
 		},
 		{
