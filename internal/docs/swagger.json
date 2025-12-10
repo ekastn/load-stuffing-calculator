@@ -681,6 +681,545 @@
                 }
             }
         },
+        "/plans": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves a paginated list of plans.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "List plans",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Items per page",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.PlanListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new load plan with a container and items.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Create a new load plan",
+                "parameters": [
+                    {
+                        "description": "Plan Creation Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreatePlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.CreatePlanResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves plan details including items and stats.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Get a plan by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PlanDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing plan (status, container).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Update a plan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Plan Update Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdatePlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a plan by ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Delete a plan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/{id}/items": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Adds a new item to an existing plan.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Add item to plan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Item Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.AddPlanItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PlanItemDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/{id}/items/{itemId}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retrieves details of a specific item in a plan.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Get plan item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.PlanItemDetail"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates a specific item in a plan.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Update plan item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdatePlanItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes a specific item from a plan.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Delete plan item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Item ID",
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/products": {
             "get": {
                 "security": [
@@ -1450,6 +1989,88 @@
         }
     },
     "definitions": {
+        "dto.AddPlanItemRequest": {
+            "type": "object",
+            "required": [
+                "height_mm",
+                "length_mm",
+                "quantity",
+                "weight_kg",
+                "width_mm"
+            ],
+            "properties": {
+                "allow_rotation": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "color_hex": {
+                    "type": "string",
+                    "example": "#ff5733"
+                },
+                "height_mm": {
+                    "type": "number",
+                    "example": 200
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "TV LED 55 inch"
+                },
+                "length_mm": {
+                    "type": "number",
+                    "example": 1300
+                },
+                "product_sku": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "TV55-001"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 120
+                },
+                "weight_kg": {
+                    "type": "number",
+                    "example": 25.5
+                },
+                "width_mm": {
+                    "type": "number",
+                    "example": 800
+                }
+            }
+        },
+        "dto.CalculationResult": {
+            "type": "object",
+            "properties": {
+                "algorithm": {
+                    "type": "string",
+                    "example": "maxrects-bssf"
+                },
+                "calculated_at": {
+                    "type": "string"
+                },
+                "duration_ms": {
+                    "type": "integer"
+                },
+                "efficiency_score": {
+                    "type": "number"
+                },
+                "job_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "queued | running | completed | failed",
+                    "type": "string"
+                },
+                "visualization_url": {
+                    "type": "string",
+                    "example": "/visualizer?plan=f47ac10b-..."
+                },
+                "volume_utilization_pct": {
+                    "type": "number"
+                }
+            }
+        },
         "dto.ContainerResponse": {
             "type": "object",
             "properties": {
@@ -1523,6 +2144,159 @@
                     "type": "string",
                     "maxLength": 50,
                     "minLength": 2
+                }
+            }
+        },
+        "dto.CreatePlanContainer": {
+            "type": "object",
+            "properties": {
+                "container_id": {
+                    "description": "Preset container if null using custom container",
+                    "type": "string",
+                    "example": "a1b2c3d4-..."
+                },
+                "height_mm": {
+                    "type": "number",
+                    "example": 2390
+                },
+                "length_mm": {
+                    "type": "number",
+                    "example": 12000
+                },
+                "max_weight_kg": {
+                    "type": "number",
+                    "example": 28200
+                },
+                "width_mm": {
+                    "type": "number",
+                    "example": 2350
+                }
+            }
+        },
+        "dto.CreatePlanItem": {
+            "type": "object",
+            "required": [
+                "height_mm",
+                "length_mm",
+                "quantity",
+                "weight_kg",
+                "width_mm"
+            ],
+            "properties": {
+                "allow_rotation": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "color_hex": {
+                    "type": "string",
+                    "example": "#ff5733"
+                },
+                "height_mm": {
+                    "type": "number",
+                    "example": 200
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "TV LED 55 inch"
+                },
+                "length_mm": {
+                    "type": "number",
+                    "example": 1300
+                },
+                "product_sku": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "example": "TV55-001"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 120
+                },
+                "weight_kg": {
+                    "type": "number",
+                    "example": 25.5
+                },
+                "width_mm": {
+                    "type": "number",
+                    "example": 800
+                }
+            }
+        },
+        "dto.CreatePlanRequest": {
+            "type": "object",
+            "required": [
+                "container",
+                "items",
+                "title"
+            ],
+            "properties": {
+                "auto_calculate": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "container": {
+                    "$ref": "#/definitions/dto.CreatePlanContainer"
+                },
+                "items": {
+                    "type": "array",
+                    "maxItems": 1000,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.CreatePlanItem"
+                    }
+                },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Barang elektronik di depan"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 150,
+                    "example": "Ekspor Jepang - Desember 2025"
+                }
+            }
+        },
+        "dto.CreatePlanResponse": {
+            "type": "object",
+            "properties": {
+                "calculation_job_id": {
+                    "type": "string",
+                    "example": "calc_8f9e2a1b"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2025-12-09T10:45:00Z"
+                },
+                "plan_code": {
+                    "type": "string",
+                    "example": "PLAN-20251209-104500"
+                },
+                "plan_id": {
+                    "type": "string",
+                    "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
+                },
+                "status": {
+                    "description": "DRAFT | IN_PROGRESS | COMPLETED | CANCELLED | FAILED",
+                    "type": "string",
+                    "example": ""
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Ekspor Jepang - Desember 2025"
+                },
+                "total_items": {
+                    "type": "integer",
+                    "example": 160
+                },
+                "total_volume_m3": {
+                    "type": "number",
+                    "example": 58.2
+                },
+                "total_weight_kg": {
+                    "type": "number",
+                    "example": 8520
                 }
             }
         },
@@ -1657,6 +2431,178 @@
                 }
             }
         },
+        "dto.PlanContainerInfo": {
+            "type": "object",
+            "properties": {
+                "container_id": {
+                    "type": "string"
+                },
+                "height_mm": {
+                    "type": "number"
+                },
+                "length_mm": {
+                    "type": "number"
+                },
+                "max_weight_kg": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "volume_m3": {
+                    "type": "number"
+                },
+                "width_mm": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.PlanDetailResponse": {
+            "type": "object",
+            "properties": {
+                "calculation": {
+                    "$ref": "#/definitions/dto.CalculationResult"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "container": {
+                    "$ref": "#/definitions/dto.PlanContainerInfo"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "$ref": "#/definitions/dto.UserSummary"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PlanItemDetail"
+                    }
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "plan_code": {
+                    "type": "string"
+                },
+                "plan_id": {
+                    "type": "string"
+                },
+                "stats": {
+                    "$ref": "#/definitions/dto.PlanStats"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PlanItemDetail": {
+            "type": "object",
+            "properties": {
+                "allow_rotation": {
+                    "type": "boolean"
+                },
+                "color_hex": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "height_mm": {
+                    "type": "number"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "length_mm": {
+                    "type": "number"
+                },
+                "product_sku": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "stacking_limit": {
+                    "type": "integer"
+                },
+                "total_volume_m3": {
+                    "type": "number"
+                },
+                "total_weight_kg": {
+                    "type": "number"
+                },
+                "weight_kg": {
+                    "type": "number"
+                },
+                "width_mm": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.PlanListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "plan_code": {
+                    "type": "string"
+                },
+                "plan_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_weight_kg": {
+                    "type": "number"
+                },
+                "volume_utilization_pct": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.PlanStats": {
+            "type": "object",
+            "properties": {
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_volume_m3": {
+                    "type": "number"
+                },
+                "total_weight_kg": {
+                    "type": "number"
+                },
+                "volume_utilization_pct": {
+                    "type": "number"
+                },
+                "weight_utilization_pct": {
+                    "type": "number"
+                }
+            }
+        },
         "dto.ProductResponse": {
             "type": "object",
             "properties": {
@@ -1744,6 +2690,53 @@
                     "type": "string",
                     "maxLength": 50,
                     "minLength": 2
+                }
+            }
+        },
+        "dto.UpdatePlanItemRequest": {
+            "type": "object",
+            "properties": {
+                "allow_rotation": {
+                    "type": "boolean"
+                },
+                "color_hex": {
+                    "type": "string"
+                },
+                "height_mm": {
+                    "type": "number"
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 100
+                },
+                "length_mm": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "weight_kg": {
+                    "type": "number"
+                },
+                "width_mm": {
+                    "type": "number"
+                }
+            }
+        },
+        "dto.UpdatePlanRequest": {
+            "type": "object",
+            "properties": {
+                "container": {
+                    "$ref": "#/definitions/dto.CreatePlanContainer"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "DRAFT",
+                        "IN_PROGRESS",
+                        "COMPLETED",
+                        "CANCELLED"
+                    ]
                 }
             }
         },

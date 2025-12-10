@@ -29,42 +29,46 @@ type App struct {
 	userHandler      *handler.UserHandler
 	roleHandler      *handler.RoleHandler
 	permHandler      *handler.PermissionHandler
-	containerHandler *handler.ContainerHandler
-	productHandler   *handler.ProductHandler
-	jwtSecret        string
-}
-
-func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
-	querier := store.New(db)
-	permCache := cache.NewPermissionCache()
-
-	authSvc := service.NewAuthService(querier, cfg.JWTSecret)
-	userSvc := service.NewUserService(querier)
-	roleSvc := service.NewRoleService(querier)
-	permSvc := service.NewPermissionService(querier)
-	containerSvc := service.NewContainerService(querier)
-	productSvc := service.NewProductService(querier)
-
-	authHandler := handler.NewAuthHandler(authSvc)
-	userHandler := handler.NewUserHandler(userSvc)
-	roleHandler := handler.NewRoleHandler(roleSvc)
-	permHandler := handler.NewPermissionHandler(permSvc)
-	containerHandler := handler.NewContainerHandler(containerSvc)
-	productHandler := handler.NewProductHandler(productSvc)
-
-	app := &App{
-		config:           cfg,
-		db:               db,
-		querier:          querier,
-		permCache:        permCache,
-		authHandler:      authHandler,
-		userHandler:      userHandler,
-		roleHandler:      roleHandler,
-		permHandler:      permHandler,
-		containerHandler: containerHandler,
-		productHandler:   productHandler,
-		jwtSecret:        cfg.JWTSecret,
+		containerHandler *handler.ContainerHandler
+		productHandler *handler.ProductHandler
+		planHandler      *handler.PlanHandler
+		jwtSecret        string
 	}
+	
+	func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
+		querier := store.New(db)
+		permCache := cache.NewPermissionCache()
+	
+		authSvc := service.NewAuthService(querier, cfg.JWTSecret)
+		userSvc := service.NewUserService(querier)
+		roleSvc := service.NewRoleService(querier)
+		permSvc := service.NewPermissionService(querier)
+		containerSvc := service.NewContainerService(querier)
+		productSvc := service.NewProductService(querier)
+		planSvc := service.NewPlanService(querier)
+	
+		authHandler := handler.NewAuthHandler(authSvc)
+		userHandler := handler.NewUserHandler(userSvc)
+		roleHandler := handler.NewRoleHandler(roleSvc)
+		permHandler := handler.NewPermissionHandler(permSvc)
+		containerHandler := handler.NewContainerHandler(containerSvc)
+		productHandler := handler.NewProductHandler(productSvc)
+		planHandler := handler.NewPlanHandler(planSvc)
+	
+		app := &App{
+			config:           cfg,
+			db:               db,
+			querier:          querier,
+			permCache:        permCache,
+			authHandler:      authHandler,
+			userHandler:      userHandler,
+			roleHandler:      roleHandler,
+			permHandler:      permHandler,
+			containerHandler: containerHandler,
+			productHandler:   productHandler,
+			planHandler:      planHandler,
+			jwtSecret:        cfg.JWTSecret,
+		}
 
 	app.setupRouter()
 

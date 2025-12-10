@@ -69,6 +69,20 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			products.PUT("/:id", a.productHandler.UpdateProduct)
 			products.DELETE("/:id", a.productHandler.DeleteProduct)
 		}
+
+		plans := v1.Group("/plans", middleware.Role("admin"))
+		{
+			plans.POST("", a.planHandler.CreatePlan)
+			plans.GET("", a.planHandler.ListPlans)
+			plans.GET("/:id", a.planHandler.GetPlan)
+			plans.PUT("/:id", a.planHandler.UpdatePlan)
+			plans.DELETE("/:id", a.planHandler.DeletePlan)
+
+			plans.POST("/:id/items", a.planHandler.AddPlanItem)
+			plans.GET("/:id/items/:itemId", a.planHandler.GetPlanItem)
+			plans.PUT("/:id/items/:itemId", a.planHandler.UpdatePlanItem)
+			plans.DELETE("/:id/items/:itemId", a.planHandler.DeletePlanItem)
+		}
 	}
 }
 
