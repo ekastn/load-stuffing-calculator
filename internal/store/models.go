@@ -23,11 +23,56 @@ type Container struct {
 	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }
 
+type LoadItem struct {
+	ItemID        uuid.UUID      `json:"item_id"`
+	PlanID        *uuid.UUID     `json:"plan_id"`
+	ItemLabel     *string        `json:"item_label"`
+	LengthMm      pgtype.Numeric `json:"length_mm"`
+	WidthMm       pgtype.Numeric `json:"width_mm"`
+	HeightMm      pgtype.Numeric `json:"height_mm"`
+	WeightKg      pgtype.Numeric `json:"weight_kg"`
+	Quantity      int32          `json:"quantity"`
+	AllowRotation *bool          `json:"allow_rotation"`
+	ColorHex      *string        `json:"color_hex"`
+}
+
+type LoadPlan struct {
+	PlanID      uuid.UUID        `json:"plan_id"`
+	PlanCode    string           `json:"plan_code"`
+	Status      *string          `json:"status"`
+	ContLabel   *string          `json:"cont_label"`
+	LengthMm    pgtype.Numeric   `json:"length_mm"`
+	WidthMm     pgtype.Numeric   `json:"width_mm"`
+	HeightMm    pgtype.Numeric   `json:"height_mm"`
+	MaxWeightKg pgtype.Numeric   `json:"max_weight_kg"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+}
+
 type Permission struct {
 	PermissionID uuid.UUID `json:"permission_id"`
 	Name         string    `json:"name"`
 	Description  *string   `json:"description"`
 	CreatedAt    time.Time `json:"created_at"`
+}
+
+type PlanPlacement struct {
+	PlacementID  uuid.UUID      `json:"placement_id"`
+	ResultID     *uuid.UUID     `json:"result_id"`
+	ItemID       *uuid.UUID     `json:"item_id"`
+	PosX         pgtype.Numeric `json:"pos_x"`
+	PosY         pgtype.Numeric `json:"pos_y"`
+	PosZ         pgtype.Numeric `json:"pos_z"`
+	RotationCode *int32         `json:"rotation_code"`
+	StepNumber   int32          `json:"step_number"`
+}
+
+type PlanResult struct {
+	ResultID             uuid.UUID        `json:"result_id"`
+	PlanID               *uuid.UUID       `json:"plan_id"`
+	TotalLoadedWeightKg  pgtype.Numeric   `json:"total_loaded_weight_kg"`
+	VolumeUtilizationPct pgtype.Numeric   `json:"volume_utilization_pct"`
+	IsFeasible           *bool            `json:"is_feasible"`
+	CreatedAt            pgtype.Timestamp `json:"created_at"`
 }
 
 type Product struct {
