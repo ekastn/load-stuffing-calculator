@@ -17,11 +17,11 @@ func TestProductService_CreateProduct(t *testing.T) {
 	color := "#abcdef"
 
 	tests := []struct {
-		name       string
-		req        dto.CreateProductRequest
-		createErr  error
-		createResp store.Product
-		wantErr    bool
+		name        string
+		req         dto.CreateProductRequest
+		createErr   error
+		createResp  store.Product
+		wantErr     bool
 	}{
 		{
 			name: "success",
@@ -140,12 +140,12 @@ func TestProductService_GetProduct(t *testing.T) {
 
 func TestProductService_ListProducts(t *testing.T) {
 	tests := []struct {
-		name        string
-		page, limit int32
-		listResp    []store.Product
-		listErr     error
-		wantErr     bool
-		wantLen     int
+		name         string
+		page, limit  int32
+		listResp     []store.Product
+		listErr      error
+		wantErr      bool
+		wantLen      int
 	}{
 		{
 			name: "success",
@@ -249,8 +249,8 @@ func TestProductService_DeleteProduct(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:    "success",
-			id:      id.String(),
+			name: "success",
+			id:   id.String(),
 			wantErr: false,
 		},
 		{
@@ -277,8 +277,4 @@ func TestProductService_DeleteProduct(t *testing.T) {
 			}
 		})
 	}
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

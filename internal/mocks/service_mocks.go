@@ -204,3 +204,68 @@ func (m *MockProductService) DeleteProduct(ctx context.Context, id string) error
 	args := m.Called(ctx, id)
 	return args.Error(0)
 }
+
+// MockPlanService is a mock implementation of service.PlanService
+type MockPlanService struct {
+	mock.Mock
+}
+
+func (m *MockPlanService) CreateCompletePlan(ctx context.Context, req dto.CreatePlanRequest) (*dto.CreatePlanResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.CreatePlanResponse), args.Error(1)
+}
+
+func (m *MockPlanService) GetPlan(ctx context.Context, id string) (*dto.PlanDetailResponse, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.PlanDetailResponse), args.Error(1)
+}
+
+func (m *MockPlanService) ListPlans(ctx context.Context, page, limit int32) ([]dto.PlanListItem, error) {
+	args := m.Called(ctx, page, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.PlanListItem), args.Error(1)
+}
+
+func (m *MockPlanService) UpdatePlan(ctx context.Context, id string, req dto.UpdatePlanRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockPlanService) DeletePlan(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockPlanService) AddPlanItem(ctx context.Context, planID string, req dto.AddPlanItemRequest) (*dto.PlanItemDetail, error) {
+	args := m.Called(ctx, planID, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.PlanItemDetail), args.Error(1)
+}
+
+func (m *MockPlanService) GetPlanItem(ctx context.Context, planID, itemID string) (*dto.PlanItemDetail, error) {
+	args := m.Called(ctx, planID, itemID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.PlanItemDetail), args.Error(1)
+}
+
+func (m *MockPlanService) UpdatePlanItem(ctx context.Context, planID, itemID string, req dto.UpdatePlanItemRequest) error {
+	args := m.Called(ctx, planID, itemID, req)
+	return args.Error(0)
+}
+
+func (m *MockPlanService) DeletePlanItem(ctx context.Context, planID, itemID string) error {
+	args := m.Called(ctx, planID, itemID)
+	return args.Error(0)
+}

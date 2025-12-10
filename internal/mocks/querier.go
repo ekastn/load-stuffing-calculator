@@ -41,6 +41,94 @@ type MockQuerier struct {
 	ListProductsFunc         func(ctx context.Context, arg store.ListProductsParams) ([]store.Product, error)
 	UpdateProductFunc        func(ctx context.Context, arg store.UpdateProductParams) error
 	DeleteProductFunc        func(ctx context.Context, id uuid.UUID) error
+	CreateLoadPlanFunc       func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error)
+	AddLoadItemFunc          func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error)
+	GetLoadPlanFunc          func(ctx context.Context, planID uuid.UUID) (store.LoadPlan, error)
+	ListLoadPlansFunc        func(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error)
+	UpdatePlanStatusFunc     func(ctx context.Context, arg store.UpdatePlanStatusParams) error
+	ListLoadItemsFunc        func(ctx context.Context, planID *uuid.UUID) ([]store.LoadItem, error)
+	GetLoadItemFunc          func(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error)
+	UpdateLoadItemFunc       func(ctx context.Context, arg store.UpdateLoadItemParams) error
+	DeleteLoadItemFunc       func(ctx context.Context, arg store.DeleteLoadItemParams) error
+	UpdateLoadPlanFunc       func(ctx context.Context, arg store.UpdateLoadPlanParams) error
+	DeleteLoadPlanFunc       func(ctx context.Context, planID uuid.UUID) error
+}
+
+func (m *MockQuerier) CreateLoadPlan(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error) {
+	if m.CreateLoadPlanFunc != nil {
+		return m.CreateLoadPlanFunc(ctx, arg)
+	}
+	return store.LoadPlan{}, fmt.Errorf("CreateLoadPlan not implemented")
+}
+
+func (m *MockQuerier) AddLoadItem(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error) {
+	if m.AddLoadItemFunc != nil {
+		return m.AddLoadItemFunc(ctx, arg)
+	}
+	return store.LoadItem{}, fmt.Errorf("AddLoadItem not implemented")
+}
+
+func (m *MockQuerier) GetLoadPlan(ctx context.Context, planID uuid.UUID) (store.LoadPlan, error) {
+	if m.GetLoadPlanFunc != nil {
+		return m.GetLoadPlanFunc(ctx, planID)
+	}
+	return store.LoadPlan{}, fmt.Errorf("GetLoadPlan not implemented")
+}
+
+func (m *MockQuerier) ListLoadPlans(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error) {
+	if m.ListLoadPlansFunc != nil {
+		return m.ListLoadPlansFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListLoadPlans not implemented")
+}
+
+func (m *MockQuerier) UpdatePlanStatus(ctx context.Context, arg store.UpdatePlanStatusParams) error {
+	if m.UpdatePlanStatusFunc != nil {
+		return m.UpdatePlanStatusFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdatePlanStatus not implemented")
+}
+
+func (m *MockQuerier) ListLoadItems(ctx context.Context, planID *uuid.UUID) ([]store.LoadItem, error) {
+	if m.ListLoadItemsFunc != nil {
+		return m.ListLoadItemsFunc(ctx, planID)
+	}
+	return nil, fmt.Errorf("ListLoadItems not implemented")
+}
+
+func (m *MockQuerier) GetLoadItem(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error) {
+	if m.GetLoadItemFunc != nil {
+		return m.GetLoadItemFunc(ctx, arg)
+	}
+	return store.LoadItem{}, fmt.Errorf("GetLoadItem not implemented")
+}
+
+func (m *MockQuerier) UpdateLoadItem(ctx context.Context, arg store.UpdateLoadItemParams) error {
+	if m.UpdateLoadItemFunc != nil {
+		return m.UpdateLoadItemFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateLoadItem not implemented")
+}
+
+func (m *MockQuerier) DeleteLoadItem(ctx context.Context, arg store.DeleteLoadItemParams) error {
+	if m.DeleteLoadItemFunc != nil {
+		return m.DeleteLoadItemFunc(ctx, arg)
+	}
+	return fmt.Errorf("DeleteLoadItem not implemented")
+}
+
+func (m *MockQuerier) UpdateLoadPlan(ctx context.Context, arg store.UpdateLoadPlanParams) error {
+	if m.UpdateLoadPlanFunc != nil {
+		return m.UpdateLoadPlanFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateLoadPlan not implemented")
+}
+
+func (m *MockQuerier) DeleteLoadPlan(ctx context.Context, planID uuid.UUID) error {
+	if m.DeleteLoadPlanFunc != nil {
+		return m.DeleteLoadPlanFunc(ctx, planID)
+	}
+	return fmt.Errorf("DeleteLoadPlan not implemented")
 }
 
 func (m *MockQuerier) CreateProduct(ctx context.Context, arg store.CreateProductParams) (store.Product, error) {

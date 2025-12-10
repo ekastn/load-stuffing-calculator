@@ -11,3 +11,4 @@ type MockRoleService = mocks.MockRoleService
 type MockPermissionService = mocks.MockPermissionService
 type MockContainerService = mocks.MockContainerService
 type MockProductService = mocks.MockProductService
+type MockPlanService = mocks.MockPlanService

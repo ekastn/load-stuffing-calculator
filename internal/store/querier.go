@@ -11,17 +11,23 @@ import (
 )
 
 type Querier interface {
+	AddLoadItem(ctx context.Context, arg AddLoadItemParams) (LoadItem, error)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
+	CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error)
 	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteContainer(ctx context.Context, containerID uuid.UUID) error
+	DeleteLoadItem(ctx context.Context, arg DeleteLoadItemParams) error
+	DeleteLoadPlan(ctx context.Context, planID uuid.UUID) error
 	DeletePermission(ctx context.Context, permissionID uuid.UUID) error
 	DeleteProduct(ctx context.Context, productID uuid.UUID) error
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
 	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)
+	GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadItem, error)
+	GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, error)
 	GetPermission(ctx context.Context, permissionID uuid.UUID) (Permission, error)
 	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
 	GetProduct(ctx context.Context, productID uuid.UUID) (Product, error)
@@ -31,13 +37,18 @@ type Querier interface {
 	GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
 	ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error)
+	ListLoadItems(ctx context.Context, planID *uuid.UUID) ([]LoadItem, error)
+	ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([]LoadPlan, error)
 	ListPermissions(ctx context.Context, arg ListPermissionsParams) ([]Permission, error)
 	ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error)
 	ListRoles(ctx context.Context, arg ListRolesParams) ([]Role, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
 	RevokeRefreshToken(ctx context.Context, token string) error
 	UpdateContainer(ctx context.Context, arg UpdateContainerParams) error
+	UpdateLoadItem(ctx context.Context, arg UpdateLoadItemParams) error
+	UpdateLoadPlan(ctx context.Context, arg UpdateLoadPlanParams) error
 	UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error
+	UpdatePlanStatus(ctx context.Context, arg UpdatePlanStatusParams) error
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateRole(ctx context.Context, arg UpdateRoleParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) error

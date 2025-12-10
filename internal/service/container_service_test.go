@@ -9,14 +9,7 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
-
-func toNumeric(f float64) pgtype.Numeric {
-	var n pgtype.Numeric
-	_ = n.Scan(fmt.Sprintf("%f", f))
-	return n
-}
 
 func TestContainerService_CreateContainer(t *testing.T) {
 	name := "20ft"
