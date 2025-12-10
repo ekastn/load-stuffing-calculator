@@ -1,5 +1,65 @@
 basePath: /api/v1
 definitions:
+  dto.AddPlanItemRequest:
+    properties:
+      allow_rotation:
+        example: true
+        type: boolean
+      color_hex:
+        example: '#ff5733'
+        type: string
+      height_mm:
+        example: 200
+        type: number
+      label:
+        example: TV LED 55 inch
+        maxLength: 100
+        type: string
+      length_mm:
+        example: 1300
+        type: number
+      product_sku:
+        example: TV55-001
+        maxLength: 50
+        type: string
+      quantity:
+        example: 120
+        type: integer
+      weight_kg:
+        example: 25.5
+        type: number
+      width_mm:
+        example: 800
+        type: number
+    required:
+    - height_mm
+    - length_mm
+    - quantity
+    - weight_kg
+    - width_mm
+    type: object
+  dto.CalculationResult:
+    properties:
+      algorithm:
+        example: maxrects-bssf
+        type: string
+      calculated_at:
+        type: string
+      duration_ms:
+        type: integer
+      efficiency_score:
+        type: number
+      job_id:
+        type: string
+      status:
+        description: queued | running | completed | failed
+        type: string
+      visualization_url:
+        example: /visualizer?plan=f47ac10b-...
+        type: string
+      volume_utilization_pct:
+        type: number
+    type: object
   dto.ContainerResponse:
     properties:
       description:
@@ -52,6 +112,120 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  dto.CreatePlanContainer:
+    properties:
+      container_id:
+        description: Preset container if null using custom container
+        example: a1b2c3d4-...
+        type: string
+      height_mm:
+        example: 2390
+        type: number
+      length_mm:
+        example: 12000
+        type: number
+      max_weight_kg:
+        example: 28200
+        type: number
+      width_mm:
+        example: 2350
+        type: number
+    type: object
+  dto.CreatePlanItem:
+    properties:
+      allow_rotation:
+        example: true
+        type: boolean
+      color_hex:
+        example: '#ff5733'
+        type: string
+      height_mm:
+        example: 200
+        type: number
+      label:
+        example: TV LED 55 inch
+        maxLength: 100
+        type: string
+      length_mm:
+        example: 1300
+        type: number
+      product_sku:
+        example: TV55-001
+        maxLength: 50
+        type: string
+      quantity:
+        example: 120
+        type: integer
+      weight_kg:
+        example: 25.5
+        type: number
+      width_mm:
+        example: 800
+        type: number
+    required:
+    - height_mm
+    - length_mm
+    - quantity
+    - weight_kg
+    - width_mm
+    type: object
+  dto.CreatePlanRequest:
+    properties:
+      auto_calculate:
+        example: true
+        type: boolean
+      container:
+        $ref: '#/definitions/dto.CreatePlanContainer'
+      items:
+        items:
+          $ref: '#/definitions/dto.CreatePlanItem'
+        maxItems: 1000
+        minItems: 1
+        type: array
+      notes:
+        example: Barang elektronik di depan
+        maxLength: 500
+        type: string
+      title:
+        example: Ekspor Jepang - Desember 2025
+        maxLength: 150
+        type: string
+    required:
+    - container
+    - items
+    - title
+    type: object
+  dto.CreatePlanResponse:
+    properties:
+      calculation_job_id:
+        example: calc_8f9e2a1b
+        type: string
+      created_at:
+        example: "2025-12-09T10:45:00Z"
+        type: string
+      plan_code:
+        example: PLAN-20251209-104500
+        type: string
+      plan_id:
+        example: f47ac10b-58cc-4372-a567-0e02b2c3d479
+        type: string
+      status:
+        description: DRAFT | IN_PROGRESS | COMPLETED | CANCELLED | FAILED
+        example: ""
+        type: string
+      title:
+        example: Ekspor Jepang - Desember 2025
+        type: string
+      total_items:
+        example: 160
+        type: integer
+      total_volume_m3:
+        example: 58.2
+        type: number
+      total_weight_kg:
+        example: 8520
+        type: number
     type: object
   dto.CreateProductRequest:
     properties:
@@ -147,6 +321,119 @@ definitions:
       name:
         type: string
     type: object
+  dto.PlanContainerInfo:
+    properties:
+      container_id:
+        type: string
+      height_mm:
+        type: number
+      length_mm:
+        type: number
+      max_weight_kg:
+        type: number
+      name:
+        type: string
+      volume_m3:
+        type: number
+      width_mm:
+        type: number
+    type: object
+  dto.PlanDetailResponse:
+    properties:
+      calculation:
+        $ref: '#/definitions/dto.CalculationResult'
+      completed_at:
+        type: string
+      container:
+        $ref: '#/definitions/dto.PlanContainerInfo'
+      created_at:
+        type: string
+      created_by:
+        $ref: '#/definitions/dto.UserSummary'
+      items:
+        items:
+          $ref: '#/definitions/dto.PlanItemDetail'
+        type: array
+      notes:
+        type: string
+      plan_code:
+        type: string
+      plan_id:
+        type: string
+      stats:
+        $ref: '#/definitions/dto.PlanStats'
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.PlanItemDetail:
+    properties:
+      allow_rotation:
+        type: boolean
+      color_hex:
+        type: string
+      created_at:
+        type: string
+      height_mm:
+        type: number
+      item_id:
+        type: string
+      label:
+        type: string
+      length_mm:
+        type: number
+      product_sku:
+        type: string
+      quantity:
+        type: integer
+      stacking_limit:
+        type: integer
+      total_volume_m3:
+        type: number
+      total_weight_kg:
+        type: number
+      weight_kg:
+        type: number
+      width_mm:
+        type: number
+    type: object
+  dto.PlanListItem:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      plan_code:
+        type: string
+      plan_id:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+      total_items:
+        type: integer
+      total_weight_kg:
+        type: number
+      volume_utilization_pct:
+        type: number
+    type: object
+  dto.PlanStats:
+    properties:
+      total_items:
+        type: integer
+      total_volume_m3:
+        type: number
+      total_weight_kg:
+        type: number
+      volume_utilization_pct:
+        type: number
+      weight_utilization_pct:
+        type: number
+    type: object
   dto.ProductResponse:
     properties:
       color_hex:
@@ -208,6 +495,38 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  dto.UpdatePlanItemRequest:
+    properties:
+      allow_rotation:
+        type: boolean
+      color_hex:
+        type: string
+      height_mm:
+        type: number
+      label:
+        maxLength: 100
+        type: string
+      length_mm:
+        type: number
+      quantity:
+        type: integer
+      weight_kg:
+        type: number
+      width_mm:
+        type: number
+    type: object
+  dto.UpdatePlanRequest:
+    properties:
+      container:
+        $ref: '#/definitions/dto.CreatePlanContainer'
+      status:
+        enum:
+        - DRAFT
+        - IN_PROGRESS
+        - COMPLETED
+        - CANCELLED
+        type: string
     type: object
   dto.UpdateProductRequest:
     properties:
@@ -738,6 +1057,338 @@ paths:
       summary: Update a permission
       tags:
       - permissions
+  /plans:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of plans.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.PlanListItem'
+                  type: array
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List plans
+      tags:
+      - plans
+    post:
+      consumes:
+      - application/json
+      description: Creates a new load plan with a container and items.
+      parameters:
+      - description: Plan Creation Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreatePlanRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CreatePlanResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a new load plan
+      tags:
+      - plans
+  /plans/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a plan by ID.
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete a plan
+      tags:
+      - plans
+    get:
+      consumes:
+      - application/json
+      description: Retrieves plan details including items and stats.
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PlanDetailResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a plan by ID
+      tags:
+      - plans
+    put:
+      consumes:
+      - application/json
+      description: Updates an existing plan (status, container).
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Plan Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a plan
+      tags:
+      - plans
+  /plans/{id}/items:
+    post:
+      consumes:
+      - application/json
+      description: Adds a new item to an existing plan.
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Item Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddPlanItemRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PlanItemDetail'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Add item to plan
+      tags:
+      - plans
+  /plans/{id}/items/{itemId}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a specific item from a plan.
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete plan item
+      tags:
+      - plans
+    get:
+      consumes:
+      - application/json
+      description: Retrieves details of a specific item in a plan.
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.PlanItemDetail'
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get plan item
+      tags:
+      - plans
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific item in a plan.
+      parameters:
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Item ID
+        in: path
+        name: itemId
+        required: true
+        type: string
+      - description: Update Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdatePlanItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update plan item
+      tags:
+      - plans
   /products:
     get:
       consumes:
