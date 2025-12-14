@@ -39,7 +39,7 @@ type CreatePlanResponse struct {
 	PlanID           string  `json:"plan_id" example:"f47ac10b-58cc-4372-a567-0e02b2c3d479"`
 	PlanCode         string  `json:"plan_code" example:"PLAN-20251209-104500"`
 	Title            string  `json:"title" example:"Ekspor Jepang - Desember 2025"`
-	Status           string  `json:"status" example:""` // DRAFT | IN_PROGRESS | COMPLETED | CANCELLED | FAILED
+	Status           string  `json:"status" example:"DRAFT"` // DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED
 	TotalItems       int     `json:"total_items" example:"160"`
 	TotalWeightKG    float64 `json:"total_weight_kg" example:"8520.0"`
 	TotalVolumeM3    float64 `json:"total_volume_m3" example:"58.2"`
@@ -52,7 +52,7 @@ type PlanDetailResponse struct {
 	PlanCode    string             `json:"plan_code"`
 	Title       string             `json:"title"`
 	Notes       *string            `json:"notes,omitempty"`
-	Status      string             `json:"status"`
+	Status      string             `json:"status" example:"COMPLETED"` // DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED
 	Container   PlanContainerInfo  `json:"container"`
 	Stats       PlanStats          `json:"stats"`
 	Items       []PlanItemDetail   `json:"items"`
@@ -113,7 +113,7 @@ type PlanListItem struct {
 	PlanID               string  `json:"plan_id"`
 	PlanCode             string  `json:"plan_code"`
 	Title                string  `json:"title"`
-	Status               string  `json:"status"`
+	Status               string  `json:"status" example:"DRAFT"`
 	TotalItems           int     `json:"total_items"`
 	TotalWeightKG        float64 `json:"total_weight_kg"`
 	VolumeUtilizationPct float64 `json:"volume_utilization_pct,omitempty"`
@@ -122,7 +122,7 @@ type PlanListItem struct {
 }
 
 type UpdatePlanRequest struct {
-	Status    *string              `json:"status,omitempty" binding:"omitempty,oneof=DRAFT IN_PROGRESS COMPLETED CANCELLED"`
+	Status    *string              `json:"status,omitempty" binding:"omitempty,oneof=DRAFT IN_PROGRESS COMPLETED PARTIAL FAILED CANCELLED"`
 	Container *CreatePlanContainer `json:"container,omitempty"`
 }
 

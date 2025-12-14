@@ -52,6 +52,30 @@ type MockQuerier struct {
 	DeleteLoadItemFunc       func(ctx context.Context, arg store.DeleteLoadItemParams) error
 	UpdateLoadPlanFunc       func(ctx context.Context, arg store.UpdateLoadPlanParams) error
 	DeleteLoadPlanFunc       func(ctx context.Context, planID uuid.UUID) error
+	CreatePlanResultFunc     func(ctx context.Context, arg store.CreatePlanResultParams) (store.PlanResult, error)
+	DeletePlanResultsFunc    func(ctx context.Context, planID *uuid.UUID) error
+	CreatePlanPlacementFunc  func(ctx context.Context, arg []store.CreatePlanPlacementParams) (int64, error)
+}
+
+func (m *MockQuerier) CreatePlanResult(ctx context.Context, arg store.CreatePlanResultParams) (store.PlanResult, error) {
+	if m.CreatePlanResultFunc != nil {
+		return m.CreatePlanResultFunc(ctx, arg)
+	}
+	return store.PlanResult{}, fmt.Errorf("CreatePlanResult not implemented")
+}
+
+func (m *MockQuerier) DeletePlanResults(ctx context.Context, planID *uuid.UUID) error {
+	if m.DeletePlanResultsFunc != nil {
+		return m.DeletePlanResultsFunc(ctx, planID)
+	}
+	return fmt.Errorf("DeletePlanResults not implemented")
+}
+
+func (m *MockQuerier) CreatePlanPlacement(ctx context.Context, arg []store.CreatePlanPlacementParams) (int64, error) {
+	if m.CreatePlanPlacementFunc != nil {
+		return m.CreatePlanPlacementFunc(ctx, arg)
+	}
+	return 0, fmt.Errorf("CreatePlanPlacement not implemented")
 }
 
 func (m *MockQuerier) CreateLoadPlan(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error) {

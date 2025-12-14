@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
+	"github.com/ekastn/load-stuffing-calculator/internal/packer"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
@@ -67,20 +69,21 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "Test Plan",
 			Container: dto.CreatePlanContainer{
 				ContainerID: stringPtr(contID.String()),
 			},
-			Items: []dto.CreatePlanItem{itemReq},
+			Items:         []dto.CreatePlanItem{itemReq},
+			AutoCalculate: boolPtr(false),
 		}
 		resp, err := s.CreateCompletePlan(context.Background(), req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, planID.String(), resp.PlanID)
-		assert.Equal(t, "IN_PROGRESS", resp.Status) // autoCalculate defaults to true
+		assert.Equal(t, types.PlanStatusDraft.String(), resp.Status)
 	})
 
 	t.Run("success_with_custom_container", func(t *testing.T) {
@@ -104,7 +107,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "Custom Plan",
 			Container: dto.CreatePlanContainer{
@@ -113,7 +116,8 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 				HeightMM:    &customHeight,
 				MaxWeightKG: &customMaxWeight,
 			},
-			Items: []dto.CreatePlanItem{itemReq},
+			Items:         []dto.CreatePlanItem{itemReq},
+			AutoCalculate: boolPtr(false), // Ensure auto-calc is off for this test too
 		}
 		resp, err := s.CreateCompletePlan(context.Background(), req)
 
@@ -123,7 +127,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 
 	t.Run("error_invalid_container_id", func(t *testing.T) {
 		mockQ := &MockQuerier{}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "Invalid Container ID Plan",
 			Container: dto.CreatePlanContainer{
@@ -145,7 +149,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 				return store.Container{}, fmt.Errorf("container not found")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "Container Not Found Plan",
 			Container: dto.CreatePlanContainer{
@@ -162,7 +166,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 
 	t.Run("error_custom_container_dims_missing", func(t *testing.T) {
 		mockQ := &MockQuerier{}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "Missing Custom Dims Plan",
 			Container: dto.CreatePlanContainer{
@@ -183,7 +187,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 				return store.LoadPlan{}, fmt.Errorf("db error")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "DB Error Plan",
 			Container: dto.CreatePlanContainer{
@@ -220,7 +224,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 				return store.LoadItem{}, fmt.Errorf("item db error")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "Item Add Error Plan",
 			Container: dto.CreatePlanContainer{
@@ -264,7 +268,7 @@ func TestPlanService_GetPlan(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		resp, err := s.GetPlan(context.Background(), planID.String())
 
 		assert.NoError(t, err)
@@ -280,7 +284,7 @@ func TestPlanService_GetPlan(t *testing.T) {
 				return store.LoadPlan{}, fmt.Errorf("plan not found")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		resp, err := s.GetPlan(context.Background(), uuid.New().String())
 
 		assert.Error(t, err)
@@ -298,7 +302,7 @@ func TestPlanService_GetPlan(t *testing.T) {
 				return nil, fmt.Errorf("list items db error")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		resp, err := s.GetPlan(context.Background(), planID.String())
 
 		assert.Error(t, err)
@@ -324,13 +328,13 @@ func TestPlanService_ListPlans(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		resp, err := s.ListPlans(context.Background(), 1, 10)
 
 		assert.NoError(t, err)
 		assert.Len(t, resp, 1)
 		assert.Equal(t, "P1", resp[0].PlanCode)
-		assert.Equal(t, "DRAFT", resp[0].Status)
+		assert.Equal(t, types.PlanStatusDraft.String(), resp[0].Status)
 		assert.Equal(t, 0, resp[0].TotalItems)
 		assert.Equal(t, 0.0, resp[0].TotalWeightKG)
 		// Volume and Utilization would need calculation here
@@ -343,7 +347,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		resp, err := s.ListPlans(context.Background(), 1, 10)
 
 		assert.Error(t, err)
@@ -355,7 +359,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 func TestPlanService_UpdatePlan(t *testing.T) {
 	planID := uuid.New()
 	contID := uuid.New()
-	statusNew := "COMPLETED"
+	statusNew := types.PlanStatusCompleted.String()
 
 	t.Run("success_update_status", func(t *testing.T) {
 		mockQ := &MockQuerier{
@@ -363,7 +367,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 				return store.LoadPlan{
 					PlanID: planID,
 					PlanCode: "OLD_CODE",
-					Status: stringPtr("DRAFT"),
+					Status: stringPtr(types.PlanStatusDraft.String()),
 					ContLabel: stringPtr("Old Cont"),
 					LengthMm: toNumeric(1000),
 					WidthMm: toNumeric(1000),
@@ -379,7 +383,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanRequest{
 			Status: stringPtr(statusNew),
 		}
@@ -394,7 +398,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 				return store.LoadPlan{
 					PlanID: planID,
 					PlanCode: "OLD_CODE",
-					Status: stringPtr("DRAFT"),
+					Status: stringPtr(types.PlanStatusDraft.String()),
 					ContLabel: stringPtr("Old Cont"),
 					LengthMm: toNumeric(1000),
 					WidthMm: toNumeric(1000),
@@ -419,7 +423,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanRequest{
 			Container: &dto.CreatePlanContainer{
 				ContainerID: stringPtr(contID.String()),
@@ -435,7 +439,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 				return store.LoadPlan{}, fmt.Errorf("plan not found")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanRequest{
 			Status: stringPtr(statusNew),
 		}
@@ -457,7 +461,7 @@ func TestPlanService_DeletePlan(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		err := s.DeletePlan(context.Background(), planID.String())
 
 		assert.NoError(t, err)
@@ -484,7 +488,7 @@ func TestPlanService_AddPlanItem(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.AddPlanItemRequest{}
 		req.Label = stringPtr("Item")
 		req.LengthMM = 100
@@ -511,7 +515,7 @@ func TestPlanService_AddPlanItem(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.AddPlanItemRequest{}
 		req.Label = stringPtr("Item")
 		req.LengthMM = 100
@@ -560,7 +564,7 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanItemRequest{
 			Label: stringPtr("New Label"),
 		}
@@ -588,7 +592,7 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanItemRequest{
 			LengthMM:      &newLen,
 			Quantity:      &newQty,
@@ -605,7 +609,7 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 				return store.LoadItem{}, fmt.Errorf("item not found")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanItemRequest{Label: stringPtr("New Label")}
 		err := s.UpdatePlanItem(context.Background(), planID.String(), uuid.New().String(), req)
 
@@ -627,7 +631,7 @@ func TestPlanService_DeletePlanItem(t *testing.T) {
 			},
 		}
 
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		err := s.DeletePlanItem(context.Background(), planID.String(), itemID.String())
 		assert.NoError(t, err)
 	})
@@ -638,7 +642,7 @@ func TestPlanService_DeletePlanItem(t *testing.T) {
 				return fmt.Errorf("db error")
 			},
 		}
-		s := service.NewPlanService(mockQ)
+		s := service.NewPlanService(mockQ, packer.NewPacker())
 		err := s.DeletePlanItem(context.Background(), planID.String(), itemID.String())
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to delete item")

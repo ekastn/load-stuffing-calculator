@@ -79,3 +79,30 @@ WHERE plan_id = $1;
 -- name: DeleteLoadPlan :exec
 DELETE FROM load_plans
 WHERE plan_id = $1;
+
+-- name: CreatePlanResult :one
+INSERT INTO plan_results (
+    plan_id,
+    total_loaded_weight_kg,
+    volume_utilization_pct,
+    is_feasible
+) VALUES (
+    $1, $2, $3, $4
+)
+RETURNING *;
+
+-- name: DeletePlanResults :exec
+DELETE FROM plan_results WHERE plan_id = $1;
+
+-- name: CreatePlanPlacement :copyfrom
+INSERT INTO plan_placements (
+    result_id,
+    item_id,
+    pos_x,
+    pos_y,
+    pos_z,
+    rotation_code,
+    step_number
+) VALUES (
+    $1, $2, $3, $4, $5, $6, $7
+);

@@ -117,6 +117,54 @@ func (q *Queries) CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) 
 	return i, err
 }
 
+type CreatePlanPlacementParams struct {
+	ResultID     *uuid.UUID     `json:"result_id"`
+	ItemID       *uuid.UUID     `json:"item_id"`
+	PosX         pgtype.Numeric `json:"pos_x"`
+	PosY         pgtype.Numeric `json:"pos_y"`
+	PosZ         pgtype.Numeric `json:"pos_z"`
+	RotationCode *int32         `json:"rotation_code"`
+	StepNumber   int32          `json:"step_number"`
+}
+
+const createPlanResult = `-- name: CreatePlanResult :one
+INSERT INTO plan_results (
+    plan_id,
+    total_loaded_weight_kg,
+    volume_utilization_pct,
+    is_feasible
+) VALUES (
+    $1, $2, $3, $4
+)
+RETURNING result_id, plan_id, total_loaded_weight_kg, volume_utilization_pct, is_feasible, created_at
+`
+
+type CreatePlanResultParams struct {
+	PlanID               *uuid.UUID     `json:"plan_id"`
+	TotalLoadedWeightKg  pgtype.Numeric `json:"total_loaded_weight_kg"`
+	VolumeUtilizationPct pgtype.Numeric `json:"volume_utilization_pct"`
+	IsFeasible           *bool          `json:"is_feasible"`
+}
+
+func (q *Queries) CreatePlanResult(ctx context.Context, arg CreatePlanResultParams) (PlanResult, error) {
+	row := q.db.QueryRow(ctx, createPlanResult,
+		arg.PlanID,
+		arg.TotalLoadedWeightKg,
+		arg.VolumeUtilizationPct,
+		arg.IsFeasible,
+	)
+	var i PlanResult
+	err := row.Scan(
+		&i.ResultID,
+		&i.PlanID,
+		&i.TotalLoadedWeightKg,
+		&i.VolumeUtilizationPct,
+		&i.IsFeasible,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const deleteLoadItem = `-- name: DeleteLoadItem :exec
 DELETE FROM load_items
 WHERE plan_id = $1 AND item_id = $2
@@ -139,6 +187,15 @@ WHERE plan_id = $1
 
 func (q *Queries) DeleteLoadPlan(ctx context.Context, planID uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteLoadPlan, planID)
+	return err
+}
+
+const deletePlanResults = `-- name: DeletePlanResults :exec
+DELETE FROM plan_results WHERE plan_id = $1
+`
+
+func (q *Queries) DeletePlanResults(ctx context.Context, planID *uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deletePlanResults, planID)
 	return err
 }
 

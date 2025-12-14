@@ -3,10 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
+	"github.com/ekastn/load-stuffing-calculator/internal/packer"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/google/uuid"
 )
 
@@ -20,14 +23,16 @@ type PlanService interface {
 	GetPlanItem(ctx context.Context, planID, itemID string) (*dto.PlanItemDetail, error)
 	UpdatePlanItem(ctx context.Context, planID, itemID string, req dto.UpdatePlanItemRequest) error
 	DeletePlanItem(ctx context.Context, planID, itemID string) error
+	CalculatePlan(ctx context.Context, planID string) (*dto.CalculationResult, error)
 }
 
 type planService struct {
 	q store.Querier
+	p packer.Packer
 }
 
-func NewPlanService(q store.Querier) PlanService {
-	return &planService{q: q}
+func NewPlanService(q store.Querier, p packer.Packer) PlanService {
+	return &planService{q: q, p: p}
 }
 
 func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlanRequest) (*dto.CreatePlanResponse, error) {
@@ -65,10 +70,7 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 	}
 
 	planCode := "PLD-" + time.Now().Format("20060102-150405")
-	status := "DRAFT"
-	if autoCalc {
-		status = "IN_PROGRESS"
-	}
+	status := types.PlanStatusDraft.String()
 
 	plan, err := s.q.CreateLoadPlan(ctx, store.CreateLoadPlanParams{
 		PlanCode:    planCode,
@@ -122,8 +124,29 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 
 	var jobID *string
 	if autoCalc {
-		fakeJob := "calc_" + uuid.New().String()[:10]
-		jobID = &fakeJob
+		// Perform synchronous calculation
+		calcRes, err := s.CalculatePlan(ctx, plan.PlanID.String())
+		if err != nil {
+			// If calculation fails, we log it (conceptually) and mark status as FAILED
+			failStatus := types.PlanStatusFailed.String()
+			_ = s.q.UpdatePlanStatus(ctx, store.UpdatePlanStatusParams{
+				PlanID: plan.PlanID,
+				Status: &failStatus,
+			})
+			status = types.PlanStatusFailed.String()
+			// We can return the error, or just continue with failed status.
+			// Returning error might confuse client if Plan was created.
+			// Let's just set status FAILED.
+		} else {
+			status = types.PlanStatusCompleted.String()
+			if !strings.EqualFold(calcRes.Status, types.PlanStatusCompleted.String()) {
+				status = types.PlanStatusPartial.String() // logic inside CalculatePlan handles DB update, here for response
+			}
+			jobID = &calcRes.JobID
+		}
+	} else {
+		// If not auto-calc, leave as DRAFT
+		status = types.PlanStatusDraft.String()
 	}
 
 	return &dto.CreatePlanResponse{
@@ -365,31 +388,6 @@ func (s *planService) GetPlanItem(ctx context.Context, planID, itemID string) (*
 	return mapLoadItemToDetail(item), nil
 }
 
-func mapLoadItemToDetail(i store.LoadItem) *dto.PlanItemDetail {
-	l := toFloat(i.LengthMm)
-	w := toFloat(i.WidthMm)
-	h := toFloat(i.HeightMm)
-	wg := toFloat(i.WeightKg)
-	q := int(i.Quantity)
-
-	vol := l * w * h / 1_000_000_000.0 * float64(q)
-	tw := wg * float64(q)
-
-	return &dto.PlanItemDetail{
-		ItemID:        i.ItemID.String(),
-		Label:         i.ItemLabel,
-		LengthMM:      l,
-		WidthMM:       w,
-		HeightMM:      h,
-		WeightKG:      wg,
-		Quantity:      q,
-		TotalWeightKG: tw,
-		TotalVolumeM3: vol,
-		AllowRotation: *i.AllowRotation,
-		ColorHex:      i.ColorHex,
-	}
-}
-
 func (s *planService) UpdatePlanItem(ctx context.Context, planID, itemID string, req dto.UpdatePlanItemRequest) error {
 	pID, err := uuid.Parse(planID)
 	if err != nil {
@@ -464,4 +462,153 @@ func (s *planService) DeletePlanItem(ctx context.Context, planID, itemID string)
 		return fmt.Errorf("failed to delete item: %w", err)
 	}
 	return nil
+}
+
+func (s *planService) CalculatePlan(ctx context.Context, planID string) (*dto.CalculationResult, error) {
+	// 1. Fetch Plan & Items
+	pID, err := uuid.Parse(planID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid plan id")
+	}
+
+	plan, err := s.q.GetLoadPlan(ctx, pID)
+	if err != nil {
+		return nil, fmt.Errorf("plan not found: %w", err)
+	}
+
+	items, err := s.q.ListLoadItems(ctx, &plan.PlanID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list items: %w", err)
+	}
+
+	// 2. Prepare Inputs
+	contInput := packer.ContainerInput{
+		ID:        plan.PlanID.String(),
+		Length:    toFloat(plan.LengthMm),
+		Width:     toFloat(plan.WidthMm),
+		Height:    toFloat(plan.HeightMm),
+		MaxWeight: toFloat(plan.MaxWeightKg),
+	}
+
+	var itemInputs []packer.ItemInput
+	for _, item := range items {
+		allowRot := true
+		if item.AllowRotation != nil {
+			allowRot = *item.AllowRotation
+		}
+		color := "#3498db"
+		if item.ColorHex != nil {
+			color = *item.ColorHex
+		}
+
+		itemInputs = append(itemInputs, packer.ItemInput{
+			ID:            item.ItemID.String(),
+			Label:         getString(item.ItemLabel),
+			Length:        toFloat(item.LengthMm),
+			Width:         toFloat(item.WidthMm),
+			Height:        toFloat(item.HeightMm),
+			Weight:        toFloat(item.WeightKg),
+			Quantity:      int(item.Quantity),
+			AllowRotation: allowRot,
+			Color:         color,
+		})
+	}
+
+	// 3. Run Packing
+	res, err := s.p.Pack(ctx, contInput, itemInputs)
+	if err != nil {
+		return nil, fmt.Errorf("packing failed: %w", err)
+	}
+
+	// 4. Save Results
+	// Delete old results first? Usually only one active result.
+	_ = s.q.DeletePlanResults(ctx, &pID)
+
+	savedRes, err := s.q.CreatePlanResult(ctx, store.CreatePlanResultParams{
+		PlanID:               &pID,
+		TotalLoadedWeightKg:  toNumeric(res.TotalWeightPackedKG),
+		VolumeUtilizationPct: toNumeric(res.VolumeUtilisationPct),
+		IsFeasible:           &res.IsFeasible,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to save result: %w", err)
+	}
+
+	// 5. Save Placements (Bulk)
+	var placements []store.CreatePlanPlacementParams
+	for i, pItem := range res.PackedItems {
+		itemID, _ := uuid.Parse(pItem.ItemID)
+		
+		rID := savedRes.ResultID
+		iID := itemID
+		rot := int32(pItem.RotationType)
+		
+		placements = append(placements, store.CreatePlanPlacementParams{
+			ResultID:     &rID,
+			ItemID:       &iID,
+			PosX:         toNumeric(pItem.Position.X),
+			PosY:         toNumeric(pItem.Position.Y),
+			PosZ:         toNumeric(pItem.Position.Z),
+			RotationCode: &rot,
+			StepNumber:   int32(i + 1),
+		})
+	}
+
+	if len(placements) > 0 {
+		_, err := s.q.CreatePlanPlacement(ctx, placements)
+		if err != nil {
+			return nil, fmt.Errorf("failed to save placements: %w", err)
+		}
+	}
+
+	// 6. Update Status
+	newStatus := types.PlanStatusCompleted.String()
+	if !res.IsFeasible {
+		newStatus = types.PlanStatusPartial.String()
+	}
+	s.q.UpdatePlanStatus(ctx, store.UpdatePlanStatusParams{
+		PlanID: pID,
+		Status: &newStatus,
+	})
+
+	// 7. Return DTO
+	return &dto.CalculationResult{
+		JobID:             savedRes.ResultID.String(),
+		Status:            types.PlanStatusCompleted.String(), // Status from packer result, or from DB
+		Algorithm:         res.Algorithm,
+		EfficiencyScore:   res.VolumeUtilisationPct,
+		VolumeUtilization: res.VolumeUtilisationPct,
+		DurationMs:        res.DurationMs,
+		VisualizationURL:  "/visualizer?plan=" + planID,
+	}, nil
+}
+
+func mapLoadItemToDetail(i store.LoadItem) *dto.PlanItemDetail {
+	l := toFloat(i.LengthMm)
+	w := toFloat(i.WidthMm)
+	h := toFloat(i.HeightMm)
+	wg := toFloat(i.WeightKg)
+	q := int(i.Quantity)
+
+	vol := l * w * h / 1_000_000_000.0 * float64(q)
+	tw := wg * float64(q)
+
+	allowRot := true
+	if i.AllowRotation != nil {
+		allowRot = *i.AllowRotation
+	}
+
+	return &dto.PlanItemDetail{
+		ItemID:        i.ItemID.String(),
+		Label:         i.ItemLabel,
+		LengthMM:      l,
+		WidthMM:       w,
+		HeightMM:      h,
+		WeightKG:      wg,
+		Quantity:      q,
+		TotalWeightKG: tw,
+		TotalVolumeM3: vol,
+		AllowRotation: allowRot,
+		ColorHex:      i.ColorHex,
+	}
 }
