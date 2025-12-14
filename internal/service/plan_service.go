@@ -217,6 +217,52 @@ func (s *planService) GetPlan(ctx context.Context, id string) (*dto.PlanDetailRe
 	contH := toFloat(plan.HeightMm)
 	contVol := contL * contW * contH / 1_000_000_000.0
 
+	var calc *dto.CalculationResult
+	res, err := s.q.GetPlanResult(ctx, &plan.PlanID)
+	if err == nil {
+		status := types.PlanStatusCompleted.String()
+		if res.IsFeasible != nil && !*res.IsFeasible {
+			status = types.PlanStatusPartial.String()
+		}
+		
+		calc = &dto.CalculationResult{
+			JobID:             res.ResultID.String(),
+			Status:            status,
+			Algorithm:         "BestFitDecreasing", // Default for now
+			EfficiencyScore:   toFloat(res.VolumeUtilizationPct),
+			VolumeUtilization: toFloat(res.VolumeUtilizationPct),
+			VisualizationURL:  "/visualizer?plan=" + plan.PlanID.String(),
+		}
+
+		// Fetch placements
+		placements, err := s.q.ListPlanPlacements(ctx, &res.ResultID)
+		if err == nil {
+			var plDetails []dto.PlacementDetail
+			for _, pl := range placements {
+				var iID string
+				if pl.ItemID != nil {
+					iID = pl.ItemID.String()
+				}
+				
+				rot := 0
+				if pl.RotationCode != nil {
+					rot = int(*pl.RotationCode)
+				}
+
+				plDetails = append(plDetails, dto.PlacementDetail{
+					PlacementID: pl.PlacementID.String(),
+					ItemID:      iID,
+					PositionX:   toFloat(pl.PosX),
+					PositionY:   toFloat(pl.PosY),
+					PositionZ:   toFloat(pl.PosZ),
+					Rotation:    rot,
+					StepNumber:  int(pl.StepNumber),
+				})
+			}
+			calc.Placements = plDetails
+		}
+	}
+
 	return &dto.PlanDetailResponse{
 		PlanID:   plan.PlanID.String(),
 		PlanCode: plan.PlanCode,
@@ -234,8 +280,9 @@ func (s *planService) GetPlan(ctx context.Context, id string) (*dto.PlanDetailRe
 			TotalWeightKG: totalWeight,
 			TotalVolumeM3: totalVolume,
 		},
-		Items:     itemDetails,
-		CreatedAt: plan.CreatedAt.Time,
+		Items:       itemDetails,
+		Calculation: calc,
+		CreatedAt:   plan.CreatedAt.Time,
 	}, nil
 }
 

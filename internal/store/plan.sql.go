@@ -248,6 +248,24 @@ func (q *Queries) GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, 
 	return i, err
 }
 
+const getPlanResult = `-- name: GetPlanResult :one
+SELECT result_id, plan_id, total_loaded_weight_kg, volume_utilization_pct, is_feasible, created_at FROM plan_results WHERE plan_id = $1
+`
+
+func (q *Queries) GetPlanResult(ctx context.Context, planID *uuid.UUID) (PlanResult, error) {
+	row := q.db.QueryRow(ctx, getPlanResult, planID)
+	var i PlanResult
+	err := row.Scan(
+		&i.ResultID,
+		&i.PlanID,
+		&i.TotalLoadedWeightKg,
+		&i.VolumeUtilizationPct,
+		&i.IsFeasible,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const listLoadItems = `-- name: ListLoadItems :many
 SELECT item_id, plan_id, item_label, length_mm, width_mm, height_mm, weight_kg, quantity, allow_rotation, color_hex FROM load_items
 WHERE plan_id = $1
@@ -314,6 +332,39 @@ func (q *Queries) ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([
 			&i.HeightMm,
 			&i.MaxWeightKg,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPlanPlacements = `-- name: ListPlanPlacements :many
+SELECT placement_id, result_id, item_id, pos_x, pos_y, pos_z, rotation_code, step_number FROM plan_placements WHERE result_id = $1 ORDER BY step_number ASC
+`
+
+func (q *Queries) ListPlanPlacements(ctx context.Context, resultID *uuid.UUID) ([]PlanPlacement, error) {
+	rows, err := q.db.Query(ctx, listPlanPlacements, resultID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PlanPlacement
+	for rows.Next() {
+		var i PlanPlacement
+		if err := rows.Scan(
+			&i.PlacementID,
+			&i.ResultID,
+			&i.ItemID,
+			&i.PosX,
+			&i.PosY,
+			&i.PosZ,
+			&i.RotationCode,
+			&i.StepNumber,
 		); err != nil {
 			return nil, err
 		}

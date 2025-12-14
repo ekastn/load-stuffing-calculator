@@ -106,3 +106,9 @@ INSERT INTO plan_placements (
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7
 );
+
+-- name: GetPlanResult :one
+SELECT * FROM plan_results WHERE plan_id = $1;
+
+-- name: ListPlanPlacements :many
+SELECT * FROM plan_placements WHERE result_id = $1 ORDER BY step_number ASC;

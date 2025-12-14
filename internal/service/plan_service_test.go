@@ -266,6 +266,9 @@ func TestPlanService_GetPlan(t *testing.T) {
 					{ItemID: uuid.New(), ItemLabel: stringPtr("Item1"), Quantity: 2, LengthMm: toNumeric(100), WidthMm: toNumeric(100), HeightMm: toNumeric(100), WeightKg: toNumeric(10), AllowRotation: boolPtr(true), ColorHex: stringPtr("#aabbcc")},
 				}, nil
 			},
+			GetPlanResultFunc: func(ctx context.Context, id *uuid.UUID) (store.PlanResult, error) {
+				return store.PlanResult{}, fmt.Errorf("no result")
+			},
 		}
 
 		s := service.NewPlanService(mockQ, packer.NewPacker())
