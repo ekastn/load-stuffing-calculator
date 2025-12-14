@@ -15,6 +15,8 @@ type Querier interface {
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
 	CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error)
 	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
+	CreatePlanPlacement(ctx context.Context, arg []CreatePlanPlacementParams) (int64, error)
+	CreatePlanResult(ctx context.Context, arg CreatePlanResultParams) (PlanResult, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
@@ -23,6 +25,7 @@ type Querier interface {
 	DeleteLoadItem(ctx context.Context, arg DeleteLoadItemParams) error
 	DeleteLoadPlan(ctx context.Context, planID uuid.UUID) error
 	DeletePermission(ctx context.Context, permissionID uuid.UUID) error
+	DeletePlanResults(ctx context.Context, planID *uuid.UUID) error
 	DeleteProduct(ctx context.Context, productID uuid.UUID) error
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
 	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)

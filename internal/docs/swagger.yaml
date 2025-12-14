@@ -211,8 +211,8 @@ definitions:
         example: f47ac10b-58cc-4372-a567-0e02b2c3d479
         type: string
       status:
-        description: DRAFT | IN_PROGRESS | COMPLETED | CANCELLED | FAILED
-        example: ""
+        description: DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED
+        example: DRAFT
         type: string
       title:
         example: Ekspor Jepang - Desember 2025
@@ -363,6 +363,8 @@ definitions:
       stats:
         $ref: '#/definitions/dto.PlanStats'
       status:
+        description: DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED
+        example: COMPLETED
         type: string
       title:
         type: string
@@ -411,6 +413,7 @@ definitions:
       plan_id:
         type: string
       status:
+        example: DRAFT
         type: string
       title:
         type: string
@@ -525,6 +528,8 @@ definitions:
         - DRAFT
         - IN_PROGRESS
         - COMPLETED
+        - PARTIAL
+        - FAILED
         - CANCELLED
         type: string
     type: object

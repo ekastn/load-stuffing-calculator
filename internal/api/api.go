@@ -12,6 +12,7 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/config"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
+	"github.com/ekastn/load-stuffing-calculator/internal/packer"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
 	"github.com/gin-contrib/cors"
@@ -29,25 +30,26 @@ type App struct {
 	userHandler      *handler.UserHandler
 	roleHandler      *handler.RoleHandler
 	permHandler      *handler.PermissionHandler
-		containerHandler *handler.ContainerHandler
-		productHandler *handler.ProductHandler
-		planHandler      *handler.PlanHandler
-		jwtSecret        string
-	}
-	
-	func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
-		querier := store.New(db)
-		permCache := cache.NewPermissionCache()
-	
-		authSvc := service.NewAuthService(querier, cfg.JWTSecret)
-		userSvc := service.NewUserService(querier)
-		roleSvc := service.NewRoleService(querier)
-		permSvc := service.NewPermissionService(querier)
-		containerSvc := service.NewContainerService(querier)
-		productSvc := service.NewProductService(querier)
-		planSvc := service.NewPlanService(querier)
-	
-		authHandler := handler.NewAuthHandler(authSvc)
+	containerHandler *handler.ContainerHandler
+	productHandler   *handler.ProductHandler
+	planHandler      *handler.PlanHandler
+	jwtSecret        string
+}
+
+func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
+	querier := store.New(db)
+	permCache := cache.NewPermissionCache()
+	pack := packer.NewPacker()
+
+	authSvc := service.NewAuthService(querier, cfg.JWTSecret)
+	userSvc := service.NewUserService(querier)
+	roleSvc := service.NewRoleService(querier)
+	permSvc := service.NewPermissionService(querier)
+	containerSvc := service.NewContainerService(querier)
+	productSvc := service.NewProductService(querier)
+	planSvc := service.NewPlanService(querier, pack)
+
+	authHandler := handler.NewAuthHandler(authSvc)
 		userHandler := handler.NewUserHandler(userSvc)
 		roleHandler := handler.NewRoleHandler(roleSvc)
 		permHandler := handler.NewPermissionHandler(permSvc)

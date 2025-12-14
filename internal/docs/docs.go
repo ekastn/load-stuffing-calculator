@@ -2285,9 +2285,9 @@ const docTemplate = `{
                     "example": "f47ac10b-58cc-4372-a567-0e02b2c3d479"
                 },
                 "status": {
-                    "description": "DRAFT | IN_PROGRESS | COMPLETED | CANCELLED | FAILED",
+                    "description": "DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED",
                     "type": "string",
-                    "example": ""
+                    "example": "DRAFT"
                 },
                 "title": {
                     "type": "string",
@@ -2501,7 +2501,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.PlanStats"
                 },
                 "status": {
-                    "type": "string"
+                    "description": "DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED",
+                    "type": "string",
+                    "example": "COMPLETED"
                 },
                 "title": {
                     "type": "string"
@@ -2574,7 +2576,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "DRAFT"
                 },
                 "title": {
                     "type": "string"
@@ -2742,6 +2745,8 @@ const docTemplate = `{
                         "DRAFT",
                         "IN_PROGRESS",
                         "COMPLETED",
+                        "PARTIAL",
+                        "FAILED",
                         "CANCELLED"
                     ]
                 }
