@@ -224,7 +224,7 @@ func (s *planService) GetPlan(ctx context.Context, id string) (*dto.PlanDetailRe
 		if res.IsFeasible != nil && !*res.IsFeasible {
 			status = types.PlanStatusPartial.String()
 		}
-		
+
 		calc = &dto.CalculationResult{
 			JobID:             res.ResultID.String(),
 			Status:            status,
@@ -243,7 +243,7 @@ func (s *planService) GetPlan(ctx context.Context, id string) (*dto.PlanDetailRe
 				if pl.ItemID != nil {
 					iID = pl.ItemID.String()
 				}
-				
+
 				rot := 0
 				if pl.RotationCode != nil {
 					rot = int(*pl.RotationCode)
@@ -585,11 +585,11 @@ func (s *planService) CalculatePlan(ctx context.Context, planID string) (*dto.Ca
 	var placements []store.CreatePlanPlacementParams
 	for i, pItem := range res.PackedItems {
 		itemID, _ := uuid.Parse(pItem.ItemID)
-		
+
 		rID := savedRes.ResultID
 		iID := itemID
 		rot := int32(pItem.RotationType)
-		
+
 		placements = append(placements, store.CreatePlanPlacementParams{
 			ResultID:     &rID,
 			ItemID:       &iID,

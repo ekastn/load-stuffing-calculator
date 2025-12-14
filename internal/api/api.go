@@ -50,27 +50,27 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	planSvc := service.NewPlanService(querier, pack)
 
 	authHandler := handler.NewAuthHandler(authSvc)
-		userHandler := handler.NewUserHandler(userSvc)
-		roleHandler := handler.NewRoleHandler(roleSvc)
-		permHandler := handler.NewPermissionHandler(permSvc)
-		containerHandler := handler.NewContainerHandler(containerSvc)
-		productHandler := handler.NewProductHandler(productSvc)
-		planHandler := handler.NewPlanHandler(planSvc)
-	
-		app := &App{
-			config:           cfg,
-			db:               db,
-			querier:          querier,
-			permCache:        permCache,
-			authHandler:      authHandler,
-			userHandler:      userHandler,
-			roleHandler:      roleHandler,
-			permHandler:      permHandler,
-			containerHandler: containerHandler,
-			productHandler:   productHandler,
-			planHandler:      planHandler,
-			jwtSecret:        cfg.JWTSecret,
-		}
+	userHandler := handler.NewUserHandler(userSvc)
+	roleHandler := handler.NewRoleHandler(roleSvc)
+	permHandler := handler.NewPermissionHandler(permSvc)
+	containerHandler := handler.NewContainerHandler(containerSvc)
+	productHandler := handler.NewProductHandler(productSvc)
+	planHandler := handler.NewPlanHandler(planSvc)
+
+	app := &App{
+		config:           cfg,
+		db:               db,
+		querier:          querier,
+		permCache:        permCache,
+		authHandler:      authHandler,
+		userHandler:      userHandler,
+		roleHandler:      roleHandler,
+		permHandler:      permHandler,
+		containerHandler: containerHandler,
+		productHandler:   productHandler,
+		planHandler:      planHandler,
+		jwtSecret:        cfg.JWTSecret,
+	}
 
 	app.setupRouter()
 
