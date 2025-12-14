@@ -55,6 +55,22 @@ type MockQuerier struct {
 	CreatePlanResultFunc     func(ctx context.Context, arg store.CreatePlanResultParams) (store.PlanResult, error)
 	DeletePlanResultsFunc    func(ctx context.Context, planID *uuid.UUID) error
 	CreatePlanPlacementFunc  func(ctx context.Context, arg []store.CreatePlanPlacementParams) (int64, error)
+	GetPlanResultFunc        func(ctx context.Context, planID *uuid.UUID) (store.PlanResult, error)
+	ListPlanPlacementsFunc   func(ctx context.Context, resultID *uuid.UUID) ([]store.PlanPlacement, error)
+}
+
+func (m *MockQuerier) ListPlanPlacements(ctx context.Context, resultID *uuid.UUID) ([]store.PlanPlacement, error) {
+	if m.ListPlanPlacementsFunc != nil {
+		return m.ListPlanPlacementsFunc(ctx, resultID)
+	}
+	return nil, fmt.Errorf("ListPlanPlacements not implemented")
+}
+
+func (m *MockQuerier) GetPlanResult(ctx context.Context, planID *uuid.UUID) (store.PlanResult, error) {
+	if m.GetPlanResultFunc != nil {
+		return m.GetPlanResultFunc(ctx, planID)
+	}
+	return store.PlanResult{}, fmt.Errorf("GetPlanResult not implemented")
 }
 
 func (m *MockQuerier) CreatePlanResult(ctx context.Context, arg store.CreatePlanResultParams) (store.PlanResult, error) {

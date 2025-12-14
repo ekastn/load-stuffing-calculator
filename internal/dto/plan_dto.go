@@ -99,14 +99,25 @@ type PlanItemDetail struct {
 }
 
 type CalculationResult struct {
-	JobID             string  `json:"job_id"`
-	Status            string  `json:"status"` // queued | running | completed | failed
-	Algorithm         string  `json:"algorithm" example:"maxrects-bssf"`
-	CalculatedAt      *string `json:"calculated_at,omitempty"`
-	DurationMs        int64   `json:"duration_ms,omitempty"`
-	EfficiencyScore   float64 `json:"efficiency_score,omitempty"`
-	VolumeUtilization float64 `json:"volume_utilization_pct,omitempty"`
-	VisualizationURL  string  `json:"visualization_url" example:"/visualizer?plan=f47ac10b-..."`
+	JobID             string            `json:"job_id"`
+	Status            string            `json:"status"` // queued | running | completed | failed
+	Algorithm         string            `json:"algorithm" example:"maxrects-bssf"`
+	CalculatedAt      *string           `json:"calculated_at,omitempty"`
+	DurationMs        int64             `json:"duration_ms,omitempty"`
+	EfficiencyScore   float64           `json:"efficiency_score,omitempty"`
+	VolumeUtilization float64           `json:"volume_utilization_pct,omitempty"`
+	VisualizationURL  string            `json:"visualization_url" example:"/visualizer?plan=f47ac10b-..."`
+	Placements        []PlacementDetail `json:"placements,omitempty"`
+}
+
+type PlacementDetail struct {
+	PlacementID string  `json:"placement_id"`
+	ItemID      string  `json:"item_id"`
+	PositionX   float64 `json:"pos_x"`
+	PositionY   float64 `json:"pos_y"`
+	PositionZ   float64 `json:"pos_z"`
+	Rotation    int     `json:"rotation"`
+	StepNumber  int     `json:"step_number"`
 }
 
 type PlanListItem struct {
