@@ -295,3 +295,31 @@ func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, nil)
 }
+
+// CalculatePlan godoc
+// @Summary      Calculate plan
+// @Description  Triggers the packing calculation for a plan.
+// @Tags         plans
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Plan ID"
+// @Success      200  {object}  response.APIResponse{data=dto.CalculationResult}
+// @Failure      400  {object}  response.APIResponse
+// @Failure      500  {object}  response.APIResponse
+// @Security     BearerAuth
+// @Router       /plans/{id}/calculate [post]
+func (h *PlanHandler) CalculatePlan(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.Error(c, http.StatusBadRequest, "Plan ID is required")
+		return
+	}
+
+	resp, err := h.planSvc.CalculatePlan(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to calculate plan: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}

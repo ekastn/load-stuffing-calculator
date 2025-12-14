@@ -344,3 +344,49 @@ func TestPlanHandler_DeletePlanItem(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 }
+
+func TestPlanHandler_CalculatePlan(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	planID := uuid.New().String()
+
+	t.Run("success", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		expectedResp := &dto.CalculationResult{
+			JobID:           uuid.New().String(),
+			Status:          "completed",
+			Algorithm:       "default",
+			EfficiencyScore: 90.0,
+		}
+		mockSvc.On("CalculatePlan", mock.Anything, planID).Return(expectedResp, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/calculate", nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.CalculatePlan(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("error_calc_failed", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("CalculatePlan", mock.Anything, planID).Return(nil, errors.New("packing failed"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/calculate", nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.CalculatePlan(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+}

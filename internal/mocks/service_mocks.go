@@ -269,3 +269,11 @@ func (m *MockPlanService) DeletePlanItem(ctx context.Context, planID, itemID str
 	args := m.Called(ctx, planID, itemID)
 	return args.Error(0)
 }
+
+func (m *MockPlanService) CalculatePlan(ctx context.Context, planID string) (*dto.CalculationResult, error) {
+	args := m.Called(ctx, planID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.CalculationResult), args.Error(1)
+}
