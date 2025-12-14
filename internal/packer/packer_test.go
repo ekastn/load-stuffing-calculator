@@ -136,7 +136,7 @@ func TestPacker_Pack(t *testing.T) {
 		assert.Len(t, res.UnfitItems, 1)
 		assert.Equal(t, "NO-FIT", res.UnfitItems[0].ID)
 	})
-	
+
 	t.Run("quantity_splitting", func(t *testing.T) {
 		items := []packer.ItemInput{
 			{
@@ -148,9 +148,9 @@ func TestPacker_Pack(t *testing.T) {
 				Quantity: 3, // Length 500 fits 2 times in 1000. 3rd should fail.
 			},
 		}
-		
+
 		res, err := p.Pack(ctx, container, items)
-		
+
 		assert.NoError(t, err)
 		assert.False(t, res.IsFeasible)
 		assert.Equal(t, 2, res.TotalPackedItems)

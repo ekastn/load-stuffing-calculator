@@ -168,7 +168,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 		mockQ := &MockQuerier{}
 		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
-			Title: "Missing Custom Dims Plan",
+			Title:     "Missing Custom Dims Plan",
 			Container: dto.CreatePlanContainer{
 				// Missing LengthMM, WidthMM, HeightMM, MaxWeightKG
 			},
@@ -368,13 +368,13 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 		mockQ := &MockQuerier{
 			GetLoadPlanFunc: func(ctx context.Context, id uuid.UUID) (store.LoadPlan, error) {
 				return store.LoadPlan{
-					PlanID: planID,
-					PlanCode: "OLD_CODE",
-					Status: stringPtr(types.PlanStatusDraft.String()),
-					ContLabel: stringPtr("Old Cont"),
-					LengthMm: toNumeric(1000),
-					WidthMm: toNumeric(1000),
-					HeightMm: toNumeric(1000),
+					PlanID:      planID,
+					PlanCode:    "OLD_CODE",
+					Status:      stringPtr(types.PlanStatusDraft.String()),
+					ContLabel:   stringPtr("Old Cont"),
+					LengthMm:    toNumeric(1000),
+					WidthMm:     toNumeric(1000),
+					HeightMm:    toNumeric(1000),
 					MaxWeightKg: toNumeric(1000),
 				}, nil
 			},
@@ -399,13 +399,13 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 		mockQ := &MockQuerier{
 			GetLoadPlanFunc: func(ctx context.Context, id uuid.UUID) (store.LoadPlan, error) {
 				return store.LoadPlan{
-					PlanID: planID,
-					PlanCode: "OLD_CODE",
-					Status: stringPtr(types.PlanStatusDraft.String()),
-					ContLabel: stringPtr("Old Cont"),
-					LengthMm: toNumeric(1000),
-					WidthMm: toNumeric(1000),
-					HeightMm: toNumeric(1000),
+					PlanID:      planID,
+					PlanCode:    "OLD_CODE",
+					Status:      stringPtr(types.PlanStatusDraft.String()),
+					ContLabel:   stringPtr("Old Cont"),
+					LengthMm:    toNumeric(1000),
+					WidthMm:     toNumeric(1000),
+					HeightMm:    toNumeric(1000),
 					MaxWeightKg: toNumeric(1000),
 				}, nil
 			},

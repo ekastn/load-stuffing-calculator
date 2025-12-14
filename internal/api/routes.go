@@ -82,7 +82,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			plans.GET("/:id/items/:itemId", a.planHandler.GetPlanItem)
 			plans.PUT("/:id/items/:itemId", a.planHandler.UpdatePlanItem)
 			plans.DELETE("/:id/items/:itemId", a.planHandler.DeletePlanItem)
-			
+
 			plans.POST("/:id/calculate", a.planHandler.CalculatePlan)
 		}
 	}
