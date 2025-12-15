@@ -123,6 +123,8 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 	}
 
 	var jobID *string
+	var calcResult *dto.CalculationResult
+
 	if autoCalc {
 		// Perform synchronous calculation
 		calcRes, err := s.CalculatePlan(ctx, plan.PlanID.String())
@@ -134,15 +136,13 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 				Status: &failStatus,
 			})
 			status = types.PlanStatusFailed.String()
-			// We can return the error, or just continue with failed status.
-			// Returning error might confuse client if Plan was created.
-			// Let's just set status FAILED.
 		} else {
 			status = types.PlanStatusCompleted.String()
 			if !strings.EqualFold(calcRes.Status, types.PlanStatusCompleted.String()) {
 				status = types.PlanStatusPartial.String() // logic inside CalculatePlan handles DB update, here for response
 			}
 			jobID = &calcRes.JobID
+			calcResult = calcRes
 		}
 	} else {
 		// If not auto-calc, leave as DRAFT
@@ -158,6 +158,7 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 		TotalWeightKG:    totalWeight,
 		TotalVolumeM3:    totalVolume,
 		CalculationJobID: jobID,
+		Calculation:      calcResult,
 		CreatedAt:        plan.CreatedAt.Time.Format(time.RFC3339),
 	}, nil
 }
@@ -581,8 +582,10 @@ func (s *planService) CalculatePlan(ctx context.Context, planID string) (*dto.Ca
 		return nil, fmt.Errorf("failed to save result: %w", err)
 	}
 
-	// 5. Save Placements (Bulk)
+	// 5. Save Placements (Bulk) AND map DTO
 	var placements []store.CreatePlanPlacementParams
+	var plDTOs []dto.PlacementDetail
+
 	for i, pItem := range res.PackedItems {
 		itemID, _ := uuid.Parse(pItem.ItemID)
 
@@ -598,6 +601,16 @@ func (s *planService) CalculatePlan(ctx context.Context, planID string) (*dto.Ca
 			PosZ:         toNumeric(pItem.Position.Z),
 			RotationCode: &rot,
 			StepNumber:   int32(i + 1),
+		})
+
+		plDTOs = append(plDTOs, dto.PlacementDetail{
+			PlacementID: "", // Not generated yet
+			ItemID:      pItem.ItemID,
+			PositionX:   pItem.Position.X,
+			PositionY:   pItem.Position.Y,
+			PositionZ:   pItem.Position.Z,
+			Rotation:    pItem.RotationType,
+			StepNumber:  i + 1,
 		})
 	}
 
@@ -627,6 +640,7 @@ func (s *planService) CalculatePlan(ctx context.Context, planID string) (*dto.Ca
 		VolumeUtilization: res.VolumeUtilisationPct,
 		DurationMs:        res.DurationMs,
 		VisualizationURL:  "/visualizer?plan=" + planID,
+		Placements:        plDTOs,
 	}, nil
 }
 

@@ -51,6 +51,10 @@ definitions:
         type: number
       job_id:
         type: string
+      placements:
+        items:
+          $ref: '#/definitions/dto.PlacementDetail'
+        type: array
       status:
         description: queued | running | completed | failed
         type: string
@@ -198,6 +202,8 @@ definitions:
     type: object
   dto.CreatePlanResponse:
     properties:
+      calculation:
+        $ref: '#/definitions/dto.CalculationResult'
       calculation_job_id:
         example: calc_8f9e2a1b
         type: string
@@ -320,6 +326,23 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  dto.PlacementDetail:
+    properties:
+      item_id:
+        type: string
+      placement_id:
+        type: string
+      pos_x:
+        type: number
+      pos_y:
+        type: number
+      pos_z:
+        type: number
+      rotation:
+        type: integer
+      step_number:
+        type: integer
     type: object
   dto.PlanContainerInfo:
     properties:

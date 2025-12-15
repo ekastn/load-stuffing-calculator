@@ -2126,6 +2126,12 @@ const docTemplate = `{
                 "job_id": {
                     "type": "string"
                 },
+                "placements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.PlacementDetail"
+                    }
+                },
                 "status": {
                     "description": "queued | running | completed | failed",
                     "type": "string"
@@ -2329,6 +2335,9 @@ const docTemplate = `{
         "dto.CreatePlanResponse": {
             "type": "object",
             "properties": {
+                "calculation": {
+                    "$ref": "#/definitions/dto.CalculationResult"
+                },
                 "calculation_job_id": {
                     "type": "string",
                     "example": "calc_8f9e2a1b"
@@ -2496,6 +2505,32 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.PlacementDetail": {
+            "type": "object",
+            "properties": {
+                "item_id": {
+                    "type": "string"
+                },
+                "placement_id": {
+                    "type": "string"
+                },
+                "pos_x": {
+                    "type": "number"
+                },
+                "pos_y": {
+                    "type": "number"
+                },
+                "pos_z": {
+                    "type": "number"
+                },
+                "rotation": {
+                    "type": "integer"
+                },
+                "step_number": {
+                    "type": "integer"
                 }
             }
         },
