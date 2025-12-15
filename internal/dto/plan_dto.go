@@ -36,15 +36,16 @@ type CreatePlanItem struct {
 }
 
 type CreatePlanResponse struct {
-	PlanID           string  `json:"plan_id" example:"f47ac10b-58cc-4372-a567-0e02b2c3d479"`
-	PlanCode         string  `json:"plan_code" example:"PLAN-20251209-104500"`
-	Title            string  `json:"title" example:"Ekspor Jepang - Desember 2025"`
-	Status           string  `json:"status" example:"DRAFT"` // DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED
-	TotalItems       int     `json:"total_items" example:"160"`
-	TotalWeightKG    float64 `json:"total_weight_kg" example:"8520.0"`
-	TotalVolumeM3    float64 `json:"total_volume_m3" example:"58.2"`
-	CalculationJobID *string `json:"calculation_job_id,omitempty" example:"calc_8f9e2a1b"`
-	CreatedAt        string  `json:"created_at" example:"2025-12-09T10:45:00Z"`
+	PlanID           string             `json:"plan_id" example:"f47ac10b-58cc-4372-a567-0e02b2c3d479"`
+	PlanCode         string             `json:"plan_code" example:"PLAN-20251209-104500"`
+	Title            string             `json:"title" example:"Ekspor Jepang - Desember 2025"`
+	Status           string             `json:"status" example:"DRAFT"` // DRAFT, IN_PROGRESS, COMPLETED, PARTIAL, FAILED, CANCELLED
+	TotalItems       int                `json:"total_items" example:"160"`
+	TotalWeightKG    float64            `json:"total_weight_kg" example:"8520.0"`
+	TotalVolumeM3    float64            `json:"total_volume_m3" example:"58.2"`
+	CalculationJobID *string            `json:"calculation_job_id,omitempty" example:"calc_8f9e2a1b"`
+	Calculation      *CalculationResult `json:"calculation,omitempty"`
+	CreatedAt        string             `json:"created_at" example:"2025-12-09T10:45:00Z"`
 }
 
 type PlanDetailResponse struct {
