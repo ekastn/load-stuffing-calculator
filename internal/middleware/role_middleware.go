@@ -4,10 +4,11 @@ import (
 	"net/http"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/response"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
 )
 
-func Role(allowedRoles ...string) gin.HandlerFunc {
+func Role(allowedRoles ...types.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")
 		if !exists {
@@ -23,8 +24,14 @@ func Role(allowedRoles ...string) gin.HandlerFunc {
 			return
 		}
 
+		// Admin has access to everything
+		if userRole == types.RoleAdmin.String() {
+			c.Next()
+			return
+		}
+
 		for _, allowed := range allowedRoles {
-			if userRole == allowed {
+			if userRole == allowed.String() {
 				c.Next()
 				return
 			}

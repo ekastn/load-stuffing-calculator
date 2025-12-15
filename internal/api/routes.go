@@ -5,6 +5,7 @@ import (
 
 	_ "github.com/ekastn/load-stuffing-calculator/internal/docs"
 	"github.com/ekastn/load-stuffing-calculator/internal/middleware"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -27,14 +28,14 @@ func (a *App) setupRoutes(r *gin.Engine) {
 
 		v1.Use(middleware.JWT(a.jwtSecret))
 
-		users := v1.Group("/users", middleware.Role("admin"))
+		users := v1.Group("/users", middleware.Role(types.RoleAdmin))
 		{
 			users.POST("", a.userHandler.CreateUser)
 			users.GET("/:id", a.userHandler.GetUser)
 			users.GET("", a.userHandler.ListUsers)
 		}
 
-		roles := v1.Group("/roles", middleware.Role("admin"))
+		roles := v1.Group("/roles", middleware.Role(types.RoleAdmin))
 		{
 			roles.POST("", a.roleHandler.CreateRole)
 			roles.GET("", a.roleHandler.ListRoles)
@@ -43,7 +44,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			roles.DELETE("/:id", a.roleHandler.DeleteRole)
 		}
 
-		permissions := v1.Group("/permissions", middleware.Role("admin"))
+		permissions := v1.Group("/permissions", middleware.Role(types.RoleAdmin))
 		{
 			permissions.POST("", a.permHandler.CreatePermission)
 			permissions.GET("", a.permHandler.ListPermissions)
@@ -52,7 +53,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			permissions.DELETE("/:id", a.permHandler.DeletePermission)
 		}
 
-		containers := v1.Group("/containers", middleware.Role("admin"))
+		containers := v1.Group("/containers", middleware.Role(types.RoleAdmin))
 		{
 			containers.POST("", a.containerHandler.CreateContainer)
 			containers.GET("", a.containerHandler.ListContainers)
@@ -61,7 +62,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			containers.DELETE("/:id", a.containerHandler.DeleteContainer)
 		}
 
-		products := v1.Group("/products", middleware.Role("admin"))
+		products := v1.Group("/products", middleware.Role(types.RoleAdmin))
 		{
 			products.POST("", a.productHandler.CreateProduct)
 			products.GET("", a.productHandler.ListProducts)
@@ -70,20 +71,23 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			products.DELETE("/:id", a.productHandler.DeleteProduct)
 		}
 
-		plans := v1.Group("/plans", middleware.Role("admin"))
+		plans := v1.Group("/plans")
 		{
-			plans.POST("", a.planHandler.CreatePlan)
-			plans.GET("", a.planHandler.ListPlans)
-			plans.GET("/:id", a.planHandler.GetPlan)
-			plans.PUT("/:id", a.planHandler.UpdatePlan)
-			plans.DELETE("/:id", a.planHandler.DeletePlan)
+			// Read access: Planner + Operator (Admin implicit)
+			plans.GET("", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.ListPlans)
+			plans.GET("/:id", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.GetPlan)
+			plans.GET("/:id/items/:itemId", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.GetPlanItem)
 
-			plans.POST("/:id/items", a.planHandler.AddPlanItem)
-			plans.GET("/:id/items/:itemId", a.planHandler.GetPlanItem)
-			plans.PUT("/:id/items/:itemId", a.planHandler.UpdatePlanItem)
-			plans.DELETE("/:id/items/:itemId", a.planHandler.DeletePlanItem)
+			// Write access: Planner only (Admin implicit)
+			plans.POST("", middleware.Role(types.RolePlanner), a.planHandler.CreatePlan)
+			plans.PUT("/:id", middleware.Role(types.RolePlanner), a.planHandler.UpdatePlan)
+			plans.DELETE("/:id", middleware.Role(types.RolePlanner), a.planHandler.DeletePlan)
 
-			plans.POST("/:id/calculate", a.planHandler.CalculatePlan)
+			plans.POST("/:id/items", middleware.Role(types.RolePlanner), a.planHandler.AddPlanItem)
+			plans.PUT("/:id/items/:itemId", middleware.Role(types.RolePlanner), a.planHandler.UpdatePlanItem)
+			plans.DELETE("/:id/items/:itemId", middleware.Role(types.RolePlanner), a.planHandler.DeletePlanItem)
+
+			plans.POST("/:id/calculate", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.CalculatePlan)
 		}
 	}
 }
