@@ -1,3 +1,9 @@
+export type Role = "admin" | "planner" | "operator"
+
+export const RoleAdmin: Role = "admin"
+export const RolePlanner: Role = "planner"
+export const RoleOperator: Role = "operator"
+
 export interface CreateRoleRequest {
   name: string
   description?: string
