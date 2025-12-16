@@ -2,80 +2,72 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
-import { MOCK_USERS } from "./mock-users"
-
-export type UserRole = "admin" | "planner" | "operator"
-
-export interface User {
-  id: string
-  email: string
-  name: string
-  role: UserRole
-}
+import { AuthService } from "@/lib/services/auth"
+import { UserSummary } from "@/lib/types"
 
 interface AuthContextType {
-  user: User | null
+  user: UserSummary | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<void>
   logout: () => void
-  createUser: (email: string, name: string, role: UserRole, password: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+export const AUTH_TOKEN_KEY = "access_token"
+export const AUTH_USER_KEY = "auth_user"
+
+export function getAccessToken() {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem(AUTH_TOKEN_KEY)
+  }
+  return null
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<UserSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem("auth_user")
-    if (stored) {
+    const storedUser = localStorage.getItem(AUTH_USER_KEY)
+    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY)
+
+    if (storedUser && storedToken) {
       try {
-        setUser(JSON.parse(stored))
+        setUser(JSON.parse(storedUser))
       } catch (e) {
-        console.error("Failed to load user:", e)
+        console.error("Failed to load user from storage:", e)
+        localStorage.removeItem(AUTH_USER_KEY)
+        localStorage.removeItem(AUTH_TOKEN_KEY)
       }
     }
     setIsLoading(false)
   }, [])
 
-  const login = async (email: string, password: string) => {
-    const foundUser = MOCK_USERS.find((u) => u.email === email && u.password === password)
+  const login = async (username: string, password: string) => {
+    try {
+      const response = await AuthService.login({ username, password })
 
-    if (!foundUser) {
-      throw new Error("Invalid credentials")
+      if (response.access_token && response.user) {
+        localStorage.setItem(AUTH_TOKEN_KEY, response.access_token)
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user))
+        setUser(response.user)
+      } else {
+        throw new Error("Invalid response from server")
+      }
+    } catch (err) {
+      throw err
     }
-
-    const loggedInUser = { id: foundUser.id, email: foundUser.email, name: foundUser.name, role: foundUser.role }
-    setUser(loggedInUser)
-    localStorage.setItem("auth_user", JSON.stringify(loggedInUser))
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem("auth_user")
+    localStorage.removeItem(AUTH_USER_KEY)
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    window.location.href = "/"
   }
 
-  const createUser = async (email: string, name: string, role: UserRole, password: string) => {
-    const users = JSON.parse(localStorage.getItem("users") || "[]")
-
-    if (users.some((u: any) => u.email === email)) {
-      throw new Error("User already exists")
-    }
-
-    const newUser = {
-      id: `user_${Date.now()}`,
-      email,
-      name,
-      role,
-      password, // In production, hash this!
-    }
-
-    users.push(newUser)
-    localStorage.setItem("users", JSON.stringify(users))
-  }
-
-  return <AuthContext.Provider value={{ user, isLoading, login, logout, createUser }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
