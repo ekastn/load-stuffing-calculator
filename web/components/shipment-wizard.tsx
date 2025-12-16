@@ -16,6 +16,8 @@ export function ShipmentWizard() {
   const { createShipment, addItemToShipment } = usePlanning()
   const router = useRouter()
 
+  console.log("[v0] ShipmentWizard - Rendering, containers:", containers.length, "products:", products.length)
+
   const [shipmentName, setShipmentName] = useState("")
   const [containerMode, setContainerMode] = useState<"preset" | "custom">("preset")
   const [selectedContainerId, setSelectedContainerId] = useState("")
@@ -133,7 +135,7 @@ export function ShipmentWizard() {
       addItemToShipment(shipmentId, item)
     })
 
-    router.push(`/planner/visualization?shipmentId=${shipmentId}`)
+    router.push(`/shipments/${shipmentId}/visualize`)
   }
 
   const totalWeight = items.reduce((sum, item) => sum + item.weight * item.quantity, 0)

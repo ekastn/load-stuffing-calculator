@@ -57,13 +57,13 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
       <div
         className={`${
           sidebarOpen ? "w-64" : "w-0"
-        } border-r border-border bg-card transition-all duration-300 overflow-hidden`}
+        } border-r border-border bg-card transition-all duration-300 overflow-hidden flex flex-col`}
       >
         <div className="flex h-16 items-center border-b border-border px-6">
           <h1 className="text-xl font-bold text-primary">Load & Stuffing</h1>
         </div>
 
-        <nav className="space-y-1 p-4">
+        <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
           {items.map((item) => (
             <button
               key={item.path}
@@ -79,7 +79,7 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
           ))}
         </nav>
 
-        <div className="absolute bottom-6 left-6 right-6 space-y-2 border-t border-border pt-4">
+        <div className="border-t border-border p-4 space-y-2">
           <div className="text-xs text-muted-foreground">
             <p className="font-medium text-foreground">{user?.name}</p>
             <p>{user?.email}</p>

@@ -25,7 +25,7 @@ export function LoginForm() {
 
     try {
       await login(email, password)
-      router.push("/dashboard")
+      router.push("/")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
     } finally {
@@ -42,7 +42,7 @@ export function LoginForm() {
   const handleDemoLogin = async (demoEmail: string, demoPassword: string) => {
     try {
       await login(demoEmail, demoPassword)
-      router.push("/dashboard")
+      router.push("/")
     } catch (err) {
       setError("Invalid demo credentials")
     }
