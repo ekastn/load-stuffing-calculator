@@ -1,91 +1,105 @@
 "use client"
 
-import { RouteGuard } from "@/lib/route-guard"
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useUsers } from "@/hooks/use-users"
+import { CreateUserRequest, UserResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
-import { useAudit } from "@/lib/audit-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Plus } from "lucide-react"
+import { RouteGuard } from "@/lib/route-guard"
+import { RoleAdmin } from "@/lib/types"
+import { DataTable } from "@/components/ui/data-table"
+import { ColumnDef } from "@tanstack/react-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2 } from "lucide-react"
 
 export default function UsersPage() {
-  const { user, createUser } = useAuth()
-  const { addLog } = useAudit()
-  const [users, setUsers] = useState<any[]>([])
+  const { user, isLoading: authLoading } = useAuth()
+  const { users, isLoading: dataLoading, error, createUser } = useUsers()
+  
   const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    name: "",
-    role: "planner" as "planner" | "operator" | "admin",
-    password: "",
-  })
+  const [formData, setFormData] = useState<CreateUserRequest>({ username: "", email: "", password: "", role: "planner" })
 
-  useEffect(() => {
-    const stored = localStorage.getItem("users") || "[]"
-    setUsers(JSON.parse(stored))
-  }, [])
-
-  const handleCreateUser = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!user) return
-
-    try {
-      await createUser(formData.email, formData.name, formData.role, formData.password)
-
-      addLog({
-        userId: user.id,
-        userName: user.name,
-        userRole: user.role,
-        action: "CREATE",
-        entityType: "USER",
-        entityId: formData.email,
-        entityName: formData.name,
-        details: { role: formData.role },
-      })
-
-      const stored = localStorage.getItem("users") || "[]"
-      setUsers(JSON.parse(stored))
-
-      setFormData({ email: "", name: "", role: "planner", password: "" })
+    const success = await createUser(formData)
+    if (success) {
+      setFormData({ username: "", email: "", password: "", role: "planner" })
       setShowForm(false)
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to create user")
+    } else {
+      alert("Failed to create user")
     }
   }
 
-  const handleDeleteUser = (email: string, name: string) => {
-    if (!user || !confirm(`Delete user ${email}?`)) return
-
-    const stored = JSON.parse(localStorage.getItem("users") || "[]")
-    const filtered = stored.filter((u: any) => u.email !== email)
-    localStorage.setItem("users", JSON.stringify(filtered))
-    setUsers(filtered)
-
-    addLog({
-      userId: user.id,
-      userName: user.name,
-      userRole: user.role,
-      action: "DELETE",
-      entityType: "USER",
-      entityId: email,
-      entityName: name,
-      details: {},
-    })
-  }
-
-  const roleColors = {
+  const roleColors: Record<string, string> = {
     admin: "bg-destructive/10 text-destructive",
     planner: "bg-primary/10 text-primary",
     operator: "bg-accent/10 text-accent",
   }
 
+  const columns: ColumnDef<UserResponse>[] = [
+    {
+      accessorKey: "username",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Username" />
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Email" />
+      ),
+    },
+    {
+      accessorKey: "role",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Role" />
+      ),
+      cell: ({ row }) => {
+          const role = row.getValue("role") as string
+          return (
+              <Badge className={roleColors[role] || "bg-muted text-muted-foreground"}>
+                  {role}
+              </Badge>
+          )
+      }
+    },
+    {
+        accessorKey: "created_at",
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Created" />
+        ),
+        cell: ({ row }) => {
+            const date = row.getValue("created_at") as string
+            return new Date(date).toLocaleDateString()
+        }
+    }
+  ]
+
+  if (authLoading) {
+    return (
+        <div className="flex h-screen items-center justify-center">
+            <div className="text-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+            <p className="text-muted-foreground">Loading...</p>
+            </div>
+        </div>
+    )
+  }
+
+  if (error) {
+      return (
+        <div className="flex h-screen items-center justify-center text-destructive">
+            Error: {error}
+        </div>
+      )
+  }
+
   return (
-    <RouteGuard allowedRoles={["admin"]}>
+    <RouteGuard allowedRoles={[RoleAdmin]} redirectTo="/shipments">
       <DashboardLayout currentPage="/users">
         <div className="space-y-8">
           <div className="flex items-center justify-between">
@@ -105,14 +119,14 @@ export default function UsersPage() {
                 <CardTitle>Create New User</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCreateUser} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Name</label>
+                      <label className="text-sm font-medium">Username</label>
                       <Input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="John Doe"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        placeholder="john_doe"
                         required
                       />
                     </div>
@@ -146,7 +160,7 @@ export default function UsersPage() {
                         onChange={(e) =>
                           setFormData({
                             ...formData,
-                            role: e.target.value as any,
+                            role: e.target.value,
                           })
                         }
                         className="flex h-10 w-full rounded-md border border-border bg-input/50 px-3 py-2 text-sm"
@@ -171,39 +185,16 @@ export default function UsersPage() {
             </Card>
           )}
 
-          <div className="grid gap-4">
-            {users.length === 0 ? (
-              <Card className="border-border/50 bg-card/50">
-                <CardContent className="pt-6 text-center">
-                  <p className="text-muted-foreground">No users created yet</p>
-                </CardContent>
-              </Card>
-            ) : (
-              users.map((u) => (
-                <Card key={u.email} className="border-border/50 bg-card/50">
-                  <CardContent className="pt-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-foreground">{u.name}</p>
-                        <p className="text-sm text-muted-foreground">{u.email}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Badge className={roleColors[u.role as keyof typeof roleColors]}>{u.role}</Badge>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDeleteUser(u.email, u.name)}
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+          {dataLoading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+              <p className="text-muted-foreground">Loading users...</p>
+            </div>
+          ) : (
+            <div className="rounded-md border border-border/50 bg-card/50">
+              <DataTable columns={columns} data={users} />
+            </div>
+          )}
         </div>
       </DashboardLayout>
     </RouteGuard>
