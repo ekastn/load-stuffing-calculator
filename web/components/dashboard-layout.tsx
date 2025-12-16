@@ -27,6 +27,8 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
     admin: [
       { label: "Dashboard", path: "/" },
       { label: "User Management", path: "/users" },
+      { label: "Role Management", path: "/roles" },
+      { label: "Permissions", path: "/permissions" },
       { label: "Container Profiles", path: "/containers" },
       { label: "Product Catalog", path: "/products" },
       { label: "All Shipments", path: "/shipments" },
@@ -81,8 +83,7 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
 
         <div className="border-t border-border p-4 space-y-2">
           <div className="text-xs text-muted-foreground">
-            <p className="font-medium text-foreground">{user?.name}</p>
-            <p>{user?.email}</p>
+            <p className="font-medium text-foreground">{user?.username}</p>
             <p className="mt-1 inline-block rounded bg-primary/10 px-2 py-1 text-primary capitalize">{user?.role}</p>
           </div>
           <Button onClick={handleLogout} variant="outline" size="sm" className="w-full bg-transparent">
