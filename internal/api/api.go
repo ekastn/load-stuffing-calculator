@@ -79,7 +79,13 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 
 func (a *App) setupRouter() {
 	router := gin.Default()
-	router.Use(cors.Default())
+
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+
+	router.Use(cors.New(config))
 	a.setupRoutes(router)
 	a.router = router
 }
