@@ -15,6 +15,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AUTH_TOKEN_KEY = "access_token"
+export const REFRESH_TOKEN_KEY = "refresh_token"
 export const AUTH_USER_KEY = "auth_user"
 
 export function getAccessToken() {
@@ -39,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Failed to load user from storage:", e)
         localStorage.removeItem(AUTH_USER_KEY)
         localStorage.removeItem(AUTH_TOKEN_KEY)
+        localStorage.removeItem(REFRESH_TOKEN_KEY)
       }
     }
     setIsLoading(false)
@@ -50,6 +52,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.access_token && response.user) {
         localStorage.setItem(AUTH_TOKEN_KEY, response.access_token)
+        if (response.refresh_token) {
+            localStorage.setItem(REFRESH_TOKEN_KEY, response.refresh_token)
+        }
         localStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.user))
         setUser(response.user)
       } else {
@@ -64,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     localStorage.removeItem(AUTH_USER_KEY)
     localStorage.removeItem(AUTH_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
     window.location.href = "/"
   }
 

@@ -24,6 +24,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/login", a.authHandler.Login)
+			auth.POST("/refresh", a.authHandler.RefreshToken)
 		}
 
 		v1.Use(middleware.JWT(a.jwtSecret))
