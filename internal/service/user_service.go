@@ -15,6 +15,9 @@ type UserService interface {
 	CreateUser(ctx context.Context, req dto.CreateUserRequest) (*dto.UserResponse, error)
 	GetUserByID(ctx context.Context, id string) (*dto.UserResponse, error)
 	ListUsers(ctx context.Context, page, limit int32) ([]dto.UserResponse, error)
+	UpdateUser(ctx context.Context, id string, req dto.UpdateUserRequest) error
+	DeleteUser(ctx context.Context, id string) error
+	ChangePassword(ctx context.Context, id string, newPassword string) error
 }
 
 type userService struct {
@@ -132,4 +135,76 @@ func (s *userService) ListUsers(ctx context.Context, page, limit int32) ([]dto.U
 	}
 
 	return result, nil
+}
+
+func (s *userService) UpdateUser(ctx context.Context, id string, req dto.UpdateUserRequest) error {
+	userUUID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid user id format: %w", err)
+	}
+
+	existing, err := s.q.GetUserByID(ctx, userUUID)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	params := store.UpdateUserParams{
+		UserID:   userUUID,
+		RoleID:   existing.RoleID,
+		Username: existing.Username,
+		Email:    existing.Email,
+	}
+
+	if req.Username != nil {
+		params.Username = *req.Username
+	}
+	if req.Email != nil {
+		params.Email = *req.Email
+	}
+	if req.Role != nil {
+		role, err := s.q.GetRoleByName(ctx, *req.Role)
+		if err != nil {
+			return fmt.Errorf("role not found: %w", err)
+		}
+		params.RoleID = role.RoleID
+	}
+
+	if err := s.q.UpdateUser(ctx, params); err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
+	}
+	return nil
+}
+
+func (s *userService) DeleteUser(ctx context.Context, id string) error {
+	userUUID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid user id format: %w", err)
+	}
+
+	if err := s.q.DeleteUser(ctx, userUUID); err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	return nil
+}
+
+func (s *userService) ChangePassword(ctx context.Context, id string, newPassword string) error {
+	userUUID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid user id format: %w", err)
+	}
+
+	hashedPassword, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	err = s.q.UpdateUserPassword(ctx, store.UpdateUserPasswordParams{
+		UserID: userUUID,
+		PasswordHash: hashedPassword,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to update user password: %w", err)
+	}
+	return nil
 }

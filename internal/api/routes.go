@@ -33,6 +33,9 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			users.POST("", a.userHandler.CreateUser)
 			users.GET("/:id", a.userHandler.GetUser)
 			users.GET("", a.userHandler.ListUsers)
+			users.PUT("/:id", a.userHandler.UpdateUser)
+			users.DELETE("/:id", a.userHandler.DeleteUser)
+			users.PUT("/:id/password", a.userHandler.ChangePassword)
 		}
 
 		roles := v1.Group("/roles", middleware.Role(types.RoleAdmin))

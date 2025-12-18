@@ -28,6 +28,7 @@ type Querier interface {
 	DeletePlanResults(ctx context.Context, planID *uuid.UUID) error
 	DeleteProduct(ctx context.Context, productID uuid.UUID) error
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
+	DeleteUser(ctx context.Context, userID uuid.UUID) error
 	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)
 	GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadItem, error)
 	GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, error)
@@ -57,6 +58,7 @@ type Querier interface {
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateRole(ctx context.Context, arg UpdateRoleParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) error
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 }
 
 var _ Querier = (*Queries)(nil)

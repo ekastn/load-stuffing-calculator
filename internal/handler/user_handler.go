@@ -104,3 +104,109 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, resp)
 }
+
+// UpdateUser godoc
+//
+//	@Summary		Update a user
+//	@Description	Updates an existing user. Requires admin privileges.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"User ID"
+//	@Param			request	body		dto.UpdateUserRequest	true	"User Update Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/users/{id} [put]
+func (h *UserHandler) UpdateUser(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.Error(c, http.StatusBadRequest, "User ID is required")
+		return
+	}
+
+	var req dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
+		return
+	}
+
+	err := h.userSvc.UpdateUser(c.Request.Context(), id, req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to update user: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
+}
+
+// DeleteUser godoc
+//
+//	@Summary		Delete a user
+//	@Description	Deletes a user by ID. Requires admin privileges.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"User ID"
+//	@Success		200	{object}	response.APIResponse
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		500	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/users/{id} [delete]
+func (h *UserHandler) DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.Error(c, http.StatusBadRequest, "User ID is required")
+		return
+	}
+
+	err := h.userSvc.DeleteUser(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to delete user: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
+}
+
+// ChangePassword godoc
+//
+//	@Summary		Change user password
+//	@Description	Changes the password for a specific user. Requires admin privileges.
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"User ID"
+//	@Param			request	body		dto.ChangePasswordRequest	true	"Password Change Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/users/{id}/password [put]
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.Error(c, http.StatusBadRequest, "User ID is required")
+		return
+	}
+
+	var req dto.ChangePasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
+		return
+	}
+
+	if req.Password != req.ConfirmPassword {
+		response.Error(c, http.StatusBadRequest, "Password and Confirm Password do not match")
+		return
+	}
+
+	err := h.userSvc.ChangePassword(c.Request.Context(), id, req.Password)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to change password: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
+}
