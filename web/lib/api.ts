@@ -44,7 +44,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 
         if (!refreshToken) {
           isRefreshing = false
-          handleLogout()
+          dispatchSessionExpired()
           throw new Error("Session expired")
         }
 
@@ -62,7 +62,6 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 
           const refreshData = await refreshRes.json()
           
-          // Check success in response body if wrapped
           if (refreshData && typeof refreshData === "object" && "success" in refreshData && !refreshData.success) {
              throw new Error(refreshData.message || "Refresh failed")
           }
@@ -82,7 +81,7 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
 
         } catch (error) {
           isRefreshing = false
-          handleLogout()
+          dispatchSessionExpired()
           throw new Error("Session expired")
         }
       } else {
@@ -117,11 +116,10 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
   }
 }
 
-function handleLogout() {
-  localStorage.removeItem("access_token")
-  localStorage.removeItem("refresh_token")
-  localStorage.removeItem("user")
-  window.location.href = "/login"
+function dispatchSessionExpired() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("auth:session-expired"))
+  }
 }
 
 export async function apiPost<T>(endpoint: string, body: any, options: RequestOptions = {}): Promise<T> {
