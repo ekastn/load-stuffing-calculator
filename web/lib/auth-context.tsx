@@ -1,15 +1,16 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useCallback } from "react"
 import { AuthService } from "@/lib/services/auth"
 import { UserSummary } from "@/lib/types"
+import { useRouter } from "next/navigation"
 
 interface AuthContextType {
   user: UserSummary | null
   isLoading: boolean
   login: (username: string, password: string) => Promise<void>
-  logout: () => void
+  logout: (reason?: string) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,6 +29,20 @@ export function getAccessToken() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserSummary | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+
+  const logout = useCallback((reason?: string) => {
+    setUser(null)
+    localStorage.removeItem(AUTH_USER_KEY)
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+    
+    if (reason) {
+      router.push(`/?reason=${reason}`)
+    } else {
+      router.push("/")
+    }
+  }, [router])
 
   useEffect(() => {
     const storedUser = localStorage.getItem(AUTH_USER_KEY)
@@ -44,7 +59,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setIsLoading(false)
-  }, [])
+
+    const handleSessionExpired = () => {
+      logout("session_expired")
+    }
+
+    window.addEventListener("auth:session-expired", handleSessionExpired)
+    return () => {
+      window.removeEventListener("auth:session-expired", handleSessionExpired)
+    }
+  }, [logout])
 
   const login = async (username: string, password: string) => {
     try {
@@ -63,14 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       throw err
     }
-  }
-
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem(AUTH_USER_KEY)
-    localStorage.removeItem(AUTH_TOKEN_KEY)
-    localStorage.removeItem(REFRESH_TOKEN_KEY)
-    window.location.href = "/"
   }
 
   return <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>
