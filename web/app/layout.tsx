@@ -8,6 +8,7 @@ import { PlanningProvider } from "@/lib/planning-context"
 import { ExecutionProvider } from "@/lib/execution-context"
 import { AuditProvider } from "@/lib/audit-context"
 import "./globals.css"
+import { Toaster } from "@/components/ui/sonner"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -50,6 +51,7 @@ export default function RootLayout({
                 <ExecutionProvider>
                   {children}
                   <Analytics />
+                  <Toaster />
                 </ExecutionProvider>
               </PlanningProvider>
             </StorageProvider>

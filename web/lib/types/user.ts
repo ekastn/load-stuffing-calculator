@@ -6,9 +6,16 @@ export interface CreateUserRequest {
 }
 
 export interface UpdateUserRequest {
+  username?: string
   email?: string
+  role?: string
   full_name?: string
   phone?: string
+}
+
+export interface ChangePasswordRequest {
+  password: string
+  confirm_password: string
 }
 
 export interface UserProfileResponse {
