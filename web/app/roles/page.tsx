@@ -22,6 +22,18 @@ import { RoleAdmin } from "@/lib/types"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 
 export default function RolesPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -34,18 +46,22 @@ export default function RolesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     let success = false
-    if (editingId) {
-      success = await updateRole(editingId, formData)
-    } else {
-      success = await createRole(formData)
+    try {
+      if (editingId) {
+        success = await updateRole(editingId, formData)
+        if (success) toast.success("Role updated successfully!")
+      } else {
+        success = await createRole(formData)
+        if (success) toast.success("Role created successfully!")
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save role")
     }
 
     if (success) {
       setFormData({ name: "", description: "" })
       setEditingId(null)
       setShowForm(false)
-    } else {
-      alert("Failed to save role")
     }
   }
 
@@ -55,12 +71,24 @@ export default function RolesPage() {
     setShowForm(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this role?")) return
-    const success = await deleteRole(id)
-    if (!success) {
-      alert("Failed to delete role")
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [roleToDelete, setRoleToDelete] = useState<string | null>(null)
+
+  const handleDelete = (id: string) => {
+    setRoleToDelete(id)
+    setShowConfirmDelete(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!roleToDelete) return
+    const success = await deleteRole(roleToDelete)
+    if (success) {
+      toast.success("Role deleted successfully!")
+    } else {
+      toast.error("Failed to delete role")
     }
+    setShowConfirmDelete(false)
+    setRoleToDelete(null)
   }
 
   const openNewForm = () => {
@@ -211,6 +239,22 @@ export default function RolesPage() {
             </div>
           )}
         </div>
+
+        <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the role
+                and remove its data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DashboardLayout>
     </RouteGuard>
   )
