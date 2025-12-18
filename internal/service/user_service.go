@@ -200,7 +200,7 @@ func (s *userService) ChangePassword(ctx context.Context, id string, newPassword
 	}
 
 	err = s.q.UpdateUserPassword(ctx, store.UpdateUserPasswordParams{
-		UserID: userUUID,
+		UserID:       userUUID,
 		PasswordHash: hashedPassword,
 	})
 	if err != nil {
