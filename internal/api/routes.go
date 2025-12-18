@@ -39,16 +39,16 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			users.PUT("/:id/password", a.userHandler.ChangePassword)
 		}
 
-		        roles := v1.Group("/roles", middleware.Role(types.RoleAdmin))
-		        {
-		            roles.POST("", a.roleHandler.CreateRole)
-		            roles.GET("/:id", a.roleHandler.GetRole)
-		            roles.GET("", a.roleHandler.ListRoles)
-		            roles.PUT("/:id", a.roleHandler.UpdateRole)
-		            roles.DELETE("/:id", a.roleHandler.DeleteRole)
-		            roles.GET("/:id/permissions", a.roleHandler.GetRolePermissions)
-		            roles.PUT("/:id/permissions", a.roleHandler.UpdateRolePermissions)
-		        }
+		roles := v1.Group("/roles", middleware.Role(types.RoleAdmin))
+		{
+			roles.POST("", a.roleHandler.CreateRole)
+			roles.GET("/:id", a.roleHandler.GetRole)
+			roles.GET("", a.roleHandler.ListRoles)
+			roles.PUT("/:id", a.roleHandler.UpdateRole)
+			roles.DELETE("/:id", a.roleHandler.DeleteRole)
+			roles.GET("/:id/permissions", a.roleHandler.GetRolePermissions)
+			roles.PUT("/:id/permissions", a.roleHandler.UpdateRolePermissions)
+		}
 		permissions := v1.Group("/permissions", middleware.Role(types.RoleAdmin))
 		{
 			permissions.POST("", a.permHandler.CreatePermission)
