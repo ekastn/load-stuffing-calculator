@@ -55,6 +55,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users WHERE user_id = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUser, userID)
+	return err
+}
+
 const getRoleByName = `-- name: GetRoleByName :one
 SELECT role_id, name, description FROM roles
 WHERE name = $1
@@ -78,6 +87,7 @@ SELECT
     u.user_id,
     u.username,
     u.email,
+    u.role_id,
     r.name AS role_name,
     u.created_at,
     up.full_name,
@@ -96,6 +106,7 @@ type GetUserByIDRow struct {
 	UserID      uuid.UUID   `json:"user_id"`
 	Username    string      `json:"username"`
 	Email       string      `json:"email"`
+	RoleID      uuid.UUID   `json:"role_id"`
 	RoleName    string      `json:"role_name"`
 	CreatedAt   time.Time   `json:"created_at"`
 	FullName    *string     `json:"full_name"`
@@ -113,6 +124,7 @@ func (q *Queries) GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByI
 		&i.UserID,
 		&i.Username,
 		&i.Email,
+		&i.RoleID,
 		&i.RoleName,
 		&i.CreatedAt,
 		&i.FullName,
@@ -238,5 +250,19 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.Email,
 		arg.Username,
 	)
+	return err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = $2, updated_at = NOW() WHERE user_id = $1
+`
+
+type UpdateUserPasswordParams struct {
+	UserID       uuid.UUID `json:"user_id"`
+	PasswordHash string    `json:"password_hash"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.UserID, arg.PasswordHash)
 	return err
 }

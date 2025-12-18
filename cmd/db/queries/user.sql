@@ -32,6 +32,7 @@ SELECT
     u.user_id,
     u.username,
     u.email,
+    u.role_id,
     r.name AS role_name,
     u.created_at,
     up.full_name,
@@ -63,3 +64,9 @@ WHERE u.username = $1;
 -- name: GetRoleByName :one
 SELECT role_id, name, description FROM roles
 WHERE name = $1;
+
+-- name: DeleteUser :exec
+DELETE FROM users WHERE user_id = $1;
+
+-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = $2, updated_at = NOW() WHERE user_id = $1;

@@ -20,6 +20,8 @@ type MockQuerier struct {
 	ListUsersFunc            func(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error)
 	RevokeRefreshTokenFunc   func(ctx context.Context, token string) error
 	UpdateUserFunc           func(ctx context.Context, arg store.UpdateUserParams) error
+	DeleteUserFunc           func(ctx context.Context, userID uuid.UUID) error
+	UpdateUserPasswordFunc   func(ctx context.Context, arg store.UpdateUserPasswordParams) error
 	GetPermissionsByRoleFunc func(ctx context.Context, name string) ([]string, error)
 	CreateRoleFunc           func(ctx context.Context, arg store.CreateRoleParams) (store.Role, error)
 	GetRoleFunc              func(ctx context.Context, id uuid.UUID) (store.Role, error)
@@ -57,6 +59,20 @@ type MockQuerier struct {
 	CreatePlanPlacementFunc  func(ctx context.Context, arg []store.CreatePlanPlacementParams) (int64, error)
 	GetPlanResultFunc        func(ctx context.Context, planID *uuid.UUID) (store.PlanResult, error)
 	ListPlanPlacementsFunc   func(ctx context.Context, resultID *uuid.UUID) ([]store.PlanPlacement, error)
+}
+
+func (m *MockQuerier) UpdateUserPassword(ctx context.Context, arg store.UpdateUserPasswordParams) error {
+	if m.UpdateUserPasswordFunc != nil {
+		return m.UpdateUserPasswordFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateUserPassword not implemented")
+}
+
+func (m *MockQuerier) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	if m.DeleteUserFunc != nil {
+		return m.DeleteUserFunc(ctx, userID)
+	}
+	return fmt.Errorf("DeleteUser not implemented")
 }
 
 func (m *MockQuerier) ListPlanPlacements(ctx context.Context, resultID *uuid.UUID) ([]store.PlanPlacement, error) {
@@ -379,6 +395,13 @@ func (m *MockQuerier) UpdateUser(ctx context.Context, arg store.UpdateUserParams
 		return m.UpdateUserFunc(ctx, arg)
 	}
 	return fmt.Errorf("UpdateUser not implemented")
+}
+
+func (m *MockQuerier) UpdateUserPassword(ctx context.Context, arg store.UpdateUserPasswordParams) error {
+	if m.UpdateUserPasswordFunc != nil {
+		return m.UpdateUserPasswordFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateUserPassword not implemented")
 }
 
 var _ store.Querier = (*MockQuerier)(nil)

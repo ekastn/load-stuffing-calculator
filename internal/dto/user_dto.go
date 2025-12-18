@@ -8,9 +8,16 @@ type CreateUserRequest struct {
 }
 
 type UpdateUserRequest struct {
+	Username *string `json:"username,omitempty" binding:"omitempty,alphanum,min=4,max=50"`
+	Role     *string `json:"role,omitempty" binding:"omitempty,oneof=admin planner operator"`
 	Email    *string `json:"email,omitempty" binding:"omitempty,email"`
 	FullName *string `json:"full_name,omitempty" binding:"omitempty,max=100"`
 	Phone    *string `json:"phone,omitempty" binding:"omitempty,max=20"`
+}
+
+type ChangePasswordRequest struct {
+	Password        string `json:"password" binding:"required,min=6"`
+	ConfirmPassword string `json:"confirm_password" binding:"required,min=6,eqfield=Password"`
 }
 
 type UserResponse struct {
