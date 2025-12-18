@@ -16,3 +16,7 @@ type UserSummary struct {
 	Username string `json:"username" example:"admin"`
 	Role     string `json:"role" example:"admin"`
 }
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}

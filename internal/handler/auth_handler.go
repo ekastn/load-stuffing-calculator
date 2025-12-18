@@ -44,3 +44,31 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, resp)
 }
+
+// RefreshToken godoc
+//
+//	@Summary		Refresh Access Token
+//	@Description	Rotates the refresh token and issues a new access token.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.RefreshTokenRequest	true	"Refresh Token"
+//	@Success		200		{object}	response.APIResponse{data=dto.LoginResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		401		{object}	response.APIResponse
+//	@Router			/auth/refresh [post]
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	var req dto.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
+		return
+	}
+
+	resp, err := h.authSvc.RefreshToken(c.Request.Context(), req.RefreshToken)
+	if err != nil {
+		response.Error(c, http.StatusUnauthorized, "Invalid or expired refresh token")
+		return
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
