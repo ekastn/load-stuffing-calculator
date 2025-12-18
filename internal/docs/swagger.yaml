@@ -598,6 +598,15 @@ definitions:
     - weight_kg
     - width_mm
     type: object
+  dto.UpdateRolePermissionsRequest:
+    properties:
+      permission_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - permission_ids
+    type: object
   dto.UpdateRoleRequest:
     properties:
       description:
@@ -1880,6 +1889,76 @@ paths:
       security:
       - BearerAuth: []
       summary: Update a role
+      tags:
+      - roles
+  /roles/{id}/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of permission IDs assigned to a role.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    type: string
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get permissions for a role
+      tags:
+      - roles
+    put:
+      consumes:
+      - application/json
+      description: Replaces all permissions for a role. Requires admin privileges.
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role Permissions Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateRolePermissionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update permissions for a role
       tags:
       - roles
   /users:

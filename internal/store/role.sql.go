@@ -11,6 +11,20 @@ import (
 	"github.com/google/uuid"
 )
 
+const addRolePermission = `-- name: AddRolePermission :exec
+INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)
+`
+
+type AddRolePermissionParams struct {
+	RoleID       uuid.UUID `json:"role_id"`
+	PermissionID uuid.UUID `json:"permission_id"`
+}
+
+func (q *Queries) AddRolePermission(ctx context.Context, arg AddRolePermissionParams) error {
+	_, err := q.db.Exec(ctx, addRolePermission, arg.RoleID, arg.PermissionID)
+	return err
+}
+
 const createRole = `-- name: CreateRole :one
 INSERT INTO roles (
     name, 
@@ -49,6 +63,15 @@ func (q *Queries) DeleteRole(ctx context.Context, roleID uuid.UUID) error {
 	return err
 }
 
+const deleteRolePermissions = `-- name: DeleteRolePermissions :exec
+DELETE FROM role_permissions WHERE role_id = $1
+`
+
+func (q *Queries) DeleteRolePermissions(ctx context.Context, roleID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRolePermissions, roleID)
+	return err
+}
+
 const getRole = `-- name: GetRole :one
 SELECT role_id, name, description, created_at
 FROM roles
@@ -65,6 +88,30 @@ func (q *Queries) GetRole(ctx context.Context, roleID uuid.UUID) (Role, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const getRolePermissions = `-- name: GetRolePermissions :many
+SELECT permission_id FROM role_permissions WHERE role_id = $1
+`
+
+func (q *Queries) GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, getRolePermissions, roleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var permission_id uuid.UUID
+		if err := rows.Scan(&permission_id); err != nil {
+			return nil, err
+		}
+		items = append(items, permission_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listRoles = `-- name: ListRoles :many

@@ -51,4 +51,23 @@ export const RoleService = {
       throw new Error(error.message || "Failed to delete role")
     }
   },
+
+  getRolePermissions: async (id: string): Promise<string[]> => {
+    try {
+      const response = await apiGet<string[]>(`/roles/${id}/permissions`)
+      return response || []
+    } catch (error: any) {
+      console.error(`RoleService.getRolePermissions(${id}) failed:`, error)
+      throw new Error(error.message || "Failed to fetch role permissions")
+    }
+  },
+
+  updateRolePermissions: async (id: string, permissionIds: string[]): Promise<void> => {
+    try {
+      return await apiPut<void>(`/roles/${id}/permissions`, { permission_ids: permissionIds })
+    } catch (error: any) {
+      console.error(`RoleService.updateRolePermissions(${id}) failed:`, error)
+      throw new Error(error.message || "Failed to update role permissions")
+    }
+  },
 }

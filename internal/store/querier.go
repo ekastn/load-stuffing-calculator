@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	AddLoadItem(ctx context.Context, arg AddLoadItemParams) (LoadItem, error)
+	AddRolePermission(ctx context.Context, arg AddRolePermissionParams) error
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
 	CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error)
 	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
@@ -28,6 +29,7 @@ type Querier interface {
 	DeletePlanResults(ctx context.Context, planID *uuid.UUID) error
 	DeleteProduct(ctx context.Context, productID uuid.UUID) error
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
+	DeleteRolePermissions(ctx context.Context, roleID uuid.UUID) error
 	DeleteUser(ctx context.Context, userID uuid.UUID) error
 	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)
 	GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadItem, error)
@@ -39,6 +41,7 @@ type Querier interface {
 	GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error)
 	GetRole(ctx context.Context, roleID uuid.UUID) (Role, error)
 	GetRoleByName(ctx context.Context, name string) (GetRoleByNameRow, error)
+	GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
 	ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error)

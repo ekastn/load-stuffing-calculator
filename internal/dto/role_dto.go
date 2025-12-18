@@ -15,3 +15,7 @@ type RoleResponse struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`
 }
+
+type UpdateRolePermissionsRequest struct {
+	PermissionIDs []string `json:"permission_ids" binding:"required"`
+}
