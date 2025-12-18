@@ -2,13 +2,15 @@
 
 import { useState } from "react"
 import { useRoles } from "@/hooks/use-roles"
+import { usePermissions } from "@/hooks/use-permissions"
+import { RoleService } from "@/lib/services/roles"
 import { CreateRoleRequest, RoleResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Trash2, MoreHorizontal, Edit } from "lucide-react"
+import { Plus, Trash2, MoreHorizontal, Edit, Shield } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,15 +35,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 
 
 export default function RolesPage() {
   const { user, isLoading: authLoading } = useAuth()
   const { roles, isLoading: dataLoading, error, createRole, updateRole, deleteRole } = useRoles()
+  const { permissions } = usePermissions()
   
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<CreateRoleRequest>({ name: "", description: "" })
   const [editingId, setEditingId] = useState<string | null>(null)
+
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [roleToDelete, setRoleToDelete] = useState<string | null>(null)
+
+  const [showPermissionsDialog, setShowPermissionsDialog] = useState(false)
+  const [selectedRole, setSelectedRole] = useState<RoleResponse | null>(null)
+  const [assignedPermissionIds, setAssignedPermissionIds] = useState<string[]>([])
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,9 +84,6 @@ export default function RolesPage() {
     setShowForm(true)
   }
 
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
-  const [roleToDelete, setRoleToDelete] = useState<string | null>(null)
-
   const handleDelete = (id: string) => {
     setRoleToDelete(id)
     setShowConfirmDelete(true)
@@ -89,6 +99,37 @@ export default function RolesPage() {
     }
     setShowConfirmDelete(false)
     setRoleToDelete(null)
+  }
+
+  const handleManagePermissions = async (role: RoleResponse) => {
+    setSelectedRole(role)
+    try {
+      const assignedIds = await RoleService.getRolePermissions(role.id)
+      setAssignedPermissionIds(assignedIds)
+      setShowPermissionsDialog(true)
+    } catch (err) {
+      toast.error("Failed to fetch assigned permissions")
+    }
+  }
+
+  const handleTogglePermission = (id: string) => {
+    setAssignedPermissionIds(prev => 
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    )
+  }
+
+  const savePermissions = async () => {
+    if (!selectedRole) return
+    setIsSavingPermissions(true)
+    try {
+      await RoleService.updateRolePermissions(selectedRole.id, assignedPermissionIds)
+      toast.success("Permissions updated successfully")
+      setShowPermissionsDialog(false)
+    } catch (err) {
+      toast.error("Failed to update permissions")
+    } finally {
+      setIsSavingPermissions(false)
+    }
   }
 
   const openNewForm = () => {
@@ -135,6 +176,10 @@ export default function RolesPage() {
                 <DropdownMenuItem onClick={() => handleEdit(role)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleManagePermissions(role)}>
+                  <Shield className="mr-2 h-4 w-4" />
+                  Manage Permissions
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
@@ -255,6 +300,50 @@ export default function RolesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Manage Permissions Dialog */}
+        <Dialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Manage Permissions for {selectedRole?.name}</DialogTitle>
+              <DialogDescription>
+                Select the permissions that should be assigned to this role.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto">
+              {permissions.map((permission) => (
+                <div key={permission.id} className="flex items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                  <Checkbox
+                    id={permission.id}
+                    checked={assignedPermissionIds.includes(permission.id)}
+                    onCheckedChange={() => handleTogglePermission(permission.id)}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor={permission.id}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {permission.name}
+                    </label>
+                    {permission.description && (
+                      <p className="text-xs text-muted-foreground">
+                        {permission.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setShowPermissionsDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={savePermissions} disabled={isSavingPermissions}>
+                {isSavingPermissions ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DashboardLayout>
     </RouteGuard>
   )

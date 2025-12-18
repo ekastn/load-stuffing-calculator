@@ -164,3 +164,65 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, nil)
 }
+
+// GetRolePermissions godoc
+// @Summary      Get permissions for a role
+// @Description  Retrieves a list of permission IDs assigned to a role.
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Role ID"
+// @Success      200  {object}  response.APIResponse{data=[]string}
+// @Failure      400  {object}  response.APIResponse
+// @Security     BearerAuth
+// @Router       /roles/{id}/permissions [get]
+func (h *RoleHandler) GetRolePermissions(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.Error(c, http.StatusBadRequest, "Role ID is required")
+		return
+	}
+
+	resp, err := h.roleSvc.GetRolePermissions(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to get role permissions")
+		return
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+// UpdateRolePermissions godoc
+// @Summary      Update permissions for a role
+// @Description  Replaces all permissions for a role. Requires admin privileges.
+// @Tags         roles
+// @Accept       json
+// @Produce      json
+// @Param        id      path      string                          true  "Role ID"
+// @Param        request body      dto.UpdateRolePermissionsRequest  true  "Role Permissions Data"
+// @Success      200     {object}  response.APIResponse
+// @Failure      400     {object}  response.APIResponse
+// @Failure      500     {object}  response.APIResponse
+// @Security     BearerAuth
+// @Router       /roles/{id}/permissions [put]
+func (h *RoleHandler) UpdateRolePermissions(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		response.Error(c, http.StatusBadRequest, "Role ID is required")
+		return
+	}
+
+	var req dto.UpdateRolePermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
+		return
+	}
+
+	err := h.roleSvc.UpdateRolePermissions(c.Request.Context(), id, req.PermissionIDs)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to update role permissions: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
+}

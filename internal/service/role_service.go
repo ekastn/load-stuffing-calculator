@@ -15,6 +15,8 @@ type RoleService interface {
 	ListRoles(ctx context.Context, page, limit int32) ([]dto.RoleResponse, error)
 	UpdateRole(ctx context.Context, id string, req dto.UpdateRoleRequest) error
 	DeleteRole(ctx context.Context, id string) error
+	UpdateRolePermissions(ctx context.Context, id string, permissionIDs []string) error
+	GetRolePermissions(ctx context.Context, id string) ([]string, error)
 }
 
 type roleService struct {
@@ -116,4 +118,48 @@ func (s *roleService) DeleteRole(ctx context.Context, id string) error {
 		return fmt.Errorf("failed to delete role: %w", err)
 	}
 	return nil
+}
+
+func (s *roleService) UpdateRolePermissions(ctx context.Context, id string, permissionIDs []string) error {
+	roleID, err := uuid.Parse(id)
+	if err != nil {
+		return fmt.Errorf("invalid role id: %w", err)
+	}
+
+	if err := s.q.DeleteRolePermissions(ctx, roleID); err != nil {
+		return fmt.Errorf("failed to clear existing permissions: %w", err)
+	}
+
+	for _, pIDStr := range permissionIDs {
+		pID, err := uuid.Parse(pIDStr)
+		if err != nil {
+			return fmt.Errorf("invalid permission id %s: %w", pIDStr, err)
+		}
+		if err := s.q.AddRolePermission(ctx, store.AddRolePermissionParams{
+			RoleID:       roleID,
+			PermissionID: pID,
+		}); err != nil {
+			return fmt.Errorf("failed to add permission %s: %w", pIDStr, err)
+		}
+	}
+
+	return nil
+}
+
+func (s *roleService) GetRolePermissions(ctx context.Context, id string) ([]string, error) {
+	roleID, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid role id: %w", err)
+	}
+
+	perms, err := s.q.GetRolePermissions(ctx, roleID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []string
+	for _, p := range perms {
+		result = append(result, p.String())
+	}
+	return result, nil
 }

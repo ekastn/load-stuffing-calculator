@@ -29,3 +29,12 @@ WHERE role_id = $1;
 -- name: DeleteRole :exec
 DELETE FROM roles 
 WHERE role_id = $1;
+
+-- name: DeleteRolePermissions :exec
+DELETE FROM role_permissions WHERE role_id = $1;
+
+-- name: AddRolePermission :exec
+INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2);
+
+-- name: GetRolePermissions :many
+SELECT permission_id FROM role_permissions WHERE role_id = $1;
