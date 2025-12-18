@@ -29,6 +29,11 @@ func (a *App) setupRoutes(r *gin.Engine) {
 
 		v1.Use(middleware.JWT(a.jwtSecret))
 
+		dashboard := v1.Group("/dashboard")
+		{
+			dashboard.GET("", a.dashboardHandler.GetStats)
+		}
+
 		users := v1.Group("/users", middleware.Role(types.RoleAdmin))
 		{
 			users.POST("", a.userHandler.CreateUser)

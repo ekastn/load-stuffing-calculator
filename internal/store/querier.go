@@ -13,6 +13,12 @@ import (
 type Querier interface {
 	AddLoadItem(ctx context.Context, arg AddLoadItemParams) (LoadItem, error)
 	AddRolePermission(ctx context.Context, arg AddRolePermissionParams) error
+	CountActivePlans(ctx context.Context) (int64, error)
+	CountCompletedPlans(ctx context.Context) (int64, error)
+	CountCompletedPlansToday(ctx context.Context) (int64, error)
+	CountContainers(ctx context.Context) (int64, error)
+	CountTotalItems(ctx context.Context) (int64, error)
+	CountTotalUsers(ctx context.Context) (int64, error)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
 	CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error)
 	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
@@ -31,12 +37,14 @@ type Querier interface {
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
 	DeleteRolePermissions(ctx context.Context, roleID uuid.UUID) error
 	DeleteUser(ctx context.Context, userID uuid.UUID) error
+	GetAvgVolumeUtilization(ctx context.Context) (float64, error)
 	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)
 	GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadItem, error)
 	GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, error)
 	GetPermission(ctx context.Context, permissionID uuid.UUID) (Permission, error)
 	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
 	GetPlanResult(ctx context.Context, planID *uuid.UUID) (PlanResult, error)
+	GetPlanStatusDistribution(ctx context.Context) ([]GetPlanStatusDistributionRow, error)
 	GetProduct(ctx context.Context, productID uuid.UUID) (Product, error)
 	GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error)
 	GetRole(ctx context.Context, roleID uuid.UUID) (Role, error)

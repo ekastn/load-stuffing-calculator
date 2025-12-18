@@ -1,18 +1,20 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
+import { useDashboard } from "@/hooks/use-dashboard"
 import { useRouter } from "next/navigation"
 import { LoginForm } from "@/components/login-form"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, Truck, Users, BarChart3 } from "lucide-react"
+import { Package, Truck, Users, BarChart3, Activity } from "lucide-react"
 
 export default function Home() {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
+  const { stats: dashboardStats, isLoading: statsLoading } = useDashboard()
   const router = useRouter()
 
-  if (isLoading) {
+  if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="space-y-4 text-center">
@@ -27,26 +29,37 @@ export default function Home() {
     return <LoginForm />
   }
 
-  const statsAdmin = [
-    { title: "Total Users", value: "12", icon: Users },
-    { title: "Active Shipments", value: "8", icon: Truck },
-    { title: "Container Types", value: "5", icon: Package },
-    { title: "Success Rate", value: "98.5%", icon: BarChart3 },
-  ]
+  // Fallback loading for dashboard content
+  if (statsLoading) {
+     return (
+      <DashboardLayout currentPage="/">
+        <div className="flex min-h-screen items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+        </div>
+      </DashboardLayout>
+     )
+  }
 
-  const statsPlanner = [
-    { title: "Pending Plans", value: "3", icon: Truck },
-    { title: "Completed Today", value: "12", icon: Package },
-    { title: "Avg Utilization", value: "87%", icon: BarChart3 },
-    { title: "Items Processed", value: "245", icon: Package },
-  ]
+  const statsAdmin = dashboardStats?.admin ? [
+    { title: "Total Users", value: dashboardStats.admin.total_users.toString(), icon: Users },
+    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck },
+    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package },
+    { title: "Success Rate", value: `${dashboardStats.admin.success_rate}%`, icon: BarChart3 },
+  ] : []
 
-  const statsOperator = [
-    { title: "Active Loads", value: "2", icon: Truck },
-    { title: "Completed", value: "18", icon: Package },
-    { title: "Failed Validations", value: "0", icon: BarChart3 },
-    { title: "Avg Time/Load", value: "24m", icon: Package },
-  ]
+  const statsPlanner = dashboardStats?.planner ? [
+    { title: "Pending Plans", value: dashboardStats.planner.pending_plans.toString(), icon: Truck },
+    { title: "Completed Today", value: dashboardStats.planner.completed_today.toString(), icon: Package },
+    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3 },
+    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Package },
+  ] : []
+
+  const statsOperator = dashboardStats?.operator ? [
+    { title: "Active Loads", value: dashboardStats.operator.active_loads.toString(), icon: Truck },
+    { title: "Completed", value: dashboardStats.operator.completed.toString(), icon: Package },
+    { title: "Failed Validations", value: dashboardStats.operator.failed_validations.toString(), icon: AlertCircle },
+    { title: "Avg Time/Load", value: dashboardStats.operator.avg_time_per_load, icon: Activity },
+  ] : []
 
   const stats =
     {
@@ -79,7 +92,7 @@ export default function Home() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome, {user.name}!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome, {user.name || user.username}!</h1>
           <p className="mt-2 text-muted-foreground">
             {user.role === "admin" && "Manage system configuration and users"}
             {user.role === "planner" && "Plan and optimize container loads"}
@@ -143,7 +156,7 @@ export default function Home() {
               </div>
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <span className="text-foreground">Welcome to Load & Stuffing</span>
-                <span className="text-muted-foreground">Demo Mode</span>
+                <span className="text-muted-foreground">Real-time Dashboard</span>
               </div>
             </div>
           </CardContent>
@@ -151,4 +164,25 @@ export default function Home() {
       </div>
     </DashboardLayout>
   )
+}
+
+function AlertCircle(props: any) {
+    return (
+      <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" x2="12" y1="8" y2="12" />
+        <line x1="12" x2="12.01" y1="16" y2="16" />
+      </svg>
+    )
 }

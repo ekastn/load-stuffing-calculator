@@ -33,6 +33,7 @@ type App struct {
 	containerHandler *handler.ContainerHandler
 	productHandler   *handler.ProductHandler
 	planHandler      *handler.PlanHandler
+	dashboardHandler *handler.DashboardHandler
 	jwtSecret        string
 }
 
@@ -48,6 +49,7 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	containerSvc := service.NewContainerService(querier)
 	productSvc := service.NewProductService(querier)
 	planSvc := service.NewPlanService(querier, pack)
+	dashboardSvc := service.NewDashboardService(querier)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	userHandler := handler.NewUserHandler(userSvc)
@@ -56,6 +58,7 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	containerHandler := handler.NewContainerHandler(containerSvc)
 	productHandler := handler.NewProductHandler(productSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
+	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
 
 	app := &App{
 		config:           cfg,
@@ -69,6 +72,7 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 		containerHandler: containerHandler,
 		productHandler:   productHandler,
 		planHandler:      planHandler,
+		dashboardHandler: dashboardHandler,
 		jwtSecret:        cfg.JWTSecret,
 	}
 
