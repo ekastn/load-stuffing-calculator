@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { PermissionService } from "@/lib/services/permissions"
 import { CreatePermissionRequest, PermissionResponse } from "@/lib/types"
@@ -24,6 +24,18 @@ import { RoleAdmin } from "@/lib/types"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 
 export default function PermissionsPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -36,18 +48,22 @@ export default function PermissionsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     let success = false
-    if (editingId) {
-      success = await updatePermission(editingId, formData)
-    } else {
-      success = await createPermission(formData)
+    try {
+      if (editingId) {
+        success = await updatePermission(editingId, formData)
+        if (success) toast.success("Permission updated successfully!")
+      } else {
+        success = await createPermission(formData)
+        if (success) toast.success("Permission created successfully!")
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save permission")
     }
 
     if (success) {
       setFormData({ name: "", description: "" })
       setEditingId(null)
       setShowForm(false)
-    } else {
-      alert("Failed to save permission")
     }
   }
 
@@ -57,12 +73,24 @@ export default function PermissionsPage() {
     setShowForm(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this permission?")) return
-    const success = await deletePermission(id)
-    if (!success) {
-      alert("Failed to delete permission")
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [permissionToDelete, setPermissionToDelete] = useState<string | null>(null)
+
+  const handleDelete = (id: string) => {
+    setPermissionToDelete(id)
+    setShowConfirmDelete(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!permissionToDelete) return
+    const success = await deletePermission(permissionToDelete)
+    if (success) {
+      toast.success("Permission deleted successfully!")
+    } else {
+      toast.error("Failed to delete permission")
     }
+    setShowConfirmDelete(false)
+    setPermissionToDelete(null)
   }
 
   const openNewForm = () => {
@@ -213,6 +241,22 @@ export default function PermissionsPage() {
             </div>
           )}
         </div>
+
+        <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the permission
+                and remove its data from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DashboardLayout>
     </RouteGuard>
   )
