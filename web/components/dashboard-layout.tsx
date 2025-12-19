@@ -96,21 +96,21 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-border bg-card/50 px-6 backdrop-blur-sm">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="rounded-md p-2 hover:bg-card/50 lg:hidden">
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-
-          <div className="flex-1" />
-
-          <div className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            })}
-          </div>
-        </div>
+        {/* <div className="flex h-16 items-center justify-between border-b border-border bg-card/50 px-6 backdrop-blur-sm"> */}
+        {/*   <button onClick={() => setSidebarOpen(!sidebarOpen)} className="rounded-md p-2 hover:bg-card/50 lg:hidden"> */}
+        {/*     {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />} */}
+        {/*   </button> */}
+        {/**/}
+        {/*   <div className="flex-1" /> */}
+        {/**/}
+        {/*   <div className="text-sm text-muted-foreground"> */}
+        {/*     {new Date().toLocaleDateString("en-US", { */}
+        {/*       weekday: "short", */}
+        {/*       month: "short", */}
+        {/*       day: "numeric", */}
+        {/*     })} */}
+        {/*   </div> */}
+        {/* </div> */}
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto">
