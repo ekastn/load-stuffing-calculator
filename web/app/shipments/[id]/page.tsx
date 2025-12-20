@@ -3,86 +3,80 @@
 import { useAuth } from "@/lib/auth-context"
 import { usePlans } from "@/hooks/use-plans"
 import { useParams } from "next/navigation"
-import { useEffect, useState, useMemo, useRef } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RouteGuard } from "@/lib/route-guard"
-import { Trash2, Package, CheckCircle, RefreshCw, Play, Pause, RotateCcw, ChevronLeft, ChevronRight, Box, Info, Plus } from "lucide-react"
-import { Canvas3DView, PackedItem } from "@/components/canvas-3d-view"
+import { Trash2, Package, CheckCircle, RefreshCw, Box, Info, Plus, AlertTriangle } from "lucide-react"
+import { StuffingViewer } from "@/components/stuffing-viewer"
 import { toast } from "sonner"
-import { PlacementDetail } from "@/lib/types"
-import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ItemInputForm } from "@/components/item-input-form"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
+import type { StuffingPlanData } from "@/lib/StuffingVisualizer"
+import type { PlanDetailResponse } from "@/lib/types"
 
 export default function ShipmentDetailPage() {
   const { user } = useAuth()
-  const { fetchPlan, calculatePlan, deletePlanItem, currentPlan, isLoading } = usePlans()
+  const { fetchPlan, calculatePlan, deletePlanItem, currentPlan, isLoading, error } = usePlans()
   const params = useParams()
   const shipmentId = params.id as string
   const [isCalculating, setIsCalculating] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
   
-  // Visualization State
-  const [currentStep, setCurrentStep] = useState<number>(0)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [selectedItemId, setSelectedItemId] = useState<string | null>(null)
-  const playIntervalRef = useRef<NodeJS.Timeout | null>(null)
-
   useEffect(() => {
     if (shipmentId) {
       fetchPlan(shipmentId)
     }
   }, [shipmentId, fetchPlan])
 
-  const packedItems: PackedItem[] = useMemo(() => {
-    if (!currentPlan?.calculation?.placements || !currentPlan.items) return []
-    
-    return currentPlan.calculation.placements.map((p: PlacementDetail) => {
-      const item = currentPlan.items.find(i => i.item_id === p.item_id)
-      if (!item) return null
-      
-      return {
-        itemId: item.item_id,
-        name: item.label || "Item",
-        dimensions: { length: item.length_mm, width: item.width_mm, height: item.height_mm },
-        position: { x: p.pos_x, y: p.pos_y, z: p.pos_z },
-        color: item.color_hex || "#3498db",
-        step: p.step_number,
-        rotation: p.rotation
-      }
-    }).filter(Boolean) as PackedItem[]
-  }, [currentPlan])
-
-  const totalSteps = packedItems.length
-
-  useEffect(() => {
-    if (totalSteps > 0 && currentStep === 0 && !isPlaying) {
-      setCurrentStep(totalSteps)
+  const toStuffingPlanData = (plan: PlanDetailResponse): StuffingPlanData => {
+    return {
+      plan_id: plan.plan_id,
+      plan_code: plan.plan_code,
+      container: {
+        name: plan.container.name || "Container",
+        length_mm: plan.container.length_mm,
+        width_mm: plan.container.width_mm,
+        height_mm: plan.container.height_mm,
+        max_weight_kg: plan.container.max_weight_kg,
+        volume_m3: plan.container.volume_m3,
+      },
+      items: plan.items.map((item) => ({
+        item_id: item.item_id,
+        label: item.label || "Item",
+        length_mm: item.length_mm,
+        width_mm: item.width_mm,
+        height_mm: item.height_mm,
+        weight_kg: item.weight_kg,
+        quantity: item.quantity,
+        total_volume_m3: item.total_volume_m3,
+        total_weight_kg: item.total_weight_kg,
+        color_hex: item.color_hex || "#3498db",
+        allow_rotation: item.allow_rotation,
+        stacking_limit: item.stacking_limit,
+        created_at: item.created_at,
+      })),
+      stats: {
+        total_items: plan.stats.total_items,
+        total_weight_kg: plan.stats.total_weight_kg,
+        total_volume_m3: plan.stats.total_volume_m3,
+        volume_utilization_pct: plan.stats.volume_utilization_pct,
+        weight_utilization_pct: plan.stats.weight_utilization_pct,
+      },
+      calculation: {
+        job_id: plan.calculation?.job_id || "",
+        status: plan.calculation?.status || "",
+        algorithm: plan.calculation?.algorithm || "",
+        placements: plan.calculation?.placements || [],
+        volume_utilization_pct: plan.calculation?.volume_utilization_pct || 0,
+        efficiency_score: plan.calculation?.efficiency_score || 0,
+        visualization_url: plan.calculation?.visualization_url || "",
+      },
     }
-  }, [totalSteps])
-
-  useEffect(() => {
-    if (isPlaying) {
-      playIntervalRef.current = setInterval(() => {
-        setCurrentStep(prev => {
-          if (prev >= totalSteps) {
-            setIsPlaying(false)
-            return prev
-          }
-          return prev + 1
-        })
-      }, 200) 
-    } else {
-      if (playIntervalRef.current) clearInterval(playIntervalRef.current)
-    }
-    return () => {
-      if (playIntervalRef.current) clearInterval(playIntervalRef.current)
-    }
-  }, [isPlaying, totalSteps])
+  }
 
   const handleCalculate = async () => {
     setIsCalculating(true)
@@ -90,7 +84,6 @@ export default function ShipmentDetailPage() {
     setIsCalculating(false)
     if (result) {
       toast.success("Calculation completed")
-      setCurrentStep(result.placements?.length || 0)
     } else {
       toast.error("Calculation failed")
     }
@@ -106,16 +99,6 @@ export default function ShipmentDetailPage() {
     }
   }
 
-  const togglePlay = () => {
-    if (currentStep >= totalSteps && !isPlaying) {
-      setCurrentStep(0)
-    }
-    setIsPlaying(!isPlaying)
-  }
-
-  const stepForward = () => setCurrentStep(prev => Math.min(prev + 1, totalSteps))
-  const stepBackward = () => setCurrentStep(prev => Math.max(prev - 1, 0))
-  const resetStep = () => { setIsPlaying(false); setCurrentStep(0) }
 
   // Stats Logic
   const skuStats = useMemo(() => {
@@ -202,50 +185,44 @@ export default function ShipmentDetailPage() {
               <Card className="flex-1 border-border/50 bg-white shadow-sm overflow-hidden flex flex-col">
                 <CardHeader className="py-2 px-4 shrink-0 border-b border-border/50 bg-slate-50/80 flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">3D Simulation</CardTitle>
-                    {calc && (
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1 bg-white rounded-md p-0.5 border border-border/50 shadow-sm">
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={resetStep} title="Reset">
-                                    <RotateCcw className="h-3 w-3" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={stepBackward} disabled={currentStep <= 0}>
-                                    <ChevronLeft className="h-3 w-3" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600" onClick={togglePlay}>
-                                    {isPlaying ? <Pause className="h-3 w-3 fill-current" /> : <Play className="h-3 w-3 fill-current" />}
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={stepForward} disabled={currentStep >= totalSteps}>
-                                    <ChevronRight className="h-3 w-3" />
-                                </Button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold font-mono bg-slate-200 px-1.5 py-0.5 rounded text-slate-600 w-12 text-center">{currentStep}/{totalSteps}</span>
-                                <Slider 
-                                    value={[currentStep]} 
-                                    max={totalSteps} 
-                                    step={1}
-                                    onValueChange={(v) => { setIsPlaying(false); setCurrentStep(v[0]) }}
-                                    className="w-24"
-                                />
-                            </div>
-                        </div>
-                    )}
+
                 </CardHeader>
                 <CardContent className="flex-1 p-0 relative">
-                  {calc ? (
-                    <Canvas3DView 
-                      items={packedItems}
-                      containerDims={{ length: container.length_mm, width: container.width_mm, height: container.height_mm }}
-                      containerName={container.name || "Container"}
-                      currentStep={currentStep}
-                      selectedItemId={selectedItemId}
-                      onSelect={setSelectedItemId}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-slate-50">
-                        <Box className="h-16 w-16 mb-4 opacity-10" />
-                        <p className="font-medium">No simulation data</p>
-                        <p className="text-xs opacity-70">Add items and run calculation to start simulator</p>
+                  <div className="absolute inset-0">
+                    <StuffingViewer data={toStuffingPlanData(currentPlan)} />
+                  </div>
+
+                  {(!calc?.placements?.length || error) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px]">
+                      <div className="max-w-md rounded-lg border border-border/50 bg-white p-4 shadow-sm">
+                        <div className="flex items-start gap-3">
+                          <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {error ? "Simulation error" : "No simulation data"}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-600">
+                              {error || "Recalculate the plan to generate placements."}
+                            </p>
+                            <div className="mt-3 flex gap-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={handleCalculate}
+                                disabled={isCalculating || currentPlan.items.length === 0}
+                                className="gap-2"
+                              >
+                                {isCalculating ? (
+                                  <RefreshCw className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RefreshCw className="h-4 w-4" />
+                                )}
+                                Recalculate
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   )}
                 </CardContent>

@@ -92,7 +92,7 @@ export default function Home() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome, {user.name || user.username}!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome, {user.username}!</h1>
           <p className="mt-2 text-muted-foreground">
             {user.role === "admin" && "Manage system configuration and users"}
             {user.role === "planner" && "Plan and optimize container loads"}
