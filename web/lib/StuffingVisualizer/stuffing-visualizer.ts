@@ -227,37 +227,17 @@ export class StuffingVisualizer {
     public async generateReport(config: Partial<ReportGeneratorConfig> = {}): Promise<Blob | null> {
         if (!this.data) return null;
 
-        const originalStep = this.getCurrentStep();
-        const maxStep = this.getMaxStep();
-        
-        // Capture full screenshot
-        this.setStep(maxStep);
-        const fullScreenshotResult = this.captureStepScreenshot();
-        
-        // Capture step screenshots
-        const stepImages: string[] = [];
-        const stepAspectRatios: number[] = [];
-        
-        for (let step = 1; step <= maxStep; step++) {
-            this.setStep(step);
-            const result = this.captureStepScreenshot();
-            if (result) {
-                stepImages.push(result.screenshot);
-                stepAspectRatios.push(result.aspectRatio);
-            }
-        }
-
-        // Restore state
-        this.setStep(originalStep);
-
         const generator = new ReportGenerator();
+
+        // Capture a single full screenshot for the summary page.
+        // Step pages remain vector-only to avoid memory blowups.
+        const full = this.captureStepScreenshot();
+
         return generator.generateStuffingInstructions(this.data, {
             companyName: this.config.companyName ?? "Load Stuffing Visualization",
+            fullScreenshot: full?.screenshot,
+            fullScreenshotAspectRatio: full?.aspectRatio,
             ...config,
-            stepImages,
-            stepAspectRatios,
-            fullScreenshot: fullScreenshotResult?.screenshot,
-            fullScreenshotAspectRatio: fullScreenshotResult?.aspectRatio
         });
     }
 
