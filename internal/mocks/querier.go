@@ -59,6 +59,18 @@ type MockQuerier struct {
 	CreatePlanPlacementFunc  func(ctx context.Context, arg []store.CreatePlanPlacementParams) (int64, error)
 	GetPlanResultFunc        func(ctx context.Context, planID *uuid.UUID) (store.PlanResult, error)
 	ListPlanPlacementsFunc   func(ctx context.Context, resultID *uuid.UUID) ([]store.PlanPlacement, error)
+
+	AddRolePermissionFunc         func(ctx context.Context, arg store.AddRolePermissionParams) error
+	DeleteRolePermissionsFunc     func(ctx context.Context, roleID uuid.UUID) error
+	GetRolePermissionsFunc        func(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error)
+	CountActivePlansFunc          func(ctx context.Context) (int64, error)
+	CountCompletedPlansFunc       func(ctx context.Context) (int64, error)
+	CountCompletedPlansTodayFunc  func(ctx context.Context) (int64, error)
+	CountContainersFunc           func(ctx context.Context) (int64, error)
+	CountTotalItemsFunc           func(ctx context.Context) (int64, error)
+	CountTotalUsersFunc           func(ctx context.Context) (int64, error)
+	GetAvgVolumeUtilizationFunc   func(ctx context.Context) (float64, error)
+	GetPlanStatusDistributionFunc func(ctx context.Context) ([]store.GetPlanStatusDistributionRow, error)
 }
 
 func (m *MockQuerier) UpdateUserPassword(ctx context.Context, arg store.UpdateUserPasswordParams) error {
@@ -397,11 +409,81 @@ func (m *MockQuerier) UpdateUser(ctx context.Context, arg store.UpdateUserParams
 	return fmt.Errorf("UpdateUser not implemented")
 }
 
-func (m *MockQuerier) UpdateUserPassword(ctx context.Context, arg store.UpdateUserPasswordParams) error {
-	if m.UpdateUserPasswordFunc != nil {
-		return m.UpdateUserPasswordFunc(ctx, arg)
+func (m *MockQuerier) AddRolePermission(ctx context.Context, arg store.AddRolePermissionParams) error {
+	if m.AddRolePermissionFunc != nil {
+		return m.AddRolePermissionFunc(ctx, arg)
 	}
-	return fmt.Errorf("UpdateUserPassword not implemented")
+	return fmt.Errorf("AddRolePermission not implemented")
+}
+
+func (m *MockQuerier) DeleteRolePermissions(ctx context.Context, roleID uuid.UUID) error {
+	if m.DeleteRolePermissionsFunc != nil {
+		return m.DeleteRolePermissionsFunc(ctx, roleID)
+	}
+	return fmt.Errorf("DeleteRolePermissions not implemented")
+}
+
+func (m *MockQuerier) GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error) {
+	if m.GetRolePermissionsFunc != nil {
+		return m.GetRolePermissionsFunc(ctx, roleID)
+	}
+	return nil, fmt.Errorf("GetRolePermissions not implemented")
+}
+
+func (m *MockQuerier) CountActivePlans(ctx context.Context) (int64, error) {
+	if m.CountActivePlansFunc != nil {
+		return m.CountActivePlansFunc(ctx)
+	}
+	return 0, fmt.Errorf("CountActivePlans not implemented")
+}
+
+func (m *MockQuerier) CountCompletedPlans(ctx context.Context) (int64, error) {
+	if m.CountCompletedPlansFunc != nil {
+		return m.CountCompletedPlansFunc(ctx)
+	}
+	return 0, fmt.Errorf("CountCompletedPlans not implemented")
+}
+
+func (m *MockQuerier) CountCompletedPlansToday(ctx context.Context) (int64, error) {
+	if m.CountCompletedPlansTodayFunc != nil {
+		return m.CountCompletedPlansTodayFunc(ctx)
+	}
+	return 0, fmt.Errorf("CountCompletedPlansToday not implemented")
+}
+
+func (m *MockQuerier) CountContainers(ctx context.Context) (int64, error) {
+	if m.CountContainersFunc != nil {
+		return m.CountContainersFunc(ctx)
+	}
+	return 0, fmt.Errorf("CountContainers not implemented")
+}
+
+func (m *MockQuerier) CountTotalItems(ctx context.Context) (int64, error) {
+	if m.CountTotalItemsFunc != nil {
+		return m.CountTotalItemsFunc(ctx)
+	}
+	return 0, fmt.Errorf("CountTotalItems not implemented")
+}
+
+func (m *MockQuerier) CountTotalUsers(ctx context.Context) (int64, error) {
+	if m.CountTotalUsersFunc != nil {
+		return m.CountTotalUsersFunc(ctx)
+	}
+	return 0, fmt.Errorf("CountTotalUsers not implemented")
+}
+
+func (m *MockQuerier) GetAvgVolumeUtilization(ctx context.Context) (float64, error) {
+	if m.GetAvgVolumeUtilizationFunc != nil {
+		return m.GetAvgVolumeUtilizationFunc(ctx)
+	}
+	return 0, fmt.Errorf("GetAvgVolumeUtilization not implemented")
+}
+
+func (m *MockQuerier) GetPlanStatusDistribution(ctx context.Context) ([]store.GetPlanStatusDistributionRow, error) {
+	if m.GetPlanStatusDistributionFunc != nil {
+		return m.GetPlanStatusDistributionFunc(ctx)
+	}
+	return nil, fmt.Errorf("GetPlanStatusDistribution not implemented")
 }
 
 var _ store.Querier = (*MockQuerier)(nil)

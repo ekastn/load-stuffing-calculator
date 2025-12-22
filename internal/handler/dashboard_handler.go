@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"net/http"
 	"github.com/ekastn/load-stuffing-calculator/internal/response"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type DashboardHandler struct {

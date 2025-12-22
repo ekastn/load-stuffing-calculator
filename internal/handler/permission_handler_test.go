@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,7 @@ func TestPermissionHandler_CreatePermission(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		req := dto.CreatePermissionRequest{Name: "perm"}
 		expectedResp := &dto.PermissionResponse{ID: "1", Name: "perm"}
@@ -44,7 +45,7 @@ func TestPermissionHandler_CreatePermission(t *testing.T) {
 
 	t.Run("bad_request", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -58,7 +59,7 @@ func TestPermissionHandler_CreatePermission(t *testing.T) {
 
 	t.Run("service_error", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		req := dto.CreatePermissionRequest{Name: "perm"}
 		mockSvc.On("CreatePermission", mock.Anything, req).Return(nil, errors.New("failed"))
@@ -80,7 +81,7 @@ func TestPermissionHandler_GetPermission(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		expectedResp := &dto.PermissionResponse{ID: id, Name: "perm"}
@@ -100,7 +101,7 @@ func TestPermissionHandler_GetPermission(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		mockSvc.On("GetPermission", mock.Anything, id).Return(nil, errors.New("not found"))
@@ -121,7 +122,7 @@ func TestPermissionHandler_ListPermissions(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		expectedResp := []dto.PermissionResponse{{ID: "1", Name: "perm"}}
 
@@ -143,7 +144,7 @@ func TestPermissionHandler_UpdatePermission(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		req := dto.UpdatePermissionRequest{Name: "perm"}
@@ -171,7 +172,7 @@ func TestPermissionHandler_DeletePermission(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
-		h := handler.NewPermissionHandler(mockSvc)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		mockSvc.On("DeletePermission", mock.Anything, id).Return(nil)

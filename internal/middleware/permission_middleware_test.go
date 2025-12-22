@@ -38,11 +38,10 @@ func TestPermissionMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
-	t.Run("admin_bypass", func(t *testing.T) {
+	t.Run("authorized_by_global_star", func(t *testing.T) {
 		mockQ := &MockQuerier{
 			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
-				t.Error("GetPermissionsByRole should not be called")
-				return nil, nil
+				return []string{"*"}, nil
 			},
 		}
 		permCache := cache.NewPermissionCache()
@@ -53,6 +52,24 @@ func TestPermissionMiddleware(t *testing.T) {
 		c.Set("role", "admin")
 
 		middleware.Permission(mockQ, permCache, "anything")(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("authorized_by_resource_star", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				return []string{"plan:*"}, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		c.Set("role", "planner")
+
+		middleware.Permission(mockQ, permCache, "plan:update")(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
@@ -113,5 +130,59 @@ func TestPermissionMiddleware(t *testing.T) {
 		middleware.Permission(mockQ, permCache, "article:create")(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("forbidden_when_other_resource_star", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				return []string{"plan:*"}, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		c.Set("role", "planner")
+
+		middleware.Permission(mockQ, permCache, "user:create")(c)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("permission_any_allows_if_any_match", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				return []string{"plan:read"}, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		c.Set("role", "operator")
+
+		middleware.PermissionAny(mockQ, permCache, "plan:update", "plan:read")(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("permission_all_requires_all", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				return []string{"plan:read"}, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		c.Set("role", "operator")
+
+		middleware.PermissionAll(mockQ, permCache, "plan:read", "plan:update")(c)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 }

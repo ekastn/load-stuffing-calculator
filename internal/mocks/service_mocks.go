@@ -20,6 +20,14 @@ func (m *MockAuthService) Login(ctx context.Context, req dto.LoginRequest) (*dto
 	return args.Get(0).(*dto.LoginResponse), args.Error(1)
 }
 
+func (m *MockAuthService) RefreshToken(ctx context.Context, refreshToken string) (*dto.LoginResponse, error) {
+	args := m.Called(ctx, refreshToken)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.LoginResponse), args.Error(1)
+}
+
 // MockUserService is a mock implementation of service.UserService
 type MockUserService struct {
 	mock.Mock
@@ -47,6 +55,21 @@ func (m *MockUserService) ListUsers(ctx context.Context, page, limit int32) ([]d
 		return nil, args.Error(1)
 	}
 	return args.Get(0).([]dto.UserResponse), args.Error(1)
+}
+
+func (m *MockUserService) UpdateUser(ctx context.Context, id string, req dto.UpdateUserRequest) error {
+	args := m.Called(ctx, id, req)
+	return args.Error(0)
+}
+
+func (m *MockUserService) DeleteUser(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
+
+func (m *MockUserService) ChangePassword(ctx context.Context, id string, newPassword string) error {
+	args := m.Called(ctx, id, newPassword)
+	return args.Error(0)
 }
 
 // MockRoleService is a mock implementation of service.RoleService
@@ -86,6 +109,19 @@ func (m *MockRoleService) UpdateRole(ctx context.Context, id string, req dto.Upd
 func (m *MockRoleService) DeleteRole(ctx context.Context, id string) error {
 	args := m.Called(ctx, id)
 	return args.Error(0)
+}
+
+func (m *MockRoleService) UpdateRolePermissions(ctx context.Context, id string, permissionIDs []string) error {
+	args := m.Called(ctx, id, permissionIDs)
+	return args.Error(0)
+}
+
+func (m *MockRoleService) GetRolePermissions(ctx context.Context, id string) ([]string, error) {
+	args := m.Called(ctx, id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]string), args.Error(1)
 }
 
 // MockPermissionService is a mock implementation of service.PermissionService

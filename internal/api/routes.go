@@ -5,7 +5,6 @@ import (
 
 	_ "github.com/ekastn/load-stuffing-calculator/internal/docs"
 	"github.com/ekastn/load-stuffing-calculator/internal/middleware"
-	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -29,12 +28,14 @@ func (a *App) setupRoutes(r *gin.Engine) {
 
 		v1.Use(middleware.JWT(a.jwtSecret))
 
+		perm := middleware.NewPermissionMiddleware(a.querier, a.permCache)
+
 		dashboard := v1.Group("/dashboard")
 		{
-			dashboard.GET("", a.dashboardHandler.GetStats)
+			dashboard.GET("", perm.Require("dashboard:read"), a.dashboardHandler.GetStats)
 		}
 
-		users := v1.Group("/users", middleware.Role(types.RoleAdmin))
+		users := v1.Group("/users", perm.Require("user:*"))
 		{
 			users.POST("", a.userHandler.CreateUser)
 			users.GET("/:id", a.userHandler.GetUser)
@@ -44,7 +45,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			users.PUT("/:id/password", a.userHandler.ChangePassword)
 		}
 
-		roles := v1.Group("/roles", middleware.Role(types.RoleAdmin))
+		roles := v1.Group("/roles", perm.Require("role:*"))
 		{
 			roles.POST("", a.roleHandler.CreateRole)
 			roles.GET("/:id", a.roleHandler.GetRole)
@@ -54,7 +55,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			roles.GET("/:id/permissions", a.roleHandler.GetRolePermissions)
 			roles.PUT("/:id/permissions", a.roleHandler.UpdateRolePermissions)
 		}
-		permissions := v1.Group("/permissions", middleware.Role(types.RoleAdmin))
+		permissions := v1.Group("/permissions", perm.Require("permission:*"))
 		{
 			permissions.POST("", a.permHandler.CreatePermission)
 			permissions.GET("", a.permHandler.ListPermissions)
@@ -63,7 +64,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			permissions.DELETE("/:id", a.permHandler.DeletePermission)
 		}
 
-		containers := v1.Group("/containers", middleware.Role(types.RoleAdmin))
+		containers := v1.Group("/containers", perm.Require("container:*"))
 		{
 			containers.POST("", a.containerHandler.CreateContainer)
 			containers.GET("", a.containerHandler.ListContainers)
@@ -72,7 +73,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			containers.DELETE("/:id", a.containerHandler.DeleteContainer)
 		}
 
-		products := v1.Group("/products", middleware.Role(types.RoleAdmin))
+		products := v1.Group("/products", perm.Require("product:*"))
 		{
 			products.POST("", a.productHandler.CreateProduct)
 			products.GET("", a.productHandler.ListProducts)
@@ -83,21 +84,19 @@ func (a *App) setupRoutes(r *gin.Engine) {
 
 		plans := v1.Group("/plans")
 		{
-			// Read access: Planner + Operator (Admin implicit)
-			plans.GET("", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.ListPlans)
-			plans.GET("/:id", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.GetPlan)
-			plans.GET("/:id/items/:itemId", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.GetPlanItem)
+			plans.GET("", perm.Require("plan:read"), a.planHandler.ListPlans)
+			plans.GET("/:id", perm.Require("plan:read"), a.planHandler.GetPlan)
+			plans.GET("/:id/items/:itemId", perm.Require("plan_item:read"), a.planHandler.GetPlanItem)
 
-			// Write access: Planner only (Admin implicit)
-			plans.POST("", middleware.Role(types.RolePlanner), a.planHandler.CreatePlan)
-			plans.PUT("/:id", middleware.Role(types.RolePlanner), a.planHandler.UpdatePlan)
-			plans.DELETE("/:id", middleware.Role(types.RolePlanner), a.planHandler.DeletePlan)
+			plans.POST("", perm.Require("plan:create"), a.planHandler.CreatePlan)
+			plans.PUT("/:id", perm.Require("plan:update"), a.planHandler.UpdatePlan)
+			plans.DELETE("/:id", perm.Require("plan:delete"), a.planHandler.DeletePlan)
 
-			plans.POST("/:id/items", middleware.Role(types.RolePlanner), a.planHandler.AddPlanItem)
-			plans.PUT("/:id/items/:itemId", middleware.Role(types.RolePlanner), a.planHandler.UpdatePlanItem)
-			plans.DELETE("/:id/items/:itemId", middleware.Role(types.RolePlanner), a.planHandler.DeletePlanItem)
+			plans.POST("/:id/items", perm.Require("plan_item:*"), a.planHandler.AddPlanItem)
+			plans.PUT("/:id/items/:itemId", perm.Require("plan_item:*"), a.planHandler.UpdatePlanItem)
+			plans.DELETE("/:id/items/:itemId", perm.Require("plan_item:*"), a.planHandler.DeletePlanItem)
 
-			plans.POST("/:id/calculate", middleware.Role(types.RolePlanner, types.RoleOperator), a.planHandler.CalculatePlan)
+			plans.POST("/:id/calculate", perm.Require("plan:calculate"), a.planHandler.CalculatePlan)
 		}
 	}
 }

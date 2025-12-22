@@ -53,8 +53,8 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	userHandler := handler.NewUserHandler(userSvc)
-	roleHandler := handler.NewRoleHandler(roleSvc)
-	permHandler := handler.NewPermissionHandler(permSvc)
+	roleHandler := handler.NewRoleHandler(roleSvc, permCache)
+	permHandler := handler.NewPermissionHandler(permSvc, permCache)
 	containerHandler := handler.NewContainerHandler(containerSvc)
 	productHandler := handler.NewProductHandler(productSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
