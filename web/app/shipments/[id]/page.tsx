@@ -15,8 +15,16 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { ItemInputForm } from "@/components/item-input-form"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import type { StuffingPlanData } from "@/lib/StuffingVisualizer"
-import type { PlanDetailResponse } from "@/lib/types"
+import type { PlanDetailResponse, CalculatePlanRequest } from "@/lib/types"
 
 export default function ShipmentDetailPage() {
   const { user } = useAuth()
@@ -25,7 +33,11 @@ export default function ShipmentDetailPage() {
   const shipmentId = params.id as string
   const [isCalculating, setIsCalculating] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
-  
+
+  const [showAdvancedCalc, setShowAdvancedCalc] = useState(false)
+  const [calcStrategy, setCalcStrategy] = useState("bestfitdecreasing")
+  const [calcGoal, setCalcGoal] = useState("tightest")
+  const [calcGravity, setCalcGravity] = useState(true)
   useEffect(() => {
     if (shipmentId) {
       fetchPlan(shipmentId)
@@ -80,7 +92,17 @@ export default function ShipmentDetailPage() {
 
   const handleCalculate = async () => {
     setIsCalculating(true)
-    const result = await calculatePlan(shipmentId)
+
+    const options: CalculatePlanRequest = {
+      strategy: calcStrategy,
+      gravity: calcGravity,
+    }
+
+    if (calcStrategy === "parallel") {
+      options.goal = calcGoal
+    }
+
+    const result = await calculatePlan(shipmentId, options)
     setIsCalculating(false)
     if (result) {
       toast.success("Calculation completed")
@@ -159,15 +181,25 @@ export default function ShipmentDetailPage() {
                         <Plus className="h-4 w-4" />
                         Add Items
                     </Button>
-                    <Button 
+                    <Button
                         variant="secondary"
                         size="sm"
-                        onClick={handleCalculate} 
-                        disabled={isCalculating || currentPlan.items.length === 0} 
+                        onClick={handleCalculate}
+                        disabled={isCalculating || currentPlan.items.length === 0}
                         className="gap-2"
                     >
                         {isCalculating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                         Recalculate
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowAdvancedCalc(true)}
+                        className="gap-2"
+                    >
+                        <Info className="h-4 w-4" />
+                        Advanced
                     </Button>
                 </>
                 )}
@@ -326,6 +358,69 @@ export default function ShipmentDetailPage() {
             </div>
           </div>
         </div>
+
+        <Dialog open={showAdvancedCalc} onOpenChange={setShowAdvancedCalc}>
+            <DialogContent className="sm:max-w-[520px]">
+                <DialogHeader>
+                    <DialogTitle>Advanced Calculation</DialogTitle>
+                    <DialogDescription>
+                        Choose packing strategy and options for recalculation.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                    <div className="grid grid-cols-1 gap-2">
+                        <label className="text-sm font-medium">Strategy</label>
+                        <Select value={calcStrategy} onValueChange={setCalcStrategy}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select strategy" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="bestfitdecreasing">Best Fit Decreasing</SelectItem>
+                                <SelectItem value="minimizeboxes">Minimize Boxes</SelectItem>
+                                <SelectItem value="greedy">Greedy</SelectItem>
+                                <SelectItem value="bestfit">Best Fit</SelectItem>
+                                <SelectItem value="nextfit">Next Fit</SelectItem>
+                                <SelectItem value="worstfit">Worst Fit</SelectItem>
+                                <SelectItem value="almostworstfit">Almost Worst Fit</SelectItem>
+                                <SelectItem value="parallel">Parallel (auto)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                        <label className="text-sm font-medium">Goal (Parallel only)</label>
+                        <Select
+                            value={calcGoal}
+                            onValueChange={setCalcGoal}
+                            disabled={calcStrategy !== "parallel"}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select goal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="tightest">Tightest Packing</SelectItem>
+                                <SelectItem value="minimizeboxes">Minimize Boxes</SelectItem>
+                                <SelectItem value="maximizeitems">Maximize Items</SelectItem>
+                                <SelectItem value="maxfill">Max Average Fill</SelectItem>
+                                <SelectItem value="balanced">Balanced</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded-md border border-border/50 bg-slate-50/50 p-3">
+                        <div>
+                            <p className="text-sm font-medium">Gravity settling</p>
+                            <p className="text-xs text-muted-foreground">Drops items to the floor/support to reduce floating.</p>
+                        </div>
+                        <Checkbox
+                            checked={calcGravity}
+                            onCheckedChange={(checked) => setCalcGravity(checked === true)}
+                        />
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
 
         <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
             <DialogContent className="sm:max-w-[500px]">

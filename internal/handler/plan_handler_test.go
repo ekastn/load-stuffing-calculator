@@ -360,7 +360,7 @@ func TestPlanHandler_CalculatePlan(t *testing.T) {
 			Algorithm:       "default",
 			EfficiencyScore: 90.0,
 		}
-		mockSvc.On("CalculatePlan", mock.Anything, planID).Return(expectedResp, nil)
+		mockSvc.On("CalculatePlan", mock.Anything, planID, mock.Anything).Return(expectedResp, nil)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -377,7 +377,7 @@ func TestPlanHandler_CalculatePlan(t *testing.T) {
 		mockSvc := new(mocks.MockPlanService)
 		h := handler.NewPlanHandler(mockSvc)
 
-		mockSvc.On("CalculatePlan", mock.Anything, planID).Return(nil, errors.New("packing failed"))
+		mockSvc.On("CalculatePlan", mock.Anything, planID, mock.Anything).Return(nil, errors.New("packing failed"))
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)

@@ -7,6 +7,14 @@ type ContainerInput struct {
 	Width     float64 // mm
 	Height    float64 // mm
 	MaxWeight float64 // kg
+
+	Options PackOptions
+}
+
+type PackOptions struct {
+	Strategy string
+	Goal     string
+	Gravity  bool
 }
 
 // ItemInput represents an item to be packed.

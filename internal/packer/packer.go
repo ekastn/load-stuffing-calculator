@@ -3,6 +3,9 @@ package packer
 import (
 	"context"
 	"fmt"
+	"math"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/bavix/boxpacker3"
@@ -28,10 +31,10 @@ func (p *packer) Pack(ctx context.Context, container ContainerInput, items []Ite
 	boxes := []*boxpacker3.Box{p.toBox(container)}
 	libItems, itemMap := p.toItems(items)
 
-	// Configure Packer with BestFitDecreasing strategy
-	bp := boxpacker3.NewPacker(
-		boxpacker3.WithStrategy(boxpacker3.StrategyBestFitDecreasing),
-	)
+	bp, algoName, err := p.newLibPacker(container.Options)
+	if err != nil {
+		return PackingResult{}, err
+	}
 
 	// Run Packing
 	packResult, err := bp.PackCtx(ctx, boxes, libItems)
@@ -39,7 +42,14 @@ func (p *packer) Pack(ctx context.Context, container ContainerInput, items []Ite
 		return PackingResult{}, fmt.Errorf("packing calculation failed: %w", err)
 	}
 
-	return p.buildResult(container, packResult, itemMap, time.Since(start)), nil
+	result := p.buildResult(container, packResult, itemMap, time.Since(start))
+	result.Algorithm = algoName
+
+	if container.Options.Gravity {
+		p.applyGravity(container, &result)
+	}
+
+	return result, nil
 }
 
 func (p *packer) toBox(c ContainerInput) *boxpacker3.Box {
@@ -81,7 +91,7 @@ func (p *packer) buildResult(
 ) PackingResult {
 	result := PackingResult{
 		ContainerID: container.ID,
-		Algorithm:   "BestFitDecreasing",
+		Algorithm:   "",
 		DurationMs:  duration.Milliseconds(),
 	}
 
@@ -107,21 +117,27 @@ func (p *packer) mapPackedItems(box *boxpacker3.Box, itemMap map[string]ItemInpu
 		originalInput := p.lookupItem(originalItemID, itemMap)
 
 		pos := item.GetPosition()
+		dim := item.GetDimension() // rotated dimensions in same axis-order as input (Length, Width, Height)
+
+		rot := p.inferRotationType(
+			[3]float64{originalInput.Length, originalInput.Width, originalInput.Height},
+			[3]float64{dim[0], dim[1], dim[2]},
+		)
 
 		packedItem := PackedItem{
 			ItemID:        originalItemID,
 			InstanceID:    item.GetID(),
 			Label:         originalInput.Label,
 			ProductSKU:    originalInput.ProductSKU,
-			RotatedLength: item.GetWidth(),
-			RotatedWidth:  item.GetHeight(),
-			RotatedHeight: item.GetDepth(),
+			RotatedLength: dim[0],
+			RotatedWidth:  dim[1],
+			RotatedHeight: dim[2],
 			Position: Position{
 				X: pos[0],
 				Y: pos[1],
 				Z: pos[2],
 			},
-			RotationType: 0,
+			RotationType: rot,
 		}
 
 		result.PackedItems = append(result.PackedItems, packedItem)
@@ -135,6 +151,37 @@ func (p *packer) mapPackedItems(box *boxpacker3.Box, itemMap map[string]ItemInpu
 	result.TotalVolumePackedM3 /= 1_000_000_000.0 // mm3 to m3
 	result.TotalWeightPackedKG /= 1000.0          // grams to kg
 	result.TotalPackedItems = len(result.PackedItems)
+}
+
+func (p *packer) inferRotationType(originalLWH, rotatedLWH [3]float64) int {
+	// The boxpacker3 rotation code is a permutation of dimensions in the same
+	// order used when constructing the item: NewItem(..., w, h, d).
+	// In our adapter we pass (Length, Width, Height), so we can treat the
+	// rotated dimensions returned by GetDimension() as (Length, Width, Height)
+	// in the corresponding container axes.
+	perms := [6][3]int{
+		{0, 1, 2},
+		{1, 0, 2},
+		{1, 2, 0},
+		{2, 1, 0},
+		{2, 0, 1},
+		{0, 2, 1},
+	}
+
+	const eps = 1e-6
+	isClose := func(a, b float64) bool {
+		return math.Abs(a-b) <= eps
+	}
+
+	for i, perm := range perms {
+		candidate := [3]float64{originalLWH[perm[0]], originalLWH[perm[1]], originalLWH[perm[2]]}
+		if isClose(candidate[0], rotatedLWH[0]) && isClose(candidate[1], rotatedLWH[1]) && isClose(candidate[2], rotatedLWH[2]) {
+			return i
+		}
+	}
+
+	// Fallback (e.g., equal dimensions where multiple rotations match)
+	return 0
 }
 
 func (p *packer) mapUnfitItems(unfitItems []*boxpacker3.Item, itemMap map[string]ItemInput, result *PackingResult) {
@@ -179,4 +226,137 @@ func (p *packer) lookupItem(id string, itemMap map[string]ItemInput) ItemInput {
 		return input
 	}
 	return ItemInput{ID: id, Label: "Unknown"}
+}
+
+type rect struct {
+	x1, y1 float64
+	x2, y2 float64
+}
+
+func (r rect) overlapsXY(o rect, eps float64) bool {
+	return (r.x1+eps) < o.x2 && (o.x1+eps) < r.x2 && (r.y1+eps) < o.y2 && (o.y1+eps) < r.y2
+}
+
+func strategyName(strategy boxpacker3.PackingStrategy) string {
+	switch strategy {
+	case boxpacker3.StrategyMinimizeBoxes:
+		return "MinimizeBoxes"
+	case boxpacker3.StrategyGreedy:
+		return "Greedy"
+	case boxpacker3.StrategyBestFit:
+		return "BestFit"
+	case boxpacker3.StrategyBestFitDecreasing:
+		return "BestFitDecreasing"
+	case boxpacker3.StrategyNextFit:
+		return "NextFit"
+	case boxpacker3.StrategyWorstFit:
+		return "WorstFit"
+	case boxpacker3.StrategyAlmostWorstFit:
+		return "AlmostWorstFit"
+	default:
+		return "MinimizeBoxes"
+	}
+}
+
+func (p *packer) newLibPacker(opts PackOptions) (*boxpacker3.Packer, string, error) {
+	strategy := strings.ToLower(strings.TrimSpace(opts.Strategy))
+	goal := strings.ToLower(strings.TrimSpace(opts.Goal))
+
+	switch strategy {
+	case "", "bestfitdecreasing", "bfd":
+		const strat = boxpacker3.StrategyBestFitDecreasing
+		return boxpacker3.NewPacker(boxpacker3.WithStrategy(strat)), strategyName(strat), nil
+	case "minimizeboxes", "ffd":
+		const strat = boxpacker3.StrategyMinimizeBoxes
+		return boxpacker3.NewPacker(boxpacker3.WithStrategy(strat)), strategyName(strat), nil
+	case "greedy":
+		const strat = boxpacker3.StrategyGreedy
+		return boxpacker3.NewPacker(boxpacker3.WithStrategy(strat)), strategyName(strat), nil
+	case "bestfit", "bf":
+		const strat = boxpacker3.StrategyBestFit
+		return boxpacker3.NewPacker(boxpacker3.WithStrategy(strat)), strategyName(strat), nil
+	case "nextfit", "nf":
+		const strat = boxpacker3.StrategyNextFit
+		return boxpacker3.NewPacker(boxpacker3.WithStrategy(strat)), strategyName(strat), nil
+	case "worstfit", "wf":
+		const strat = boxpacker3.StrategyWorstFit
+		return boxpacker3.NewPacker(boxpacker3.WithStrategy(strat)), strategyName(strat), nil
+	case "almostworstfit", "awf":
+		const strat = boxpacker3.StrategyAlmostWorstFit
+		return boxpacker3.NewPacker(boxpacker3.WithStrategy(strat)), strategyName(strat), nil
+	case "parallel", "auto":
+		var comparator boxpacker3.ComparatorFunc
+		switch goal {
+		case "", "minimizeboxes":
+			comparator = boxpacker3.MinimizeBoxesGoal
+		case "maximizeitems":
+			comparator = boxpacker3.MaximizeItemsGoal
+		case "tightest":
+			comparator = boxpacker3.TightestPackingGoal
+		case "maxfill", "maxaveragefillrate":
+			comparator = boxpacker3.MaxAverageFillRateGoal
+		case "balanced":
+			comparator = boxpacker3.BalancedPackingGoal
+		default:
+			return nil, "", fmt.Errorf("invalid pack goal: %q", opts.Goal)
+		}
+
+		ps := boxpacker3.NewParallelStrategy(
+			boxpacker3.WithAlgorithms(
+				boxpacker3.NewMinimizeBoxesStrategy(),
+				boxpacker3.NewBestFitDecreasingStrategy(),
+				boxpacker3.NewBestFitStrategy(),
+				boxpacker3.NewGreedyStrategy(),
+			),
+			boxpacker3.WithGoal(comparator),
+		)
+
+		return boxpacker3.NewPacker(boxpacker3.WithAlgorithm(ps)), "Parallel(" + goal + ")", nil
+	default:
+		return nil, "", fmt.Errorf("invalid pack strategy: %q", opts.Strategy)
+	}
+}
+
+func (p *packer) applyGravity(container ContainerInput, result *PackingResult) {
+	if len(result.PackedItems) == 0 {
+		return
+	}
+
+	packed := make([]*PackedItem, 0, len(result.PackedItems))
+	for i := range result.PackedItems {
+		packed = append(packed, &result.PackedItems[i])
+	}
+
+	sort.SliceStable(packed, func(i, j int) bool {
+		if packed[i].Position.Z != packed[j].Position.Z {
+			return packed[i].Position.Z < packed[j].Position.Z
+		}
+		if packed[i].Position.Y != packed[j].Position.Y {
+			return packed[i].Position.Y < packed[j].Position.Y
+		}
+		return packed[i].Position.X < packed[j].Position.X
+	})
+
+	const eps = 1e-6
+	for i, cur := range packed {
+		curRect := rect{cur.Position.X, cur.Position.Y, cur.Position.X + cur.RotatedLength, cur.Position.Y + cur.RotatedWidth}
+
+		bestZ := 0.0
+		for j := 0; j < i; j++ {
+			below := packed[j]
+			belowRect := rect{below.Position.X, below.Position.Y, below.Position.X + below.RotatedLength, below.Position.Y + below.RotatedWidth}
+			if !curRect.overlapsXY(belowRect, eps) {
+				continue
+			}
+
+			supportZ := below.Position.Z + below.RotatedHeight
+			if supportZ > bestZ {
+				bestZ = supportZ
+			}
+		}
+
+		if bestZ+cur.RotatedHeight <= container.Height+eps {
+			cur.Position.Z = bestZ
+		}
+	}
 }

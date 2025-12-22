@@ -91,4 +91,14 @@ describe("PlanService", () => {
     expect(apiPost).toHaveBeenCalledWith("/plans/1/calculate", {})
     expect(result).toEqual(mockResult)
   })
+
+  it("calculatePlan passes options body", async () => {
+    const mockResult = { job_id: "job1", status: "COMPLETED" }
+    ;(apiPost as Mock).mockResolvedValue(mockResult)
+
+    const options = { strategy: "parallel", goal: "tightest", gravity: true }
+    const result = await PlanService.calculatePlan("1", options)
+    expect(apiPost).toHaveBeenCalledWith("/plans/1/calculate", options)
+    expect(result).toEqual(mockResult)
+  })
 })

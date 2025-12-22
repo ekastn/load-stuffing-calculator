@@ -7,7 +7,8 @@ import {
   PlanDetailResponse,
   AddPlanItemRequest,
   UpdatePlanItemRequest,
-  CalculationResult
+  CalculationResult,
+  CalculatePlanRequest
 } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 
@@ -126,9 +127,9 @@ export function usePlans() {
     }
   }
 
-  const calculatePlan = async (planId: string) => {
+  const calculatePlan = async (planId: string, options?: CalculatePlanRequest) => {
     try {
-      const result = await PlanService.calculatePlan(planId)
+      const result = await PlanService.calculatePlan(planId, options)
       if (currentPlan && currentPlan.plan_id === planId) {
         await fetchPlan(planId)
       }

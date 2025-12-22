@@ -38,6 +38,29 @@ definitions:
     - weight_kg
     - width_mm
     type: object
+  dto.AdminStats:
+    properties:
+      active_shipments:
+        type: integer
+      container_types:
+        type: integer
+      success_rate:
+        type: number
+      total_users:
+        type: integer
+    type: object
+  dto.CalculatePlanRequest:
+    properties:
+      goal:
+        example: tightest
+        type: string
+      gravity:
+        example: true
+        type: boolean
+      strategy:
+        example: bestfitdecreasing
+        type: string
+    type: object
   dto.CalculationResult:
     properties:
       algorithm:
@@ -307,6 +330,15 @@ definitions:
     - role
     - username
     type: object
+  dto.DashboardStatsResponse:
+    properties:
+      admin:
+        $ref: '#/definitions/dto.AdminStats'
+      operator:
+        $ref: '#/definitions/dto.OperatorStats'
+      planner:
+        $ref: '#/definitions/dto.PlannerStats'
+    type: object
   dto.LoginRequest:
     properties:
       password:
@@ -329,6 +361,17 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/dto.UserSummary'
+    type: object
+  dto.OperatorStats:
+    properties:
+      active_loads:
+        type: integer
+      avg_time_per_load:
+        type: string
+      completed:
+        type: integer
+      failed_validations:
+        type: integer
     type: object
   dto.PermissionResponse:
     properties:
@@ -471,6 +514,17 @@ definitions:
         type: number
       weight_utilization_pct:
         type: number
+    type: object
+  dto.PlannerStats:
+    properties:
+      avg_utilization:
+        type: number
+      completed_today:
+        type: integer
+      items_processed:
+        type: integer
+      pending_plans:
+        type: integer
     type: object
   dto.ProductResponse:
     properties:
@@ -975,6 +1029,32 @@ paths:
       summary: Update a container
       tags:
       - containers
+  /dashboard/stats:
+    get:
+      consumes:
+      - application/json
+      description: Returns aggregated statistics for the dashboard based on user role.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DashboardStatsResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get Dashboard Stats
+      tags:
+      - dashboard
   /health:
     get:
       consumes:
@@ -1357,6 +1437,11 @@ paths:
         name: id
         required: true
         type: string
+      - description: Calculation Options
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.CalculatePlanRequest'
       produces:
       - application/json
       responses:

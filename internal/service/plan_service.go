@@ -23,7 +23,7 @@ type PlanService interface {
 	GetPlanItem(ctx context.Context, planID, itemID string) (*dto.PlanItemDetail, error)
 	UpdatePlanItem(ctx context.Context, planID, itemID string, req dto.UpdatePlanItemRequest) error
 	DeletePlanItem(ctx context.Context, planID, itemID string) error
-	CalculatePlan(ctx context.Context, planID string) (*dto.CalculationResult, error)
+	CalculatePlan(ctx context.Context, planID string, opts dto.CalculatePlanRequest) (*dto.CalculationResult, error)
 }
 
 type planService struct {
@@ -127,7 +127,7 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 
 	if autoCalc {
 		// Perform synchronous calculation
-		calcRes, err := s.CalculatePlan(ctx, plan.PlanID.String())
+		calcRes, err := s.CalculatePlan(ctx, plan.PlanID.String(), dto.CalculatePlanRequest{})
 		if err != nil {
 			// If calculation fails, we log it (conceptually) and mark status as FAILED
 			failStatus := types.PlanStatusFailed.String()
@@ -512,7 +512,7 @@ func (s *planService) DeletePlanItem(ctx context.Context, planID, itemID string)
 	return nil
 }
 
-func (s *planService) CalculatePlan(ctx context.Context, planID string) (*dto.CalculationResult, error) {
+func (s *planService) CalculatePlan(ctx context.Context, planID string, opts dto.CalculatePlanRequest) (*dto.CalculationResult, error) {
 	// 1. Fetch Plan & Items
 	pID, err := uuid.Parse(planID)
 	if err != nil {
@@ -530,12 +530,22 @@ func (s *planService) CalculatePlan(ctx context.Context, planID string) (*dto.Ca
 	}
 
 	// 2. Prepare Inputs
+	gravity := false
+	if opts.Gravity != nil {
+		gravity = *opts.Gravity
+	}
+
 	contInput := packer.ContainerInput{
 		ID:        plan.PlanID.String(),
 		Length:    toFloat(plan.LengthMm),
 		Width:     toFloat(plan.WidthMm),
 		Height:    toFloat(plan.HeightMm),
 		MaxWeight: toFloat(plan.MaxWeightKg),
+		Options: packer.PackOptions{
+			Strategy: opts.Strategy,
+			Goal:     opts.Goal,
+			Gravity:  gravity,
+		},
 	}
 
 	var itemInputs []packer.ItemInput

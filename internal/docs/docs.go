@@ -430,6 +430,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/dashboard/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns aggregated statistics for the dashboard based on user role.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "dashboard"
+                ],
+                "summary": "Get Dashboard Stats",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DashboardStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "Checks if the server is running and returns basic info.",
@@ -1061,6 +1107,14 @@ const docTemplate = `{
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Calculation Options",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CalculatePlanRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2440,6 +2494,40 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.AdminStats": {
+            "type": "object",
+            "properties": {
+                "active_shipments": {
+                    "type": "integer"
+                },
+                "container_types": {
+                    "type": "integer"
+                },
+                "success_rate": {
+                    "type": "number"
+                },
+                "total_users": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CalculatePlanRequest": {
+            "type": "object",
+            "properties": {
+                "goal": {
+                    "type": "string",
+                    "example": "tightest"
+                },
+                "gravity": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "strategy": {
+                    "type": "string",
+                    "example": "bestfitdecreasing"
+                }
+            }
+        },
         "dto.CalculationResult": {
             "type": "object",
             "properties": {
@@ -2811,6 +2899,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.DashboardStatsResponse": {
+            "type": "object",
+            "properties": {
+                "admin": {
+                    "$ref": "#/definitions/dto.AdminStats"
+                },
+                "operator": {
+                    "$ref": "#/definitions/dto.OperatorStats"
+                },
+                "planner": {
+                    "$ref": "#/definitions/dto.PlannerStats"
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -2841,6 +2943,23 @@ const docTemplate = `{
                 },
                 "user": {
                     "$ref": "#/definitions/dto.UserSummary"
+                }
+            }
+        },
+        "dto.OperatorStats": {
+            "type": "object",
+            "properties": {
+                "active_loads": {
+                    "type": "integer"
+                },
+                "avg_time_per_load": {
+                    "type": "string"
+                },
+                "completed": {
+                    "type": "integer"
+                },
+                "failed_validations": {
+                    "type": "integer"
                 }
             }
         },
@@ -3056,6 +3175,23 @@ const docTemplate = `{
                 },
                 "weight_utilization_pct": {
                     "type": "number"
+                }
+            }
+        },
+        "dto.PlannerStats": {
+            "type": "object",
+            "properties": {
+                "avg_utilization": {
+                    "type": "number"
+                },
+                "completed_today": {
+                    "type": "integer"
+                },
+                "items_processed": {
+                    "type": "integer"
+                },
+                "pending_plans": {
+                    "type": "integer"
                 }
             }
         },
