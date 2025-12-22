@@ -53,11 +53,18 @@ func (p *packer) Pack(ctx context.Context, container ContainerInput, items []Ite
 }
 
 func (p *packer) toBox(c ContainerInput) *boxpacker3.Box {
+	// boxpacker3 uses (width, height, depth) axis ordering.
+	// Our API/domain model uses (length=X, width=Y, height=Z).
+	//
+	// We map:
+	// - boxpacker3 width  <- container width  (Y)
+	// - boxpacker3 height <- container height (Z)
+	// - boxpacker3 depth  <- container length (X)
 	return boxpacker3.NewBox(
 		c.ID,
-		c.Length,
 		c.Width,
 		c.Height,
+		c.Length,
 		c.MaxWeight*1000, // kg to grams
 	)
 }
@@ -70,11 +77,14 @@ func (p *packer) toItems(items []ItemInput) ([]*boxpacker3.Item, map[string]Item
 		itemMap[item.ID] = item
 		for i := 0; i < item.Quantity; i++ {
 			instanceID := fmt.Sprintf("%s:%d", item.ID, i)
+
+			// boxpacker3's NewItem expects (width, height, depth).
+			// Keep the same axis meaning as toBox() above.
 			libItem := boxpacker3.NewItem(
 				instanceID,
-				item.Length,
 				item.Width,
 				item.Height,
+				item.Length,
 				item.Weight*1000, // kg to grams
 			)
 			libItems = append(libItems, libItem)
@@ -116,12 +126,20 @@ func (p *packer) mapPackedItems(box *boxpacker3.Box, itemMap map[string]ItemInpu
 		originalItemID := p.parseOriginalID(item.GetID())
 		originalInput := p.lookupItem(originalItemID, itemMap)
 
-		pos := item.GetPosition()
-		dim := item.GetDimension() // rotated dimensions in same axis-order as input (Length, Width, Height)
+		pos := item.GetPosition()  // boxpacker3 axis order: (W, H, D)
+		dim := item.GetDimension() // boxpacker3 axis order: (W, H, D); already rotated
+
+		// Convert boxpacker3 (W,H,D) back into our API/container axes (L,W,H).
+		// With the mapping in toBox()/toItems():
+		// - depth  (D) aligns with length (L / X)
+		// - width  (W) aligns with width  (W / Y)
+		// - height (H) aligns with height (H / Z)
+		posLWH := [3]float64{pos[2], pos[0], pos[1]}
+		dimLWH := [3]float64{dim[2], dim[0], dim[1]}
 
 		rot := p.inferRotationType(
 			[3]float64{originalInput.Length, originalInput.Width, originalInput.Height},
-			[3]float64{dim[0], dim[1], dim[2]},
+			dimLWH,
 		)
 
 		packedItem := PackedItem{
@@ -129,13 +147,13 @@ func (p *packer) mapPackedItems(box *boxpacker3.Box, itemMap map[string]ItemInpu
 			InstanceID:    item.GetID(),
 			Label:         originalInput.Label,
 			ProductSKU:    originalInput.ProductSKU,
-			RotatedLength: dim[0],
-			RotatedWidth:  dim[1],
-			RotatedHeight: dim[2],
+			RotatedLength: dimLWH[0],
+			RotatedWidth:  dimLWH[1],
+			RotatedHeight: dimLWH[2],
 			Position: Position{
-				X: pos[0],
-				Y: pos[1],
-				Z: pos[2],
+				X: posLWH[0],
+				Y: posLWH[1],
+				Z: posLWH[2],
 			},
 			RotationType: rot,
 		}
@@ -154,11 +172,9 @@ func (p *packer) mapPackedItems(box *boxpacker3.Box, itemMap map[string]ItemInpu
 }
 
 func (p *packer) inferRotationType(originalLWH, rotatedLWH [3]float64) int {
-	// The boxpacker3 rotation code is a permutation of dimensions in the same
-	// order used when constructing the item: NewItem(..., w, h, d).
-	// In our adapter we pass (Length, Width, Height), so we can treat the
-	// rotated dimensions returned by GetDimension() as (Length, Width, Height)
-	// in the corresponding container axes.
+	// RotationType is the orientation code we persist and expose via the API.
+	// It is defined as the index of the permutation of the original (L,W,H)
+	// dims that matches the packed (rotated) item dims in container space.
 	perms := [6][3]int{
 		{0, 1, 2},
 		{1, 0, 2},

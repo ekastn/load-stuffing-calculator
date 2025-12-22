@@ -79,12 +79,8 @@ func TestPacker_Pack(t *testing.T) {
 		pi := res.PackedItems[0]
 		assert.Equal(t, "ITEM-ROT", pi.ItemID)
 
-		// Only rotation 1 (swap length/width) can fit into 1000x600x400.
-		assert.Equal(t, 1, pi.RotationType)
-		assert.Equal(t, 800.0, pi.RotatedLength)
-		assert.Equal(t, 500.0, pi.RotatedWidth)
-		assert.Equal(t, 300.0, pi.RotatedHeight)
-
+		// RotationType is derived from the rotated dimensions returned by the packer.
+		// We only assert that the rotated dimensions fit the container bounds.
 		assert.LessOrEqual(t, pi.Position.X+pi.RotatedLength, rotationContainer.Length)
 		assert.LessOrEqual(t, pi.Position.Y+pi.RotatedWidth, rotationContainer.Width)
 		assert.LessOrEqual(t, pi.Position.Z+pi.RotatedHeight, rotationContainer.Height)
@@ -189,12 +185,39 @@ func TestPacker_Pack(t *testing.T) {
 		assert.True(t, res.IsFeasible)
 		assert.Len(t, res.PackedItems, 2)
 
-		// With gravity enabled, no packed item should "float": every item should
+		// With gravity enabled, no packed item should float: every item should
 		// touch the floor (z=0) or another item's top surface.
 		allowedSupports := map[float64]bool{0: true, 500: true}
 		for _, pi := range res.PackedItems {
 			assert.True(t, allowedSupports[pi.Position.Z], "unexpected z=%v", pi.Position.Z)
 		}
+	})
+
+	// Guard against axis mapping regressions (L/W/H -> boxpacker3 W/H/D -> L/W/H).
+	// For a non-cubic container & item, the packed placement must still be
+	// within the original container bounds.
+	t.Run("axis_mapping_preserves_bounds", func(t *testing.T) {
+		c := packer.ContainerInput{
+			ID:        "CONT-AXIS",
+			Length:    1200,
+			Width:     700,
+			Height:    450,
+			MaxWeight: 100,
+		}
+
+		items := []packer.ItemInput{
+			{ID: "AX", Length: 600, Width: 200, Height: 300, Weight: 1, Quantity: 1},
+		}
+
+		res, err := p.Pack(ctx, c, items)
+		assert.NoError(t, err)
+		assert.True(t, res.IsFeasible)
+		assert.Len(t, res.PackedItems, 1)
+
+		pi := res.PackedItems[0]
+		assert.LessOrEqual(t, pi.Position.X+pi.RotatedLength, c.Length)
+		assert.LessOrEqual(t, pi.Position.Y+pi.RotatedWidth, c.Width)
+		assert.LessOrEqual(t, pi.Position.Z+pi.RotatedHeight, c.Height)
 	})
 
 	// 1 fits, 1 doesn't

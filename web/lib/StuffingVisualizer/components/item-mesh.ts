@@ -21,9 +21,9 @@ export class ItemMesh {
         const w = this.itemData.width_mm;
         const h = this.itemData.height_mm;
 
-        // rotation codes follow boxpacker3 RotationType (0..5).
-        // Backend treats (length,width,height) as the input axis order, so
-        // rotation is a simple permutation of (l,w,h).
+        // rotation codes (0..5) come from our backend API and represent a
+        // permutation of the item's original (length,width,height) in container
+        // coordinates. They are not boxpacker3's native axis order.
         switch (this.placement.rotation) {
             case 0:
                 return { length_mm: l, width_mm: w, height_mm: h };
