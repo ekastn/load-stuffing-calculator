@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,7 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		req := dto.CreateRoleRequest{Name: "role"}
 		expectedResp := &dto.RoleResponse{ID: "1", Name: "role"}
@@ -45,7 +46,7 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 
 	t.Run("bad_request", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -59,7 +60,7 @@ func TestRoleHandler_CreateRole(t *testing.T) {
 
 	t.Run("service_error", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		req := dto.CreateRoleRequest{Name: "role"}
 		mockSvc.On("CreateRole", mock.Anything, req).Return(nil, errors.New("failed"))
@@ -81,7 +82,7 @@ func TestRoleHandler_GetRole(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		expectedResp := &dto.RoleResponse{ID: id, Name: "role"}
@@ -101,7 +102,7 @@ func TestRoleHandler_GetRole(t *testing.T) {
 
 	t.Run("not_found", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		mockSvc.On("GetRole", mock.Anything, id).Return(nil, errors.New("not found"))
@@ -122,7 +123,7 @@ func TestRoleHandler_ListRoles(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		expectedResp := []dto.RoleResponse{{ID: "1", Name: "role"}}
 
@@ -144,7 +145,7 @@ func TestRoleHandler_UpdateRole(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		req := dto.UpdateRoleRequest{Name: "role"}
@@ -173,7 +174,7 @@ func TestRoleHandler_DeleteRole(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockSvc := new(MockRoleService)
-		h := handler.NewRoleHandler(mockSvc)
+		h := handler.NewRoleHandler(mockSvc, cache.NewPermissionCache())
 
 		id := "1"
 		mockSvc.On("DeleteRole", mock.Anything, id).Return(nil)

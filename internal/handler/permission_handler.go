@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/response"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
@@ -11,11 +12,12 @@ import (
 )
 
 type PermissionHandler struct {
-	permSvc service.PermissionService
+	permSvc   service.PermissionService
+	permCache *cache.PermissionCache
 }
 
-func NewPermissionHandler(permSvc service.PermissionService) *PermissionHandler {
-	return &PermissionHandler{permSvc: permSvc}
+func NewPermissionHandler(permSvc service.PermissionService, permCache *cache.PermissionCache) *PermissionHandler {
+	return &PermissionHandler{permSvc: permSvc, permCache: permCache}
 }
 
 // CreatePermission godoc
@@ -43,6 +45,7 @@ func (h *PermissionHandler) CreatePermission(c *gin.Context) {
 		return
 	}
 
+	h.permCache.Invalidate()
 	response.Success(c, http.StatusCreated, resp)
 }
 
@@ -134,6 +137,7 @@ func (h *PermissionHandler) UpdatePermission(c *gin.Context) {
 		return
 	}
 
+	h.permCache.Invalidate()
 	response.Success(c, http.StatusOK, nil)
 }
 
@@ -162,5 +166,6 @@ func (h *PermissionHandler) DeletePermission(c *gin.Context) {
 		return
 	}
 
+	h.permCache.Invalidate()
 	response.Success(c, http.StatusOK, nil)
 }

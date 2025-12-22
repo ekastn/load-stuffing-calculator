@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/response"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
@@ -11,11 +12,12 @@ import (
 )
 
 type RoleHandler struct {
-	roleSvc service.RoleService
+	roleSvc   service.RoleService
+	permCache *cache.PermissionCache
 }
 
-func NewRoleHandler(roleSvc service.RoleService) *RoleHandler {
-	return &RoleHandler{roleSvc: roleSvc}
+func NewRoleHandler(roleSvc service.RoleService, permCache *cache.PermissionCache) *RoleHandler {
+	return &RoleHandler{roleSvc: roleSvc, permCache: permCache}
 }
 
 // CreateRole godoc
@@ -224,5 +226,6 @@ func (h *RoleHandler) UpdateRolePermissions(c *gin.Context) {
 		return
 	}
 
+	h.permCache.Invalidate()
 	response.Success(c, http.StatusOK, nil)
 }
