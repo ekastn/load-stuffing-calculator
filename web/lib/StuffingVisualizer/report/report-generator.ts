@@ -465,19 +465,28 @@ export class ReportGenerator {
     }
 
     private getDimsForRotation(item: ItemData, rotation: number): { length_mm: number; width_mm: number; height_mm: number } {
-        // rotations 1 and 3 swap length/width
-        if (rotation === 1 || rotation === 3) {
-            return {
-                length_mm: item.width_mm,
-                width_mm: item.length_mm,
-                height_mm: item.height_mm,
-            };
+        // rotation codes follow boxpacker3 RotationType (0..5) as a permutation
+        // of (length,width,height).
+        const l = item.length_mm;
+        const w = item.width_mm;
+        const h = item.height_mm;
+
+        switch (rotation) {
+            case 0:
+                return { length_mm: l, width_mm: w, height_mm: h };
+            case 1:
+                return { length_mm: w, width_mm: l, height_mm: h };
+            case 2:
+                return { length_mm: w, width_mm: h, height_mm: l };
+            case 3:
+                return { length_mm: h, width_mm: w, height_mm: l };
+            case 4:
+                return { length_mm: h, width_mm: l, height_mm: w };
+            case 5:
+                return { length_mm: l, width_mm: h, height_mm: w };
+            default:
+                return { length_mm: l, width_mm: w, height_mm: h };
         }
-        return {
-            length_mm: item.length_mm,
-            width_mm: item.width_mm,
-            height_mm: item.height_mm,
-        };
     }
 
     private drawItemRect(

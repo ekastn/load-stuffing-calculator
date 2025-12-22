@@ -143,3 +143,9 @@ export interface UpdatePlanItemRequest {
   allow_rotation?: boolean
   color_hex?: string
 }
+
+export interface CalculatePlanRequest {
+  strategy?: string
+  goal?: string
+  gravity?: boolean
+}

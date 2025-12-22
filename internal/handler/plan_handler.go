@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -302,7 +304,8 @@ func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 // @Tags         plans
 // @Accept       json
 // @Produce      json
-// @Param        id   path      string  true  "Plan ID"
+// @Param        id       path      string                  true  "Plan ID"
+// @Param        request  body      dto.CalculatePlanRequest false "Calculation Options"
 // @Success      200  {object}  response.APIResponse{data=dto.CalculationResult}
 // @Failure      400  {object}  response.APIResponse
 // @Failure      500  {object}  response.APIResponse
@@ -315,7 +318,18 @@ func (h *PlanHandler) CalculatePlan(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.planSvc.CalculatePlan(c.Request.Context(), id)
+	var req dto.CalculatePlanRequest
+	// Empty body is allowed (defaults will apply).
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// Gin returns io.EOF for empty request bodies; treat that as "no options".
+		if !errors.Is(err, io.EOF) {
+			response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
+			return
+		}
+		req = dto.CalculatePlanRequest{}
+	}
+
+	resp, err := h.planSvc.CalculatePlan(c.Request.Context(), id, req)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "Failed to calculate plan: "+err.Error())
 		return

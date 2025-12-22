@@ -270,8 +270,8 @@ func (m *MockPlanService) DeletePlanItem(ctx context.Context, planID, itemID str
 	return args.Error(0)
 }
 
-func (m *MockPlanService) CalculatePlan(ctx context.Context, planID string) (*dto.CalculationResult, error) {
-	args := m.Called(ctx, planID)
+func (m *MockPlanService) CalculatePlan(ctx context.Context, planID string, opts dto.CalculatePlanRequest) (*dto.CalculationResult, error) {
+	args := m.Called(ctx, planID, opts)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}

@@ -152,3 +152,9 @@ type UpdatePlanItemRequest struct {
 	AllowRotation *bool    `json:"allow_rotation,omitempty"`
 	ColorHex      *string  `json:"color_hex,omitempty" binding:"omitempty,len=7,startswith=#"`
 }
+
+type CalculatePlanRequest struct {
+	Strategy string `json:"strategy" binding:"omitempty" example:"bestfitdecreasing"`
+	Goal     string `json:"goal" binding:"omitempty" example:"tightest"`
+	Gravity  *bool  `json:"gravity" binding:"omitempty" example:"true"`
+}

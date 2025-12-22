@@ -8,7 +8,8 @@ import {
   AddPlanItemRequest,
   UpdatePlanItemRequest,
   PlanItemDetail,
-  CalculationResult
+  CalculationResult,
+  CalculatePlanRequest
 } from "../types"
 
 export const PlanService = {
@@ -85,9 +86,9 @@ export const PlanService = {
     }
   },
 
-  calculatePlan: async (planId: string): Promise<CalculationResult> => {
+  calculatePlan: async (planId: string, options?: CalculatePlanRequest): Promise<CalculationResult> => {
     try {
-      return await apiPost<CalculationResult>(`/plans/${planId}/calculate`, {})
+      return await apiPost<CalculationResult>(`/plans/${planId}/calculate`, options ?? {})
     } catch (error: any) {
       console.error(`PlanService.calculatePlan(${planId}) failed:`, error)
       throw new Error(error.message || "Failed to calculate plan")
