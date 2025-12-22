@@ -465,8 +465,8 @@ export class ReportGenerator {
     }
 
     private getDimsForRotation(item: ItemData, rotation: number): { length_mm: number; width_mm: number; height_mm: number } {
-        // rotation codes follow boxpacker3 RotationType (0..5) as a permutation
-        // of (length,width,height).
+        // rotation codes (0..5) come from our backend API and represent a
+        // permutation of (length,width,height) in container coordinates.
         const l = item.length_mm;
         const w = item.width_mm;
         const h = item.height_mm;
