@@ -1,9 +1,9 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,16 +17,21 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const router = useRouter()
-  const searchParams = useSearchParams()
+
+  const [nextPath, setNextPath] = useState<string | null>(null)
 
   useEffect(() => {
-    const reason = searchParams.get("reason")
-    if (reason === "session_expired") {
-      toast.error("Session expired. Please login again.")
-      // Clear the query parameter to avoid showing the toast again on refresh
-      router.replace("/")
-    }
-  }, [searchParams, router])
+    const params = new URLSearchParams(window.location.search)
+    const next = params.get("next")
+    setNextPath(next)
+
+    if (params.get("reason") !== "session_expired") return
+
+    toast.error("Session expired. Please login again.")
+
+    // Clear the query parameter to avoid showing the toast again on refresh.
+    router.replace(next ? `/login?next=${encodeURIComponent(next)}` : "/login")
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +40,7 @@ export function LoginForm() {
 
     try {
       await login(username, password)
-      router.push("/")
+      router.push(nextPath || "/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed")
     } finally {

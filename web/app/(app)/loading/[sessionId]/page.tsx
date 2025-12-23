@@ -5,7 +5,6 @@ import { usePlanning } from "@/lib/planning-context"
 import { useExecution } from "@/lib/execution-context"
 import { useRouter, useParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { IoTWeightInput } from "@/components/iot-weight-input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -66,8 +65,7 @@ export default function ActiveLoadingPage() {
 
   return (
     <RouteGuard allowedRoles={["operator"]}>
-      <DashboardLayout currentPage="/loading">
-        <div className="space-y-8">
+      <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Active Loading</h1>
@@ -230,8 +228,7 @@ export default function ActiveLoadingPage() {
               </CardContent>
             </Card>
           )}
-        </div>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

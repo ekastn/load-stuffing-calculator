@@ -3,17 +3,16 @@
 import type React from "react"
 
 import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LogOut, Menu, X } from "lucide-react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
-  currentPage: string
 }
 
-export function DashboardLayout({ children, currentPage }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -25,7 +24,7 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
 
   const navigationItems = {
     admin: [
-      { label: "Dashboard", path: "/" },
+      { label: "Dashboard", path: "/dashboard" },
       { label: "User Management", path: "/users" },
       { label: "Role Management", path: "/roles" },
       { label: "Permissions", path: "/permissions" },
@@ -39,19 +38,31 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
       { label: "Execution Logs", path: "/reports/execution" },
     ],
     planner: [
-      { label: "Dashboard", path: "/" },
+      { label: "Dashboard", path: "/dashboard" },
       { label: "Create Shipment", path: "/shipments/new" },
       { label: "All Shipments", path: "/shipments" },
       { label: "Manifests", path: "/reports/manifest" },
     ],
     operator: [
-      { label: "Dashboard", path: "/" },
+      { label: "Dashboard", path: "/dashboard" },
       { label: "Loading Instructions", path: "/loading" },
       { label: "Execution Logs", path: "/reports/execution" },
     ],
   }
 
   const items = navigationItems[user?.role as keyof typeof navigationItems] || []
+  const pathname = usePathname()
+
+  const activePath = useMemo(() => {
+    if (!pathname) return ""
+
+    const matches = items
+      .map((item) => item.path)
+      .filter((path) => pathname === path || pathname.startsWith(path + "/"))
+
+    matches.sort((a, b) => b.length - a.length)
+    return matches[0] || ""
+  }, [items, pathname])
 
   return (
     <div className="flex h-screen bg-background">
@@ -71,10 +82,12 @@ export function DashboardLayout({ children, currentPage }: DashboardLayoutProps)
               key={item.path}
               onClick={() => router.push(item.path)}
               className={`w-full rounded-md px-4 py-2 text-left text-sm font-medium transition-colors ${
-                currentPage === item.path
+                activePath === item.path
                   ? "bg-primary/10 text-primary"
                   : "text-foreground/70 hover:bg-card/50 hover:text-foreground"
               }`}
+
+
             >
               {item.label}
             </button>

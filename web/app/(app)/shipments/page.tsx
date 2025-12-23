@@ -4,7 +4,6 @@ import { RouteGuard } from "@/lib/route-guard"
 import { useAuth } from "@/lib/auth-context"
 import { usePlans } from "@/hooks/use-plans"
 import { useRouter } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -29,8 +28,7 @@ export default function ShipmentsPage() {
 
   return (
     <RouteGuard allowedRoles={["admin", "planner", "operator"]}>
-      <DashboardLayout currentPage="/shipments">
-        <div className="space-y-8">
+      <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Shipments</h1>
@@ -106,8 +104,7 @@ export default function ShipmentsPage() {
               ))}
             </div>
           )}
-        </div>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

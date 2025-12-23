@@ -13,30 +13,33 @@ interface RouteGuardProps {
   redirectTo?: string
 }
 
-export function RouteGuard({ children, allowedRoles, redirectTo = "/" }: RouteGuardProps) {
+export function RouteGuard({ children, allowedRoles, redirectTo = "/dashboard" }: RouteGuardProps) {
   const { user, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading) {
-      console.log("[v0] RouteGuard - User:", user?.role, "Allowed roles:", allowedRoles)
+    if (isLoading) return
 
-      if (!user) {
-        console.log("[v0] RouteGuard - No user, redirecting to /")
-        router.replace("/")
-        return
-      }
+    console.log("[v0] RouteGuard - User:", user?.role, "Allowed roles:", allowedRoles)
 
-      const isAdmin = user.role === "admin"
-      const hasAccess = isAdmin || allowedRoles.includes(user.role as UserRole)
-
-      if (!hasAccess) {
-        console.log("[v0] RouteGuard - Unauthorized role, redirecting to", redirectTo)
-        router.replace(redirectTo)
-      } else {
-        console.log("[v0] RouteGuard - Access granted, rendering children")
-      }
+    if (!user) {
+      const nextPath = window.location.pathname + window.location.search
+      const url = `/login?next=${encodeURIComponent(nextPath)}`
+      console.log("[v0] RouteGuard - No user, redirecting to", url)
+      router.replace(url)
+      return
     }
+
+    const isAdmin = user.role === "admin"
+    const hasAccess = isAdmin || allowedRoles.includes(user.role as UserRole)
+
+    if (!hasAccess) {
+      console.log("[v0] RouteGuard - Unauthorized role, redirecting to", redirectTo)
+      router.replace(redirectTo)
+      return
+    }
+
+    console.log("[v0] RouteGuard - Access granted, rendering children")
   }, [user, isLoading, allowedRoles, redirectTo, router])
 
   if (isLoading) {
@@ -53,9 +56,7 @@ export function RouteGuard({ children, allowedRoles, redirectTo = "/" }: RouteGu
   const isAdmin = user?.role === "admin"
   const hasAccess = isAdmin || allowedRoles.includes(user?.role as UserRole)
 
-  if (!user || !hasAccess) {
-    return null
-  }
+  if (!user || !hasAccess) return null
 
   return <>{children}</>
 }

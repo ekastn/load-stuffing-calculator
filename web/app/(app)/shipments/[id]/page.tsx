@@ -4,10 +4,8 @@ import { useAuth } from "@/lib/auth-context"
 import { usePlans } from "@/hooks/use-plans"
 import { useParams } from "next/navigation"
 import { useEffect, useState, useMemo } from "react"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { RouteGuard } from "@/lib/route-guard"
 import { Trash2, Package, CheckCircle, RefreshCw, Box, Info, Plus, AlertTriangle } from "lucide-react"
 import { StuffingViewer } from "@/components/stuffing-viewer"
 import { toast } from "sonner"
@@ -159,11 +157,8 @@ export default function ShipmentDetailPage() {
   const volUtil = calc ? calc.volume_utilization_pct : 0
 
   return (
-    <RouteGuard allowedRoles={["planner", "operator", "admin"]}>
-      <DashboardLayout currentPage="/shipments">
-        <div className="h-[calc(100vh-6rem)] flex flex-col gap-4">
-          
-          <div className="flex items-center justify-between shrink-0 bg-white p-4 rounded-lg border border-border/50 shadow-sm">
+    <div className="h-[calc(100vh-6rem)] flex flex-col gap-4">
+      <div className="flex items-center justify-between shrink-0 bg-white p-4 rounded-lg border border-border/50 shadow-sm">
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-xl font-bold text-foreground uppercase tracking-tight">{currentPlan.title || currentPlan.plan_code}</h1>
@@ -357,7 +352,6 @@ export default function ShipmentDetailPage() {
 
             </div>
           </div>
-        </div>
 
         <Dialog open={showAdvancedCalc} onOpenChange={setShowAdvancedCalc}>
             <DialogContent className="sm:max-w-[520px]">
@@ -422,18 +416,17 @@ export default function ShipmentDetailPage() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle>Add Item to Plan</DialogTitle>
-                    <DialogDescription>
-                        Add a product from catalog or enter custom dimensions.
-                    </DialogDescription>
-                </DialogHeader>
-                <ItemInputForm shipmentId={shipmentId} onSuccess={() => setShowAddItem(false)} />
-            </DialogContent>
-        </Dialog>
-      </DashboardLayout>
-    </RouteGuard>
+      <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Add Item to Plan</DialogTitle>
+            <DialogDescription>
+              Add a product from catalog or enter custom dimensions.
+            </DialogDescription>
+          </DialogHeader>
+          <ItemInputForm shipmentId={shipmentId} onSuccess={() => setShowAddItem(false)} />
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }

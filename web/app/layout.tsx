@@ -3,10 +3,6 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/lib/auth-context"
-import { StorageProvider } from "@/lib/storage-context"
-import { PlanningProvider } from "@/lib/planning-context"
-import { ExecutionProvider } from "@/lib/execution-context"
-import { AuditProvider } from "@/lib/audit-context"
 import "./globals.css"
 import { Toaster } from "@/components/ui/sonner"
 
@@ -45,17 +41,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans antialiased`}>
         <AuthProvider>
-          <AuditProvider>
-            <StorageProvider>
-              <PlanningProvider>
-                <ExecutionProvider>
-                  {children}
-                  <Analytics />
-                  <Toaster />
-                </ExecutionProvider>
-              </PlanningProvider>
-            </StorageProvider>
-          </AuditProvider>
+          {children}
+          <Analytics />
+          <Toaster />
         </AuthProvider>
       </body>
     </html>

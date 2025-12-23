@@ -3,7 +3,6 @@
 import { useAuth } from "@/lib/auth-context"
 import { useAudit } from "@/lib/audit-context"
 import { useEffect, useState } from "react"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { RouteGuard } from "@/lib/route-guard"
@@ -36,8 +35,7 @@ export default function AuditLogsPage() {
 
   return (
     <RouteGuard allowedRoles={["admin"]}>
-      <DashboardLayout currentPage="/reports">
-        <div className="space-y-8">
+      <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>
             <p className="mt-1 text-muted-foreground">System activity and user actions</p>
@@ -125,8 +123,7 @@ export default function AuditLogsPage() {
               ))}
             </div>
           )}
-        </div>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

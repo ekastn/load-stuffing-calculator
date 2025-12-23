@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useUsers } from "@/hooks/use-users"
 import { CreateUserRequest, UpdateUserRequest, ChangePasswordRequest, UserResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -246,9 +245,8 @@ export default function UsersPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]} redirectTo="/shipments">
-      <DashboardLayout currentPage="/users">
-        <div className="space-y-8">
+    <RouteGuard allowedRoles={[RoleAdmin]}>
+      <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">User Management</h1>
@@ -306,17 +304,20 @@ export default function UsersPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    {!editingId && ( // Password only for new user
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Password</label>
-                        <Input
-                          type="password"
-                          value={(formData as CreateUserRequest).password || ""}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          placeholder="••••••••"
-                          required
-                        />
-                      </div>
+                    {!editingId && (
+                      <>
+                        {/* Password only for new user */}
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Password</label>
+                          <Input
+                            type="password"
+                            value={(formData as CreateUserRequest).password || ""}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            placeholder="••••••••"
+                            required
+                          />
+                        </div>
+                      </>
                     )}
                   </div>
 
@@ -343,7 +344,6 @@ export default function UsersPage() {
               <DataTable columns={columns} data={users} />
             </div>
           )}
-        </div>
 
         {/* Change Password Dialog */}
         <Dialog open={showChangePasswordDialog} onOpenChange={setShowChangePasswordDialog}>
@@ -400,7 +400,7 @@ export default function UsersPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

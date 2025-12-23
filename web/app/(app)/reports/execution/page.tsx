@@ -1,6 +1,5 @@
 "use client"
 import { useExecution } from "@/lib/execution-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { RouteGuard } from "@/lib/route-guard"
@@ -13,8 +12,7 @@ export default function ExecutionLogsPage() {
 
   return (
     <RouteGuard allowedRoles={["admin", "operator"]}>
-      <DashboardLayout currentPage="/reports">
-        <div className="space-y-8">
+      <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Execution Logs</h1>
             <p className="mt-1 text-muted-foreground">Historical record of all loading sessions</p>
@@ -80,8 +78,7 @@ export default function ExecutionLogsPage() {
               ))}
             </div>
           )}
-        </div>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

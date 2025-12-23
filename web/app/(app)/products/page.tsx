@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useProducts } from "@/hooks/use-products"
 import { CreateProductRequest, ProductResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -216,9 +215,8 @@ export default function ProductsPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]} redirectTo="/shipments">
-      <DashboardLayout currentPage="/products">
-        <div className="space-y-8">
+    <RouteGuard allowedRoles={[RoleAdmin]}>
+      <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Product Catalog</h1>
@@ -325,7 +323,6 @@ export default function ProductsPage() {
               <DataTable columns={columns} data={products} />
             </div>
           )}
-        </div>
 
         <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
           <AlertDialogContent>
@@ -341,7 +338,7 @@ export default function ProductsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }
