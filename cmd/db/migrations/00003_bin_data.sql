@@ -67,5 +67,8 @@ CREATE TABLE plan_placements (
 
 -- +goose Down
 -- +goose StatementBegin
-SELECT 'down SQL query';
+DROP TABLE plan_placements;
+DROP TABLE plan_results;
+DROP TABLE load_items;
+DROP TABLE load_plans;
 -- +goose StatementEnd
