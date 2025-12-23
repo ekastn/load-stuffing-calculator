@@ -1,7 +1,6 @@
 "use client"
 import { usePlanning } from "@/lib/planning-context"
 import { useExecution } from "@/lib/execution-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RouteGuard } from "@/lib/route-guard"
@@ -86,8 +85,7 @@ Generated: ${new Date().toLocaleString()}
 
   return (
     <RouteGuard allowedRoles={["admin", "planner"]}>
-      <DashboardLayout currentPage="/reports">
-        <div className="space-y-8">
+      <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Shipment Manifests</h1>
             <p className="mt-1 text-muted-foreground">Export shipment reports and documentation</p>
@@ -152,8 +150,7 @@ Generated: ${new Date().toLocaleString()}
               })}
             </div>
           )}
-        </div>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useContainers } from "@/hooks/use-containers"
 import { CreateContainerRequest, ContainerResponse, UpdateContainerRequest } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -206,9 +205,8 @@ export default function ContainersPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]} redirectTo="/shipments">
-      <DashboardLayout currentPage="/containers">
-        <div className="space-y-8">
+    <RouteGuard allowedRoles={[RoleAdmin]}>
+      <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Container Profiles</h1>
@@ -307,7 +305,6 @@ export default function ContainersPage() {
               <DataTable columns={columns} data={containers} />
             </div>
           )}
-        </div>
 
         <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
           <AlertDialogContent>
@@ -323,7 +320,7 @@ export default function ContainersPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

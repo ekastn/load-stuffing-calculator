@@ -3,13 +3,12 @@
 import { useAuth } from "@/lib/auth-context"
 import { useDashboard } from "@/hooks/use-dashboard"
 import { useRouter } from "next/navigation"
-import { LoginForm } from "@/components/login-form"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { RouteGuard } from "@/lib/route-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Package, Truck, Users, BarChart3, Activity } from "lucide-react"
 
-export default function Home() {
+export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth()
   const { stats: dashboardStats, isLoading: statsLoading } = useDashboard()
   const router = useRouter()
@@ -25,20 +24,20 @@ export default function Home() {
     )
   }
 
-  if (!user) {
-    return <LoginForm />
-  }
-
-  // Fallback loading for dashboard content
-  if (statsLoading) {
-     return (
-      <DashboardLayout currentPage="/">
+  return (
+    <RouteGuard allowedRoles={["admin", "planner", "operator"]}>
+      {statsLoading ? (
         <div className="flex min-h-screen items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
         </div>
-      </DashboardLayout>
-     )
-  }
+      ) : (
+        <>{renderDashboard()}</>
+      )}
+    </RouteGuard>
+  )
+
+  function renderDashboard() {
+    if (!user) return null
 
   const statsAdmin = dashboardStats?.admin ? [
     { title: "Total Users", value: dashboardStats.admin.total_users.toString(), icon: Users },
@@ -87,8 +86,7 @@ export default function Home() {
       ],
     }[user.role] || []
 
-  return (
-    <DashboardLayout currentPage="/">
+    return (
       <div className="space-y-8">
         {/* Header */}
         <div>
@@ -162,8 +160,8 @@ export default function Home() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
-  )
+    )
+  }
 }
 
 function AlertCircle(props: any) {

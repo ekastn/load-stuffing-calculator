@@ -6,7 +6,6 @@ import { usePermissions } from "@/hooks/use-permissions"
 import { RoleService } from "@/lib/services/roles"
 import { CreateRoleRequest, RoleResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -216,9 +215,8 @@ export default function RolesPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]} redirectTo="/shipments">
-      <DashboardLayout currentPage="/roles">
-        <div className="space-y-8">
+    <RouteGuard allowedRoles={[RoleAdmin]}>
+      <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Roles</h1>
@@ -283,7 +281,6 @@ export default function RolesPage() {
               <DataTable columns={columns} data={roles} />
             </div>
           )}
-        </div>
 
         <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
           <AlertDialogContent>
@@ -344,7 +341,7 @@ export default function RolesPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

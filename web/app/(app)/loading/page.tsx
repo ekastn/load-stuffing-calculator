@@ -4,7 +4,6 @@ import { useAuth } from "@/lib/auth-context"
 import { usePlanning } from "@/lib/planning-context"
 import { useExecution } from "@/lib/execution-context"
 import { useRouter } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -34,8 +33,7 @@ export default function LoadingInstructionsPage() {
 
   return (
     <RouteGuard allowedRoles={["operator"]}>
-      <DashboardLayout currentPage="/loading">
-        <div className="space-y-8">
+      <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Loading Instructions</h1>
             <p className="mt-1 text-muted-foreground">Available shipments ready for execution</p>
@@ -89,8 +87,7 @@ export default function LoadingInstructionsPage() {
               ))}
             </div>
           )}
-        </div>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

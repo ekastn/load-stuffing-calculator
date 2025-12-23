@@ -6,7 +6,6 @@ import { PermissionService } from "@/lib/services/permissions"
 import { CreatePermissionRequest, PermissionResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 import { usePermissions } from "@/hooks/use-permissions"
-import { DashboardLayout } from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -173,9 +172,8 @@ export default function PermissionsPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]} redirectTo="/shipments">
-      <DashboardLayout currentPage="/permissions">
-        <div className="space-y-8">
+    <RouteGuard allowedRoles={[RoleAdmin]}>
+      <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Permissions</h1>
@@ -240,7 +238,6 @@ export default function PermissionsPage() {
               <DataTable columns={columns} data={permissions} />
             </div>
           )}
-        </div>
 
         <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
           <AlertDialogContent>
@@ -257,7 +254,7 @@ export default function PermissionsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </DashboardLayout>
+      </div>
     </RouteGuard>
   )
 }

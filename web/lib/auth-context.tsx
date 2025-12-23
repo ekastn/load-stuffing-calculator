@@ -38,7 +38,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(REFRESH_TOKEN_KEY)
     
     if (reason) {
-      router.push(`/?reason=${reason}`)
+      router.push(`/login?reason=${reason}`)
     } else {
       router.push("/")
     }
