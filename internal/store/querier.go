@@ -13,10 +13,12 @@ import (
 type Querier interface {
 	AddLoadItem(ctx context.Context, arg AddLoadItemParams) (LoadItem, error)
 	AddRolePermission(ctx context.Context, arg AddRolePermissionParams) error
+	ClaimPlansFromGuest(ctx context.Context, arg ClaimPlansFromGuestParams) error
 	CountActivePlans(ctx context.Context) (int64, error)
 	CountCompletedPlans(ctx context.Context) (int64, error)
 	CountCompletedPlansToday(ctx context.Context) (int64, error)
 	CountContainers(ctx context.Context) (int64, error)
+	CountPlansByCreator(ctx context.Context, arg CountPlansByCreatorParams) (int64, error)
 	CountTotalItems(ctx context.Context) (int64, error)
 	CountTotalUsers(ctx context.Context) (int64, error)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
@@ -41,6 +43,7 @@ type Querier interface {
 	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)
 	GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadItem, error)
 	GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, error)
+	GetLoadPlanForGuest(ctx context.Context, arg GetLoadPlanForGuestParams) (LoadPlan, error)
 	GetPermission(ctx context.Context, permissionID uuid.UUID) (Permission, error)
 	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
 	GetPlanResult(ctx context.Context, planID *uuid.UUID) (PlanResult, error)
@@ -55,6 +58,7 @@ type Querier interface {
 	ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error)
 	ListLoadItems(ctx context.Context, planID *uuid.UUID) ([]LoadItem, error)
 	ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([]LoadPlan, error)
+	ListLoadPlansForGuest(ctx context.Context, arg ListLoadPlansForGuestParams) ([]LoadPlan, error)
 	ListPermissions(ctx context.Context, arg ListPermissionsParams) ([]Permission, error)
 	ListPlanPlacements(ctx context.Context, resultID *uuid.UUID) ([]PlanPlacement, error)
 	ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error)

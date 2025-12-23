@@ -1,10 +1,11 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/ekastn/load-stuffing-calculator/internal/response"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type DashboardHandler struct {
@@ -16,15 +17,16 @@ func NewDashboardHandler(dashboardSvc service.DashboardService) *DashboardHandle
 }
 
 // GetStats godoc
-// @Summary      Get Dashboard Stats
-// @Description  Returns aggregated statistics for the dashboard based on user role.
-// @Tags         dashboard
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  response.APIResponse{data=dto.DashboardStatsResponse}
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /dashboard/stats [get]
+//
+//	@Summary		Get Dashboard Stats
+//	@Description	Returns aggregated statistics for the dashboard based on user role.
+//	@Tags			dashboard
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.APIResponse{data=dto.DashboardStatsResponse}
+//	@Failure		500	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/dashboard/stats [get]
 func (h *DashboardHandler) GetStats(c *gin.Context) {
 	role, exists := c.Get("role")
 	if !exists {

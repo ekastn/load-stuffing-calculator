@@ -45,6 +45,52 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.Success(c, http.StatusOK, resp)
 }
 
+// Register godoc
+//
+//	@Summary		Register User
+//	@Description	Creates a new user account. If `guest_token` is provided, guest-created plans are claimed into the new account.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.RegisterRequest	true	"Registration data"
+//	@Success		201		{object}	response.APIResponse{data=dto.RegisterResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Router			/auth/register [post]
+func (h *AuthHandler) Register(c *gin.Context) {
+	var req dto.RegisterRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
+		return
+	}
+
+	resp, err := h.authSvc.Register(c.Request.Context(), req)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Failed to register user: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusCreated, resp)
+}
+
+// GuestToken godoc
+//
+//	@Summary		Issue Guest Token
+//	@Description	Issues a trial (guest) access token. Trial users can manage only their own plans and are limited to 3 total plans.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	response.APIResponse{data=dto.GuestTokenResponse}
+//	@Failure		500	{object}	response.APIResponse
+//	@Router			/auth/guest [post]
+func (h *AuthHandler) GuestToken(c *gin.Context) {
+	resp, err := h.authSvc.GuestToken(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to issue guest token")
+		return
+	}
+	response.Success(c, http.StatusOK, resp)
+}
+
 // RefreshToken godoc
 //
 //	@Summary		Refresh Access Token

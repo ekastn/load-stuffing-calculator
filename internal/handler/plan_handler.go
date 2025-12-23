@@ -20,18 +20,30 @@ func NewPlanHandler(planSvc service.PlanService) *PlanHandler {
 	return &PlanHandler{planSvc: planSvc}
 }
 
+func respondPlanServiceError(c *gin.Context, err error, defaultStatus int, defaultMessage string) {
+	switch {
+	case errors.Is(err, service.ErrTrialLimitReached):
+		response.Error(c, http.StatusTooManyRequests, "Trial limit reached")
+	case errors.Is(err, service.ErrForbidden):
+		response.Error(c, http.StatusForbidden, "Forbidden")
+	default:
+		response.Error(c, defaultStatus, defaultMessage+err.Error())
+	}
+}
+
 // CreatePlan godoc
-// @Summary      Create a new load plan
-// @Description  Creates a new load plan with a container and items.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        request body dto.CreatePlanRequest true "Plan Creation Data"
-// @Success      201  {object}  response.APIResponse{data=dto.CreatePlanResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans [post]
+//
+//	@Summary		Create a new load plan
+//	@Description	Creates a new load plan with a container and items.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.CreatePlanRequest	true	"Plan Creation Data"
+//	@Success		201		{object}	response.APIResponse{data=dto.CreatePlanResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans [post]
 func (h *PlanHandler) CreatePlan(c *gin.Context) {
 	var req dto.CreatePlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -41,7 +53,7 @@ func (h *PlanHandler) CreatePlan(c *gin.Context) {
 
 	resp, err := h.planSvc.CreateCompletePlan(c.Request.Context(), req)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to create plan: "+err.Error())
+		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to create plan: ")
 		return
 	}
 
@@ -49,17 +61,18 @@ func (h *PlanHandler) CreatePlan(c *gin.Context) {
 }
 
 // GetPlan godoc
-// @Summary      Get a plan by ID
-// @Description  Retrieves plan details including items and stats.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Plan ID"
-// @Success      200  {object}  response.APIResponse{data=dto.PlanDetailResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      404  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id} [get]
+//
+//	@Summary		Get a plan by ID
+//	@Description	Retrieves plan details including items and stats.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Plan ID"
+//	@Success		200	{object}	response.APIResponse{data=dto.PlanDetailResponse}
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		404	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id} [get]
 func (h *PlanHandler) GetPlan(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -77,17 +90,18 @@ func (h *PlanHandler) GetPlan(c *gin.Context) {
 }
 
 // ListPlans godoc
-// @Summary      List plans
-// @Description  Retrieves a paginated list of plans.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        page   query     int  false  "Page number" default(1)
-// @Param        limit  query     int  false  "Items per page" default(10)
-// @Success      200  {object}  response.APIResponse{data=[]dto.PlanListItem}
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans [get]
+//
+//	@Summary		List plans
+//	@Description	Retrieves a paginated list of plans.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			page	query		int	false	"Page number"		default(1)
+//	@Param			limit	query		int	false	"Items per page"	default(10)
+//	@Success		200		{object}	response.APIResponse{data=[]dto.PlanListItem}
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans [get]
 func (h *PlanHandler) ListPlans(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -105,18 +119,19 @@ func (h *PlanHandler) ListPlans(c *gin.Context) {
 }
 
 // UpdatePlan godoc
-// @Summary      Update a plan
-// @Description  Updates an existing plan (status, container).
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string                 true  "Plan ID"
-// @Param        request body      dto.UpdatePlanRequest  true  "Plan Update Data"
-// @Success      200     {object}  response.APIResponse
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id} [put]
+//
+//	@Summary		Update a plan
+//	@Description	Updates an existing plan (status, container).
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"Plan ID"
+//	@Param			request	body		dto.UpdatePlanRequest	true	"Plan Update Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id} [put]
 func (h *PlanHandler) UpdatePlan(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -132,7 +147,7 @@ func (h *PlanHandler) UpdatePlan(c *gin.Context) {
 
 	err := h.planSvc.UpdatePlan(c.Request.Context(), id, req)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to update plan: "+err.Error())
+		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to update plan: ")
 		return
 	}
 
@@ -140,17 +155,18 @@ func (h *PlanHandler) UpdatePlan(c *gin.Context) {
 }
 
 // DeletePlan godoc
-// @Summary      Delete a plan
-// @Description  Deletes a plan by ID.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Plan ID"
-// @Success      200  {object}  response.APIResponse
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id} [delete]
+//
+//	@Summary		Delete a plan
+//	@Description	Deletes a plan by ID.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Plan ID"
+//	@Success		200	{object}	response.APIResponse
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		500	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id} [delete]
 func (h *PlanHandler) DeletePlan(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -160,7 +176,7 @@ func (h *PlanHandler) DeletePlan(c *gin.Context) {
 
 	err := h.planSvc.DeletePlan(c.Request.Context(), id)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to delete plan: "+err.Error())
+		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to delete plan: ")
 		return
 	}
 
@@ -168,18 +184,19 @@ func (h *PlanHandler) DeletePlan(c *gin.Context) {
 }
 
 // AddPlanItem godoc
-// @Summary      Add item to plan
-// @Description  Adds a new item to an existing plan.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string                 true  "Plan ID"
-// @Param        request body      dto.AddPlanItemRequest true  "Item Data"
-// @Success      201     {object}  response.APIResponse{data=dto.PlanItemDetail}
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id}/items [post]
+//
+//	@Summary		Add item to plan
+//	@Description	Adds a new item to an existing plan.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"Plan ID"
+//	@Param			request	body		dto.AddPlanItemRequest	true	"Item Data"
+//	@Success		201		{object}	response.APIResponse{data=dto.PlanItemDetail}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id}/items [post]
 func (h *PlanHandler) AddPlanItem(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -195,7 +212,7 @@ func (h *PlanHandler) AddPlanItem(c *gin.Context) {
 
 	resp, err := h.planSvc.AddPlanItem(c.Request.Context(), id, req)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to add item: "+err.Error())
+		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to add item: ")
 		return
 	}
 
@@ -203,17 +220,18 @@ func (h *PlanHandler) AddPlanItem(c *gin.Context) {
 }
 
 // GetPlanItem godoc
-// @Summary      Get plan item
-// @Description  Retrieves details of a specific item in a plan.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string  true  "Plan ID"
-// @Param        itemId  path      string  true  "Item ID"
-// @Success      200     {object}  response.APIResponse{data=dto.PlanItemDetail}
-// @Failure      404     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id}/items/{itemId} [get]
+//
+//	@Summary		Get plan item
+//	@Description	Retrieves details of a specific item in a plan.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string	true	"Plan ID"
+//	@Param			itemId	path		string	true	"Item ID"
+//	@Success		200		{object}	response.APIResponse{data=dto.PlanItemDetail}
+//	@Failure		404		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id}/items/{itemId} [get]
 func (h *PlanHandler) GetPlanItem(c *gin.Context) {
 	id := c.Param("id")
 	itemId := c.Param("itemId")
@@ -232,19 +250,20 @@ func (h *PlanHandler) GetPlanItem(c *gin.Context) {
 }
 
 // UpdatePlanItem godoc
-// @Summary      Update plan item
-// @Description  Updates a specific item in a plan.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string                 true  "Plan ID"
-// @Param        itemId  path      string                 true  "Item ID"
-// @Param        request body      dto.UpdatePlanItemRequest true "Update Data"
-// @Success      200     {object}  response.APIResponse
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id}/items/{itemId} [put]
+//
+//	@Summary		Update plan item
+//	@Description	Updates a specific item in a plan.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"Plan ID"
+//	@Param			itemId	path		string						true	"Item ID"
+//	@Param			request	body		dto.UpdatePlanItemRequest	true	"Update Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id}/items/{itemId} [put]
 func (h *PlanHandler) UpdatePlanItem(c *gin.Context) {
 	id := c.Param("id")
 	itemId := c.Param("itemId")
@@ -261,7 +280,7 @@ func (h *PlanHandler) UpdatePlanItem(c *gin.Context) {
 
 	err := h.planSvc.UpdatePlanItem(c.Request.Context(), id, itemId, req)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to update item: "+err.Error())
+		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to update item: ")
 		return
 	}
 
@@ -269,18 +288,19 @@ func (h *PlanHandler) UpdatePlanItem(c *gin.Context) {
 }
 
 // DeletePlanItem godoc
-// @Summary      Delete plan item
-// @Description  Deletes a specific item from a plan.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string  true  "Plan ID"
-// @Param        itemId  path      string  true  "Item ID"
-// @Success      200     {object}  response.APIResponse
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id}/items/{itemId} [delete]
+//
+//	@Summary		Delete plan item
+//	@Description	Deletes a specific item from a plan.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string	true	"Plan ID"
+//	@Param			itemId	path		string	true	"Item ID"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id}/items/{itemId} [delete]
 func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 	id := c.Param("id")
 	itemId := c.Param("itemId")
@@ -291,7 +311,7 @@ func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 
 	err := h.planSvc.DeletePlanItem(c.Request.Context(), id, itemId)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to delete item: "+err.Error())
+		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to delete item: ")
 		return
 	}
 
@@ -299,18 +319,19 @@ func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 }
 
 // CalculatePlan godoc
-// @Summary      Calculate plan
-// @Description  Triggers the packing calculation for a plan.
-// @Tags         plans
-// @Accept       json
-// @Produce      json
-// @Param        id       path      string                  true  "Plan ID"
-// @Param        request  body      dto.CalculatePlanRequest false "Calculation Options"
-// @Success      200  {object}  response.APIResponse{data=dto.CalculationResult}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /plans/{id}/calculate [post]
+//
+//	@Summary		Calculate plan
+//	@Description	Triggers the packing calculation for a plan.
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"Plan ID"
+//	@Param			request	body		dto.CalculatePlanRequest	false	"Calculation Options"
+//	@Success		200		{object}	response.APIResponse{data=dto.CalculationResult}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id}/calculate [post]
 func (h *PlanHandler) CalculatePlan(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -331,7 +352,7 @@ func (h *PlanHandler) CalculatePlan(c *gin.Context) {
 
 	resp, err := h.planSvc.CalculatePlan(c.Request.Context(), id, req)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to calculate plan: "+err.Error())
+		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to calculate plan: ")
 		return
 	}
 

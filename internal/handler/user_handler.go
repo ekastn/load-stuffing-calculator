@@ -177,7 +177,7 @@ func (h *UserHandler) DeleteUser(c *gin.Context) {
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string					true	"User ID"
+//	@Param			id		path		string						true	"User ID"
 //	@Param			request	body		dto.ChangePasswordRequest	true	"Password Change Data"
 //	@Success		200		{object}	response.APIResponse
 //	@Failure		400		{object}	response.APIResponse

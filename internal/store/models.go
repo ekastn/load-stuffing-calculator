@@ -37,15 +37,17 @@ type LoadItem struct {
 }
 
 type LoadPlan struct {
-	PlanID      uuid.UUID        `json:"plan_id"`
-	PlanCode    string           `json:"plan_code"`
-	Status      *string          `json:"status"`
-	ContLabel   *string          `json:"cont_label"`
-	LengthMm    pgtype.Numeric   `json:"length_mm"`
-	WidthMm     pgtype.Numeric   `json:"width_mm"`
-	HeightMm    pgtype.Numeric   `json:"height_mm"`
-	MaxWeightKg pgtype.Numeric   `json:"max_weight_kg"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	PlanID        uuid.UUID        `json:"plan_id"`
+	PlanCode      string           `json:"plan_code"`
+	Status        *string          `json:"status"`
+	ContLabel     *string          `json:"cont_label"`
+	LengthMm      pgtype.Numeric   `json:"length_mm"`
+	WidthMm       pgtype.Numeric   `json:"width_mm"`
+	HeightMm      pgtype.Numeric   `json:"height_mm"`
+	MaxWeightKg   pgtype.Numeric   `json:"max_weight_kg"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	CreatedByType string           `json:"created_by_type"`
+	CreatedByID   uuid.UUID        `json:"created_by_id"`
 }
 
 type Permission struct {

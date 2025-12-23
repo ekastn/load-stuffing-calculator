@@ -12,6 +12,15 @@ import (
 	"github.com/google/uuid"
 )
 
+func mustMakeTrialJWT(t *testing.T, secret string) string {
+	t.Helper()
+	tok, err := auth.GenerateAccessToken(uuid.New().String(), "trial", secret)
+	if err != nil {
+		t.Fatalf("failed to generate trial jwt: %v", err)
+	}
+	return tok
+}
+
 // TestAuthService_Login uses table-driven tests to verify the Login method.
 func TestAuthService_Login(t *testing.T) {
 	// Setup a common JWT secret for tests
@@ -35,6 +44,19 @@ func TestAuthService_Login(t *testing.T) {
 		{
 			name:         "successful_login",
 			loginRequest: dto.LoginRequest{Username: "testuser", Password: validPassword},
+			expectedUser: store.GetUserByUsernameRow{
+				UserID:       uuid.New(),
+				Username:     "testuser",
+				PasswordHash: hashedPassword,
+				RoleName:     "user",
+			},
+			wantErr:          false,
+			wantAccessToken:  true,
+			wantRefreshToken: true,
+		},
+		{
+			name:         "successful_login_with_guest_token_claims_plans",
+			loginRequest: dto.LoginRequest{Username: "testuser", Password: validPassword, GuestToken: stringPtr(mustMakeTrialJWT(t, jwtSecret))},
 			expectedUser: store.GetUserByUsernameRow{
 				UserID:       uuid.New(),
 				Username:     "testuser",
@@ -84,6 +106,7 @@ func TestAuthService_Login(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			claimed := false
 			mockQ := &MockQuerier{
 				GetUserByUsernameFunc: func(ctx context.Context, username string) (store.GetUserByUsernameRow, error) {
 					if tt.getUserByUsernameErr != nil {
@@ -98,11 +121,22 @@ func TestAuthService_Login(t *testing.T) {
 				CreateRefreshTokenFunc: func(ctx context.Context, arg store.CreateRefreshTokenParams) error {
 					return tt.createRefreshTokenErr
 				},
+				ClaimPlansFromGuestFunc: func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error {
+					claimed = true
+					return nil
+				},
 			}
 
 			s := service.NewAuthService(mockQ, jwtSecret)
 
 			resp, err := s.Login(context.Background(), tt.loginRequest)
+			if tt.loginRequest.GuestToken != nil && *tt.loginRequest.GuestToken != "" {
+				if !claimed {
+					t.Fatalf("expected guest plans to be claimed")
+				}
+			} else if claimed {
+				t.Fatalf("did not expect guest plans to be claimed")
+			}
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Login() error = %v, wantErr %v", err, tt.wantErr)
@@ -137,4 +171,91 @@ func TestAuthService_Login(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAuthService_Register(t *testing.T) {
+	jwtSecret := "test-jwt-secret"
+
+	t.Run("successful_register_with_guest_token_claims_plans", func(t *testing.T) {
+		claimed := false
+		userID := uuid.New()
+		roleID := uuid.New()
+		trialJWT := mustMakeTrialJWT(t, jwtSecret)
+
+		mockQ := &MockQuerier{
+			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+				if name != "planner" {
+					return store.GetRoleByNameRow{}, fmt.Errorf("unexpected role name: %s", name)
+				}
+				return store.GetRoleByNameRow{RoleID: roleID, Name: "planner"}, nil
+			},
+			CreateUserFunc: func(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
+				return store.User{UserID: userID, Username: arg.Username}, nil
+			},
+			ClaimPlansFromGuestFunc: func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error {
+				claimed = true
+				return nil
+			},
+			CreateRefreshTokenFunc: func(ctx context.Context, arg store.CreateRefreshTokenParams) error {
+				return nil
+			},
+		}
+
+		s := service.NewAuthService(mockQ, jwtSecret)
+		resp, err := s.Register(context.Background(), dto.RegisterRequest{
+			Username:   "newuser",
+			Email:      "newuser@example.com",
+			Password:   "password123",
+			GuestToken: stringPtr(trialJWT),
+		})
+
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp == nil {
+			t.Fatalf("expected response")
+		}
+		if !claimed {
+			t.Fatalf("expected guest plans to be claimed")
+		}
+	})
+
+	t.Run("successful_register_without_guest_token_does_not_claim_plans", func(t *testing.T) {
+		claimed := false
+		userID := uuid.New()
+		roleID := uuid.New()
+
+		mockQ := &MockQuerier{
+			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+				return store.GetRoleByNameRow{RoleID: roleID, Name: "planner"}, nil
+			},
+			CreateUserFunc: func(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
+				return store.User{UserID: userID, Username: arg.Username}, nil
+			},
+			ClaimPlansFromGuestFunc: func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error {
+				claimed = true
+				return nil
+			},
+			CreateRefreshTokenFunc: func(ctx context.Context, arg store.CreateRefreshTokenParams) error {
+				return nil
+			},
+		}
+
+		s := service.NewAuthService(mockQ, jwtSecret)
+		resp, err := s.Register(context.Background(), dto.RegisterRequest{
+			Username: "newuser",
+			Email:    "newuser@example.com",
+			Password: "password123",
+		})
+
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp == nil {
+			t.Fatalf("expected response")
+		}
+		if claimed {
+			t.Fatalf("did not expect guest plans to be claimed")
+		}
+	})
 }

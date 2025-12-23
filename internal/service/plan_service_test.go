@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/auth"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/packer"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
@@ -15,6 +16,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/assert"
 )
+
+func authedPlannerCtx() context.Context {
+	return auth.WithUserID(auth.WithRole(context.Background(), "planner"), uuid.New().String())
+}
+
+func authedTrialCtxWithID(id uuid.UUID) context.Context {
+	return auth.WithUserID(auth.WithRole(context.Background(), "trial"), id.String())
+}
 
 func TestPlanService_CreateCompletePlan(t *testing.T) {
 	planID := uuid.New()
@@ -78,7 +87,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			Items:         []dto.CreatePlanItem{itemReq},
 			AutoCalculate: boolPtr(false),
 		}
-		resp, err := s.CreateCompletePlan(context.Background(), req)
+		resp, err := s.CreateCompletePlan(authedPlannerCtx(), req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
@@ -119,7 +128,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			Items:         []dto.CreatePlanItem{itemReq},
 			AutoCalculate: boolPtr(false), // Ensure auto-calc is off for this test too
 		}
-		resp, err := s.CreateCompletePlan(context.Background(), req)
+		resp, err := s.CreateCompletePlan(authedPlannerCtx(), req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
@@ -135,7 +144,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 			Items: []dto.CreatePlanItem{itemReq},
 		}
-		resp, err := s.CreateCompletePlan(context.Background(), req)
+		resp, err := s.CreateCompletePlan(authedPlannerCtx(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -157,7 +166,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 			Items: []dto.CreatePlanItem{itemReq},
 		}
-		resp, err := s.CreateCompletePlan(context.Background(), req)
+		resp, err := s.CreateCompletePlan(authedPlannerCtx(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -174,7 +183,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 			Items: []dto.CreatePlanItem{itemReq},
 		}
-		resp, err := s.CreateCompletePlan(context.Background(), req)
+		resp, err := s.CreateCompletePlan(authedPlannerCtx(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -198,7 +207,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 			Items: []dto.CreatePlanItem{itemReq},
 		}
-		resp, err := s.CreateCompletePlan(context.Background(), req)
+		resp, err := s.CreateCompletePlan(authedPlannerCtx(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -235,11 +244,85 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 			Items: []dto.CreatePlanItem{itemReq},
 		}
-		resp, err := s.CreateCompletePlan(context.Background(), req)
+		resp, err := s.CreateCompletePlan(authedPlannerCtx(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
 		assert.Contains(t, err.Error(), "failed to add item")
+	})
+
+	t.Run("trial_limit_reached", func(t *testing.T) {
+		guestID := uuid.New()
+		createCalled := false
+
+		mockQ := &MockQuerier{
+			CountPlansByCreatorFunc: func(ctx context.Context, arg store.CountPlansByCreatorParams) (int64, error) {
+				assert.Equal(t, "guest", arg.CreatedByType)
+				assert.Equal(t, guestID, arg.CreatedByID)
+				return 3, nil
+			},
+			CreateLoadPlanFunc: func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error) {
+				createCalled = true
+				return store.LoadPlan{}, nil
+			},
+		}
+
+		s := service.NewPlanService(mockQ, packer.NewPacker())
+		req := dto.CreatePlanRequest{
+			Title: "Trial Plan",
+			Container: dto.CreatePlanContainer{
+				LengthMM:    floatPtr(1000),
+				WidthMM:     floatPtr(500),
+				HeightMM:    floatPtr(500),
+				MaxWeightKG: floatPtr(5000),
+			},
+			Items:         []dto.CreatePlanItem{itemReq},
+			AutoCalculate: boolPtr(false),
+		}
+
+		resp, err := s.CreateCompletePlan(authedTrialCtxWithID(guestID), req)
+		assert.ErrorIs(t, err, service.ErrTrialLimitReached)
+		assert.Nil(t, resp)
+		assert.False(t, createCalled)
+	})
+
+	t.Run("trial_creates_with_guest_owner_fields", func(t *testing.T) {
+		guestID := uuid.New()
+		planID := uuid.New()
+
+		mockQ := &MockQuerier{
+			CountPlansByCreatorFunc: func(ctx context.Context, arg store.CountPlansByCreatorParams) (int64, error) {
+				assert.Equal(t, "guest", arg.CreatedByType)
+				assert.Equal(t, guestID, arg.CreatedByID)
+				return 0, nil
+			},
+			CreateLoadPlanFunc: func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error) {
+				assert.Equal(t, "guest", arg.CreatedByType)
+				assert.Equal(t, guestID, arg.CreatedByID)
+				return store.LoadPlan{PlanID: planID, PlanCode: arg.PlanCode, CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true}}, nil
+			},
+			AddLoadItemFunc: func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error) {
+				return store.LoadItem{ItemID: uuid.New()}, nil
+			},
+		}
+
+		s := service.NewPlanService(mockQ, packer.NewPacker())
+		req := dto.CreatePlanRequest{
+			Title: "Trial Plan",
+			Container: dto.CreatePlanContainer{
+				LengthMM:    floatPtr(1000),
+				WidthMM:     floatPtr(500),
+				HeightMM:    floatPtr(500),
+				MaxWeightKG: floatPtr(5000),
+			},
+			Items:         []dto.CreatePlanItem{itemReq},
+			AutoCalculate: boolPtr(false),
+		}
+
+		resp, err := s.CreateCompletePlan(authedTrialCtxWithID(guestID), req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, planID.String(), resp.PlanID)
 	})
 }
 
@@ -272,13 +355,45 @@ func TestPlanService_GetPlan(t *testing.T) {
 		}
 
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		resp, err := s.GetPlan(context.Background(), planID.String())
+		resp, err := s.GetPlan(authedPlannerCtx(), planID.String())
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, planID.String(), resp.PlanID)
 		assert.Len(t, resp.Items, 1)
 		assert.Equal(t, 2, resp.Stats.TotalItems)
+	})
+
+	t.Run("trial_scoped", func(t *testing.T) {
+		guestID := uuid.New()
+		getGuestCalled := false
+		getUserCalled := false
+
+		mockQ := &MockQuerier{
+			GetLoadPlanForGuestFunc: func(ctx context.Context, arg store.GetLoadPlanForGuestParams) (store.LoadPlan, error) {
+				getGuestCalled = true
+				assert.Equal(t, planID, arg.PlanID)
+				assert.Equal(t, guestID, arg.CreatedByID)
+				return store.LoadPlan{PlanID: planID, PlanCode: "CODE", CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true}}, nil
+			},
+			GetLoadPlanFunc: func(ctx context.Context, id uuid.UUID) (store.LoadPlan, error) {
+				getUserCalled = true
+				return store.LoadPlan{}, nil
+			},
+			ListLoadItemsFunc: func(ctx context.Context, id *uuid.UUID) ([]store.LoadItem, error) {
+				return []store.LoadItem{}, nil
+			},
+			GetPlanResultFunc: func(ctx context.Context, id *uuid.UUID) (store.PlanResult, error) {
+				return store.PlanResult{}, fmt.Errorf("no result")
+			},
+		}
+
+		s := service.NewPlanService(mockQ, packer.NewPacker())
+		resp, err := s.GetPlan(authedTrialCtxWithID(guestID), planID.String())
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.True(t, getGuestCalled)
+		assert.False(t, getUserCalled)
 	})
 
 	t.Run("error_plan_not_found", func(t *testing.T) {
@@ -288,7 +403,7 @@ func TestPlanService_GetPlan(t *testing.T) {
 			},
 		}
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		resp, err := s.GetPlan(context.Background(), uuid.New().String())
+		resp, err := s.GetPlan(authedPlannerCtx(), uuid.New().String())
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -306,7 +421,7 @@ func TestPlanService_GetPlan(t *testing.T) {
 			},
 		}
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		resp, err := s.GetPlan(context.Background(), planID.String())
+		resp, err := s.GetPlan(authedPlannerCtx(), planID.String())
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -332,7 +447,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 		}
 
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		resp, err := s.ListPlans(context.Background(), 1, 10)
+		resp, err := s.ListPlans(authedPlannerCtx(), 1, 10)
 
 		assert.NoError(t, err)
 		assert.Len(t, resp, 1)
@@ -343,6 +458,33 @@ func TestPlanService_ListPlans(t *testing.T) {
 		// Volume and Utilization would need calculation here
 	})
 
+	t.Run("trial_scoped", func(t *testing.T) {
+		guestID := uuid.New()
+		listGuestCalled := false
+		listUserCalled := false
+
+		mockQ := &MockQuerier{
+			ListLoadPlansForGuestFunc: func(ctx context.Context, arg store.ListLoadPlansForGuestParams) ([]store.LoadPlan, error) {
+				listGuestCalled = true
+				assert.Equal(t, guestID, arg.CreatedByID)
+				assert.Equal(t, int32(10), arg.Limit)
+				assert.Equal(t, int32(0), arg.Offset)
+				return []store.LoadPlan{{PlanID: uuid.New(), PlanCode: "P1", CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true}, Status: stringPtr("DRAFT")}}, nil
+			},
+			ListLoadPlansFunc: func(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error) {
+				listUserCalled = true
+				return nil, nil
+			},
+		}
+
+		s := service.NewPlanService(mockQ, packer.NewPacker())
+		resp, err := s.ListPlans(authedTrialCtxWithID(guestID), 1, 10)
+		assert.NoError(t, err)
+		assert.Len(t, resp, 1)
+		assert.True(t, listGuestCalled)
+		assert.False(t, listUserCalled)
+	})
+
 	t.Run("db_error", func(t *testing.T) {
 		mockQ := &MockQuerier{
 			ListLoadPlansFunc: func(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error) {
@@ -351,7 +493,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 		}
 
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		resp, err := s.ListPlans(context.Background(), 1, 10)
+		resp, err := s.ListPlans(authedPlannerCtx(), 1, 10)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -390,7 +532,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 		req := dto.UpdatePlanRequest{
 			Status: stringPtr(statusNew),
 		}
-		err := s.UpdatePlan(context.Background(), planID.String(), req)
+		err := s.UpdatePlan(authedPlannerCtx(), planID.String(), req)
 
 		assert.NoError(t, err)
 	})
@@ -432,7 +574,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 				ContainerID: stringPtr(contID.String()),
 			},
 		}
-		err := s.UpdatePlan(context.Background(), planID.String(), req)
+		err := s.UpdatePlan(authedPlannerCtx(), planID.String(), req)
 		assert.NoError(t, err)
 	})
 
@@ -446,7 +588,7 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 		req := dto.UpdatePlanRequest{
 			Status: stringPtr(statusNew),
 		}
-		err := s.UpdatePlan(context.Background(), uuid.New().String(), req)
+		err := s.UpdatePlan(authedPlannerCtx(), uuid.New().String(), req)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "plan not found")
 	})
@@ -465,9 +607,30 @@ func TestPlanService_DeletePlan(t *testing.T) {
 		}
 
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		err := s.DeletePlan(context.Background(), planID.String())
+		err := s.DeletePlan(authedPlannerCtx(), planID.String())
 
 		assert.NoError(t, err)
+	})
+
+	t.Run("trial_forbidden_when_plan_not_owned", func(t *testing.T) {
+		guestID := uuid.New()
+		deleteCalled := false
+
+		mockQ := &MockQuerier{
+			GetLoadPlanForGuestFunc: func(ctx context.Context, arg store.GetLoadPlanForGuestParams) (store.LoadPlan, error) {
+				return store.LoadPlan{}, fmt.Errorf("not found")
+			},
+			DeleteLoadPlanFunc: func(ctx context.Context, id uuid.UUID) error {
+				deleteCalled = true
+				return nil
+			},
+		}
+
+		s := service.NewPlanService(mockQ, packer.NewPacker())
+		err := s.DeletePlan(authedTrialCtxWithID(guestID), planID.String())
+
+		assert.ErrorIs(t, err, service.ErrForbidden)
+		assert.False(t, deleteCalled)
 	})
 }
 
@@ -502,13 +665,42 @@ func TestPlanService_AddPlanItem(t *testing.T) {
 		req.AllowRotation = boolPtr(true)
 		req.ColorHex = stringPtr("#abcdef")
 
-		resp, err := s.AddPlanItem(context.Background(), planID.String(), req)
+		resp, err := s.AddPlanItem(authedPlannerCtx(), planID.String(), req)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, "Item", *resp.Label)
 		assert.Equal(t, 100.0, resp.LengthMM)
 		assert.True(t, resp.AllowRotation)
+	})
+
+	t.Run("trial_forbidden_when_plan_not_owned", func(t *testing.T) {
+		guestID := uuid.New()
+		addCalled := false
+
+		mockQ := &MockQuerier{
+			GetLoadPlanForGuestFunc: func(ctx context.Context, arg store.GetLoadPlanForGuestParams) (store.LoadPlan, error) {
+				return store.LoadPlan{}, fmt.Errorf("not found")
+			},
+			AddLoadItemFunc: func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error) {
+				addCalled = true
+				return store.LoadItem{}, nil
+			},
+		}
+
+		s := service.NewPlanService(mockQ, packer.NewPacker())
+		req := dto.AddPlanItemRequest{}
+		req.Label = stringPtr("Item")
+		req.LengthMM = 1
+		req.WidthMM = 1
+		req.HeightMM = 1
+		req.WeightKG = 1
+		req.Quantity = 1
+
+		resp, err := s.AddPlanItem(authedTrialCtxWithID(guestID), planID.String(), req)
+		assert.ErrorIs(t, err, service.ErrForbidden)
+		assert.Nil(t, resp)
+		assert.False(t, addCalled)
 	})
 
 	t.Run("error_add_item_db_error", func(t *testing.T) {
@@ -527,7 +719,7 @@ func TestPlanService_AddPlanItem(t *testing.T) {
 		req.WeightKG = 10
 		req.Quantity = 5
 
-		resp, err := s.AddPlanItem(context.Background(), planID.String(), req)
+		resp, err := s.AddPlanItem(authedPlannerCtx(), planID.String(), req)
 
 		assert.Error(t, err)
 		assert.Nil(t, resp)
@@ -572,7 +764,7 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 			Label: stringPtr("New Label"),
 		}
 
-		err := s.UpdatePlanItem(context.Background(), planID.String(), itemID.String(), req)
+		err := s.UpdatePlanItem(authedPlannerCtx(), planID.String(), itemID.String(), req)
 		assert.NoError(t, err)
 	})
 
@@ -602,7 +794,7 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 			AllowRotation: &newRotation,
 			ColorHex:      &newColor,
 		}
-		err := s.UpdatePlanItem(context.Background(), planID.String(), itemID.String(), req)
+		err := s.UpdatePlanItem(authedPlannerCtx(), planID.String(), itemID.String(), req)
 		assert.NoError(t, err)
 	})
 
@@ -614,7 +806,7 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 		}
 		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanItemRequest{Label: stringPtr("New Label")}
-		err := s.UpdatePlanItem(context.Background(), planID.String(), uuid.New().String(), req)
+		err := s.UpdatePlanItem(authedPlannerCtx(), planID.String(), uuid.New().String(), req)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "item not found")
@@ -635,7 +827,7 @@ func TestPlanService_DeletePlanItem(t *testing.T) {
 		}
 
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		err := s.DeletePlanItem(context.Background(), planID.String(), itemID.String())
+		err := s.DeletePlanItem(authedPlannerCtx(), planID.String(), itemID.String())
 		assert.NoError(t, err)
 	})
 
@@ -646,7 +838,7 @@ func TestPlanService_DeletePlanItem(t *testing.T) {
 			},
 		}
 		s := service.NewPlanService(mockQ, packer.NewPacker())
-		err := s.DeletePlanItem(context.Background(), planID.String(), itemID.String())
+		err := s.DeletePlanItem(authedPlannerCtx(), planID.String(), itemID.String())
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to delete item")
 	})

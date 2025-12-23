@@ -14,17 +14,21 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-func GenerateAccessToken(userID, role, secret string) (string, error) {
+func GenerateAccessTokenWithTTL(userID, role, secret string, ttl time.Duration) (string, error) {
 	claims := Claims{
 		UserID: userID,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(2 * time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(secret))
+}
+
+func GenerateAccessToken(userID, role, secret string) (string, error) {
+	return GenerateAccessTokenWithTTL(userID, role, secret, 2*time.Hour)
 }
 
 func GenerateRefreshToken() (string, error) {

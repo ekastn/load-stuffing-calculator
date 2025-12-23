@@ -75,21 +75,25 @@ INSERT INTO load_plans (
     length_mm,
     width_mm,
     height_mm,
-    max_weight_kg
+    max_weight_kg,
+    created_by_type,
+    created_by_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
-RETURNING plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at
+RETURNING plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id
 `
 
 type CreateLoadPlanParams struct {
-	PlanCode    string         `json:"plan_code"`
-	Status      *string        `json:"status"`
-	ContLabel   *string        `json:"cont_label"`
-	LengthMm    pgtype.Numeric `json:"length_mm"`
-	WidthMm     pgtype.Numeric `json:"width_mm"`
-	HeightMm    pgtype.Numeric `json:"height_mm"`
-	MaxWeightKg pgtype.Numeric `json:"max_weight_kg"`
+	PlanCode      string         `json:"plan_code"`
+	Status        *string        `json:"status"`
+	ContLabel     *string        `json:"cont_label"`
+	LengthMm      pgtype.Numeric `json:"length_mm"`
+	WidthMm       pgtype.Numeric `json:"width_mm"`
+	HeightMm      pgtype.Numeric `json:"height_mm"`
+	MaxWeightKg   pgtype.Numeric `json:"max_weight_kg"`
+	CreatedByType string         `json:"created_by_type"`
+	CreatedByID   uuid.UUID      `json:"created_by_id"`
 }
 
 func (q *Queries) CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error) {
@@ -101,6 +105,8 @@ func (q *Queries) CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) 
 		arg.WidthMm,
 		arg.HeightMm,
 		arg.MaxWeightKg,
+		arg.CreatedByType,
+		arg.CreatedByID,
 	)
 	var i LoadPlan
 	err := row.Scan(
@@ -113,6 +119,8 @@ func (q *Queries) CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) 
 		&i.HeightMm,
 		&i.MaxWeightKg,
 		&i.CreatedAt,
+		&i.CreatedByType,
+		&i.CreatedByID,
 	)
 	return i, err
 }
@@ -228,7 +236,7 @@ func (q *Queries) GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadI
 }
 
 const getLoadPlan = `-- name: GetLoadPlan :one
-SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at FROM load_plans WHERE plan_id = $1
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id FROM load_plans WHERE plan_id = $1
 `
 
 func (q *Queries) GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, error) {
@@ -244,6 +252,40 @@ func (q *Queries) GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, 
 		&i.HeightMm,
 		&i.MaxWeightKg,
 		&i.CreatedAt,
+		&i.CreatedByType,
+		&i.CreatedByID,
+	)
+	return i, err
+}
+
+const getLoadPlanForGuest = `-- name: GetLoadPlanForGuest :one
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id
+FROM load_plans
+WHERE plan_id = $1
+  AND created_by_type = 'guest'
+  AND created_by_id = $2
+`
+
+type GetLoadPlanForGuestParams struct {
+	PlanID      uuid.UUID `json:"plan_id"`
+	CreatedByID uuid.UUID `json:"created_by_id"`
+}
+
+func (q *Queries) GetLoadPlanForGuest(ctx context.Context, arg GetLoadPlanForGuestParams) (LoadPlan, error) {
+	row := q.db.QueryRow(ctx, getLoadPlanForGuest, arg.PlanID, arg.CreatedByID)
+	var i LoadPlan
+	err := row.Scan(
+		&i.PlanID,
+		&i.PlanCode,
+		&i.Status,
+		&i.ContLabel,
+		&i.LengthMm,
+		&i.WidthMm,
+		&i.HeightMm,
+		&i.MaxWeightKg,
+		&i.CreatedAt,
+		&i.CreatedByType,
+		&i.CreatedByID,
 	)
 	return i, err
 }
@@ -303,7 +345,7 @@ func (q *Queries) ListLoadItems(ctx context.Context, planID *uuid.UUID) ([]LoadI
 }
 
 const listLoadPlans = `-- name: ListLoadPlans :many
-SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at FROM load_plans
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id FROM load_plans
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2
 `
@@ -332,6 +374,55 @@ func (q *Queries) ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([
 			&i.HeightMm,
 			&i.MaxWeightKg,
 			&i.CreatedAt,
+			&i.CreatedByType,
+			&i.CreatedByID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLoadPlansForGuest = `-- name: ListLoadPlansForGuest :many
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id
+FROM load_plans
+WHERE created_by_type = 'guest'
+  AND created_by_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListLoadPlansForGuestParams struct {
+	CreatedByID uuid.UUID `json:"created_by_id"`
+	Limit       int32     `json:"limit"`
+	Offset      int32     `json:"offset"`
+}
+
+func (q *Queries) ListLoadPlansForGuest(ctx context.Context, arg ListLoadPlansForGuestParams) ([]LoadPlan, error) {
+	rows, err := q.db.Query(ctx, listLoadPlansForGuest, arg.CreatedByID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LoadPlan
+	for rows.Next() {
+		var i LoadPlan
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.PlanCode,
+			&i.Status,
+			&i.ContLabel,
+			&i.LengthMm,
+			&i.WidthMm,
+			&i.HeightMm,
+			&i.MaxWeightKg,
+			&i.CreatedAt,
+			&i.CreatedByType,
+			&i.CreatedByID,
 		); err != nil {
 			return nil, err
 		}

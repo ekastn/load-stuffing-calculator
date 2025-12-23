@@ -12,6 +12,22 @@ type MockAuthService struct {
 	mock.Mock
 }
 
+func (m *MockAuthService) GuestToken(ctx context.Context) (*dto.GuestTokenResponse, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.GuestTokenResponse), args.Error(1)
+}
+
+func (m *MockAuthService) Register(ctx context.Context, req dto.RegisterRequest) (*dto.RegisterResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.RegisterResponse), args.Error(1)
+}
+
 func (m *MockAuthService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
