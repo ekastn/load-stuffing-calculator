@@ -19,17 +19,18 @@ func NewProductHandler(productSvc service.ProductService) *ProductHandler {
 }
 
 // CreateProduct godoc
-// @Summary      Create a new product
-// @Description  Creates a new product. Requires admin privileges.
-// @Tags         products
-// @Accept       json
-// @Produce      json
-// @Param        request body dto.CreateProductRequest true "Product Creation Data"
-// @Success      201  {object}  response.APIResponse{data=dto.ProductResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /products [post]
+//
+//	@Summary		Create a new product
+//	@Description	Creates a new product. Requires admin privileges.
+//	@Tags			products
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.CreateProductRequest	true	"Product Creation Data"
+//	@Success		201		{object}	response.APIResponse{data=dto.ProductResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
 	var req dto.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,17 +48,18 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 }
 
 // GetProduct godoc
-// @Summary      Get a product by ID
-// @Description  Retrieves product details by ID.
-// @Tags         products
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Product ID"
-// @Success      200  {object}  response.APIResponse{data=dto.ProductResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      404  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /products/{id} [get]
+//
+//	@Summary		Get a product by ID
+//	@Description	Retrieves product details by ID.
+//	@Tags			products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Product ID"
+//	@Success		200	{object}	response.APIResponse{data=dto.ProductResponse}
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		404	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/products/{id} [get]
 func (h *ProductHandler) GetProduct(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -75,17 +77,18 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 }
 
 // ListProducts godoc
-// @Summary      List products
-// @Description  Retrieves a paginated list of products.
-// @Tags         products
-// @Accept       json
-// @Produce      json
-// @Param        page   query     int  false  "Page number" default(1)
-// @Param        limit  query     int  false  "Items per page" default(10)
-// @Success      200  {object}  response.APIResponse{data=[]dto.ProductResponse}
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /products [get]
+//
+//	@Summary		List products
+//	@Description	Retrieves a paginated list of products.
+//	@Tags			products
+//	@Accept			json
+//	@Produce		json
+//	@Param			page	query		int	false	"Page number"		default(1)
+//	@Param			limit	query		int	false	"Items per page"	default(10)
+//	@Success		200		{object}	response.APIResponse{data=[]dto.ProductResponse}
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/products [get]
 func (h *ProductHandler) ListProducts(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -103,18 +106,19 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 }
 
 // UpdateProduct godoc
-// @Summary      Update a product
-// @Description  Updates an existing product. Requires admin privileges.
-// @Tags         products
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string                 true  "Product ID"
-// @Param        request body      dto.UpdateProductRequest  true  "Product Update Data"
-// @Success      200     {object}  response.APIResponse
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /products/{id} [put]
+//
+//	@Summary		Update a product
+//	@Description	Updates an existing product. Requires admin privileges.
+//	@Tags			products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"Product ID"
+//	@Param			request	body		dto.UpdateProductRequest	true	"Product Update Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -138,17 +142,18 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 }
 
 // DeleteProduct godoc
-// @Summary      Delete a product
-// @Description  Deletes a product by ID. Requires admin privileges.
-// @Tags         products
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Product ID"
-// @Success      200  {object}  response.APIResponse
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /products/{id} [delete]
+//
+//	@Summary		Delete a product
+//	@Description	Deletes a product by ID. Requires admin privileges.
+//	@Tags			products
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Product ID"
+//	@Success		200	{object}	response.APIResponse
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		500	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {

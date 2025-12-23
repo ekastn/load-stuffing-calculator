@@ -21,17 +21,18 @@ func NewRoleHandler(roleSvc service.RoleService, permCache *cache.PermissionCach
 }
 
 // CreateRole godoc
-// @Summary      Create a new role
-// @Description  Creates a new role. Requires admin privileges.
-// @Tags         roles
-// @Accept       json
-// @Produce      json
-// @Param        request body dto.CreateRoleRequest true "Role Creation Data"
-// @Success      201  {object}  response.APIResponse{data=dto.RoleResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /roles [post]
+//
+//	@Summary		Create a new role
+//	@Description	Creates a new role. Requires admin privileges.
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.CreateRoleRequest	true	"Role Creation Data"
+//	@Success		201		{object}	response.APIResponse{data=dto.RoleResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/roles [post]
 func (h *RoleHandler) CreateRole(c *gin.Context) {
 	var req dto.CreateRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,17 +50,18 @@ func (h *RoleHandler) CreateRole(c *gin.Context) {
 }
 
 // GetRole godoc
-// @Summary      Get a role by ID
-// @Description  Retrieves role details by ID.
-// @Tags         roles
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Role ID"
-// @Success      200  {object}  response.APIResponse{data=dto.RoleResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      404  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /roles/{id} [get]
+//
+//	@Summary		Get a role by ID
+//	@Description	Retrieves role details by ID.
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Role ID"
+//	@Success		200	{object}	response.APIResponse{data=dto.RoleResponse}
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		404	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/roles/{id} [get]
 func (h *RoleHandler) GetRole(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -77,17 +79,18 @@ func (h *RoleHandler) GetRole(c *gin.Context) {
 }
 
 // ListRoles godoc
-// @Summary      List roles
-// @Description  Retrieves a paginated list of roles.
-// @Tags         roles
-// @Accept       json
-// @Produce      json
-// @Param        page   query     int  false  "Page number" default(1)
-// @Param        limit  query     int  false  "Items per page" default(10)
-// @Success      200  {object}  response.APIResponse{data=[]dto.RoleResponse}
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /roles [get]
+//
+//	@Summary		List roles
+//	@Description	Retrieves a paginated list of roles.
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			page	query		int	false	"Page number"		default(1)
+//	@Param			limit	query		int	false	"Items per page"	default(10)
+//	@Success		200		{object}	response.APIResponse{data=[]dto.RoleResponse}
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/roles [get]
 func (h *RoleHandler) ListRoles(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -105,18 +108,19 @@ func (h *RoleHandler) ListRoles(c *gin.Context) {
 }
 
 // UpdateRole godoc
-// @Summary      Update a role
-// @Description  Updates an existing role. Requires admin privileges.
-// @Tags         roles
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string                 true  "Role ID"
-// @Param        request body      dto.UpdateRoleRequest  true  "Role Update Data"
-// @Success      200     {object}  response.APIResponse
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /roles/{id} [put]
+//
+//	@Summary		Update a role
+//	@Description	Updates an existing role. Requires admin privileges.
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string					true	"Role ID"
+//	@Param			request	body		dto.UpdateRoleRequest	true	"Role Update Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/roles/{id} [put]
 func (h *RoleHandler) UpdateRole(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -140,17 +144,18 @@ func (h *RoleHandler) UpdateRole(c *gin.Context) {
 }
 
 // DeleteRole godoc
-// @Summary      Delete a role
-// @Description  Deletes a role by ID. Requires admin privileges.
-// @Tags         roles
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Role ID"
-// @Success      200  {object}  response.APIResponse
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /roles/{id} [delete]
+//
+//	@Summary		Delete a role
+//	@Description	Deletes a role by ID. Requires admin privileges.
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Role ID"
+//	@Success		200	{object}	response.APIResponse
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		500	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/roles/{id} [delete]
 func (h *RoleHandler) DeleteRole(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -168,16 +173,17 @@ func (h *RoleHandler) DeleteRole(c *gin.Context) {
 }
 
 // GetRolePermissions godoc
-// @Summary      Get permissions for a role
-// @Description  Retrieves a list of permission IDs assigned to a role.
-// @Tags         roles
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Role ID"
-// @Success      200  {object}  response.APIResponse{data=[]string}
-// @Failure      400  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /roles/{id}/permissions [get]
+//
+//	@Summary		Get permissions for a role
+//	@Description	Retrieves a list of permission IDs assigned to a role.
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Role ID"
+//	@Success		200	{object}	response.APIResponse{data=[]string}
+//	@Failure		400	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/roles/{id}/permissions [get]
 func (h *RoleHandler) GetRolePermissions(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -195,18 +201,19 @@ func (h *RoleHandler) GetRolePermissions(c *gin.Context) {
 }
 
 // UpdateRolePermissions godoc
-// @Summary      Update permissions for a role
-// @Description  Replaces all permissions for a role. Requires admin privileges.
-// @Tags         roles
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string                          true  "Role ID"
-// @Param        request body      dto.UpdateRolePermissionsRequest  true  "Role Permissions Data"
-// @Success      200     {object}  response.APIResponse
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /roles/{id}/permissions [put]
+//
+//	@Summary		Update permissions for a role
+//	@Description	Replaces all permissions for a role. Requires admin privileges.
+//	@Tags			roles
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string								true	"Role ID"
+//	@Param			request	body		dto.UpdateRolePermissionsRequest	true	"Role Permissions Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/roles/{id}/permissions [put]
 func (h *RoleHandler) UpdateRolePermissions(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {

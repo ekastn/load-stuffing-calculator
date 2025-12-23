@@ -23,6 +23,8 @@ func (a *App) setupRoutes(r *gin.Engine) {
 		auth := v1.Group("/auth")
 		{
 			auth.POST("/login", a.authHandler.Login)
+			auth.POST("/register", a.authHandler.Register)
+			auth.POST("/guest", a.authHandler.GuestToken)
 			auth.POST("/refresh", a.authHandler.RefreshToken)
 		}
 
@@ -64,22 +66,22 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			permissions.DELETE("/:id", a.permHandler.DeletePermission)
 		}
 
-		containers := v1.Group("/containers", perm.Require("container:*"))
+		containers := v1.Group("/containers")
 		{
-			containers.POST("", a.containerHandler.CreateContainer)
-			containers.GET("", a.containerHandler.ListContainers)
-			containers.GET("/:id", a.containerHandler.GetContainer)
-			containers.PUT("/:id", a.containerHandler.UpdateContainer)
-			containers.DELETE("/:id", a.containerHandler.DeleteContainer)
+			containers.POST("", perm.Require("container:create"), a.containerHandler.CreateContainer)
+			containers.GET("", perm.Require("container:read"), a.containerHandler.ListContainers)
+			containers.GET("/:id", perm.Require("container:read"), a.containerHandler.GetContainer)
+			containers.PUT("/:id", perm.Require("container:update"), a.containerHandler.UpdateContainer)
+			containers.DELETE("/:id", perm.Require("container:delete"), a.containerHandler.DeleteContainer)
 		}
 
-		products := v1.Group("/products", perm.Require("product:*"))
+		products := v1.Group("/products")
 		{
-			products.POST("", a.productHandler.CreateProduct)
-			products.GET("", a.productHandler.ListProducts)
-			products.GET("/:id", a.productHandler.GetProduct)
-			products.PUT("/:id", a.productHandler.UpdateProduct)
-			products.DELETE("/:id", a.productHandler.DeleteProduct)
+			products.POST("", perm.Require("product:create"), a.productHandler.CreateProduct)
+			products.GET("", perm.Require("product:read"), a.productHandler.ListProducts)
+			products.GET("/:id", perm.Require("product:read"), a.productHandler.GetProduct)
+			products.PUT("/:id", perm.Require("product:update"), a.productHandler.UpdateProduct)
+			products.DELETE("/:id", perm.Require("product:delete"), a.productHandler.DeleteProduct)
 		}
 
 		plans := v1.Group("/plans")
@@ -102,13 +104,14 @@ func (a *App) setupRoutes(r *gin.Engine) {
 }
 
 // HealthCheck godoc
-// @Summary      Health Check
-// @Description  Checks if the server is running and returns basic info.
-// @Tags         system
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  map[string]string
-// @Router       /health [get]
+//
+//	@Summary		Health Check
+//	@Description	Checks if the server is running and returns basic info.
+//	@Tags			system
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	map[string]string
+//	@Router			/health [get]
 func (a *App) HealthCheck(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"status":  "ok",

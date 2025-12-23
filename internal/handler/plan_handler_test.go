@@ -11,6 +11,7 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
 	"github.com/ekastn/load-stuffing-calculator/internal/mocks"
+	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -99,6 +100,34 @@ func TestPlanHandler_CreatePlan(t *testing.T) {
 		h.CreatePlan(c)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("trial_limit_reached", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		req := dto.CreatePlanRequest{
+			Title: "Test Plan",
+			Container: dto.CreatePlanContainer{
+				LengthMM:    floatPtr(1000),
+				WidthMM:     floatPtr(500),
+				HeightMM:    floatPtr(500),
+				MaxWeightKG: floatPtr(5000),
+			},
+			Items: []dto.CreatePlanItem{itemReq},
+		}
+		mockSvc.On("CreateCompletePlan", mock.Anything, req).Return(nil, service.ErrTrialLimitReached)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans", bytes.NewBuffer(jsonBytes))
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.CreatePlan(c)
+
+		assert.Equal(t, http.StatusTooManyRequests, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }
@@ -205,6 +234,26 @@ func TestPlanHandler_UpdatePlan(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+
+	t.Run("forbidden", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		req := dto.UpdatePlanRequest{Status: stringPtr("COMPLETED")}
+		mockSvc.On("UpdatePlan", mock.Anything, planID, req).Return(service.ErrForbidden)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPut, "/plans/"+planID, bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePlan(c)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
 }
 
 func TestPlanHandler_DeletePlan(t *testing.T) {
@@ -226,6 +275,23 @@ func TestPlanHandler_DeletePlan(t *testing.T) {
 		h.DeletePlan(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("forbidden", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("DeletePlan", mock.Anything, planID).Return(service.ErrForbidden)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodDelete, "/plans/"+planID, nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.DeletePlan(c)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }
@@ -263,6 +329,25 @@ func TestPlanHandler_AddPlanItem(t *testing.T) {
 		h.AddPlanItem(c)
 
 		assert.Equal(t, http.StatusCreated, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("forbidden", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("AddPlanItem", mock.Anything, planID, itemReq).Return(nil, service.ErrForbidden)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(itemReq)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/items", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.AddPlanItem(c)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }
@@ -387,6 +472,23 @@ func TestPlanHandler_CalculatePlan(t *testing.T) {
 		h.CalculatePlan(c)
 
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("forbidden", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("CalculatePlan", mock.Anything, planID, mock.Anything).Return(nil, service.ErrForbidden)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/calculate", nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.CalculatePlan(c)
+
+		assert.Equal(t, http.StatusForbidden, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }

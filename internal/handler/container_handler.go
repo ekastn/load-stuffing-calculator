@@ -19,17 +19,18 @@ func NewContainerHandler(containerSvc service.ContainerService) *ContainerHandle
 }
 
 // CreateContainer godoc
-// @Summary      Create a new container
-// @Description  Creates a new container type. Requires admin privileges.
-// @Tags         containers
-// @Accept       json
-// @Produce      json
-// @Param        request body dto.CreateContainerRequest true "Container Creation Data"
-// @Success      201  {object}  response.APIResponse{data=dto.ContainerResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /containers [post]
+//
+//	@Summary		Create a new container
+//	@Description	Creates a new container type. Requires admin privileges.
+//	@Tags			containers
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.CreateContainerRequest	true	"Container Creation Data"
+//	@Success		201		{object}	response.APIResponse{data=dto.ContainerResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/containers [post]
 func (h *ContainerHandler) CreateContainer(c *gin.Context) {
 	var req dto.CreateContainerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -47,17 +48,18 @@ func (h *ContainerHandler) CreateContainer(c *gin.Context) {
 }
 
 // GetContainer godoc
-// @Summary      Get a container by ID
-// @Description  Retrieves container details by ID.
-// @Tags         containers
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Container ID"
-// @Success      200  {object}  response.APIResponse{data=dto.ContainerResponse}
-// @Failure      400  {object}  response.APIResponse
-// @Failure      404  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /containers/{id} [get]
+//
+//	@Summary		Get a container by ID
+//	@Description	Retrieves container details by ID.
+//	@Tags			containers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Container ID"
+//	@Success		200	{object}	response.APIResponse{data=dto.ContainerResponse}
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		404	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/containers/{id} [get]
 func (h *ContainerHandler) GetContainer(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -75,17 +77,18 @@ func (h *ContainerHandler) GetContainer(c *gin.Context) {
 }
 
 // ListContainers godoc
-// @Summary      List containers
-// @Description  Retrieves a paginated list of containers.
-// @Tags         containers
-// @Accept       json
-// @Produce      json
-// @Param        page   query     int  false  "Page number" default(1)
-// @Param        limit  query     int  false  "Items per page" default(10)
-// @Success      200  {object}  response.APIResponse{data=[]dto.ContainerResponse}
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /containers [get]
+//
+//	@Summary		List containers
+//	@Description	Retrieves a paginated list of containers.
+//	@Tags			containers
+//	@Accept			json
+//	@Produce		json
+//	@Param			page	query		int	false	"Page number"		default(1)
+//	@Param			limit	query		int	false	"Items per page"	default(10)
+//	@Success		200		{object}	response.APIResponse{data=[]dto.ContainerResponse}
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/containers [get]
 func (h *ContainerHandler) ListContainers(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
@@ -103,18 +106,19 @@ func (h *ContainerHandler) ListContainers(c *gin.Context) {
 }
 
 // UpdateContainer godoc
-// @Summary      Update a container
-// @Description  Updates an existing container. Requires admin privileges.
-// @Tags         containers
-// @Accept       json
-// @Produce      json
-// @Param        id      path      string                 true  "Container ID"
-// @Param        request body      dto.UpdateContainerRequest  true  "Container Update Data"
-// @Success      200     {object}  response.APIResponse
-// @Failure      400     {object}  response.APIResponse
-// @Failure      500     {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /containers/{id} [put]
+//
+//	@Summary		Update a container
+//	@Description	Updates an existing container. Requires admin privileges.
+//	@Tags			containers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string						true	"Container ID"
+//	@Param			request	body		dto.UpdateContainerRequest	true	"Container Update Data"
+//	@Success		200		{object}	response.APIResponse
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		500		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/containers/{id} [put]
 func (h *ContainerHandler) UpdateContainer(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -138,17 +142,18 @@ func (h *ContainerHandler) UpdateContainer(c *gin.Context) {
 }
 
 // DeleteContainer godoc
-// @Summary      Delete a container
-// @Description  Deletes a container by ID. Requires admin privileges.
-// @Tags         containers
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "Container ID"
-// @Success      200  {object}  response.APIResponse
-// @Failure      400  {object}  response.APIResponse
-// @Failure      500  {object}  response.APIResponse
-// @Security     BearerAuth
-// @Router       /containers/{id} [delete]
+//
+//	@Summary		Delete a container
+//	@Description	Deletes a container by ID. Requires admin privileges.
+//	@Tags			containers
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"Container ID"
+//	@Success		200	{object}	response.APIResponse
+//	@Failure		400	{object}	response.APIResponse
+//	@Failure		500	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/containers/{id} [delete]
 func (h *ContainerHandler) DeleteContainer(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {

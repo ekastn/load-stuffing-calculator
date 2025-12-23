@@ -1,8 +1,9 @@
 package dto
 
 type LoginRequest struct {
-	Username string `json:"username" binding:"required" example:"admin"`
-	Password string `json:"password" binding:"required" example:"admin123"`
+	Username   string  `json:"username" binding:"required" example:"admin"`
+	Password   string  `json:"password" binding:"required" example:"admin123"`
+	GuestToken *string `json:"guest_token"`
 }
 
 type LoginResponse struct {
@@ -20,3 +21,16 @@ type UserSummary struct {
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
+
+type GuestTokenResponse struct {
+	AccessToken string `json:"access_token"`
+}
+
+type RegisterRequest struct {
+	Username   string  `json:"username" binding:"required"`
+	Email      string  `json:"email" binding:"required,email"`
+	Password   string  `json:"password" binding:"required"`
+	GuestToken *string `json:"guest_token"`
+}
+
+type RegisterResponse = LoginResponse

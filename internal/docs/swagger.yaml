@@ -339,8 +339,15 @@ definitions:
       planner:
         $ref: '#/definitions/dto.PlannerStats'
     type: object
+  dto.GuestTokenResponse:
+    properties:
+      access_token:
+        type: string
+    type: object
   dto.LoginRequest:
     properties:
+      guest_token:
+        type: string
       password:
         example: admin123
         type: string
@@ -549,6 +556,32 @@ definitions:
         type: string
     required:
     - refresh_token
+    type: object
+  dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      guest_token:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  dto.RegisterResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refresh_token:
+        example: rf_20251201_150405_abc123xyz
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserSummary'
     type: object
   dto.RoleResponse:
     properties:
@@ -782,6 +815,31 @@ info:
   title: Load Stuffing Calculator API
   version: "1.0"
 paths:
+  /auth/guest:
+    post:
+      consumes:
+      - application/json
+      description: Issues a trial (guest) access token. Trial users can manage only
+        their own plans and are limited to 3 total plans.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.GuestTokenResponse'
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Issue Guest Token
+      tags:
+      - auth
   /auth/login:
     post:
       consumes:
@@ -850,6 +908,38 @@ paths:
           schema:
             $ref: '#/definitions/response.APIResponse'
       summary: Refresh Access Token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account. If `guest_token` is provided, guest-created
+        plans are claimed into the new account.
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.RegisterResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      summary: Register User
       tags:
       - auth
   /containers:

@@ -2,7 +2,8 @@
 INSERT INTO roles (name, description) VALUES
 ('admin', 'Full system access'),
 ('planner', 'Can create and manage shipment plans'),
-('operator', 'Can validate loading steps & manage items')
+('operator', 'Can validate loading steps & manage items'),
+('trial', 'Anonymous trial users (limited)')
 ON CONFLICT (name) DO NOTHING;
 
 -- Default permissions (dev-mode)
@@ -77,4 +78,12 @@ SELECT r.role_id, p.permission_id
 FROM roles r
 JOIN permissions p ON p.name IN ('plan:read', 'plan_item:*', 'product:read', 'container:read', 'dashboard:read')
 WHERE r.name = 'operator'
+ON CONFLICT DO NOTHING;
+
+-- Trial permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r
+JOIN permissions p ON p.name IN ('plan:*', 'plan_item:*', 'product:read', 'container:read')
+WHERE r.name = 'trial'
 ON CONFLICT DO NOTHING;

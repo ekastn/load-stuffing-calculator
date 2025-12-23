@@ -6,9 +6,11 @@ INSERT INTO load_plans (
     length_mm,
     width_mm,
     height_mm,
-    max_weight_kg
+    max_weight_kg,
+    created_by_type,
+    created_by_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 RETURNING *;
 
@@ -29,10 +31,25 @@ RETURNING *;
 -- name: GetLoadPlan :one
 SELECT * FROM load_plans WHERE plan_id = $1;
 
+-- name: GetLoadPlanForGuest :one
+SELECT *
+FROM load_plans
+WHERE plan_id = $1
+  AND created_by_type = 'guest'
+  AND created_by_id = $2;
+
 -- name: ListLoadPlans :many
 SELECT * FROM load_plans
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2;
+
+-- name: ListLoadPlansForGuest :many
+SELECT *
+FROM load_plans
+WHERE created_by_type = 'guest'
+  AND created_by_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
 
 -- name: UpdatePlanStatus :exec
 UPDATE load_plans
