@@ -61,7 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
 
     const handleSessionExpired = () => {
-      logout("session_expired")
+      const isAuthed = Boolean(localStorage.getItem(AUTH_USER_KEY))
+      logout(isAuthed ? "session_expired" : undefined)
     }
 
     window.addEventListener("auth:session-expired", handleSessionExpired)

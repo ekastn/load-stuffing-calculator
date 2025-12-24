@@ -4,6 +4,7 @@ import { ArrowRight, Boxes, ClipboardList, Cuboid, LineChart, Package, PlayCircl
 
 import { ContainerIllustration } from "@/components/landing/container-illustration"
 import { RedirectIfAuthed } from "@/components/redirect-if-authed"
+import { TrialLoadCalculator } from "@/components/trial-load-calculator"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -164,6 +165,9 @@ export default function LandingPage() {
             </div>
           </div>
         </header>
+
+        {/* Trial Calculator */}
+        <TrialLoadCalculator />
 
         {/* Features */}
         <section className="pb-16 sm:pb-20">
