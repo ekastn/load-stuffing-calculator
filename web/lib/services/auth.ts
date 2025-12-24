@@ -1,5 +1,5 @@
 import { apiPost } from "../api"
-import { LoginRequest, LoginResponse } from "../types"
+import { GuestTokenResponse, LoginRequest, LoginResponse } from "../types"
 
 export const AuthService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -11,5 +11,9 @@ export const AuthService = {
       }
       throw error
     }
+  },
+
+  guest: async (): Promise<GuestTokenResponse> => {
+    return apiPost<GuestTokenResponse>("/auth/guest", {}, { isPublic: true })
   },
 }
