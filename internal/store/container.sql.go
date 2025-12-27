@@ -14,19 +14,21 @@ import (
 
 const createContainer = `-- name: CreateContainer :one
 INSERT INTO containers (
-    name, 
-    inner_length_mm, 
-    inner_width_mm, 
-    inner_height_mm, 
-    max_weight_kg, 
+    workspace_id,
+    name,
+    inner_length_mm,
+    inner_width_mm,
+    inner_height_mm,
+    max_weight_kg,
     description
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at
+RETURNING container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at, workspace_id
 `
 
 type CreateContainerParams struct {
+	WorkspaceID   *uuid.UUID     `json:"workspace_id"`
 	Name          string         `json:"name"`
 	InnerLengthMm pgtype.Numeric `json:"inner_length_mm"`
 	InnerWidthMm  pgtype.Numeric `json:"inner_width_mm"`
@@ -37,6 +39,7 @@ type CreateContainerParams struct {
 
 func (q *Queries) CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error) {
 	row := q.db.QueryRow(ctx, createContainer,
+		arg.WorkspaceID,
 		arg.Name,
 		arg.InnerLengthMm,
 		arg.InnerWidthMm,
@@ -55,28 +58,41 @@ func (q *Queries) CreateContainer(ctx context.Context, arg CreateContainerParams
 		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.WorkspaceID,
 	)
 	return i, err
 }
 
 const deleteContainer = `-- name: DeleteContainer :exec
-DELETE FROM containers 
+DELETE FROM containers
 WHERE container_id = $1
+  AND workspace_id = $2
 `
 
-func (q *Queries) DeleteContainer(ctx context.Context, containerID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteContainer, containerID)
+type DeleteContainerParams struct {
+	ContainerID uuid.UUID  `json:"container_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+}
+
+func (q *Queries) DeleteContainer(ctx context.Context, arg DeleteContainerParams) error {
+	_, err := q.db.Exec(ctx, deleteContainer, arg.ContainerID, arg.WorkspaceID)
 	return err
 }
 
 const getContainer = `-- name: GetContainer :one
-SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at
+SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at, workspace_id
 FROM containers
 WHERE container_id = $1
+  AND workspace_id = $2
 `
 
-func (q *Queries) GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error) {
-	row := q.db.QueryRow(ctx, getContainer, containerID)
+type GetContainerParams struct {
+	ContainerID uuid.UUID  `json:"container_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+}
+
+func (q *Queries) GetContainer(ctx context.Context, arg GetContainerParams) (Container, error) {
+	row := q.db.QueryRow(ctx, getContainer, arg.ContainerID, arg.WorkspaceID)
 	var i Container
 	err := row.Scan(
 		&i.ContainerID,
@@ -88,24 +104,27 @@ func (q *Queries) GetContainer(ctx context.Context, containerID uuid.UUID) (Cont
 		&i.Description,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.WorkspaceID,
 	)
 	return i, err
 }
 
 const listContainers = `-- name: ListContainers :many
-SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at
+SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at, workspace_id
 FROM containers
+WHERE workspace_id = $1
 ORDER BY name
-LIMIT $1 OFFSET $2
+LIMIT $2 OFFSET $3
 `
 
 type ListContainersParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+	Limit       int32      `json:"limit"`
+	Offset      int32      `json:"offset"`
 }
 
 func (q *Queries) ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error) {
-	rows, err := q.db.Query(ctx, listContainers, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listContainers, arg.WorkspaceID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +142,7 @@ func (q *Queries) ListContainers(ctx context.Context, arg ListContainersParams) 
 			&i.Description,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.WorkspaceID,
 		); err != nil {
 			return nil, err
 		}
@@ -135,20 +155,22 @@ func (q *Queries) ListContainers(ctx context.Context, arg ListContainersParams) 
 }
 
 const updateContainer = `-- name: UpdateContainer :exec
-UPDATE containers 
-SET 
-    name = $2,
-    inner_length_mm = $3,
-    inner_width_mm = $4,
-    inner_height_mm = $5,
-    max_weight_kg = $6,
-    description = $7,
+UPDATE containers
+SET
+    name = $3,
+    inner_length_mm = $4,
+    inner_width_mm = $5,
+    inner_height_mm = $6,
+    max_weight_kg = $7,
+    description = $8,
     updated_at = NOW()
 WHERE container_id = $1
+  AND workspace_id = $2
 `
 
 type UpdateContainerParams struct {
 	ContainerID   uuid.UUID      `json:"container_id"`
+	WorkspaceID   *uuid.UUID     `json:"workspace_id"`
 	Name          string         `json:"name"`
 	InnerLengthMm pgtype.Numeric `json:"inner_length_mm"`
 	InnerWidthMm  pgtype.Numeric `json:"inner_width_mm"`
@@ -160,6 +182,7 @@ type UpdateContainerParams struct {
 func (q *Queries) UpdateContainer(ctx context.Context, arg UpdateContainerParams) error {
 	_, err := q.db.Exec(ctx, updateContainer,
 		arg.ContainerID,
+		arg.WorkspaceID,
 		arg.Name,
 		arg.InnerLengthMm,
 		arg.InnerWidthMm,

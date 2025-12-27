@@ -14,24 +14,32 @@ import (
 
 const createRefreshToken = `-- name: CreateRefreshToken :exec
 INSERT INTO refresh_tokens (
-    token, 
-    user_id, 
+    token,
+    user_id,
+    workspace_id,
     expires_at
 ) VALUES (
-    $1, 
-    $2, 
-    $3
+    $1,
+    $2,
+    $3,
+    $4
 )
 `
 
 type CreateRefreshTokenParams struct {
-	Token     string     `json:"token"`
-	UserID    uuid.UUID  `json:"user_id"`
-	ExpiresAt *time.Time `json:"expires_at"`
+	Token       string     `json:"token"`
+	UserID      uuid.UUID  `json:"user_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+	ExpiresAt   *time.Time `json:"expires_at"`
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
-	_, err := q.db.Exec(ctx, createRefreshToken, arg.Token, arg.UserID, arg.ExpiresAt)
+	_, err := q.db.Exec(ctx, createRefreshToken,
+		arg.Token,
+		arg.UserID,
+		arg.WorkspaceID,
+		arg.ExpiresAt,
+	)
 	return err
 }
 
@@ -64,24 +72,31 @@ func (q *Queries) GetPermissionsByRole(ctx context.Context, name string) ([]stri
 }
 
 const getRefreshToken = `-- name: GetRefreshToken :one
-SELECT 
-    user_id, 
-    expires_at, 
+SELECT
+    user_id,
+    workspace_id,
+    expires_at,
     revoked_at
 FROM refresh_tokens
 WHERE token = $1
 `
 
 type GetRefreshTokenRow struct {
-	UserID    uuid.UUID  `json:"user_id"`
-	ExpiresAt *time.Time `json:"expires_at"`
-	RevokedAt time.Time  `json:"revoked_at"`
+	UserID      uuid.UUID  `json:"user_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+	ExpiresAt   *time.Time `json:"expires_at"`
+	RevokedAt   time.Time  `json:"revoked_at"`
 }
 
 func (q *Queries) GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error) {
 	row := q.db.QueryRow(ctx, getRefreshToken, token)
 	var i GetRefreshTokenRow
-	err := row.Scan(&i.UserID, &i.ExpiresAt, &i.RevokedAt)
+	err := row.Scan(
+		&i.UserID,
+		&i.WorkspaceID,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+	)
 	return i, err
 }
 
@@ -92,5 +107,23 @@ WHERE token = $1
 
 func (q *Queries) RevokeRefreshToken(ctx context.Context, token string) error {
 	_, err := q.db.Exec(ctx, revokeRefreshToken, token)
+	return err
+}
+
+const updateRefreshTokenWorkspace = `-- name: UpdateRefreshTokenWorkspace :exec
+UPDATE refresh_tokens
+SET
+    workspace_id = $2,
+    updated_at = NOW()
+WHERE token = $1
+`
+
+type UpdateRefreshTokenWorkspaceParams struct {
+	Token       string     `json:"token"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+}
+
+func (q *Queries) UpdateRefreshTokenWorkspace(ctx context.Context, arg UpdateRefreshTokenWorkspaceParams) error {
+	_, err := q.db.Exec(ctx, updateRefreshTokenWorkspace, arg.Token, arg.WorkspaceID)
 	return err
 }

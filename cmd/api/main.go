@@ -47,11 +47,11 @@ func main() {
 	}
 	log.Println("Database connected successfully!")
 
-	// Seed Admin User
+	// Seed Founder User
 	querier := store.New(dbPool)
 	seed := seeder.New(querier, cfg)
-	if err := seed.SeedAdmin(context.Background()); err != nil {
-		log.Printf("Warning: Failed to seed admin user: %v", err)
+	if err := seed.SeedFounder(context.Background()); err != nil {
+		log.Printf("Warning: Failed to seed founder user: %v", err)
 	}
 
 	app := api.NewApp(cfg, dbPool)

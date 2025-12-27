@@ -118,3 +118,32 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, resp)
 }
+
+// SwitchWorkspace godoc
+//
+//	@Summary		Switch active workspace
+//	@Description	Updates the active workspace for the supplied refresh token and returns a new access token.
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.SwitchWorkspaceRequest	true	"Switch workspace request"
+//	@Success		200		{object}	response.APIResponse{data=dto.SwitchWorkspaceResponse}
+//	@Failure		400		{object}	response.APIResponse
+//	@Failure		401		{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/auth/switch-workspace [post]
+func (h *AuthHandler) SwitchWorkspace(c *gin.Context) {
+	var req dto.SwitchWorkspaceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
+		return
+	}
+
+	resp, err := h.authSvc.SwitchWorkspace(c.Request.Context(), req)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Failed to switch workspace: "+err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}

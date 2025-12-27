@@ -30,6 +30,12 @@ func (a *App) setupRoutes(r *gin.Engine) {
 
 		v1.Use(middleware.JWT(a.jwtSecret))
 
+		// Auth endpoints that require a valid access token.
+		authAuthed := v1.Group("/auth")
+		{
+			authAuthed.POST("/switch-workspace", a.authHandler.SwitchWorkspace)
+		}
+
 		perm := middleware.NewPermissionMiddleware(a.querier, a.permCache)
 
 		dashboard := v1.Group("/dashboard")
@@ -82,6 +88,31 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			products.GET("/:id", perm.Require("product:read"), a.productHandler.GetProduct)
 			products.PUT("/:id", perm.Require("product:update"), a.productHandler.UpdateProduct)
 			products.DELETE("/:id", perm.Require("product:delete"), a.productHandler.DeleteProduct)
+		}
+
+		workspaces := v1.Group("/workspaces")
+		{
+			workspaces.GET("", perm.Require("workspace:read"), a.workspaceHandler.ListWorkspaces)
+			workspaces.POST("", perm.Require("workspace:create"), a.workspaceHandler.CreateWorkspace)
+			workspaces.PATCH("/:id", perm.Require("workspace:update"), a.workspaceHandler.UpdateWorkspace)
+			workspaces.DELETE("/:id", perm.Require("workspace:delete"), a.workspaceHandler.DeleteWorkspace)
+		}
+
+		members := v1.Group("/members")
+		{
+			members.GET("", perm.Require("member:read"), a.memberHandler.ListMembers)
+			members.POST("", perm.Require("member:create"), a.memberHandler.AddMember)
+			members.PATCH("/:member_id", perm.Require("member:update"), a.memberHandler.UpdateMemberRole)
+			members.DELETE("/:member_id", perm.Require("member:delete"), a.memberHandler.DeleteMember)
+		}
+
+		invites := v1.Group("/invites")
+		{
+			invites.GET("", perm.Require("invite:read"), a.inviteHandler.ListInvites)
+			invites.POST("", perm.Require("invite:create"), a.inviteHandler.CreateInvite)
+			invites.DELETE("/:invite_id", perm.Require("invite:delete"), a.inviteHandler.RevokeInvite)
+			// Note: accept is intentionally not permission-gated; the user may not yet be a member.
+			invites.POST("/accept", a.inviteHandler.AcceptInvite)
 		}
 
 		plans := v1.Group("/plans")

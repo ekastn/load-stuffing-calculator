@@ -1,39 +1,44 @@
 -- name: CreateProduct :one
 INSERT INTO products (
-    name, 
-    length_mm, 
-    width_mm, 
-    height_mm, 
-    weight_kg, 
+    workspace_id,
+    name,
+    length_mm,
+    width_mm,
+    height_mm,
+    weight_kg,
     color_hex
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING *;
 
 -- name: GetProduct :one
 SELECT *
 FROM products
-WHERE product_id = $1;
+WHERE product_id = $1
+  AND workspace_id = $2;
 
 -- name: ListProducts :many
 SELECT *
 FROM products
+WHERE workspace_id = $1
 ORDER BY name
-LIMIT $1 OFFSET $2;
+LIMIT $2 OFFSET $3;
 
 -- name: UpdateProduct :exec
-UPDATE products 
-SET 
-    name = $2,
-    length_mm = $3,
-    width_mm = $4,
-    height_mm = $5,
-    weight_kg = $6,
-    color_hex = $7,
+UPDATE products
+SET
+    name = $3,
+    length_mm = $4,
+    width_mm = $5,
+    height_mm = $6,
+    weight_kg = $7,
+    color_hex = $8,
     updated_at = NOW()
-WHERE product_id = $1;
+WHERE product_id = $1
+  AND workspace_id = $2;
 
 -- name: DeleteProduct :exec
-DELETE FROM products 
-WHERE product_id = $1;
+DELETE FROM products
+WHERE product_id = $1
+  AND workspace_id = $2;

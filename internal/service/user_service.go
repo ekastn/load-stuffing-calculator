@@ -8,6 +8,7 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/auth"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/google/uuid"
 )
 
@@ -31,7 +32,10 @@ func NewUserService(q store.Querier) UserService {
 }
 
 func (s *userService) CreateUser(ctx context.Context, req dto.CreateUserRequest) (*dto.UserResponse, error) {
-	role, err := s.q.GetRoleByName(ctx, req.Role)
+	if !types.IsAssignableWorkspaceRole(req.Role) {
+		return nil, fmt.Errorf("invalid role")
+	}
+	role, err := s.q.GetRoleByName(ctx, types.NormalizeRole(req.Role))
 	if err != nil {
 		return nil, fmt.Errorf("role not found: %w", err)
 	}
@@ -162,7 +166,10 @@ func (s *userService) UpdateUser(ctx context.Context, id string, req dto.UpdateU
 		params.Email = *req.Email
 	}
 	if req.Role != nil {
-		role, err := s.q.GetRoleByName(ctx, *req.Role)
+		if !types.IsAssignableWorkspaceRole(*req.Role) {
+			return fmt.Errorf("invalid role")
+		}
+		role, err := s.q.GetRoleByName(ctx, types.NormalizeRole(*req.Role))
 		if err != nil {
 			return fmt.Errorf("role not found: %w", err)
 		}

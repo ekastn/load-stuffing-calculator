@@ -9,15 +9,17 @@ import (
 )
 
 type Claims struct {
-	UserID string `json:"user_id"`
-	Role   string `json:"role"`
+	UserID      string  `json:"user_id"`
+	Role        string  `json:"role"`
+	WorkspaceID *string `json:"workspace_id,omitempty"`
 	jwt.RegisteredClaims
 }
 
-func GenerateAccessTokenWithTTL(userID, role, secret string, ttl time.Duration) (string, error) {
+func GenerateAccessTokenWithTTL(userID, role string, workspaceID *string, secret string, ttl time.Duration) (string, error) {
 	claims := Claims{
-		UserID: userID,
-		Role:   role,
+		UserID:      userID,
+		Role:        role,
+		WorkspaceID: workspaceID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ttl)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -27,8 +29,8 @@ func GenerateAccessTokenWithTTL(userID, role, secret string, ttl time.Duration) 
 	return token.SignedString([]byte(secret))
 }
 
-func GenerateAccessToken(userID, role, secret string) (string, error) {
-	return GenerateAccessTokenWithTTL(userID, role, secret, 2*time.Hour)
+func GenerateAccessToken(userID, role string, workspaceID *string, secret string) (string, error) {
+	return GenerateAccessTokenWithTTL(userID, role, workspaceID, secret, 2*time.Hour)
 }
 
 func GenerateRefreshToken() (string, error) {

@@ -4,12 +4,12 @@ type CreateUserRequest struct {
 	Username string `json:"username" binding:"required,alphanum,min=4,max=50" example:"budi"`
 	Email    string `json:"email" binding:"required,email" example:"budi@gudang.com"`
 	Password string `json:"password" binding:"required,min=6" example:"rahasia123"`
-	Role     string `json:"role" binding:"required,oneof=admin planner operator" example:"planner"`
+	Role     string `json:"role" binding:"required" example:"planner"`
 }
 
 type UpdateUserRequest struct {
 	Username *string `json:"username,omitempty" binding:"omitempty,alphanum,min=4,max=50"`
-	Role     *string `json:"role,omitempty" binding:"omitempty,oneof=admin planner operator"`
+	Role     *string `json:"role,omitempty" binding:"omitempty"`
 	Email    *string `json:"email,omitempty" binding:"omitempty,email"`
 	FullName *string `json:"full_name,omitempty" binding:"omitempty,max=100"`
 	Phone    *string `json:"phone,omitempty" binding:"omitempty,max=20"`

@@ -34,6 +34,9 @@ type App struct {
 	productHandler   *handler.ProductHandler
 	planHandler      *handler.PlanHandler
 	dashboardHandler *handler.DashboardHandler
+	workspaceHandler *handler.WorkspaceHandler
+	memberHandler    *handler.MemberHandler
+	inviteHandler    *handler.InviteHandler
 	jwtSecret        string
 }
 
@@ -50,6 +53,9 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	productSvc := service.NewProductService(querier)
 	planSvc := service.NewPlanService(querier, pack)
 	dashboardSvc := service.NewDashboardService(querier)
+	workspaceSvc := service.NewWorkspaceService(querier)
+	memberSvc := service.NewMemberService(querier)
+	inviteSvc := service.NewInviteService(querier, cfg.JWTSecret)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	userHandler := handler.NewUserHandler(userSvc)
@@ -59,6 +65,9 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	productHandler := handler.NewProductHandler(productSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 	dashboardHandler := handler.NewDashboardHandler(dashboardSvc)
+	workspaceHandler := handler.NewWorkspaceHandler(workspaceSvc)
+	memberHandler := handler.NewMemberHandler(memberSvc)
+	inviteHandler := handler.NewInviteHandler(inviteSvc)
 
 	app := &App{
 		config:           cfg,
@@ -73,6 +82,9 @@ func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 		productHandler:   productHandler,
 		planHandler:      planHandler,
 		dashboardHandler: dashboardHandler,
+		workspaceHandler: workspaceHandler,
+		memberHandler:    memberHandler,
+		inviteHandler:    inviteHandler,
 		jwtSecret:        cfg.JWTSecret,
 	}
 

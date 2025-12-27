@@ -63,7 +63,7 @@ func TestContainerService_CreateContainer(t *testing.T) {
 			}
 
 			s := service.NewContainerService(mockQ)
-			resp, err := s.CreateContainer(context.Background(), tt.req)
+			resp, err := s.CreateContainer(ctxWithWorkspaceID(uuid.New()), tt.req)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreateContainer() error = %v, wantErr %v", err, tt.wantErr)
@@ -112,17 +112,23 @@ func TestContainerService_GetContainer(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			workspaceID := uuid.New()
+			ctx := ctxWithWorkspaceID(workspaceID)
+
 			mockQ := &MockQuerier{
-				GetContainerFunc: func(ctx context.Context, containerID uuid.UUID) (store.Container, error) {
-					if containerID.String() != tt.id {
+				GetContainerFunc: func(ctx context.Context, arg store.GetContainerParams) (store.Container, error) {
+					if arg.ContainerID.String() != tt.id {
 						return store.Container{}, fmt.Errorf("id mismatch")
+					}
+					if arg.WorkspaceID == nil || *arg.WorkspaceID != workspaceID {
+						return store.Container{}, fmt.Errorf("workspace mismatch")
 					}
 					return tt.getResp, tt.getErr
 				},
 			}
 
 			s := service.NewContainerService(mockQ)
-			resp, err := s.GetContainer(context.Background(), tt.id)
+			resp, err := s.GetContainer(ctx, tt.id)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetContainer() error = %v, wantErr %v", err, tt.wantErr)
@@ -172,7 +178,7 @@ func TestContainerService_ListContainers(t *testing.T) {
 			}
 
 			s := service.NewContainerService(mockQ)
-			resp, err := s.ListContainers(context.Background(), tt.page, tt.limit)
+			resp, err := s.ListContainers(ctxWithWorkspaceID(uuid.New()), tt.page, tt.limit)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListContainers() error = %v, wantErr %v", err, tt.wantErr)
@@ -223,7 +229,7 @@ func TestContainerService_UpdateContainer(t *testing.T) {
 			}
 
 			s := service.NewContainerService(mockQ)
-			err := s.UpdateContainer(context.Background(), tt.id, tt.req)
+			err := s.UpdateContainer(ctxWithWorkspaceID(uuid.New()), tt.id, tt.req)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateContainer() error = %v, wantErr %v", err, tt.wantErr)
@@ -257,13 +263,13 @@ func TestContainerService_DeleteContainer(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockQ := &MockQuerier{
-				DeleteContainerFunc: func(ctx context.Context, containerID uuid.UUID) error {
+				DeleteContainerFunc: func(ctx context.Context, arg store.DeleteContainerParams) error {
 					return tt.deleteErr
 				},
 			}
 
 			s := service.NewContainerService(mockQ)
-			err := s.DeleteContainer(context.Background(), tt.id)
+			err := s.DeleteContainer(ctxWithWorkspaceID(uuid.New()), tt.id)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DeleteContainer() error = %v, wantErr %v", err, tt.wantErr)

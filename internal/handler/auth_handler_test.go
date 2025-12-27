@@ -10,6 +10,7 @@ import (
 
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -33,7 +34,7 @@ func TestAuthHandler_Login(t *testing.T) {
 			User: dto.UserSummary{
 				ID:       "user-id",
 				Username: "testuser",
-				Role:     "admin",
+				Role:     types.RoleAdmin.String(),
 			},
 		}
 

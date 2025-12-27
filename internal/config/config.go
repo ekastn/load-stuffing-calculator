@@ -8,12 +8,13 @@ import (
 )
 
 type Config struct {
-	Addr          string
-	DatabaseURL   string
-	JWTSecret     string
-	AdminUsername string
-	AdminEmail    string
-	AdminPassword string
+	Addr        string
+	DatabaseURL string
+	JWTSecret   string
+
+	FounderUsername string
+	FounderEmail    string
+	FounderPassword string
 }
 
 func Load() Config {
@@ -24,11 +25,13 @@ func Load() Config {
 		}
 	}
 	return Config{
-		Addr:          env.GetString("SRV_ADDR", ":8080"),
-		DatabaseURL:   env.GetString("DATABASE_URL", ""),
-		JWTSecret:     env.GetString("JWT_SECRET", "secret"),
-		AdminUsername: env.GetString("ADMIN_USERNAME", "admin"),
-		AdminEmail:    env.GetString("ADMIN_EMAIL", "admin@example.com"),
-		AdminPassword: env.GetString("ADMIN_PASSWORD", "admin123"),
+		Addr:        env.GetString("SRV_ADDR", ":8080"),
+		DatabaseURL: env.GetString("DATABASE_URL", ""),
+		JWTSecret:   env.GetString("JWT_SECRET", "secret"),
+
+		// Founder bootstrap (backwards compatible with ADMIN_*).
+		FounderUsername: env.GetString("FOUNDER_USERNAME", env.GetString("ADMIN_USERNAME", "admin")),
+		FounderEmail:    env.GetString("FOUNDER_EMAIL", env.GetString("ADMIN_EMAIL", "admin@example.com")),
+		FounderPassword: env.GetString("FOUNDER_PASSWORD", env.GetString("ADMIN_PASSWORD", "admin123")),
 	}
 }

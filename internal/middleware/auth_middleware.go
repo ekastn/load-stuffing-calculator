@@ -35,9 +35,15 @@ func JWT(secret string) gin.HandlerFunc {
 
 		c.Set("user_id", claims.UserID)
 		c.Set("role", claims.Role)
+		if claims.WorkspaceID != nil {
+			c.Set("workspace_id", *claims.WorkspaceID)
+		}
 
 		ctx := auth.WithUserID(c.Request.Context(), claims.UserID)
 		ctx = auth.WithRole(ctx, claims.Role)
+		if claims.WorkspaceID != nil {
+			ctx = auth.WithWorkspaceID(ctx, *claims.WorkspaceID)
+		}
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()

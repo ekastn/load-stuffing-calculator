@@ -7,9 +7,10 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string      `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
-	RefreshToken string      `json:"refresh_token" example:"rf_20251201_150405_abc123xyz"`
-	User         UserSummary `json:"user"`
+	AccessToken       string      `json:"access_token" example:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."`
+	RefreshToken      string      `json:"refresh_token" example:"rf_20251201_150405_abc123xyz"`
+	ActiveWorkspaceID *string     `json:"active_workspace_id,omitempty" example:"a1b2c3d4-5678-90ef-ghij-klmnopqrstuv"`
+	User              UserSummary `json:"user"`
 }
 
 type UserSummary struct {
@@ -31,6 +32,17 @@ type RegisterRequest struct {
 	Email      string  `json:"email" binding:"required,email"`
 	Password   string  `json:"password" binding:"required"`
 	GuestToken *string `json:"guest_token"`
+}
+
+type SwitchWorkspaceRequest struct {
+	WorkspaceID  string `json:"workspace_id" binding:"required"`
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type SwitchWorkspaceResponse struct {
+	AccessToken       string  `json:"access_token"`
+	RefreshToken      *string `json:"refresh_token,omitempty"`
+	ActiveWorkspaceID string  `json:"active_workspace_id"`
 }
 
 type RegisterResponse = LoginResponse

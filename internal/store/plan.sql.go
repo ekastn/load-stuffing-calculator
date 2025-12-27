@@ -69,6 +69,7 @@ func (q *Queries) AddLoadItem(ctx context.Context, arg AddLoadItemParams) (LoadI
 
 const createLoadPlan = `-- name: CreateLoadPlan :one
 INSERT INTO load_plans (
+    workspace_id,
     plan_code,
     status,
     cont_label,
@@ -79,12 +80,13 @@ INSERT INTO load_plans (
     created_by_type,
     created_by_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
-RETURNING plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id
+RETURNING plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
 `
 
 type CreateLoadPlanParams struct {
+	WorkspaceID   *uuid.UUID     `json:"workspace_id"`
 	PlanCode      string         `json:"plan_code"`
 	Status        *string        `json:"status"`
 	ContLabel     *string        `json:"cont_label"`
@@ -98,6 +100,7 @@ type CreateLoadPlanParams struct {
 
 func (q *Queries) CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error) {
 	row := q.db.QueryRow(ctx, createLoadPlan,
+		arg.WorkspaceID,
 		arg.PlanCode,
 		arg.Status,
 		arg.ContLabel,
@@ -121,6 +124,7 @@ func (q *Queries) CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) 
 		&i.CreatedAt,
 		&i.CreatedByType,
 		&i.CreatedByID,
+		&i.WorkspaceID,
 	)
 	return i, err
 }
@@ -191,10 +195,16 @@ func (q *Queries) DeleteLoadItem(ctx context.Context, arg DeleteLoadItemParams) 
 const deleteLoadPlan = `-- name: DeleteLoadPlan :exec
 DELETE FROM load_plans
 WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2
 `
 
-func (q *Queries) DeleteLoadPlan(ctx context.Context, planID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteLoadPlan, planID)
+type DeleteLoadPlanParams struct {
+	PlanID      uuid.UUID  `json:"plan_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+}
+
+func (q *Queries) DeleteLoadPlan(ctx context.Context, arg DeleteLoadPlanParams) error {
+	_, err := q.db.Exec(ctx, deleteLoadPlan, arg.PlanID, arg.WorkspaceID)
 	return err
 }
 
@@ -236,11 +246,19 @@ func (q *Queries) GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadI
 }
 
 const getLoadPlan = `-- name: GetLoadPlan :one
-SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id FROM load_plans WHERE plan_id = $1
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
+FROM load_plans
+WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2
 `
 
-func (q *Queries) GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, error) {
-	row := q.db.QueryRow(ctx, getLoadPlan, planID)
+type GetLoadPlanParams struct {
+	PlanID      uuid.UUID  `json:"plan_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+}
+
+func (q *Queries) GetLoadPlan(ctx context.Context, arg GetLoadPlanParams) (LoadPlan, error) {
+	row := q.db.QueryRow(ctx, getLoadPlan, arg.PlanID, arg.WorkspaceID)
 	var i LoadPlan
 	err := row.Scan(
 		&i.PlanID,
@@ -254,12 +272,13 @@ func (q *Queries) GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, 
 		&i.CreatedAt,
 		&i.CreatedByType,
 		&i.CreatedByID,
+		&i.WorkspaceID,
 	)
 	return i, err
 }
 
 const getLoadPlanForGuest = `-- name: GetLoadPlanForGuest :one
-SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
 FROM load_plans
 WHERE plan_id = $1
   AND created_by_type = 'guest'
@@ -286,6 +305,7 @@ func (q *Queries) GetLoadPlanForGuest(ctx context.Context, arg GetLoadPlanForGue
 		&i.CreatedAt,
 		&i.CreatedByType,
 		&i.CreatedByID,
+		&i.WorkspaceID,
 	)
 	return i, err
 }
@@ -345,18 +365,21 @@ func (q *Queries) ListLoadItems(ctx context.Context, planID *uuid.UUID) ([]LoadI
 }
 
 const listLoadPlans = `-- name: ListLoadPlans :many
-SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id FROM load_plans
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
+FROM load_plans
+WHERE workspace_id IS NOT DISTINCT FROM $1
 ORDER BY created_at DESC
-LIMIT $1 OFFSET $2
+LIMIT $2 OFFSET $3
 `
 
 type ListLoadPlansParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+	Limit       int32      `json:"limit"`
+	Offset      int32      `json:"offset"`
 }
 
 func (q *Queries) ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([]LoadPlan, error) {
-	rows, err := q.db.Query(ctx, listLoadPlans, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listLoadPlans, arg.WorkspaceID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -376,6 +399,7 @@ func (q *Queries) ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([
 			&i.CreatedAt,
 			&i.CreatedByType,
 			&i.CreatedByID,
+			&i.WorkspaceID,
 		); err != nil {
 			return nil, err
 		}
@@ -388,7 +412,7 @@ func (q *Queries) ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([
 }
 
 const listLoadPlansForGuest = `-- name: ListLoadPlansForGuest :many
-SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
 FROM load_plans
 WHERE created_by_type = 'guest'
   AND created_by_id = $1
@@ -423,6 +447,7 @@ func (q *Queries) ListLoadPlansForGuest(ctx context.Context, arg ListLoadPlansFo
 			&i.CreatedAt,
 			&i.CreatedByType,
 			&i.CreatedByID,
+			&i.WorkspaceID,
 		); err != nil {
 			return nil, err
 		}
@@ -513,18 +538,20 @@ func (q *Queries) UpdateLoadItem(ctx context.Context, arg UpdateLoadItemParams) 
 const updateLoadPlan = `-- name: UpdateLoadPlan :exec
 UPDATE load_plans
 SET
-    plan_code = $2,
-    cont_label = $3,
-    length_mm = $4,
-    width_mm = $5,
-    height_mm = $6,
-    max_weight_kg = $7,
-    status = $8
+    plan_code = $3,
+    cont_label = $4,
+    length_mm = $5,
+    width_mm = $6,
+    height_mm = $7,
+    max_weight_kg = $8,
+    status = $9
 WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2
 `
 
 type UpdateLoadPlanParams struct {
 	PlanID      uuid.UUID      `json:"plan_id"`
+	WorkspaceID *uuid.UUID     `json:"workspace_id"`
 	PlanCode    string         `json:"plan_code"`
 	ContLabel   *string        `json:"cont_label"`
 	LengthMm    pgtype.Numeric `json:"length_mm"`
@@ -537,6 +564,7 @@ type UpdateLoadPlanParams struct {
 func (q *Queries) UpdateLoadPlan(ctx context.Context, arg UpdateLoadPlanParams) error {
 	_, err := q.db.Exec(ctx, updateLoadPlan,
 		arg.PlanID,
+		arg.WorkspaceID,
 		arg.PlanCode,
 		arg.ContLabel,
 		arg.LengthMm,
@@ -550,16 +578,18 @@ func (q *Queries) UpdateLoadPlan(ctx context.Context, arg UpdateLoadPlanParams) 
 
 const updatePlanStatus = `-- name: UpdatePlanStatus :exec
 UPDATE load_plans
-SET status = $2
+SET status = $3
 WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2
 `
 
 type UpdatePlanStatusParams struct {
-	PlanID uuid.UUID `json:"plan_id"`
-	Status *string   `json:"status"`
+	PlanID      uuid.UUID  `json:"plan_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+	Status      *string    `json:"status"`
 }
 
 func (q *Queries) UpdatePlanStatus(ctx context.Context, arg UpdatePlanStatusParams) error {
-	_, err := q.db.Exec(ctx, updatePlanStatus, arg.PlanID, arg.Status)
+	_, err := q.db.Exec(ctx, updatePlanStatus, arg.PlanID, arg.WorkspaceID, arg.Status)
 	return err
 }

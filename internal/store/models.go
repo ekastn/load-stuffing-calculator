@@ -21,6 +21,20 @@ type Container struct {
 	Description   *string          `json:"description"`
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+	WorkspaceID   *uuid.UUID       `json:"workspace_id"`
+}
+
+type Invite struct {
+	InviteID        uuid.UUID  `json:"invite_id"`
+	WorkspaceID     uuid.UUID  `json:"workspace_id"`
+	Email           string     `json:"email"`
+	RoleID          uuid.UUID  `json:"role_id"`
+	TokenHash       string     `json:"token_hash"`
+	InvitedByUserID uuid.UUID  `json:"invited_by_user_id"`
+	ExpiresAt       *time.Time `json:"expires_at"`
+	AcceptedAt      time.Time  `json:"accepted_at"`
+	RevokedAt       time.Time  `json:"revoked_at"`
+	CreatedAt       time.Time  `json:"created_at"`
 }
 
 type LoadItem struct {
@@ -48,6 +62,16 @@ type LoadPlan struct {
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 	CreatedByType string           `json:"created_by_type"`
 	CreatedByID   uuid.UUID        `json:"created_by_id"`
+	WorkspaceID   *uuid.UUID       `json:"workspace_id"`
+}
+
+type Member struct {
+	MemberID    uuid.UUID `json:"member_id"`
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	UserID      uuid.UUID `json:"user_id"`
+	RoleID      uuid.UUID `json:"role_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type Permission struct {
@@ -77,25 +101,33 @@ type PlanResult struct {
 	CreatedAt            pgtype.Timestamp `json:"created_at"`
 }
 
+type PlatformMember struct {
+	UserID    uuid.UUID `json:"user_id"`
+	RoleID    uuid.UUID `json:"role_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type Product struct {
-	ProductID uuid.UUID        `json:"product_id"`
-	Name      string           `json:"name"`
-	LengthMm  pgtype.Numeric   `json:"length_mm"`
-	WidthMm   pgtype.Numeric   `json:"width_mm"`
-	HeightMm  pgtype.Numeric   `json:"height_mm"`
-	WeightKg  pgtype.Numeric   `json:"weight_kg"`
-	ColorHex  *string          `json:"color_hex"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ProductID   uuid.UUID        `json:"product_id"`
+	Name        string           `json:"name"`
+	LengthMm    pgtype.Numeric   `json:"length_mm"`
+	WidthMm     pgtype.Numeric   `json:"width_mm"`
+	HeightMm    pgtype.Numeric   `json:"height_mm"`
+	WeightKg    pgtype.Numeric   `json:"weight_kg"`
+	ColorHex    *string          `json:"color_hex"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	WorkspaceID *uuid.UUID       `json:"workspace_id"`
 }
 
 type RefreshToken struct {
-	Token     string     `json:"token"`
-	UserID    uuid.UUID  `json:"user_id"`
-	ExpiresAt *time.Time `json:"expires_at"`
-	RevokedAt time.Time  `json:"revoked_at"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	Token       string     `json:"token"`
+	UserID      uuid.UUID  `json:"user_id"`
+	ExpiresAt   *time.Time `json:"expires_at"`
+	RevokedAt   time.Time  `json:"revoked_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
 }
 
 type Role struct {
@@ -130,4 +162,13 @@ type UserProfile struct {
 	Address     *string     `json:"address"`
 	AvatarUrl   *string     `json:"avatar_url"`
 	UpdatedAt   time.Time   `json:"updated_at"`
+}
+
+type Workspace struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+	Type        string    `json:"type"`
+	Name        string    `json:"name"`
+	OwnerUserID uuid.UUID `json:"owner_user_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }

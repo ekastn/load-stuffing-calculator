@@ -1,5 +1,36 @@
 basePath: /api/v1
 definitions:
+  dto.AcceptInviteRequest:
+    properties:
+      token:
+        type: string
+    required:
+    - token
+    type: object
+  dto.AcceptInviteResponse:
+    properties:
+      access_token:
+        type: string
+      active_workspace_id:
+        type: string
+      role:
+        type: string
+    type: object
+  dto.AddMemberRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - planner
+        - operator
+        type: string
+      user_identifier:
+        description: email|username|uuid
+        type: string
+    required:
+    - role
+    - user_identifier
+    type: object
   dto.AddPlanItemRequest:
     properties:
       allow_rotation:
@@ -139,6 +170,28 @@ definitions:
     - inner_width_mm
     - max_weight_kg
     - name
+    type: object
+  dto.CreateInviteRequest:
+    properties:
+      email:
+        type: string
+      role:
+        enum:
+        - admin
+        - planner
+        - operator
+        type: string
+    required:
+    - email
+    - role
+    type: object
+  dto.CreateInviteResponse:
+    properties:
+      invite:
+        $ref: '#/definitions/dto.InviteResponse'
+      token:
+        description: raw token; only shown at creation time
+        type: string
     type: object
   dto.CreatePermissionRequest:
     properties:
@@ -330,6 +383,14 @@ definitions:
     - role
     - username
     type: object
+  dto.CreateWorkspaceRequest:
+    properties:
+      name:
+        maxLength: 150
+        type: string
+    required:
+    - name
+    type: object
   dto.DashboardStatsResponse:
     properties:
       admin:
@@ -342,6 +403,29 @@ definitions:
   dto.GuestTokenResponse:
     properties:
       access_token:
+        type: string
+    type: object
+  dto.InviteResponse:
+    properties:
+      accepted_at:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      expires_at:
+        type: string
+      invite_id:
+        type: string
+      invited_by_user_id:
+        type: string
+      invited_by_username:
+        type: string
+      revoked_at:
+        type: string
+      role:
+        type: string
+      workspace_id:
         type: string
     type: object
   dto.LoginRequest:
@@ -363,11 +447,33 @@ definitions:
       access_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
+      active_workspace_id:
+        example: a1b2c3d4-5678-90ef-ghij-klmnopqrstuv
+        type: string
       refresh_token:
         example: rf_20251201_150405_abc123xyz
         type: string
       user:
         $ref: '#/definitions/dto.UserSummary'
+    type: object
+  dto.MemberResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      member_id:
+        type: string
+      role:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+      username:
+        type: string
+      workspace_id:
+        type: string
     type: object
   dto.OperatorStats:
     properties:
@@ -577,6 +683,9 @@ definitions:
       access_token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         type: string
+      active_workspace_id:
+        example: a1b2c3d4-5678-90ef-ghij-klmnopqrstuv
+        type: string
       refresh_token:
         example: rf_20251201_150405_abc123xyz
         type: string
@@ -590,6 +699,25 @@ definitions:
       id:
         type: string
       name:
+        type: string
+    type: object
+  dto.SwitchWorkspaceRequest:
+    properties:
+      refresh_token:
+        type: string
+      workspace_id:
+        type: string
+    required:
+    - refresh_token
+    - workspace_id
+    type: object
+  dto.SwitchWorkspaceResponse:
+    properties:
+      access_token:
+        type: string
+      active_workspace_id:
+        type: string
+      refresh_token:
         type: string
     type: object
   dto.UpdateContainerRequest:
@@ -615,6 +743,17 @@ definitions:
     - inner_width_mm
     - max_weight_kg
     - name
+    type: object
+  dto.UpdateMemberRoleRequest:
+    properties:
+      role:
+        enum:
+        - admin
+        - planner
+        - operator
+        type: string
+    required:
+    - role
     type: object
   dto.UpdatePermissionRequest:
     properties:
@@ -727,6 +866,14 @@ definitions:
         minLength: 4
         type: string
     type: object
+  dto.UpdateWorkspaceRequest:
+    properties:
+      name:
+        maxLength: 150
+        type: string
+      owner_user_id:
+        type: string
+    type: object
   dto.UserProfileResponse:
     properties:
       address:
@@ -767,6 +914,22 @@ definitions:
         type: string
       username:
         example: admin
+        type: string
+    type: object
+  dto.WorkspaceResponse:
+    properties:
+      created_at:
+        type: string
+      name:
+        type: string
+      owner_user_id:
+        type: string
+      type:
+        description: personal|organization
+        type: string
+      updated_at:
+        type: string
+      workspace_id:
         type: string
     type: object
   response.APIResponse:
@@ -940,6 +1103,44 @@ paths:
           schema:
             $ref: '#/definitions/response.APIResponse'
       summary: Register User
+      tags:
+      - auth
+  /auth/switch-workspace:
+    post:
+      consumes:
+      - application/json
+      description: Updates the active workspace for the supplied refresh token and
+        returns a new access token.
+      parameters:
+      - description: Switch workspace request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SwitchWorkspaceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.SwitchWorkspaceResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Switch active workspace
       tags:
       - auth
   /containers:
@@ -1162,6 +1363,343 @@ paths:
       summary: Health Check
       tags:
       - system
+  /invites:
+    get:
+      consumes:
+      - application/json
+      description: Lists invites for the active workspace (founder may override via
+        workspace_id).
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.InviteResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List invites
+      tags:
+      - invites
+    post:
+      consumes:
+      - application/json
+      description: Creates an invite for the active workspace and returns a raw token
+        (shown only once).
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Invite creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateInviteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CreateInviteResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create invite
+      tags:
+      - invites
+  /invites/{invite_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Revokes a pending invite by ID.
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Invite ID
+        in: path
+        name: invite_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Revoke invite
+      tags:
+      - invites
+  /invites/accept:
+    post:
+      consumes:
+      - application/json
+      description: Accepts an invite using a token and returns a new access token
+        for the invite workspace.
+      parameters:
+      - description: Invite accept data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AcceptInviteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AcceptInviteResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Accept invite
+      tags:
+      - invites
+  /members:
+    get:
+      consumes:
+      - application/json
+      description: Lists members for the active workspace (founder may override via
+        workspace_id).
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.MemberResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List members
+      tags:
+      - members
+    post:
+      consumes:
+      - application/json
+      description: Adds an existing user to the active workspace (founder may override
+        via workspace_id).
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Member creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.AddMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.MemberResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Add member
+      tags:
+      - members
+  /members/{member_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Removes a member from the active workspace (founder may override
+        via workspace_id). Owner membership cannot be removed.
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Member ID
+        in: path
+        name: member_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete member
+      tags:
+      - members
+    patch:
+      consumes:
+      - application/json
+      description: Updates a member role in the active workspace (founder may override
+        via workspace_id).
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Member ID
+        in: path
+        name: member_id
+        required: true
+        type: string
+      - description: Member update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateMemberRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.MemberResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update member role
+      tags:
+      - members
   /permissions:
     get:
       consumes:
@@ -2350,6 +2888,159 @@ paths:
       summary: Change user password
       tags:
       - users
+  /workspaces:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of workspaces the user is a member of.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.WorkspaceResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List workspaces
+      tags:
+      - workspaces
+    post:
+      consumes:
+      - application/json
+      description: Creates an organization workspace; the creator becomes the owner
+        member.
+      parameters:
+      - description: Workspace creation data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateWorkspaceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.WorkspaceResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create workspace
+      tags:
+      - workspaces
+  /workspaces/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes an organization workspace and cascades workspace-owned
+        records.
+      parameters:
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete workspace
+      tags:
+      - workspaces
+    patch:
+      consumes:
+      - application/json
+      description: Renames a workspace and/or transfers ownership.
+      parameters:
+      - description: Workspace ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Workspace update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateWorkspaceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.WorkspaceResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Update workspace
+      tags:
+      - workspaces
 securityDefinitions:
   BearerAuth:
     in: header

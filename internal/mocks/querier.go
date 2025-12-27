@@ -11,58 +11,60 @@ import (
 // MockQuerier implements store.Querier for testing purposes.
 type MockQuerier struct {
 	GetUserByUsernameFunc  func(ctx context.Context, username string) (store.GetUserByUsernameRow, error)
+	GetUserByEmailFunc     func(ctx context.Context, email string) (store.GetUserByEmailRow, error)
 	CreateRefreshTokenFunc func(ctx context.Context, arg store.CreateRefreshTokenParams) error
 	GetRoleByNameFunc      func(ctx context.Context, name string) (store.GetRoleByNameRow, error)
 
-	CreateUserFunc            func(ctx context.Context, arg store.CreateUserParams) (store.User, error)
-	GetRefreshTokenFunc       func(ctx context.Context, token string) (store.GetRefreshTokenRow, error)
-	GetUserByIDFunc           func(ctx context.Context, userID uuid.UUID) (store.GetUserByIDRow, error)
-	ListUsersFunc             func(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error)
-	RevokeRefreshTokenFunc    func(ctx context.Context, token string) error
-	UpdateUserFunc            func(ctx context.Context, arg store.UpdateUserParams) error
-	DeleteUserFunc            func(ctx context.Context, userID uuid.UUID) error
-	UpdateUserPasswordFunc    func(ctx context.Context, arg store.UpdateUserPasswordParams) error
-	GetPermissionsByRoleFunc  func(ctx context.Context, name string) ([]string, error)
-	CreateRoleFunc            func(ctx context.Context, arg store.CreateRoleParams) (store.Role, error)
-	GetRoleFunc               func(ctx context.Context, id uuid.UUID) (store.Role, error)
-	ListRolesFunc             func(ctx context.Context, arg store.ListRolesParams) ([]store.Role, error)
-	UpdateRoleFunc            func(ctx context.Context, arg store.UpdateRoleParams) error
-	DeleteRoleFunc            func(ctx context.Context, id uuid.UUID) error
-	CreatePermissionFunc      func(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error)
-	GetPermissionFunc         func(ctx context.Context, id uuid.UUID) (store.Permission, error)
-	ListPermissionsFunc       func(ctx context.Context, arg store.ListPermissionsParams) ([]store.Permission, error)
-	UpdatePermissionFunc      func(ctx context.Context, arg store.UpdatePermissionParams) error
-	DeletePermissionFunc      func(ctx context.Context, id uuid.UUID) error
-	CreateContainerFunc       func(ctx context.Context, arg store.CreateContainerParams) (store.Container, error)
-	GetContainerFunc          func(ctx context.Context, id uuid.UUID) (store.Container, error)
-	ListContainersFunc        func(ctx context.Context, arg store.ListContainersParams) ([]store.Container, error)
-	UpdateContainerFunc       func(ctx context.Context, arg store.UpdateContainerParams) error
-	DeleteContainerFunc       func(ctx context.Context, id uuid.UUID) error
-	CreateProductFunc         func(ctx context.Context, arg store.CreateProductParams) (store.Product, error)
-	GetProductFunc            func(ctx context.Context, id uuid.UUID) (store.Product, error)
-	ListProductsFunc          func(ctx context.Context, arg store.ListProductsParams) ([]store.Product, error)
-	UpdateProductFunc         func(ctx context.Context, arg store.UpdateProductParams) error
-	DeleteProductFunc         func(ctx context.Context, id uuid.UUID) error
-	CreateLoadPlanFunc        func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error)
-	AddLoadItemFunc           func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error)
-	GetLoadPlanFunc           func(ctx context.Context, planID uuid.UUID) (store.LoadPlan, error)
-	GetLoadPlanForGuestFunc   func(ctx context.Context, arg store.GetLoadPlanForGuestParams) (store.LoadPlan, error)
-	ListLoadPlansFunc         func(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error)
-	ListLoadPlansForGuestFunc func(ctx context.Context, arg store.ListLoadPlansForGuestParams) ([]store.LoadPlan, error)
-	UpdatePlanStatusFunc      func(ctx context.Context, arg store.UpdatePlanStatusParams) error
-	ListLoadItemsFunc         func(ctx context.Context, planID *uuid.UUID) ([]store.LoadItem, error)
-	GetLoadItemFunc           func(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error)
-	UpdateLoadItemFunc        func(ctx context.Context, arg store.UpdateLoadItemParams) error
-	DeleteLoadItemFunc        func(ctx context.Context, arg store.DeleteLoadItemParams) error
-	UpdateLoadPlanFunc        func(ctx context.Context, arg store.UpdateLoadPlanParams) error
-	DeleteLoadPlanFunc        func(ctx context.Context, planID uuid.UUID) error
-	CreatePlanResultFunc      func(ctx context.Context, arg store.CreatePlanResultParams) (store.PlanResult, error)
-	DeletePlanResultsFunc     func(ctx context.Context, planID *uuid.UUID) error
-	CreatePlanPlacementFunc   func(ctx context.Context, arg []store.CreatePlanPlacementParams) (int64, error)
-	GetPlanResultFunc         func(ctx context.Context, planID *uuid.UUID) (store.PlanResult, error)
-	ListPlanPlacementsFunc    func(ctx context.Context, resultID *uuid.UUID) ([]store.PlanPlacement, error)
-	CountPlansByCreatorFunc   func(ctx context.Context, arg store.CountPlansByCreatorParams) (int64, error)
-	ClaimPlansFromGuestFunc   func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error
+	CreateUserFunc                  func(ctx context.Context, arg store.CreateUserParams) (store.User, error)
+	GetRefreshTokenFunc             func(ctx context.Context, token string) (store.GetRefreshTokenRow, error)
+	UpdateRefreshTokenWorkspaceFunc func(ctx context.Context, arg store.UpdateRefreshTokenWorkspaceParams) error
+	GetUserByIDFunc                 func(ctx context.Context, userID uuid.UUID) (store.GetUserByIDRow, error)
+	ListUsersFunc                   func(ctx context.Context, arg store.ListUsersParams) ([]store.ListUsersRow, error)
+	RevokeRefreshTokenFunc          func(ctx context.Context, token string) error
+	UpdateUserFunc                  func(ctx context.Context, arg store.UpdateUserParams) error
+	DeleteUserFunc                  func(ctx context.Context, userID uuid.UUID) error
+	UpdateUserPasswordFunc          func(ctx context.Context, arg store.UpdateUserPasswordParams) error
+	GetPermissionsByRoleFunc        func(ctx context.Context, name string) ([]string, error)
+	CreateRoleFunc                  func(ctx context.Context, arg store.CreateRoleParams) (store.Role, error)
+	GetRoleFunc                     func(ctx context.Context, id uuid.UUID) (store.Role, error)
+	ListRolesFunc                   func(ctx context.Context, arg store.ListRolesParams) ([]store.Role, error)
+	UpdateRoleFunc                  func(ctx context.Context, arg store.UpdateRoleParams) error
+	DeleteRoleFunc                  func(ctx context.Context, id uuid.UUID) error
+	CreatePermissionFunc            func(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error)
+	GetPermissionFunc               func(ctx context.Context, id uuid.UUID) (store.Permission, error)
+	ListPermissionsFunc             func(ctx context.Context, arg store.ListPermissionsParams) ([]store.Permission, error)
+	UpdatePermissionFunc            func(ctx context.Context, arg store.UpdatePermissionParams) error
+	DeletePermissionFunc            func(ctx context.Context, id uuid.UUID) error
+	CreateContainerFunc             func(ctx context.Context, arg store.CreateContainerParams) (store.Container, error)
+	GetContainerFunc                func(ctx context.Context, arg store.GetContainerParams) (store.Container, error)
+	ListContainersFunc              func(ctx context.Context, arg store.ListContainersParams) ([]store.Container, error)
+	UpdateContainerFunc             func(ctx context.Context, arg store.UpdateContainerParams) error
+	DeleteContainerFunc             func(ctx context.Context, arg store.DeleteContainerParams) error
+	CreateProductFunc               func(ctx context.Context, arg store.CreateProductParams) (store.Product, error)
+	GetProductFunc                  func(ctx context.Context, arg store.GetProductParams) (store.Product, error)
+	ListProductsFunc                func(ctx context.Context, arg store.ListProductsParams) ([]store.Product, error)
+	UpdateProductFunc               func(ctx context.Context, arg store.UpdateProductParams) error
+	DeleteProductFunc               func(ctx context.Context, arg store.DeleteProductParams) error
+	CreateLoadPlanFunc              func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error)
+	AddLoadItemFunc                 func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error)
+	GetLoadPlanFunc                 func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error)
+	GetLoadPlanForGuestFunc         func(ctx context.Context, arg store.GetLoadPlanForGuestParams) (store.LoadPlan, error)
+	ListLoadPlansFunc               func(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error)
+	ListLoadPlansForGuestFunc       func(ctx context.Context, arg store.ListLoadPlansForGuestParams) ([]store.LoadPlan, error)
+	UpdatePlanStatusFunc            func(ctx context.Context, arg store.UpdatePlanStatusParams) error
+	ListLoadItemsFunc               func(ctx context.Context, planID *uuid.UUID) ([]store.LoadItem, error)
+	GetLoadItemFunc                 func(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error)
+	UpdateLoadItemFunc              func(ctx context.Context, arg store.UpdateLoadItemParams) error
+	DeleteLoadItemFunc              func(ctx context.Context, arg store.DeleteLoadItemParams) error
+	UpdateLoadPlanFunc              func(ctx context.Context, arg store.UpdateLoadPlanParams) error
+	DeleteLoadPlanFunc              func(ctx context.Context, arg store.DeleteLoadPlanParams) error
+	CreatePlanResultFunc            func(ctx context.Context, arg store.CreatePlanResultParams) (store.PlanResult, error)
+	DeletePlanResultsFunc           func(ctx context.Context, planID *uuid.UUID) error
+	CreatePlanPlacementFunc         func(ctx context.Context, arg []store.CreatePlanPlacementParams) (int64, error)
+	GetPlanResultFunc               func(ctx context.Context, planID *uuid.UUID) (store.PlanResult, error)
+	ListPlanPlacementsFunc          func(ctx context.Context, resultID *uuid.UUID) ([]store.PlanPlacement, error)
+	CountPlansByCreatorFunc         func(ctx context.Context, arg store.CountPlansByCreatorParams) (int64, error)
+	ClaimPlansFromGuestFunc         func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error
 
 	AddRolePermissionFunc         func(ctx context.Context, arg store.AddRolePermissionParams) error
 	DeleteRolePermissionsFunc     func(ctx context.Context, roleID uuid.UUID) error
@@ -75,6 +77,29 @@ type MockQuerier struct {
 	CountTotalUsersFunc           func(ctx context.Context) (int64, error)
 	GetAvgVolumeUtilizationFunc   func(ctx context.Context) (float64, error)
 	GetPlanStatusDistributionFunc func(ctx context.Context) ([]store.GetPlanStatusDistributionRow, error)
+
+	AcceptInviteFunc                        func(ctx context.Context, arg store.AcceptInviteParams) error
+	CreateInviteFunc                        func(ctx context.Context, arg store.CreateInviteParams) (store.Invite, error)
+	GetInviteByTokenHashFunc                func(ctx context.Context, tokenHash string) (store.Invite, error)
+	ListInvitesByWorkspaceFunc              func(ctx context.Context, arg store.ListInvitesByWorkspaceParams) ([]store.ListInvitesByWorkspaceRow, error)
+	RevokeInviteFunc                        func(ctx context.Context, arg store.RevokeInviteParams) error
+	CreateWorkspaceFunc                     func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error)
+	GetWorkspaceFunc                        func(ctx context.Context, workspaceID uuid.UUID) (store.Workspace, error)
+	ListWorkspacesByOwnerFunc               func(ctx context.Context, arg store.ListWorkspacesByOwnerParams) ([]store.Workspace, error)
+	UpdateWorkspaceFunc                     func(ctx context.Context, arg store.UpdateWorkspaceParams) error
+	DeleteWorkspaceFunc                     func(ctx context.Context, workspaceID uuid.UUID) error
+	TransferWorkspaceOwnershipFunc          func(ctx context.Context, arg store.TransferWorkspaceOwnershipParams) error
+	CreateMemberFunc                        func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error)
+	GetMemberFunc                           func(ctx context.Context, memberID uuid.UUID) (store.Member, error)
+	GetMemberByWorkspaceAndUserFunc         func(ctx context.Context, arg store.GetMemberByWorkspaceAndUserParams) (store.Member, error)
+	ListMembersByWorkspaceFunc              func(ctx context.Context, arg store.ListMembersByWorkspaceParams) ([]store.ListMembersByWorkspaceRow, error)
+	UpdateMemberRoleFunc                    func(ctx context.Context, arg store.UpdateMemberRoleParams) error
+	DeleteMemberFunc                        func(ctx context.Context, arg store.DeleteMemberParams) error
+	GetPlatformRoleByUserIDFunc             func(ctx context.Context, userID uuid.UUID) (string, error)
+	UpsertPlatformMemberFunc                func(ctx context.Context, arg store.UpsertPlatformMemberParams) error
+	GetPersonalWorkspaceByOwnerFunc         func(ctx context.Context, ownerUserID uuid.UUID) (store.Workspace, error)
+	ListWorkspacesForUserFunc               func(ctx context.Context, arg store.ListWorkspacesForUserParams) ([]store.Workspace, error)
+	GetMemberRoleNameByWorkspaceAndUserFunc func(ctx context.Context, arg store.GetMemberRoleNameByWorkspaceAndUserParams) (string, error)
 }
 
 func (m *MockQuerier) UpdateUserPassword(ctx context.Context, arg store.UpdateUserPasswordParams) error {
@@ -140,9 +165,9 @@ func (m *MockQuerier) AddLoadItem(ctx context.Context, arg store.AddLoadItemPara
 	return store.LoadItem{}, fmt.Errorf("AddLoadItem not implemented")
 }
 
-func (m *MockQuerier) GetLoadPlan(ctx context.Context, planID uuid.UUID) (store.LoadPlan, error) {
+func (m *MockQuerier) GetLoadPlan(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
 	if m.GetLoadPlanFunc != nil {
-		return m.GetLoadPlanFunc(ctx, planID)
+		return m.GetLoadPlanFunc(ctx, arg)
 	}
 	return store.LoadPlan{}, fmt.Errorf("GetLoadPlan not implemented")
 }
@@ -210,9 +235,9 @@ func (m *MockQuerier) UpdateLoadPlan(ctx context.Context, arg store.UpdateLoadPl
 	return fmt.Errorf("UpdateLoadPlan not implemented")
 }
 
-func (m *MockQuerier) DeleteLoadPlan(ctx context.Context, planID uuid.UUID) error {
+func (m *MockQuerier) DeleteLoadPlan(ctx context.Context, arg store.DeleteLoadPlanParams) error {
 	if m.DeleteLoadPlanFunc != nil {
-		return m.DeleteLoadPlanFunc(ctx, planID)
+		return m.DeleteLoadPlanFunc(ctx, arg)
 	}
 	return fmt.Errorf("DeleteLoadPlan not implemented")
 }
@@ -224,9 +249,9 @@ func (m *MockQuerier) CreateProduct(ctx context.Context, arg store.CreateProduct
 	return store.Product{}, fmt.Errorf("CreateProduct not implemented")
 }
 
-func (m *MockQuerier) GetProduct(ctx context.Context, id uuid.UUID) (store.Product, error) {
+func (m *MockQuerier) GetProduct(ctx context.Context, arg store.GetProductParams) (store.Product, error) {
 	if m.GetProductFunc != nil {
-		return m.GetProductFunc(ctx, id)
+		return m.GetProductFunc(ctx, arg)
 	}
 	return store.Product{}, fmt.Errorf("GetProduct not implemented")
 }
@@ -245,9 +270,9 @@ func (m *MockQuerier) UpdateProduct(ctx context.Context, arg store.UpdateProduct
 	return fmt.Errorf("UpdateProduct not implemented")
 }
 
-func (m *MockQuerier) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+func (m *MockQuerier) DeleteProduct(ctx context.Context, arg store.DeleteProductParams) error {
 	if m.DeleteProductFunc != nil {
-		return m.DeleteProductFunc(ctx, id)
+		return m.DeleteProductFunc(ctx, arg)
 	}
 	return fmt.Errorf("DeleteProduct not implemented")
 }
@@ -259,9 +284,9 @@ func (m *MockQuerier) CreateContainer(ctx context.Context, arg store.CreateConta
 	return store.Container{}, fmt.Errorf("CreateContainer not implemented")
 }
 
-func (m *MockQuerier) GetContainer(ctx context.Context, id uuid.UUID) (store.Container, error) {
+func (m *MockQuerier) GetContainer(ctx context.Context, arg store.GetContainerParams) (store.Container, error) {
 	if m.GetContainerFunc != nil {
-		return m.GetContainerFunc(ctx, id)
+		return m.GetContainerFunc(ctx, arg)
 	}
 	return store.Container{}, fmt.Errorf("GetContainer not implemented")
 }
@@ -280,9 +305,9 @@ func (m *MockQuerier) UpdateContainer(ctx context.Context, arg store.UpdateConta
 	return fmt.Errorf("UpdateContainer not implemented")
 }
 
-func (m *MockQuerier) DeleteContainer(ctx context.Context, id uuid.UUID) error {
+func (m *MockQuerier) DeleteContainer(ctx context.Context, arg store.DeleteContainerParams) error {
 	if m.DeleteContainerFunc != nil {
-		return m.DeleteContainerFunc(ctx, id)
+		return m.DeleteContainerFunc(ctx, arg)
 	}
 	return fmt.Errorf("DeleteContainer not implemented")
 }
@@ -376,6 +401,13 @@ func (m *MockQuerier) GetUserByUsername(ctx context.Context, username string) (s
 		return m.GetUserByUsernameFunc(ctx, username)
 	}
 	return store.GetUserByUsernameRow{}, fmt.Errorf("GetUserByUsername not implemented")
+}
+
+func (m *MockQuerier) GetUserByEmail(ctx context.Context, email string) (store.GetUserByEmailRow, error) {
+	if m.GetUserByEmailFunc != nil {
+		return m.GetUserByEmailFunc(ctx, email)
+	}
+	return store.GetUserByEmailRow{}, fmt.Errorf("GetUserByEmail not implemented")
 }
 
 func (m *MockQuerier) CreateRefreshToken(ctx context.Context, arg store.CreateRefreshTokenParams) error {
@@ -516,6 +548,167 @@ func (m *MockQuerier) GetPlanStatusDistribution(ctx context.Context) ([]store.Ge
 		return m.GetPlanStatusDistributionFunc(ctx)
 	}
 	return nil, fmt.Errorf("GetPlanStatusDistribution not implemented")
+}
+
+func (m *MockQuerier) AcceptInvite(ctx context.Context, arg store.AcceptInviteParams) error {
+	if m.AcceptInviteFunc != nil {
+		return m.AcceptInviteFunc(ctx, arg)
+	}
+	return fmt.Errorf("AcceptInvite not implemented")
+}
+
+func (m *MockQuerier) CreateInvite(ctx context.Context, arg store.CreateInviteParams) (store.Invite, error) {
+	if m.CreateInviteFunc != nil {
+		return m.CreateInviteFunc(ctx, arg)
+	}
+	return store.Invite{}, fmt.Errorf("CreateInvite not implemented")
+}
+
+func (m *MockQuerier) GetInviteByTokenHash(ctx context.Context, tokenHash string) (store.Invite, error) {
+	if m.GetInviteByTokenHashFunc != nil {
+		return m.GetInviteByTokenHashFunc(ctx, tokenHash)
+	}
+	return store.Invite{}, fmt.Errorf("GetInviteByTokenHash not implemented")
+}
+
+func (m *MockQuerier) ListInvitesByWorkspace(ctx context.Context, arg store.ListInvitesByWorkspaceParams) ([]store.ListInvitesByWorkspaceRow, error) {
+	if m.ListInvitesByWorkspaceFunc != nil {
+		return m.ListInvitesByWorkspaceFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListInvitesByWorkspace not implemented")
+}
+
+func (m *MockQuerier) RevokeInvite(ctx context.Context, arg store.RevokeInviteParams) error {
+	if m.RevokeInviteFunc != nil {
+		return m.RevokeInviteFunc(ctx, arg)
+	}
+	return fmt.Errorf("RevokeInvite not implemented")
+}
+
+func (m *MockQuerier) CreateWorkspace(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+	if m.CreateWorkspaceFunc != nil {
+		return m.CreateWorkspaceFunc(ctx, arg)
+	}
+	return store.Workspace{}, fmt.Errorf("CreateWorkspace not implemented")
+}
+
+func (m *MockQuerier) GetWorkspace(ctx context.Context, workspaceID uuid.UUID) (store.Workspace, error) {
+	if m.GetWorkspaceFunc != nil {
+		return m.GetWorkspaceFunc(ctx, workspaceID)
+	}
+	return store.Workspace{}, fmt.Errorf("GetWorkspace not implemented")
+}
+
+func (m *MockQuerier) GetPersonalWorkspaceByOwner(ctx context.Context, ownerUserID uuid.UUID) (store.Workspace, error) {
+	if m.GetPersonalWorkspaceByOwnerFunc != nil {
+		return m.GetPersonalWorkspaceByOwnerFunc(ctx, ownerUserID)
+	}
+	return store.Workspace{}, fmt.Errorf("GetPersonalWorkspaceByOwner not implemented")
+}
+
+func (m *MockQuerier) ListWorkspacesForUser(ctx context.Context, arg store.ListWorkspacesForUserParams) ([]store.Workspace, error) {
+	if m.ListWorkspacesForUserFunc != nil {
+		return m.ListWorkspacesForUserFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListWorkspacesForUser not implemented")
+}
+
+func (m *MockQuerier) ListWorkspacesByOwner(ctx context.Context, arg store.ListWorkspacesByOwnerParams) ([]store.Workspace, error) {
+	if m.ListWorkspacesByOwnerFunc != nil {
+		return m.ListWorkspacesByOwnerFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListWorkspacesByOwner not implemented")
+}
+
+func (m *MockQuerier) UpdateWorkspace(ctx context.Context, arg store.UpdateWorkspaceParams) error {
+	if m.UpdateWorkspaceFunc != nil {
+		return m.UpdateWorkspaceFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateWorkspace not implemented")
+}
+
+func (m *MockQuerier) DeleteWorkspace(ctx context.Context, workspaceID uuid.UUID) error {
+	if m.DeleteWorkspaceFunc != nil {
+		return m.DeleteWorkspaceFunc(ctx, workspaceID)
+	}
+	return fmt.Errorf("DeleteWorkspace not implemented")
+}
+
+func (m *MockQuerier) TransferWorkspaceOwnership(ctx context.Context, arg store.TransferWorkspaceOwnershipParams) error {
+	if m.TransferWorkspaceOwnershipFunc != nil {
+		return m.TransferWorkspaceOwnershipFunc(ctx, arg)
+	}
+	return fmt.Errorf("TransferWorkspaceOwnership not implemented")
+}
+
+func (m *MockQuerier) CreateMember(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+	if m.CreateMemberFunc != nil {
+		return m.CreateMemberFunc(ctx, arg)
+	}
+	return store.Member{}, fmt.Errorf("CreateMember not implemented")
+}
+
+func (m *MockQuerier) GetMember(ctx context.Context, memberID uuid.UUID) (store.Member, error) {
+	if m.GetMemberFunc != nil {
+		return m.GetMemberFunc(ctx, memberID)
+	}
+	return store.Member{}, fmt.Errorf("GetMember not implemented")
+}
+
+func (m *MockQuerier) GetMemberByWorkspaceAndUser(ctx context.Context, arg store.GetMemberByWorkspaceAndUserParams) (store.Member, error) {
+	if m.GetMemberByWorkspaceAndUserFunc != nil {
+		return m.GetMemberByWorkspaceAndUserFunc(ctx, arg)
+	}
+	return store.Member{}, fmt.Errorf("GetMemberByWorkspaceAndUser not implemented")
+}
+
+func (m *MockQuerier) GetMemberRoleNameByWorkspaceAndUser(ctx context.Context, arg store.GetMemberRoleNameByWorkspaceAndUserParams) (string, error) {
+	if m.GetMemberRoleNameByWorkspaceAndUserFunc != nil {
+		return m.GetMemberRoleNameByWorkspaceAndUserFunc(ctx, arg)
+	}
+	return "", fmt.Errorf("GetMemberRoleNameByWorkspaceAndUser not implemented")
+}
+
+func (m *MockQuerier) ListMembersByWorkspace(ctx context.Context, arg store.ListMembersByWorkspaceParams) ([]store.ListMembersByWorkspaceRow, error) {
+	if m.ListMembersByWorkspaceFunc != nil {
+		return m.ListMembersByWorkspaceFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListMembersByWorkspace not implemented")
+}
+
+func (m *MockQuerier) UpdateMemberRole(ctx context.Context, arg store.UpdateMemberRoleParams) error {
+	if m.UpdateMemberRoleFunc != nil {
+		return m.UpdateMemberRoleFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateMemberRole not implemented")
+}
+
+func (m *MockQuerier) DeleteMember(ctx context.Context, arg store.DeleteMemberParams) error {
+	if m.DeleteMemberFunc != nil {
+		return m.DeleteMemberFunc(ctx, arg)
+	}
+	return fmt.Errorf("DeleteMember not implemented")
+}
+
+func (m *MockQuerier) GetPlatformRoleByUserID(ctx context.Context, userID uuid.UUID) (string, error) {
+	if m.GetPlatformRoleByUserIDFunc != nil {
+		return m.GetPlatformRoleByUserIDFunc(ctx, userID)
+	}
+	return "", fmt.Errorf("GetPlatformRoleByUserID not implemented")
+}
+
+func (m *MockQuerier) UpsertPlatformMember(ctx context.Context, arg store.UpsertPlatformMemberParams) error {
+	if m.UpsertPlatformMemberFunc != nil {
+		return m.UpsertPlatformMemberFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpsertPlatformMember not implemented")
+}
+
+func (m *MockQuerier) UpdateRefreshTokenWorkspace(ctx context.Context, arg store.UpdateRefreshTokenWorkspaceParams) error {
+	if m.UpdateRefreshTokenWorkspaceFunc != nil {
+		return m.UpdateRefreshTokenWorkspaceFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateRefreshTokenWorkspace not implemented")
 }
 
 var _ store.Querier = (*MockQuerier)(nil)

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/auth"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -60,14 +61,14 @@ func TestGenerateAccessToken(t *testing.T) {
 		{
 			name:    "valid_token_admin",
 			userID:  "user-1",
-			role:    "admin",
+			role:    types.RoleAdmin.String(),
 			secret:  "secret-key-1",
 			wantErr: false,
 		},
 		{
 			name:    "valid_token_standard_user",
 			userID:  "user-2",
-			role:    "user",
+			role:    types.RoleUser.String(),
 			secret:  "secret-key-2",
 			wantErr: false,
 		},
@@ -82,7 +83,7 @@ func TestGenerateAccessToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotToken, err := auth.GenerateAccessToken(tt.userID, tt.role, tt.secret)
+			gotToken, err := auth.GenerateAccessToken(tt.userID, tt.role, nil, tt.secret)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateAccessToken() error = %v, wantErr %v", err, tt.wantErr)
 				return

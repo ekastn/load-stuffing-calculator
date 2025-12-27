@@ -44,6 +44,14 @@ func (m *MockAuthService) RefreshToken(ctx context.Context, refreshToken string)
 	return args.Get(0).(*dto.LoginResponse), args.Error(1)
 }
 
+func (m *MockAuthService) SwitchWorkspace(ctx context.Context, req dto.SwitchWorkspaceRequest) (*dto.SwitchWorkspaceResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.SwitchWorkspaceResponse), args.Error(1)
+}
+
 // MockUserService is a mock implementation of service.UserService
 type MockUserService struct {
 	mock.Mock

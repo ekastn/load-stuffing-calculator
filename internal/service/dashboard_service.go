@@ -5,6 +5,7 @@ import (
 
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 )
 
 type DashboardService interface {
@@ -22,7 +23,7 @@ func NewDashboardService(q store.Querier) DashboardService {
 func (s *dashboardService) GetStats(ctx context.Context, role string) (*dto.DashboardStatsResponse, error) {
 	resp := &dto.DashboardStatsResponse{}
 
-	if role == "admin" {
+	if role == types.RoleAdmin.String() {
 		totalUsers, _ := s.q.CountTotalUsers(ctx)
 		activePlans, _ := s.q.CountActivePlans(ctx)
 		containerTypes, _ := s.q.CountContainers(ctx)
@@ -34,7 +35,7 @@ func (s *dashboardService) GetStats(ctx context.Context, role string) (*dto.Dash
 		}
 	}
 
-	if role == "planner" || role == "admin" {
+	if role == types.RolePlanner.String() || role == types.RoleAdmin.String() {
 		pending, _ := s.q.CountActivePlans(ctx)
 		completedToday, _ := s.q.CountCompletedPlansToday(ctx)
 		avgUtil, _ := s.q.GetAvgVolumeUtilization(ctx)
@@ -47,7 +48,7 @@ func (s *dashboardService) GetStats(ctx context.Context, role string) (*dto.Dash
 		}
 	}
 
-	if role == "operator" || role == "admin" {
+	if role == types.RoleOperator.String() || role == types.RoleAdmin.String() {
 		active, _ := s.q.CountActivePlans(ctx)
 		completed, _ := s.q.CountCompletedPlans(ctx)
 		resp.Operator = &dto.OperatorStats{

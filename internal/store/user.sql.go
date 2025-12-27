@@ -82,6 +82,36 @@ func (q *Queries) GetRoleByName(ctx context.Context, name string) (GetRoleByName
 	return i, err
 }
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT u.user_id, u.username, u.email, u.password_hash, u.role_id, r.name AS role_name
+FROM users u
+JOIN roles r ON u.role_id = r.role_id
+WHERE u.email = $1
+`
+
+type GetUserByEmailRow struct {
+	UserID       uuid.UUID `json:"user_id"`
+	Username     string    `json:"username"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"password_hash"`
+	RoleID       uuid.UUID `json:"role_id"`
+	RoleName     string    `json:"role_name"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i GetUserByEmailRow
+	err := row.Scan(
+		&i.UserID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.RoleID,
+		&i.RoleName,
+	)
+	return i, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT 
     u.user_id,

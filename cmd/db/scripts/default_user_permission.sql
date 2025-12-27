@@ -1,6 +1,8 @@
 -- Default roles
 INSERT INTO roles (name, description) VALUES
-('admin', 'Full system access'),
+('founder', 'Platform superuser (SaaS founder)'),
+('owner', 'Workspace owner / CEO'),
+('admin', 'Workspace admin (can manage members)'),
 ('planner', 'Can create and manage shipment plans'),
 ('operator', 'Can validate loading steps & manage items'),
 ('trial', 'Anonymous trial users (limited)')
@@ -40,6 +42,24 @@ INSERT INTO permissions (name, description) VALUES
 ('container:update', 'Update containers'),
 ('container:delete', 'Delete containers'),
 
+('workspace:*', 'Full access to workspaces'),
+('workspace:read', 'Read workspaces'),
+('workspace:create', 'Create workspaces'),
+('workspace:update', 'Update workspaces'),
+('workspace:delete', 'Delete workspaces'),
+
+('member:*', 'Full access to workspace members'),
+('member:read', 'Read workspace members'),
+('member:create', 'Add workspace members'),
+('member:update', 'Update workspace members'),
+('member:delete', 'Remove workspace members'),
+
+('invite:*', 'Full access to invites'),
+('invite:read', 'Read invites'),
+('invite:create', 'Create invites'),
+('invite:delete', 'Revoke invites'),
+('invite:accept', 'Accept invites'),
+
 ('plan:*', 'Full access to plans'),
 ('plan:read', 'Read plans'),
 ('plan:create', 'Create plans'),
@@ -56,11 +76,45 @@ INSERT INTO permissions (name, description) VALUES
 ('dashboard:read', 'View dashboard')
 ON CONFLICT (name) DO NOTHING;
 
--- Admin gets only global "*"
+-- Founder gets global "*"
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.role_id, p.permission_id
 FROM roles r
 JOIN permissions p ON p.name = '*'
+WHERE r.name = 'founder'
+ON CONFLICT DO NOTHING;
+
+-- Owner permissions (workspace-scoped; no global "*")
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r
+JOIN permissions p ON p.name IN (
+  'workspace:*',
+  'member:*',
+  'invite:*',
+  'product:*',
+  'container:*',
+  'plan:*',
+  'plan_item:*',
+  'dashboard:read'
+)
+WHERE r.name = 'owner'
+ON CONFLICT DO NOTHING;
+
+-- Admin permissions (workspace-scoped; no global "*")
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r
+JOIN permissions p ON p.name IN (
+  'workspace:read',
+  'member:*',
+  'invite:*',
+  'product:*',
+  'container:*',
+  'plan:*',
+  'plan_item:*',
+  'dashboard:read'
+)
 WHERE r.name = 'admin'
 ON CONFLICT DO NOTHING;
 
@@ -68,7 +122,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.role_id, p.permission_id
 FROM roles r
-JOIN permissions p ON p.name IN ('plan:*', 'plan_item:*', 'product:read', 'container:read', 'dashboard:read')
+JOIN permissions p ON p.name IN ('workspace:read', 'plan:*', 'plan_item:*', 'product:read', 'container:read', 'dashboard:read')
 WHERE r.name = 'planner'
 ON CONFLICT DO NOTHING;
 
@@ -76,7 +130,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.role_id, p.permission_id
 FROM roles r
-JOIN permissions p ON p.name IN ('plan:read', 'plan_item:*', 'product:read', 'container:read', 'dashboard:read')
+JOIN permissions p ON p.name IN ('workspace:read', 'plan:read', 'plan_item:*', 'product:read', 'container:read', 'dashboard:read')
 WHERE r.name = 'operator'
 ON CONFLICT DO NOTHING;
 
@@ -84,6 +138,6 @@ ON CONFLICT DO NOTHING;
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT r.role_id, p.permission_id
 FROM roles r
-JOIN permissions p ON p.name IN ('plan:*', 'plan_item:*', 'product:read', 'container:read')
+JOIN permissions p ON p.name IN ('workspace:read', 'plan:*', 'plan_item:*', 'product:read', 'container:read')
 WHERE r.name = 'trial'
 ON CONFLICT DO NOTHING;
