@@ -1,5 +1,6 @@
 -- name: CreateLoadPlan :one
 INSERT INTO load_plans (
+    workspace_id,
     plan_code,
     status,
     cont_label,
@@ -10,7 +11,7 @@ INSERT INTO load_plans (
     created_by_type,
     created_by_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 )
 RETURNING *;
 
@@ -29,7 +30,10 @@ INSERT INTO load_items (
 RETURNING *;
 
 -- name: GetLoadPlan :one
-SELECT * FROM load_plans WHERE plan_id = $1;
+SELECT *
+FROM load_plans
+WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2;
 
 -- name: GetLoadPlanForGuest :one
 SELECT *
@@ -39,9 +43,11 @@ WHERE plan_id = $1
   AND created_by_id = $2;
 
 -- name: ListLoadPlans :many
-SELECT * FROM load_plans
+SELECT *
+FROM load_plans
+WHERE workspace_id IS NOT DISTINCT FROM $1
 ORDER BY created_at DESC
-LIMIT $1 OFFSET $2;
+LIMIT $2 OFFSET $3;
 
 -- name: ListLoadPlansForGuest :many
 SELECT *
@@ -53,8 +59,9 @@ LIMIT $2 OFFSET $3;
 
 -- name: UpdatePlanStatus :exec
 UPDATE load_plans
-SET status = $2
-WHERE plan_id = $1;
+SET status = $3
+WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2;
 
 -- name: ListLoadItems :many
 SELECT * FROM load_items
@@ -84,18 +91,20 @@ WHERE plan_id = $1 AND item_id = $2;
 -- name: UpdateLoadPlan :exec
 UPDATE load_plans
 SET
-    plan_code = $2,
-    cont_label = $3,
-    length_mm = $4,
-    width_mm = $5,
-    height_mm = $6,
-    max_weight_kg = $7,
-    status = $8
-WHERE plan_id = $1;
+    plan_code = $3,
+    cont_label = $4,
+    length_mm = $5,
+    width_mm = $6,
+    height_mm = $7,
+    max_weight_kg = $8,
+    status = $9
+WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2;
 
 -- name: DeleteLoadPlan :exec
 DELETE FROM load_plans
-WHERE plan_id = $1;
+WHERE plan_id = $1
+  AND workspace_id IS NOT DISTINCT FROM $2;
 
 -- name: CreatePlanResult :one
 INSERT INTO plan_results (

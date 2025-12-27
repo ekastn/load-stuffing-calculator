@@ -26,7 +26,13 @@ func NewContainerService(q store.Querier) ContainerService {
 }
 
 func (s *containerService) CreateContainer(ctx context.Context, req dto.CreateContainerRequest) (*dto.ContainerResponse, error) {
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	container, err := s.q.CreateContainer(ctx, store.CreateContainerParams{
+		WorkspaceID:   workspaceID,
 		Name:          req.Name,
 		InnerLengthMm: toNumeric(req.InnerLengthMM),
 		InnerWidthMm:  toNumeric(req.InnerWidthMM),
@@ -47,7 +53,12 @@ func (s *containerService) GetContainer(ctx context.Context, id string) (*dto.Co
 		return nil, fmt.Errorf("invalid container id: %w", err)
 	}
 
-	container, err := s.q.GetContainer(ctx, containerID)
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	container, err := s.q.GetContainer(ctx, store.GetContainerParams{ContainerID: containerID, WorkspaceID: workspaceID})
 	if err != nil {
 		return nil, err
 	}
@@ -64,9 +75,15 @@ func (s *containerService) ListContainers(ctx context.Context, page, limit int32
 	}
 	offset := (page - 1) * limit
 
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	containers, err := s.q.ListContainers(ctx, store.ListContainersParams{
-		Limit:  limit,
-		Offset: offset,
+		WorkspaceID: workspaceID,
+		Limit:       limit,
+		Offset:      offset,
 	})
 	if err != nil {
 		return nil, err
@@ -86,8 +103,14 @@ func (s *containerService) UpdateContainer(ctx context.Context, id string, req d
 		return fmt.Errorf("invalid container id: %w", err)
 	}
 
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	err = s.q.UpdateContainer(ctx, store.UpdateContainerParams{
 		ContainerID:   containerID,
+		WorkspaceID:   workspaceID,
 		Name:          req.Name,
 		InnerLengthMm: toNumeric(req.InnerLengthMM),
 		InnerWidthMm:  toNumeric(req.InnerWidthMM),
@@ -107,7 +130,12 @@ func (s *containerService) DeleteContainer(ctx context.Context, id string) error
 		return fmt.Errorf("invalid container id: %w", err)
 	}
 
-	err = s.q.DeleteContainer(ctx, containerID)
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = s.q.DeleteContainer(ctx, store.DeleteContainerParams{ContainerID: containerID, WorkspaceID: workspaceID})
 	if err != nil {
 		return fmt.Errorf("failed to delete container: %w", err)
 	}

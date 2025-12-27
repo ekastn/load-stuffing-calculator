@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	AcceptInvite(ctx context.Context, arg AcceptInviteParams) error
 	AddLoadItem(ctx context.Context, arg AddLoadItemParams) (LoadItem, error)
 	AddRolePermission(ctx context.Context, arg AddRolePermissionParams) error
 	ClaimPlansFromGuest(ctx context.Context, arg ClaimPlansFromGuestParams) error
@@ -22,7 +23,9 @@ type Querier interface {
 	CountTotalItems(ctx context.Context) (int64, error)
 	CountTotalUsers(ctx context.Context) (int64, error)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
+	CreateInvite(ctx context.Context, arg CreateInviteParams) (Invite, error)
 	CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error)
+	CreateMember(ctx context.Context, arg CreateMemberParams) (Member, error)
 	CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permission, error)
 	CreatePlanPlacement(ctx context.Context, arg []CreatePlanPlacementParams) (int64, error)
 	CreatePlanResult(ctx context.Context, arg CreatePlanResultParams) (PlanResult, error)
@@ -30,50 +33,71 @@ type Querier interface {
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateRole(ctx context.Context, arg CreateRoleParams) (Role, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteContainer(ctx context.Context, containerID uuid.UUID) error
+	CreateWorkspace(ctx context.Context, arg CreateWorkspaceParams) (Workspace, error)
+	DeleteContainer(ctx context.Context, arg DeleteContainerParams) error
 	DeleteLoadItem(ctx context.Context, arg DeleteLoadItemParams) error
-	DeleteLoadPlan(ctx context.Context, planID uuid.UUID) error
+	DeleteLoadPlan(ctx context.Context, arg DeleteLoadPlanParams) error
+	DeleteMember(ctx context.Context, arg DeleteMemberParams) error
 	DeletePermission(ctx context.Context, permissionID uuid.UUID) error
 	DeletePlanResults(ctx context.Context, planID *uuid.UUID) error
-	DeleteProduct(ctx context.Context, productID uuid.UUID) error
+	DeleteProduct(ctx context.Context, arg DeleteProductParams) error
 	DeleteRole(ctx context.Context, roleID uuid.UUID) error
 	DeleteRolePermissions(ctx context.Context, roleID uuid.UUID) error
 	DeleteUser(ctx context.Context, userID uuid.UUID) error
+	DeleteWorkspace(ctx context.Context, workspaceID uuid.UUID) error
 	GetAvgVolumeUtilization(ctx context.Context) (float64, error)
-	GetContainer(ctx context.Context, containerID uuid.UUID) (Container, error)
+	GetContainer(ctx context.Context, arg GetContainerParams) (Container, error)
+	GetInviteByTokenHash(ctx context.Context, tokenHash string) (Invite, error)
 	GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadItem, error)
-	GetLoadPlan(ctx context.Context, planID uuid.UUID) (LoadPlan, error)
+	GetLoadPlan(ctx context.Context, arg GetLoadPlanParams) (LoadPlan, error)
 	GetLoadPlanForGuest(ctx context.Context, arg GetLoadPlanForGuestParams) (LoadPlan, error)
+	GetMember(ctx context.Context, memberID uuid.UUID) (Member, error)
+	GetMemberByWorkspaceAndUser(ctx context.Context, arg GetMemberByWorkspaceAndUserParams) (Member, error)
+	GetMemberRoleNameByWorkspaceAndUser(ctx context.Context, arg GetMemberRoleNameByWorkspaceAndUserParams) (string, error)
 	GetPermission(ctx context.Context, permissionID uuid.UUID) (Permission, error)
 	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
+	GetPersonalWorkspaceByOwner(ctx context.Context, ownerUserID uuid.UUID) (Workspace, error)
 	GetPlanResult(ctx context.Context, planID *uuid.UUID) (PlanResult, error)
 	GetPlanStatusDistribution(ctx context.Context) ([]GetPlanStatusDistributionRow, error)
-	GetProduct(ctx context.Context, productID uuid.UUID) (Product, error)
+	GetPlatformRoleByUserID(ctx context.Context, userID uuid.UUID) (string, error)
+	GetProduct(ctx context.Context, arg GetProductParams) (Product, error)
 	GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error)
 	GetRole(ctx context.Context, roleID uuid.UUID) (Role, error)
 	GetRoleByName(ctx context.Context, name string) (GetRoleByNameRow, error)
 	GetRolePermissions(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error)
+	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
+	GetWorkspace(ctx context.Context, workspaceID uuid.UUID) (Workspace, error)
 	ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error)
+	ListInvitesByWorkspace(ctx context.Context, arg ListInvitesByWorkspaceParams) ([]ListInvitesByWorkspaceRow, error)
 	ListLoadItems(ctx context.Context, planID *uuid.UUID) ([]LoadItem, error)
 	ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([]LoadPlan, error)
 	ListLoadPlansForGuest(ctx context.Context, arg ListLoadPlansForGuestParams) ([]LoadPlan, error)
+	ListMembersByWorkspace(ctx context.Context, arg ListMembersByWorkspaceParams) ([]ListMembersByWorkspaceRow, error)
 	ListPermissions(ctx context.Context, arg ListPermissionsParams) ([]Permission, error)
 	ListPlanPlacements(ctx context.Context, resultID *uuid.UUID) ([]PlanPlacement, error)
 	ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error)
 	ListRoles(ctx context.Context, arg ListRolesParams) ([]Role, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
+	ListWorkspacesByOwner(ctx context.Context, arg ListWorkspacesByOwnerParams) ([]Workspace, error)
+	ListWorkspacesForUser(ctx context.Context, arg ListWorkspacesForUserParams) ([]Workspace, error)
+	RevokeInvite(ctx context.Context, arg RevokeInviteParams) error
 	RevokeRefreshToken(ctx context.Context, token string) error
+	TransferWorkspaceOwnership(ctx context.Context, arg TransferWorkspaceOwnershipParams) error
 	UpdateContainer(ctx context.Context, arg UpdateContainerParams) error
 	UpdateLoadItem(ctx context.Context, arg UpdateLoadItemParams) error
 	UpdateLoadPlan(ctx context.Context, arg UpdateLoadPlanParams) error
+	UpdateMemberRole(ctx context.Context, arg UpdateMemberRoleParams) error
 	UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error
 	UpdatePlanStatus(ctx context.Context, arg UpdatePlanStatusParams) error
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
+	UpdateRefreshTokenWorkspace(ctx context.Context, arg UpdateRefreshTokenWorkspaceParams) error
 	UpdateRole(ctx context.Context, arg UpdateRoleParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) error
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
+	UpdateWorkspace(ctx context.Context, arg UpdateWorkspaceParams) error
+	UpsertPlatformMember(ctx context.Context, arg UpsertPlatformMemberParams) error
 }
 
 var _ Querier = (*Queries)(nil)

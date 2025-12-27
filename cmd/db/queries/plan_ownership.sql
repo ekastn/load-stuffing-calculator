@@ -7,6 +7,7 @@ WHERE created_by_type = sqlc.arg(created_by_type)
 -- name: ClaimPlansFromGuest :exec
 UPDATE load_plans
 SET created_by_type = 'user',
-    created_by_id = sqlc.arg(user_id)
+    created_by_id = sqlc.arg(user_id),
+    workspace_id = sqlc.arg(workspace_id)
 WHERE created_by_type = 'guest'
   AND created_by_id = sqlc.arg(guest_id);

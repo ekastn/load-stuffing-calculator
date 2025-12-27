@@ -26,13 +26,19 @@ func NewProductService(q store.Querier) ProductService {
 }
 
 func (s *productService) CreateProduct(ctx context.Context, req dto.CreateProductRequest) (*dto.ProductResponse, error) {
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	product, err := s.q.CreateProduct(ctx, store.CreateProductParams{
-		Name:     req.Name,
-		LengthMm: toNumeric(req.LengthMM),
-		WidthMm:  toNumeric(req.WidthMM),
-		HeightMm: toNumeric(req.HeightMM),
-		WeightKg: toNumeric(req.WeightKG),
-		ColorHex: req.ColorHex,
+		WorkspaceID: workspaceID,
+		Name:        req.Name,
+		LengthMm:    toNumeric(req.LengthMM),
+		WidthMm:     toNumeric(req.WidthMM),
+		HeightMm:    toNumeric(req.HeightMM),
+		WeightKg:    toNumeric(req.WeightKG),
+		ColorHex:    req.ColorHex,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create product: %w", err)
@@ -47,7 +53,12 @@ func (s *productService) GetProduct(ctx context.Context, id string) (*dto.Produc
 		return nil, fmt.Errorf("invalid product id: %w", err)
 	}
 
-	product, err := s.q.GetProduct(ctx, productID)
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	product, err := s.q.GetProduct(ctx, store.GetProductParams{ProductID: productID, WorkspaceID: workspaceID})
 	if err != nil {
 		return nil, err
 	}
@@ -64,9 +75,15 @@ func (s *productService) ListProducts(ctx context.Context, page, limit int32) ([
 	}
 	offset := (page - 1) * limit
 
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	products, err := s.q.ListProducts(ctx, store.ListProductsParams{
-		Limit:  limit,
-		Offset: offset,
+		WorkspaceID: workspaceID,
+		Limit:       limit,
+		Offset:      offset,
 	})
 	if err != nil {
 		return nil, err
@@ -86,14 +103,20 @@ func (s *productService) UpdateProduct(ctx context.Context, id string, req dto.U
 		return fmt.Errorf("invalid product id: %w", err)
 	}
 
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
 	err = s.q.UpdateProduct(ctx, store.UpdateProductParams{
-		ProductID: productID,
-		Name:      req.Name,
-		LengthMm:  toNumeric(req.LengthMM),
-		WidthMm:   toNumeric(req.WidthMM),
-		HeightMm:  toNumeric(req.HeightMM),
-		WeightKg:  toNumeric(req.WeightKG),
-		ColorHex:  req.ColorHex,
+		ProductID:   productID,
+		WorkspaceID: workspaceID,
+		Name:        req.Name,
+		LengthMm:    toNumeric(req.LengthMM),
+		WidthMm:     toNumeric(req.WidthMM),
+		HeightMm:    toNumeric(req.HeightMM),
+		WeightKg:    toNumeric(req.WeightKG),
+		ColorHex:    req.ColorHex,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update product: %w", err)
@@ -107,7 +130,12 @@ func (s *productService) DeleteProduct(ctx context.Context, id string) error {
 		return fmt.Errorf("invalid product id: %w", err)
 	}
 
-	err = s.q.DeleteProduct(ctx, productID)
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = s.q.DeleteProduct(ctx, store.DeleteProductParams{ProductID: productID, WorkspaceID: workspaceID})
 	if err != nil {
 		return fmt.Errorf("failed to delete product: %w", err)
 	}

@@ -5,8 +5,9 @@ import "context"
 type contextKey string
 
 const (
-	ContextKeyUserID contextKey = "user_id"
-	ContextKeyRole   contextKey = "role"
+	ContextKeyUserID      contextKey = "user_id"
+	ContextKeyRole        contextKey = "role"
+	ContextKeyWorkspaceID contextKey = "workspace_id"
 )
 
 func WithUserID(ctx context.Context, userID string) context.Context {
@@ -15,6 +16,10 @@ func WithUserID(ctx context.Context, userID string) context.Context {
 
 func WithRole(ctx context.Context, role string) context.Context {
 	return context.WithValue(ctx, ContextKeyRole, role)
+}
+
+func WithWorkspaceID(ctx context.Context, workspaceID string) context.Context {
+	return context.WithValue(ctx, ContextKeyWorkspaceID, workspaceID)
 }
 
 func UserIDFromContext(ctx context.Context) (string, bool) {
@@ -28,6 +33,15 @@ func UserIDFromContext(ctx context.Context) (string, bool) {
 
 func RoleFromContext(ctx context.Context) (string, bool) {
 	v := ctx.Value(ContextKeyRole)
+	if v == nil {
+		return "", false
+	}
+	s, ok := v.(string)
+	return s, ok
+}
+
+func WorkspaceIDFromContext(ctx context.Context) (string, bool) {
+	v := ctx.Value(ContextKeyWorkspaceID)
 	if v == nil {
 		return "", false
 	}

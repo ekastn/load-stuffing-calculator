@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
 
@@ -9,12 +10,13 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	service "github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/google/uuid"
 )
 
 func mustMakeTrialJWT(t *testing.T, secret string) string {
 	t.Helper()
-	tok, err := auth.GenerateAccessToken(uuid.New().String(), "trial", secret)
+	tok, err := auth.GenerateAccessToken(uuid.New().String(), types.RoleTrial.String(), nil, secret)
 	if err != nil {
 		t.Fatalf("failed to generate trial jwt: %v", err)
 	}
@@ -48,7 +50,7 @@ func TestAuthService_Login(t *testing.T) {
 				UserID:       uuid.New(),
 				Username:     "testuser",
 				PasswordHash: hashedPassword,
-				RoleName:     "user",
+				RoleName:     types.RoleUser.String(),
 			},
 			wantErr:          false,
 			wantAccessToken:  true,
@@ -61,7 +63,7 @@ func TestAuthService_Login(t *testing.T) {
 				UserID:       uuid.New(),
 				Username:     "testuser",
 				PasswordHash: hashedPassword,
-				RoleName:     "user",
+				RoleName:     types.RoleUser.String(),
 			},
 			wantErr:          false,
 			wantAccessToken:  true,
@@ -82,7 +84,7 @@ func TestAuthService_Login(t *testing.T) {
 				UserID:       uuid.New(),
 				Username:     "testuser",
 				PasswordHash: hashedPassword,
-				RoleName:     "user",
+				RoleName:     types.RoleUser.String(),
 			},
 			wantErr:          true,
 			wantAccessToken:  false,
@@ -95,7 +97,7 @@ func TestAuthService_Login(t *testing.T) {
 				UserID:       uuid.New(),
 				Username:     "testuser",
 				PasswordHash: hashedPassword,
-				RoleName:     "user",
+				RoleName:     types.RoleUser.String(),
 			},
 			createRefreshTokenErr: fmt.Errorf("database error"),
 			wantErr:               true,
@@ -117,6 +119,15 @@ func TestAuthService_Login(t *testing.T) {
 						return tt.expectedUser, nil
 					}
 					return store.GetUserByUsernameRow{}, fmt.Errorf("user not found")
+				},
+				GetPersonalWorkspaceByOwnerFunc: func(ctx context.Context, ownerUserID uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{WorkspaceID: uuid.New(), OwnerUserID: ownerUserID, Type: "personal", Name: "Personal"}, nil
+				},
+				GetPlatformRoleByUserIDFunc: func(ctx context.Context, userID uuid.UUID) (string, error) {
+					return "", sql.ErrNoRows
+				},
+				GetMemberRoleNameByWorkspaceAndUserFunc: func(ctx context.Context, arg store.GetMemberRoleNameByWorkspaceAndUserParams) (string, error) {
+					return tt.expectedUser.RoleName, nil
 				},
 				CreateRefreshTokenFunc: func(ctx context.Context, arg store.CreateRefreshTokenParams) error {
 					return tt.createRefreshTokenErr
@@ -184,13 +195,21 @@ func TestAuthService_Register(t *testing.T) {
 
 		mockQ := &MockQuerier{
 			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
-				if name != "planner" {
+				switch name {
+				case types.RolePlanner.String(), types.RoleOwner.String():
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				default:
 					return store.GetRoleByNameRow{}, fmt.Errorf("unexpected role name: %s", name)
 				}
-				return store.GetRoleByNameRow{RoleID: roleID, Name: "planner"}, nil
 			},
 			CreateUserFunc: func(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
 				return store.User{UserID: userID, Username: arg.Username}, nil
+			},
+			CreateWorkspaceFunc: func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+				return store.Workspace{WorkspaceID: uuid.New(), OwnerUserID: arg.OwnerUserID, Type: arg.Type, Name: arg.Name}, nil
+			},
+			CreateMemberFunc: func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+				return store.Member{MemberID: uuid.New(), WorkspaceID: arg.WorkspaceID, UserID: arg.UserID, RoleID: arg.RoleID}, nil
 			},
 			ClaimPlansFromGuestFunc: func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error {
 				claimed = true
@@ -227,10 +246,19 @@ func TestAuthService_Register(t *testing.T) {
 
 		mockQ := &MockQuerier{
 			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
-				return store.GetRoleByNameRow{RoleID: roleID, Name: "planner"}, nil
+				if name == types.RolePlanner.String() || name == types.RoleOwner.String() {
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				}
+				return store.GetRoleByNameRow{}, fmt.Errorf("unexpected role name: %s", name)
 			},
 			CreateUserFunc: func(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
 				return store.User{UserID: userID, Username: arg.Username}, nil
+			},
+			CreateWorkspaceFunc: func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+				return store.Workspace{WorkspaceID: uuid.New(), OwnerUserID: arg.OwnerUserID, Type: arg.Type, Name: arg.Name}, nil
+			},
+			CreateMemberFunc: func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+				return store.Member{MemberID: uuid.New(), WorkspaceID: arg.WorkspaceID, UserID: arg.UserID, RoleID: arg.RoleID}, nil
 			},
 			ClaimPlansFromGuestFunc: func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error {
 				claimed = true

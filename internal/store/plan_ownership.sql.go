@@ -14,18 +14,20 @@ import (
 const claimPlansFromGuest = `-- name: ClaimPlansFromGuest :exec
 UPDATE load_plans
 SET created_by_type = 'user',
-    created_by_id = $1
+    created_by_id = $1,
+    workspace_id = $2
 WHERE created_by_type = 'guest'
-  AND created_by_id = $2
+  AND created_by_id = $3
 `
 
 type ClaimPlansFromGuestParams struct {
-	UserID  uuid.UUID `json:"user_id"`
-	GuestID uuid.UUID `json:"guest_id"`
+	UserID      uuid.UUID  `json:"user_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+	GuestID     uuid.UUID  `json:"guest_id"`
 }
 
 func (q *Queries) ClaimPlansFromGuest(ctx context.Context, arg ClaimPlansFromGuestParams) error {
-	_, err := q.db.Exec(ctx, claimPlansFromGuest, arg.UserID, arg.GuestID)
+	_, err := q.db.Exec(ctx, claimPlansFromGuest, arg.UserID, arg.WorkspaceID, arg.GuestID)
 	return err
 }
 

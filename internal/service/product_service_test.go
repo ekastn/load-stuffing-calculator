@@ -63,7 +63,7 @@ func TestProductService_CreateProduct(t *testing.T) {
 			}
 
 			s := service.NewProductService(mockQ)
-			resp, err := s.CreateProduct(context.Background(), tt.req)
+			resp, err := s.CreateProduct(ctxWithWorkspaceID(uuid.New()), tt.req)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreateProduct() error = %v, wantErr %v", err, tt.wantErr)
@@ -112,17 +112,23 @@ func TestProductService_GetProduct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			workspaceID := uuid.New()
+			ctx := ctxWithWorkspaceID(workspaceID)
+
 			mockQ := &MockQuerier{
-				GetProductFunc: func(ctx context.Context, productID uuid.UUID) (store.Product, error) {
-					if productID.String() != tt.id {
+				GetProductFunc: func(ctx context.Context, arg store.GetProductParams) (store.Product, error) {
+					if arg.ProductID.String() != tt.id {
 						return store.Product{}, fmt.Errorf("id mismatch")
+					}
+					if arg.WorkspaceID == nil || *arg.WorkspaceID != workspaceID {
+						return store.Product{}, fmt.Errorf("workspace mismatch")
 					}
 					return tt.getResp, tt.getErr
 				},
 			}
 
 			s := service.NewProductService(mockQ)
-			resp, err := s.GetProduct(context.Background(), tt.id)
+			resp, err := s.GetProduct(ctx, tt.id)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetProduct() error = %v, wantErr %v", err, tt.wantErr)
@@ -172,7 +178,7 @@ func TestProductService_ListProducts(t *testing.T) {
 			}
 
 			s := service.NewProductService(mockQ)
-			resp, err := s.ListProducts(context.Background(), tt.page, tt.limit)
+			resp, err := s.ListProducts(ctxWithWorkspaceID(uuid.New()), tt.page, tt.limit)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListProducts() error = %v, wantErr %v", err, tt.wantErr)
@@ -230,7 +236,7 @@ func TestProductService_UpdateProduct(t *testing.T) {
 			}
 
 			s := service.NewProductService(mockQ)
-			err := s.UpdateProduct(context.Background(), tt.id, tt.req)
+			err := s.UpdateProduct(ctxWithWorkspaceID(uuid.New()), tt.id, tt.req)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("UpdateProduct() error = %v, wantErr %v", err, tt.wantErr)
@@ -263,14 +269,23 @@ func TestProductService_DeleteProduct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			workspaceID := uuid.New()
+			ctx := ctxWithWorkspaceID(workspaceID)
+
 			mockQ := &MockQuerier{
-				DeleteProductFunc: func(ctx context.Context, productID uuid.UUID) error {
+				DeleteProductFunc: func(ctx context.Context, arg store.DeleteProductParams) error {
+					if arg.ProductID.String() != tt.id {
+						return fmt.Errorf("id mismatch")
+					}
+					if arg.WorkspaceID == nil || *arg.WorkspaceID != workspaceID {
+						return fmt.Errorf("workspace mismatch")
+					}
 					return tt.deleteErr
 				},
 			}
 
 			s := service.NewProductService(mockQ)
-			err := s.DeleteProduct(context.Background(), tt.id)
+			err := s.DeleteProduct(ctx, tt.id)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("DeleteProduct() error = %v, wantErr %v", err, tt.wantErr)

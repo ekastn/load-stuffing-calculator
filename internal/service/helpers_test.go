@@ -1,10 +1,17 @@
 package service_test
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/auth"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+func ctxWithWorkspaceID(workspaceID uuid.UUID) context.Context {
+	return auth.WithWorkspaceID(context.Background(), workspaceID.String())
+}
 
 // toNumeric is a test helper to convert float64 to pgtype.Numeric.
 func toNumeric(f float64) pgtype.Numeric {

@@ -14,29 +14,32 @@ import (
 
 const createProduct = `-- name: CreateProduct :one
 INSERT INTO products (
-    name, 
-    length_mm, 
-    width_mm, 
-    height_mm, 
-    weight_kg, 
+    workspace_id,
+    name,
+    length_mm,
+    width_mm,
+    height_mm,
+    weight_kg,
     color_hex
 ) VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
 )
-RETURNING product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at
+RETURNING product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
 `
 
 type CreateProductParams struct {
-	Name     string         `json:"name"`
-	LengthMm pgtype.Numeric `json:"length_mm"`
-	WidthMm  pgtype.Numeric `json:"width_mm"`
-	HeightMm pgtype.Numeric `json:"height_mm"`
-	WeightKg pgtype.Numeric `json:"weight_kg"`
-	ColorHex *string        `json:"color_hex"`
+	WorkspaceID *uuid.UUID     `json:"workspace_id"`
+	Name        string         `json:"name"`
+	LengthMm    pgtype.Numeric `json:"length_mm"`
+	WidthMm     pgtype.Numeric `json:"width_mm"`
+	HeightMm    pgtype.Numeric `json:"height_mm"`
+	WeightKg    pgtype.Numeric `json:"weight_kg"`
+	ColorHex    *string        `json:"color_hex"`
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
 	row := q.db.QueryRow(ctx, createProduct,
+		arg.WorkspaceID,
 		arg.Name,
 		arg.LengthMm,
 		arg.WidthMm,
@@ -55,28 +58,41 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.ColorHex,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.WorkspaceID,
 	)
 	return i, err
 }
 
 const deleteProduct = `-- name: DeleteProduct :exec
-DELETE FROM products 
+DELETE FROM products
 WHERE product_id = $1
+  AND workspace_id = $2
 `
 
-func (q *Queries) DeleteProduct(ctx context.Context, productID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteProduct, productID)
+type DeleteProductParams struct {
+	ProductID   uuid.UUID  `json:"product_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+}
+
+func (q *Queries) DeleteProduct(ctx context.Context, arg DeleteProductParams) error {
+	_, err := q.db.Exec(ctx, deleteProduct, arg.ProductID, arg.WorkspaceID)
 	return err
 }
 
 const getProduct = `-- name: GetProduct :one
-SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
 FROM products
 WHERE product_id = $1
+  AND workspace_id = $2
 `
 
-func (q *Queries) GetProduct(ctx context.Context, productID uuid.UUID) (Product, error) {
-	row := q.db.QueryRow(ctx, getProduct, productID)
+type GetProductParams struct {
+	ProductID   uuid.UUID  `json:"product_id"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+}
+
+func (q *Queries) GetProduct(ctx context.Context, arg GetProductParams) (Product, error) {
+	row := q.db.QueryRow(ctx, getProduct, arg.ProductID, arg.WorkspaceID)
 	var i Product
 	err := row.Scan(
 		&i.ProductID,
@@ -88,24 +104,27 @@ func (q *Queries) GetProduct(ctx context.Context, productID uuid.UUID) (Product,
 		&i.ColorHex,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.WorkspaceID,
 	)
 	return i, err
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
 FROM products
+WHERE workspace_id = $1
 ORDER BY name
-LIMIT $1 OFFSET $2
+LIMIT $2 OFFSET $3
 `
 
 type ListProductsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	WorkspaceID *uuid.UUID `json:"workspace_id"`
+	Limit       int32      `json:"limit"`
+	Offset      int32      `json:"offset"`
 }
 
 func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error) {
-	rows, err := q.db.Query(ctx, listProducts, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listProducts, arg.WorkspaceID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +142,7 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 			&i.ColorHex,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.WorkspaceID,
 		); err != nil {
 			return nil, err
 		}
@@ -135,31 +155,34 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 }
 
 const updateProduct = `-- name: UpdateProduct :exec
-UPDATE products 
-SET 
-    name = $2,
-    length_mm = $3,
-    width_mm = $4,
-    height_mm = $5,
-    weight_kg = $6,
-    color_hex = $7,
+UPDATE products
+SET
+    name = $3,
+    length_mm = $4,
+    width_mm = $5,
+    height_mm = $6,
+    weight_kg = $7,
+    color_hex = $8,
     updated_at = NOW()
 WHERE product_id = $1
+  AND workspace_id = $2
 `
 
 type UpdateProductParams struct {
-	ProductID uuid.UUID      `json:"product_id"`
-	Name      string         `json:"name"`
-	LengthMm  pgtype.Numeric `json:"length_mm"`
-	WidthMm   pgtype.Numeric `json:"width_mm"`
-	HeightMm  pgtype.Numeric `json:"height_mm"`
-	WeightKg  pgtype.Numeric `json:"weight_kg"`
-	ColorHex  *string        `json:"color_hex"`
+	ProductID   uuid.UUID      `json:"product_id"`
+	WorkspaceID *uuid.UUID     `json:"workspace_id"`
+	Name        string         `json:"name"`
+	LengthMm    pgtype.Numeric `json:"length_mm"`
+	WidthMm     pgtype.Numeric `json:"width_mm"`
+	HeightMm    pgtype.Numeric `json:"height_mm"`
+	WeightKg    pgtype.Numeric `json:"weight_kg"`
+	ColorHex    *string        `json:"color_hex"`
 }
 
 func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) error {
 	_, err := q.db.Exec(ctx, updateProduct,
 		arg.ProductID,
+		arg.WorkspaceID,
 		arg.Name,
 		arg.LengthMm,
 		arg.WidthMm,

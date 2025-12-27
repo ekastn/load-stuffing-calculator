@@ -74,7 +74,12 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 		if err != nil {
 			return nil, fmt.Errorf("invalid container_id format")
 		}
-		cont, err := s.q.GetContainer(ctx, contUUID)
+		workspaceID, err := workspaceIDFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		cont, err := s.q.GetContainer(ctx, store.GetContainerParams{ContainerID: contUUID, WorkspaceID: workspaceID})
 		if err != nil {
 			return nil, fmt.Errorf("container not found: %w", err)
 		}
@@ -102,7 +107,7 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 		return nil, err
 	}
 
-	if actor.role == "trial" {
+	if actor.role == types.RoleTrial.String() {
 		count, err := s.q.CountPlansByCreator(ctx, store.CountPlansByCreatorParams{
 			CreatedByType: "guest",
 			CreatedByID:   actor.id,
@@ -116,12 +121,23 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 	}
 
 	createdByType := "user"
-	if actor.role == "trial" {
+	if actor.role == types.RoleTrial.String() {
 		createdByType = "guest"
 	}
 	createdByUUID := actor.id
 
+	workspaceID, err := func() (*uuid.UUID, error) {
+		if actor.role == types.RoleTrial.String() {
+			return nil, nil
+		}
+		return workspaceIDFromContext(ctx)
+	}()
+	if err != nil {
+		return nil, err
+	}
+
 	plan, err := s.q.CreateLoadPlan(ctx, store.CreateLoadPlanParams{
+		WorkspaceID:   workspaceID,
 		PlanCode:      planCode,
 		Status:        &status,
 		ContLabel:     &contLabel,
@@ -226,10 +242,14 @@ func (s *planService) GetPlan(ctx context.Context, id string) (*dto.PlanDetailRe
 	}
 
 	plan, err := func() (store.LoadPlan, error) {
-		if actor.role == "trial" {
+		if actor.role == types.RoleTrial.String() {
 			return s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: planUUID, CreatedByID: actor.id})
 		}
-		return s.q.GetLoadPlan(ctx, planUUID)
+		workspaceID, err := workspaceIDFromContext(ctx)
+		if err != nil {
+			return store.LoadPlan{}, err
+		}
+		return s.q.GetLoadPlan(ctx, store.GetLoadPlanParams{PlanID: planUUID, WorkspaceID: workspaceID})
 	}()
 	if err != nil {
 		return nil, err
@@ -363,10 +383,14 @@ func (s *planService) ListPlans(ctx context.Context, page, limit int32) ([]dto.P
 	}
 
 	plans, err := func() ([]store.LoadPlan, error) {
-		if actor.role == "trial" {
+		if actor.role == types.RoleTrial.String() {
 			return s.q.ListLoadPlansForGuest(ctx, store.ListLoadPlansForGuestParams{CreatedByID: actor.id, Limit: limit, Offset: offset})
 		}
-		return s.q.ListLoadPlans(ctx, store.ListLoadPlansParams{Limit: limit, Offset: offset})
+		workspaceID, err := workspaceIDFromContext(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return s.q.ListLoadPlans(ctx, store.ListLoadPlansParams{WorkspaceID: workspaceID, Limit: limit, Offset: offset})
 	}()
 	if err != nil {
 		return nil, err
@@ -397,17 +421,27 @@ func (s *planService) UpdatePlan(ctx context.Context, id string, req dto.UpdateP
 	}
 
 	plan, err := func() (store.LoadPlan, error) {
-		if actor.role == "trial" {
+		if actor.role == types.RoleTrial.String() {
 			return s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: planUUID, CreatedByID: actor.id})
 		}
-		return s.q.GetLoadPlan(ctx, planUUID)
+		workspaceID, err := workspaceIDFromContext(ctx)
+		if err != nil {
+			return store.LoadPlan{}, err
+		}
+		return s.q.GetLoadPlan(ctx, store.GetLoadPlanParams{PlanID: planUUID, WorkspaceID: workspaceID})
 	}()
+	if err != nil {
+		return err
+	}
+
+	workspaceID, err := workspaceIDFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
 	params := store.UpdateLoadPlanParams{
 		PlanID:      planUUID,
+		WorkspaceID: workspaceID,
 		PlanCode:    plan.PlanCode,
 		ContLabel:   plan.ContLabel,
 		LengthMm:    plan.LengthMm,
@@ -427,7 +461,8 @@ func (s *planService) UpdatePlan(ctx context.Context, id string, req dto.UpdateP
 			if err != nil {
 				return fmt.Errorf("invalid container_id format")
 			}
-			cont, err := s.q.GetContainer(ctx, contUUID)
+			cont, err := s.q.GetContainer(ctx, store.GetContainerParams{ContainerID: contUUID, WorkspaceID: workspaceID})
+
 			if err != nil {
 				return fmt.Errorf("container not found: %w", err)
 			}
@@ -465,13 +500,18 @@ func (s *planService) DeletePlan(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
-	if actor.role == "trial" {
+	if actor.role == types.RoleTrial.String() {
 		if _, err := s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: planUUID, CreatedByID: actor.id}); err != nil {
 			return ErrForbidden
 		}
 	}
 
-	return s.q.DeleteLoadPlan(ctx, planUUID)
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	return s.q.DeleteLoadPlan(ctx, store.DeleteLoadPlanParams{PlanID: planUUID, WorkspaceID: workspaceID})
 }
 
 func (s *planService) AddPlanItem(ctx context.Context, planID string, req dto.AddPlanItemRequest) (*dto.PlanItemDetail, error) {
@@ -484,7 +524,7 @@ func (s *planService) AddPlanItem(ctx context.Context, planID string, req dto.Ad
 	if err != nil {
 		return nil, err
 	}
-	if actor.role == "trial" {
+	if actor.role == types.RoleTrial.String() {
 		if _, err := s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: pID, CreatedByID: actor.id}); err != nil {
 			return nil, ErrForbidden
 		}
@@ -527,7 +567,7 @@ func (s *planService) GetPlanItem(ctx context.Context, planID, itemID string) (*
 	if err != nil {
 		return nil, err
 	}
-	if actor.role == "trial" {
+	if actor.role == types.RoleTrial.String() {
 		if _, err := s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: pID, CreatedByID: actor.id}); err != nil {
 			return nil, ErrForbidden
 		}
@@ -555,7 +595,7 @@ func (s *planService) UpdatePlanItem(ctx context.Context, planID, itemID string,
 	if err != nil {
 		return err
 	}
-	if actor.role == "trial" {
+	if actor.role == types.RoleTrial.String() {
 		if _, err := s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: pID, CreatedByID: actor.id}); err != nil {
 			return ErrForbidden
 		}
@@ -625,7 +665,7 @@ func (s *planService) DeletePlanItem(ctx context.Context, planID, itemID string)
 	if err != nil {
 		return err
 	}
-	if actor.role == "trial" {
+	if actor.role == types.RoleTrial.String() {
 		if _, err := s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: pID, CreatedByID: actor.id}); err != nil {
 			return ErrForbidden
 		}
@@ -654,10 +694,14 @@ func (s *planService) CalculatePlan(ctx context.Context, planID string, opts dto
 	}
 
 	plan, err := func() (store.LoadPlan, error) {
-		if actor.role == "trial" {
+		if actor.role == types.RoleTrial.String() {
 			return s.q.GetLoadPlanForGuest(ctx, store.GetLoadPlanForGuestParams{PlanID: pID, CreatedByID: actor.id})
 		}
-		return s.q.GetLoadPlan(ctx, pID)
+		workspaceID, err := workspaceIDFromContext(ctx)
+		if err != nil {
+			return store.LoadPlan{}, err
+		}
+		return s.q.GetLoadPlan(ctx, store.GetLoadPlanParams{PlanID: pID, WorkspaceID: workspaceID})
 	}()
 	if err != nil {
 		return nil, fmt.Errorf("plan not found: %w", err)

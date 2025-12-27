@@ -9,11 +9,12 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/google/uuid"
 )
 
 func TestUserService_CreateUser(t *testing.T) {
-	validRole := "planner"
+	validRole := types.RolePlanner.String()
 	validRoleID := uuid.New()
 	validPassword := "password123"
 
@@ -133,7 +134,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 				UserID:   validID,
 				Username: "john",
 				Email:    "john@example.com",
-				RoleName: "user",
+				RoleName: types.RoleUser.String(),
 				FullName: &fullName,
 				Gender:   &gender,
 			},

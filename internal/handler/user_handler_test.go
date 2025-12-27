@@ -10,6 +10,7 @@ import (
 
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -26,7 +27,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 			Username: "testuser",
 			Email:    "test@example.com",
 			Password: "password",
-			Role:     "planner",
+			Role:     types.RolePlanner.String(),
 		}
 		expectedResp := &dto.UserResponse{ID: "123", Username: "testuser"}
 
@@ -62,7 +63,7 @@ func TestUserHandler_CreateUser(t *testing.T) {
 		mockSvc := new(MockUserService)
 		h := handler.NewUserHandler(mockSvc)
 
-		req := dto.CreateUserRequest{Username: "testuser", Email: "test@example.com", Password: "password", Role: "planner"}
+		req := dto.CreateUserRequest{Username: "testuser", Email: "test@example.com", Password: "password", Role: types.RolePlanner.String()}
 		mockSvc.On("CreateUser", mock.Anything, req).Return(nil, errors.New("failed"))
 
 		w := httptest.NewRecorder()

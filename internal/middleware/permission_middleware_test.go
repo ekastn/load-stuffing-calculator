@@ -10,6 +10,7 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/middleware"
 	"github.com/ekastn/load-stuffing-calculator/internal/mocks"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
@@ -49,7 +50,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/", nil)
-		c.Set("role", "admin")
+		c.Set("role", types.RoleAdmin.String())
 
 		middleware.Permission(mockQ, permCache, "anything")(c)
 
@@ -67,7 +68,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/", nil)
-		c.Set("role", "planner")
+		c.Set("role", types.RolePlanner.String())
 
 		middleware.Permission(mockQ, permCache, "plan:update")(c)
 
@@ -143,7 +144,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/", nil)
-		c.Set("role", "planner")
+		c.Set("role", types.RolePlanner.String())
 
 		middleware.Permission(mockQ, permCache, "user:create")(c)
 
@@ -161,7 +162,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/", nil)
-		c.Set("role", "operator")
+		c.Set("role", types.RoleOperator.String())
 
 		middleware.PermissionAny(mockQ, permCache, "plan:update", "plan:read")(c)
 
@@ -179,7 +180,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
 		c.Request = httptest.NewRequest("GET", "/", nil)
-		c.Set("role", "operator")
+		c.Set("role", types.RoleOperator.String())
 
 		middleware.PermissionAll(mockQ, permCache, "plan:read", "plan:update")(c)
 
