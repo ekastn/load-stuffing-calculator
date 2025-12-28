@@ -25,13 +25,16 @@ func NewProductHandler(productSvc service.ProductService) *ProductHandler {
 //	@Tags			products
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		dto.CreateProductRequest	true	"Product Creation Data"
-//	@Success		201		{object}	response.APIResponse{data=dto.ProductResponse}
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string						false	"Workspace override (founder only)"
+//	@Param			request			body		dto.CreateProductRequest	true	"Product Creation Data"
+//	@Success		201				{object}	response.APIResponse{data=dto.ProductResponse}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/products [post]
 func (h *ProductHandler) CreateProduct(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	var req dto.CreateProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
@@ -54,13 +57,16 @@ func (h *ProductHandler) CreateProduct(c *gin.Context) {
 //	@Tags			products
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"Product ID"
-//	@Success		200	{object}	response.APIResponse{data=dto.ProductResponse}
-//	@Failure		400	{object}	response.APIResponse
-//	@Failure		404	{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Product ID"
+//	@Success		200				{object}	response.APIResponse{data=dto.ProductResponse}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		404				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/products/{id} [get]
 func (h *ProductHandler) GetProduct(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	id := c.Param("id")
 	if id == "" {
 		response.Error(c, http.StatusBadRequest, "Product ID is required")
@@ -83,13 +89,16 @@ func (h *ProductHandler) GetProduct(c *gin.Context) {
 //	@Tags			products
 //	@Accept			json
 //	@Produce		json
-//	@Param			page	query		int	false	"Page number"		default(1)
-//	@Param			limit	query		int	false	"Items per page"	default(10)
-//	@Success		200		{object}	response.APIResponse{data=[]dto.ProductResponse}
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			page			query		int		false	"Page number"		default(1)
+//	@Param			limit			query		int		false	"Items per page"	default(10)
+//	@Success		200				{object}	response.APIResponse{data=[]dto.ProductResponse}
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/products [get]
 func (h *ProductHandler) ListProducts(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
 
@@ -112,14 +121,17 @@ func (h *ProductHandler) ListProducts(c *gin.Context) {
 //	@Tags			products
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string						true	"Product ID"
-//	@Param			request	body		dto.UpdateProductRequest	true	"Product Update Data"
-//	@Success		200		{object}	response.APIResponse
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string						false	"Workspace override (founder only)"
+//	@Param			id				path		string						true	"Product ID"
+//	@Param			request			body		dto.UpdateProductRequest	true	"Product Update Data"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/products/{id} [put]
 func (h *ProductHandler) UpdateProduct(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	id := c.Param("id")
 	if id == "" {
 		response.Error(c, http.StatusBadRequest, "Product ID is required")
@@ -148,13 +160,16 @@ func (h *ProductHandler) UpdateProduct(c *gin.Context) {
 //	@Tags			products
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"Product ID"
-//	@Success		200	{object}	response.APIResponse
-//	@Failure		400	{object}	response.APIResponse
-//	@Failure		500	{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Product ID"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/products/{id} [delete]
 func (h *ProductHandler) DeleteProduct(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	id := c.Param("id")
 	if id == "" {
 		response.Error(c, http.StatusBadRequest, "Product ID is required")

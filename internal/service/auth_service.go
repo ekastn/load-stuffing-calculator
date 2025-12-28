@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/auth"
@@ -20,6 +21,7 @@ type AuthService interface {
 	GuestToken(ctx context.Context) (*dto.GuestTokenResponse, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*dto.LoginResponse, error)
 	SwitchWorkspace(ctx context.Context, req dto.SwitchWorkspaceRequest) (*dto.SwitchWorkspaceResponse, error)
+	Me(ctx context.Context) (*dto.AuthMeResponse, error)
 }
 
 type authService struct {
@@ -53,6 +55,9 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 		return nil, fmt.Errorf("owner role not found: %w", err)
 	}
 
+	username := strings.TrimSpace(req.Username)
+	email := strings.TrimSpace(strings.ToLower(req.Email))
+
 	hashedPassword, err := auth.HashPassword(req.Password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
@@ -60,22 +65,40 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 
 	user, err := s.q.CreateUser(ctx, store.CreateUserParams{
 		RoleID:       plannerRole.RoleID,
-		Username:     req.Username,
-		Email:        req.Email,
+		Username:     username,
+		Email:        email,
 		PasswordHash: hashedPassword,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
-	// Every user must have a personal workspace.
+	accountType := "personal"
+	if req.AccountType != nil {
+		candidate := strings.TrimSpace(strings.ToLower(*req.AccountType))
+		if candidate != "" {
+			accountType = candidate
+		}
+	}
+	if accountType != "personal" && accountType != "organization" {
+		return nil, fmt.Errorf("invalid account_type: must be 'personal' or 'organization'")
+	}
+
+	workspaceName := "my workspace"
+	if req.WorkspaceName != nil {
+		candidate := strings.TrimSpace(*req.WorkspaceName)
+		if candidate != "" {
+			workspaceName = candidate
+		}
+	}
+
 	ws, err := s.q.CreateWorkspace(ctx, store.CreateWorkspaceParams{
-		Type:        "personal",
-		Name:        req.Username,
+		Type:        accountType,
+		Name:        workspaceName,
 		OwnerUserID: user.UserID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create personal workspace: %w", err)
+		return nil, fmt.Errorf("failed to create workspace: %w", err)
 	}
 
 	_, err = s.q.CreateMember(ctx, store.CreateMemberParams{
@@ -311,6 +334,14 @@ func (s *authService) resolveDefaultWorkspaceID(ctx context.Context, userID uuid
 		return uuid.Nil, fmt.Errorf("failed to get personal workspace: %w", err)
 	}
 
+	owned, err := s.q.ListWorkspacesByOwner(ctx, store.ListWorkspacesByOwnerParams{OwnerUserID: userID, Limit: 1, Offset: 0})
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to list owned workspaces: %w", err)
+	}
+	if len(owned) > 0 {
+		return owned[0].WorkspaceID, nil
+	}
+
 	workspaces, err := s.q.ListWorkspacesForUser(ctx, store.ListWorkspacesForUserParams{UserID: userID, Limit: 1, Offset: 0})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to list workspaces: %w", err)
@@ -338,4 +369,53 @@ func (s *authService) resolveRoleName(ctx context.Context, userID uuid.UUID, wor
 		return "", fmt.Errorf("failed to resolve member role: %w", err)
 	}
 	return roleName, nil
+}
+
+func (s *authService) Me(ctx context.Context) (*dto.AuthMeResponse, error) {
+	userIDStr, ok := auth.UserIDFromContext(ctx)
+	if !ok || userIDStr == "" {
+		return nil, fmt.Errorf("missing user id")
+	}
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id")
+	}
+
+	roleName, ok := auth.RoleFromContext(ctx)
+	if !ok || roleName == "" {
+		return nil, fmt.Errorf("missing role")
+	}
+
+	user, err := s.q.GetUserByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	permissions, err := s.q.GetPermissionsByRole(ctx, roleName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get permissions: %w", err)
+	}
+
+	isPlatformMember := false
+	if _, err := s.q.GetPlatformRoleByUserID(ctx, userID); err == nil {
+		isPlatformMember = true
+	} else if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to check platform membership: %w", err)
+	}
+
+	var workspaceID *string
+	if wsID, ok := auth.WorkspaceIDFromContext(ctx); ok && wsID != "" {
+		workspaceID = &wsID
+	}
+
+	return &dto.AuthMeResponse{
+		User: dto.UserSummary{
+			ID:       user.UserID.String(),
+			Username: user.Username,
+			Role:     roleName,
+		},
+		ActiveWorkspaceID: workspaceID,
+		Permissions:       permissions,
+		IsPlatformMember:  isPlatformMember,
+	}, nil
 }

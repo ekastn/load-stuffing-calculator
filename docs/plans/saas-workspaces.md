@@ -197,9 +197,88 @@ All endpoints live under `/api/v1`.
 
 ### Phase 5: Web
 
-1. Add workspace switcher.
-2. Add members/invites screens for org workspaces.
-3. Implement invite accept to switch session (store returned JWT).
+#### Goals
+
+- Keep the existing authenticated App Router group `web/app/(app)` as the primary app surface for both **personal** and **organization** workspace usage.
+- Introduce a dedicated **platform** surface at `/dev` for platform members only.
+- Ensure UI visibility and route access checks match backend authorization by using **permissions**, not role names.
+
+#### Routing / layouts
+
+- Public and auth routes remain unchanged:
+  - `web/app/(public)`
+  - `web/app/(auth)`
+- App routes (workspace-scoped usage):
+  - `web/app/(app)`
+  - Workspace switcher is available inside the app when the user has `workspace:read`.
+- Platform routes:
+  - `web/app/dev/*` (URL prefix `/dev`)
+  - `/dev` is strictly for users who are `platform_members` (not just role name checks).
+
+#### Auth/session API support
+
+Add an authed endpoint to support permission-driven UI:
+
+- `GET /auth/me` (JWT required)
+  - Purpose: return current session context so the UI can accurately render navigation and guard pages.
+  - Response fields:
+    - `user: { id, username, role }`
+    - `active_workspace_id: string | null`
+    - `permissions: string[]` (resolved server-side from role → permissions)
+    - `is_platform_member: boolean`
+
+Notes:
+- Permissions must reflect the same wildcard semantics the backend uses (e.g. `*`, `plan:*`).
+- `is_platform_member` should be computed from `platform_members` (not inferred from role strings in the UI).
+
+#### Web client state
+
+Extend the web auth state to persist:
+
+- `active_workspace_id` (from login/register/refresh/switch responses and/or `/auth/me`)
+- `permissions: string[]` (from `/auth/me`)
+- `is_platform_member: boolean` (from `/auth/me`)
+
+#### Permission-driven UI
+
+- Replace role-based guards in the web with permission-based guards that mirror backend behavior.
+- Replace hard-coded role navigation with a single navigation model where each item declares required permissions.
+
+Permission matching rules must align with backend:
+
+- `*` grants all.
+- Exact permission name matches.
+- `resource:*` grants any `resource:<action>`.
+
+#### Workspace switcher behavior
+
+- UI calls `POST /auth/switch-workspace` when the user selects a workspace.
+- Store returned tokens and `active_workspace_id`, then re-fetch `/auth/me` to refresh permissions and platform membership state.
+- After switching: redirect to `/dashboard` (or the last route that remains permitted).
+
+#### Members / invites UI
+
+- Add members and invites screens.
+- Show/hide these screens and navigation items based on permissions:
+  - Members: `member:read` / `member:*`
+  - Invites: `invite:read` / `invite:*`
+
+#### Invite accept flow
+
+- Add a public page to accept invites (token in URL).
+- For MVP, if backend requires login, redirect unauthenticated users to login and then try accept again.
+- On successful accept, store the returned JWT/workspace and refresh `/auth/me`.
+
+#### `/dev` (platform) UI
+
+- Move admin CRUD pages into `/dev`:
+  - Users
+  - Roles
+  - Permissions
+
+- Access control:
+  - `/dev/*` requires `is_platform_member === true`.
+  - The pages still show/hide actions based on permissions (e.g. `user:*`, `role:*`, `permission:*`).
 
 ### Phase 6: Tests
 

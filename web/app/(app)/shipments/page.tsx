@@ -27,7 +27,7 @@ export default function ShipmentsPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={["admin", "planner", "operator"]}>
+    <RouteGuard requiredPermissions={["plan:read"]}>
       <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>

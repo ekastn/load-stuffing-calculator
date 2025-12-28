@@ -27,9 +27,9 @@ export function useContainers() {
     fetchContainers()
   }, [fetchContainers])
 
-  const createContainer = async (data: CreateContainerRequest) => {
+  const createContainer = async (data: CreateContainerRequest, workspaceId?: string | null) => {
     try {
-      await ContainerService.createContainer(data)
+      await ContainerService.createContainer(data, workspaceId)
       await fetchContainers()
       return true
     } catch (err) {

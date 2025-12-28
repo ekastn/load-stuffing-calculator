@@ -84,7 +84,7 @@ Generated: ${new Date().toLocaleString()}
   }
 
   return (
-    <RouteGuard allowedRoles={["admin", "planner"]}>
+    <RouteGuard requiredPermissions={["plan:read"]}>
       <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Shipment Manifests</h1>

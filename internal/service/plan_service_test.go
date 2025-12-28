@@ -96,6 +96,44 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 		assert.Equal(t, types.PlanStatusDraft.String(), resp.Status)
 	})
 
+	t.Run("founder_with_override_uses_override_workspace", func(t *testing.T) {
+		contID := uuid.New()
+		workspaceID := uuid.New()
+		overrideWorkspaceID := uuid.New()
+
+		mockQ := &MockQuerier{
+			GetContainerFunc: func(ctx context.Context, arg store.GetContainerParams) (store.Container, error) {
+				assert.Equal(t, contID, arg.ContainerID)
+				assert.Equal(t, &overrideWorkspaceID, arg.WorkspaceID)
+				return store.Container{ContainerID: contID, Name: "Preset", InnerLengthMm: toNumeric(1), InnerWidthMm: toNumeric(1), InnerHeightMm: toNumeric(1), MaxWeightKg: toNumeric(1)}, nil
+			},
+			CreateLoadPlanFunc: func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error) {
+				assert.Equal(t, &overrideWorkspaceID, arg.WorkspaceID)
+				return store.LoadPlan{PlanID: planID, PlanCode: arg.PlanCode, CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true}}, nil
+			},
+			AddLoadItemFunc: func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error) {
+				return store.LoadItem{ItemID: uuid.New()}, nil
+			},
+		}
+
+		s := service.NewPlanService(mockQ, packer.NewPacker())
+		ctx := auth.WithWorkspaceOverrideID(ctxWithRoleAndWorkspace("founder", workspaceID), overrideWorkspaceID.String())
+		ctx = auth.WithUserID(ctx, uuid.New().String())
+
+		req := dto.CreatePlanRequest{
+			Title: "Founder Override Plan",
+			Container: dto.CreatePlanContainer{
+				ContainerID: stringPtr(contID.String()),
+			},
+			Items:         []dto.CreatePlanItem{itemReq},
+			AutoCalculate: boolPtr(false),
+		}
+
+		resp, err := s.CreateCompletePlan(ctx, req)
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+	})
+
 	t.Run("success_with_custom_container", func(t *testing.T) {
 		customLength := 1000.0
 		customWidth := 500.0
@@ -600,6 +638,9 @@ func TestPlanService_DeletePlan(t *testing.T) {
 	planID := uuid.New()
 	t.Run("success", func(t *testing.T) {
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			DeleteLoadPlanFunc: func(ctx context.Context, arg store.DeleteLoadPlanParams) error {
 				if arg.PlanID != planID {
 					return assert.AnError
@@ -641,6 +682,9 @@ func TestPlanService_AddPlanItem(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			AddLoadItemFunc: func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error) {
 				return store.LoadItem{
 					ItemID:        uuid.New(),
@@ -707,6 +751,9 @@ func TestPlanService_AddPlanItem(t *testing.T) {
 
 	t.Run("error_add_item_db_error", func(t *testing.T) {
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			AddLoadItemFunc: func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error) {
 				return store.LoadItem{}, fmt.Errorf("db error")
 			},
@@ -748,6 +795,9 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 
 	t.Run("success_update_label", func(t *testing.T) {
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			GetLoadItemFunc: func(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error) {
 				return initialItem, nil
 			},
@@ -777,6 +827,9 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 		newRotation := false
 
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			GetLoadItemFunc: func(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error) {
 				return initialItem, nil
 			},
@@ -802,6 +855,9 @@ func TestPlanService_UpdatePlanItem(t *testing.T) {
 
 	t.Run("error_plan_item_not_found", func(t *testing.T) {
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			GetLoadItemFunc: func(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error) {
 				return store.LoadItem{}, fmt.Errorf("item not found")
 			},
@@ -821,6 +877,9 @@ func TestPlanService_DeletePlanItem(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			DeleteLoadItemFunc: func(ctx context.Context, arg store.DeleteLoadItemParams) error {
 				assert.Equal(t, planID, *arg.PlanID)
 				assert.Equal(t, itemID, arg.ItemID)
@@ -835,6 +894,9 @@ func TestPlanService_DeletePlanItem(t *testing.T) {
 
 	t.Run("error_db_delete_fails", func(t *testing.T) {
 		mockQ := &MockQuerier{
+			GetLoadPlanFunc: func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error) {
+				return store.LoadPlan{PlanID: planID, WorkspaceID: arg.WorkspaceID}, nil
+			},
 			DeleteLoadItemFunc: func(ctx context.Context, arg store.DeleteLoadItemParams) error {
 				return fmt.Errorf("db error")
 			},

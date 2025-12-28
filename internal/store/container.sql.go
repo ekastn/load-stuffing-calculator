@@ -79,11 +79,21 @@ func (q *Queries) DeleteContainer(ctx context.Context, arg DeleteContainerParams
 	return err
 }
 
+const deleteContainerAny = `-- name: DeleteContainerAny :exec
+DELETE FROM containers
+WHERE container_id = $1
+`
+
+func (q *Queries) DeleteContainerAny(ctx context.Context, containerID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteContainerAny, containerID)
+	return err
+}
+
 const getContainer = `-- name: GetContainer :one
 SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at, workspace_id
 FROM containers
 WHERE container_id = $1
-  AND workspace_id = $2
+  AND (workspace_id = $2 OR workspace_id IS NULL)
 `
 
 type GetContainerParams struct {
@@ -109,11 +119,35 @@ func (q *Queries) GetContainer(ctx context.Context, arg GetContainerParams) (Con
 	return i, err
 }
 
+const getContainerAny = `-- name: GetContainerAny :one
+SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at, workspace_id
+FROM containers
+WHERE container_id = $1
+`
+
+func (q *Queries) GetContainerAny(ctx context.Context, containerID uuid.UUID) (Container, error) {
+	row := q.db.QueryRow(ctx, getContainerAny, containerID)
+	var i Container
+	err := row.Scan(
+		&i.ContainerID,
+		&i.Name,
+		&i.InnerLengthMm,
+		&i.InnerWidthMm,
+		&i.InnerHeightMm,
+		&i.MaxWeightKg,
+		&i.Description,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.WorkspaceID,
+	)
+	return i, err
+}
+
 const listContainers = `-- name: ListContainers :many
 SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at, workspace_id
 FROM containers
-WHERE workspace_id = $1
-ORDER BY name
+WHERE workspace_id = $1 OR workspace_id IS NULL
+ORDER BY (workspace_id IS NULL) DESC, name
 LIMIT $2 OFFSET $3
 `
 
@@ -125,6 +159,49 @@ type ListContainersParams struct {
 
 func (q *Queries) ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error) {
 	rows, err := q.db.Query(ctx, listContainers, arg.WorkspaceID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Container
+	for rows.Next() {
+		var i Container
+		if err := rows.Scan(
+			&i.ContainerID,
+			&i.Name,
+			&i.InnerLengthMm,
+			&i.InnerWidthMm,
+			&i.InnerHeightMm,
+			&i.MaxWeightKg,
+			&i.Description,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.WorkspaceID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContainersAll = `-- name: ListContainersAll :many
+SELECT container_id, name, inner_length_mm, inner_width_mm, inner_height_mm, max_weight_kg, description, created_at, updated_at, workspace_id
+FROM containers
+ORDER BY (workspace_id IS NULL) DESC, name
+LIMIT $1 OFFSET $2
+`
+
+type ListContainersAllParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListContainersAll(ctx context.Context, arg ListContainersAllParams) ([]Container, error) {
+	rows, err := q.db.Query(ctx, listContainersAll, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +260,42 @@ func (q *Queries) UpdateContainer(ctx context.Context, arg UpdateContainerParams
 	_, err := q.db.Exec(ctx, updateContainer,
 		arg.ContainerID,
 		arg.WorkspaceID,
+		arg.Name,
+		arg.InnerLengthMm,
+		arg.InnerWidthMm,
+		arg.InnerHeightMm,
+		arg.MaxWeightKg,
+		arg.Description,
+	)
+	return err
+}
+
+const updateContainerAny = `-- name: UpdateContainerAny :exec
+UPDATE containers
+SET
+    name = $2,
+    inner_length_mm = $3,
+    inner_width_mm = $4,
+    inner_height_mm = $5,
+    max_weight_kg = $6,
+    description = $7,
+    updated_at = NOW()
+WHERE container_id = $1
+`
+
+type UpdateContainerAnyParams struct {
+	ContainerID   uuid.UUID      `json:"container_id"`
+	Name          string         `json:"name"`
+	InnerLengthMm pgtype.Numeric `json:"inner_length_mm"`
+	InnerWidthMm  pgtype.Numeric `json:"inner_width_mm"`
+	InnerHeightMm pgtype.Numeric `json:"inner_height_mm"`
+	MaxWeightKg   pgtype.Numeric `json:"max_weight_kg"`
+	Description   *string        `json:"description"`
+}
+
+func (q *Queries) UpdateContainerAny(ctx context.Context, arg UpdateContainerAnyParams) error {
+	_, err := q.db.Exec(ctx, updateContainerAny,
+		arg.ContainerID,
 		arg.Name,
 		arg.InnerLengthMm,
 		arg.InnerWidthMm,

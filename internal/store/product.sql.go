@@ -79,11 +79,21 @@ func (q *Queries) DeleteProduct(ctx context.Context, arg DeleteProductParams) er
 	return err
 }
 
+const deleteProductAny = `-- name: DeleteProductAny :exec
+DELETE FROM products
+WHERE product_id = $1
+`
+
+func (q *Queries) DeleteProductAny(ctx context.Context, productID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteProductAny, productID)
+	return err
+}
+
 const getProduct = `-- name: GetProduct :one
 SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
 FROM products
 WHERE product_id = $1
-  AND workspace_id = $2
+  AND (workspace_id = $2 OR workspace_id IS NULL)
 `
 
 type GetProductParams struct {
@@ -109,11 +119,35 @@ func (q *Queries) GetProduct(ctx context.Context, arg GetProductParams) (Product
 	return i, err
 }
 
+const getProductAny = `-- name: GetProductAny :one
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
+FROM products
+WHERE product_id = $1
+`
+
+func (q *Queries) GetProductAny(ctx context.Context, productID uuid.UUID) (Product, error) {
+	row := q.db.QueryRow(ctx, getProductAny, productID)
+	var i Product
+	err := row.Scan(
+		&i.ProductID,
+		&i.Name,
+		&i.LengthMm,
+		&i.WidthMm,
+		&i.HeightMm,
+		&i.WeightKg,
+		&i.ColorHex,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.WorkspaceID,
+	)
+	return i, err
+}
+
 const listProducts = `-- name: ListProducts :many
 SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
 FROM products
-WHERE workspace_id = $1
-ORDER BY name
+WHERE workspace_id = $1 OR workspace_id IS NULL
+ORDER BY (workspace_id IS NULL) DESC, name
 LIMIT $2 OFFSET $3
 `
 
@@ -125,6 +159,49 @@ type ListProductsParams struct {
 
 func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]Product, error) {
 	rows, err := q.db.Query(ctx, listProducts, arg.WorkspaceID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ProductID,
+			&i.Name,
+			&i.LengthMm,
+			&i.WidthMm,
+			&i.HeightMm,
+			&i.WeightKg,
+			&i.ColorHex,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.WorkspaceID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProductsAll = `-- name: ListProductsAll :many
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
+FROM products
+ORDER BY (workspace_id IS NULL) DESC, name
+LIMIT $1 OFFSET $2
+`
+
+type ListProductsAllParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListProductsAll(ctx context.Context, arg ListProductsAllParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, listProductsAll, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +260,42 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) er
 	_, err := q.db.Exec(ctx, updateProduct,
 		arg.ProductID,
 		arg.WorkspaceID,
+		arg.Name,
+		arg.LengthMm,
+		arg.WidthMm,
+		arg.HeightMm,
+		arg.WeightKg,
+		arg.ColorHex,
+	)
+	return err
+}
+
+const updateProductAny = `-- name: UpdateProductAny :exec
+UPDATE products
+SET
+    name = $2,
+    length_mm = $3,
+    width_mm = $4,
+    height_mm = $5,
+    weight_kg = $6,
+    color_hex = $7,
+    updated_at = NOW()
+WHERE product_id = $1
+`
+
+type UpdateProductAnyParams struct {
+	ProductID uuid.UUID      `json:"product_id"`
+	Name      string         `json:"name"`
+	LengthMm  pgtype.Numeric `json:"length_mm"`
+	WidthMm   pgtype.Numeric `json:"width_mm"`
+	HeightMm  pgtype.Numeric `json:"height_mm"`
+	WeightKg  pgtype.Numeric `json:"weight_kg"`
+	ColorHex  *string        `json:"color_hex"`
+}
+
+func (q *Queries) UpdateProductAny(ctx context.Context, arg UpdateProductAnyParams) error {
+	_, err := q.db.Exec(ctx, updateProductAny,
+		arg.ProductID,
 		arg.Name,
 		arg.LengthMm,
 		arg.WidthMm,

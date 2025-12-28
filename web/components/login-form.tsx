@@ -4,6 +4,8 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -97,6 +99,13 @@ export function LoginForm() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
+
+              <p className="text-center text-sm text-muted-foreground">
+                Don&apos;t have an account?{" "}
+                <Link href="/register" className="text-primary hover:underline">
+                  Create one
+                </Link>
+              </p>
             </form>
           </CardContent>
         </Card>

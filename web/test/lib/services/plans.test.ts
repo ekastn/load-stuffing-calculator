@@ -43,6 +43,16 @@ describe("PlanService", () => {
     expect(result).toEqual(createdPlan)
   })
 
+  it("createPlan appends workspace_id when provided", async () => {
+    const newPlan = { title: "Test Plan", container: { length_mm: 100 }, items: [] }
+    const createdPlan = { plan_id: "1", ...newPlan }
+    ;(apiPost as Mock).mockResolvedValue(createdPlan)
+
+    const result = await PlanService.createPlan(newPlan as any, "ws-123")
+    expect(apiPost).toHaveBeenCalledWith("/plans?workspace_id=ws-123", newPlan)
+    expect(result).toEqual(createdPlan)
+  })
+
   it("updatePlan calls apiPut correctly", async () => {
     const updateData = { status: "COMPLETED" }
     ;(apiPut as Mock).mockResolvedValue(undefined)

@@ -34,7 +34,7 @@ export default function AuditLogsPage() {
   const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "VIEW", "VALIDATE"]
 
   return (
-    <RouteGuard allowedRoles={["admin"]}>
+    <RouteGuard requiredPermissions={["*"]}>
       <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Audit Logs</h1>

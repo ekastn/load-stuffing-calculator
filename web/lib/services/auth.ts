@@ -1,5 +1,14 @@
-import { apiPost } from "../api"
-import { GuestTokenResponse, LoginRequest, LoginResponse } from "../types"
+import { apiGet, apiPost } from "../api"
+import {
+  AuthMeResponse,
+  GuestTokenResponse,
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+  SwitchWorkspaceRequest,
+  SwitchWorkspaceResponse,
+} from "../types"
 
 export const AuthService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
@@ -13,7 +22,19 @@ export const AuthService = {
     }
   },
 
+  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
+    return apiPost<RegisterResponse>("/auth/register", data, { isPublic: true })
+  },
+
+  me: async (): Promise<AuthMeResponse> => {
+    return apiGet<AuthMeResponse>("/auth/me")
+  },
+
   guest: async (): Promise<GuestTokenResponse> => {
     return apiPost<GuestTokenResponse>("/auth/guest", {}, { isPublic: true })
+  },
+
+  switchWorkspace: async (data: SwitchWorkspaceRequest): Promise<SwitchWorkspaceResponse> => {
+    return apiPost<SwitchWorkspaceResponse>("/auth/switch-workspace", data)
   },
 }

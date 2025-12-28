@@ -35,6 +35,11 @@ FROM load_plans
 WHERE plan_id = $1
   AND workspace_id IS NOT DISTINCT FROM $2;
 
+-- name: GetLoadPlanAny :one
+SELECT *
+FROM load_plans
+WHERE plan_id = $1;
+
 -- name: GetLoadPlanForGuest :one
 SELECT *
 FROM load_plans
@@ -49,6 +54,12 @@ WHERE workspace_id IS NOT DISTINCT FROM $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3;
 
+-- name: ListLoadPlansAll :many
+SELECT *
+FROM load_plans
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2;
+
 -- name: ListLoadPlansForGuest :many
 SELECT *
 FROM load_plans
@@ -62,6 +73,11 @@ UPDATE load_plans
 SET status = $3
 WHERE plan_id = $1
   AND workspace_id IS NOT DISTINCT FROM $2;
+
+-- name: UpdatePlanStatusAny :exec
+UPDATE load_plans
+SET status = $2
+WHERE plan_id = $1;
 
 -- name: ListLoadItems :many
 SELECT * FROM load_items

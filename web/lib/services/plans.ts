@@ -12,6 +12,12 @@ import {
   CalculatePlanRequest
 } from "../types"
 
+function withWorkspaceId(url: string, workspaceId?: string | null) {
+  if (!workspaceId) return url
+  const separator = url.includes("?") ? "&" : "?"
+  return `${url}${separator}workspace_id=${encodeURIComponent(workspaceId)}`
+}
+
 export const PlanService = {
   listPlans: async (page = 1, limit = 10): Promise<PlanListItem[]> => {
     try {
@@ -32,9 +38,9 @@ export const PlanService = {
     }
   },
 
-  createPlan: async (data: CreatePlanRequest): Promise<CreatePlanResponse> => {
+  createPlan: async (data: CreatePlanRequest, workspaceId?: string | null): Promise<CreatePlanResponse> => {
     try {
-      return await apiPost<CreatePlanResponse>("/plans", data)
+      return await apiPost<CreatePlanResponse>(withWorkspaceId("/plans", workspaceId), data)
     } catch (error: any) {
       console.error("PlanService.createPlan failed:", error)
       throw new Error(error.message || "Failed to create plan")

@@ -11,7 +11,7 @@ export default function ExecutionLogsPage() {
   const completedSessions = sessions.filter((s) => s.status === "completed")
 
   return (
-    <RouteGuard allowedRoles={["admin", "operator"]}>
+    <RouteGuard requiredPermissions={["plan:read"]}>
       <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Execution Logs</h1>

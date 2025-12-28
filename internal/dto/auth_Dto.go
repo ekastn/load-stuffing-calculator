@@ -28,10 +28,12 @@ type GuestTokenResponse struct {
 }
 
 type RegisterRequest struct {
-	Username   string  `json:"username" binding:"required"`
-	Email      string  `json:"email" binding:"required,email"`
-	Password   string  `json:"password" binding:"required"`
-	GuestToken *string `json:"guest_token"`
+	Username      string  `json:"username" binding:"required,alphanum,min=4,max=50"`
+	Email         string  `json:"email" binding:"required,email"`
+	Password      string  `json:"password" binding:"required,min=6"`
+	AccountType   *string `json:"account_type,omitempty"`
+	WorkspaceName *string `json:"workspace_name,omitempty"`
+	GuestToken    *string `json:"guest_token"`
 }
 
 type SwitchWorkspaceRequest struct {
@@ -43,6 +45,13 @@ type SwitchWorkspaceResponse struct {
 	AccessToken       string  `json:"access_token"`
 	RefreshToken      *string `json:"refresh_token,omitempty"`
 	ActiveWorkspaceID string  `json:"active_workspace_id"`
+}
+
+type AuthMeResponse struct {
+	User              UserSummary `json:"user"`
+	ActiveWorkspaceID *string     `json:"active_workspace_id,omitempty"`
+	Permissions       []string    `json:"permissions"`
+	IsPlatformMember  bool        `json:"is_platform_member"`
 }
 
 type RegisterResponse = LoginResponse

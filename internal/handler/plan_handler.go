@@ -6,14 +6,29 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/ekastn/load-stuffing-calculator/internal/auth"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
 	"github.com/ekastn/load-stuffing-calculator/internal/response"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
+	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
 )
 
 type PlanHandler struct {
 	planSvc service.PlanService
+}
+
+func withFounderWorkspaceOverride(c *gin.Context) {
+	workspaceID := c.Query("workspace_id")
+	if workspaceID == "" {
+		return
+	}
+	role, ok := auth.RoleFromContext(c.Request.Context())
+	if !ok || role != types.RoleFounder.String() {
+		return
+	}
+	ctx := auth.WithWorkspaceOverrideID(c.Request.Context(), workspaceID)
+	c.Request = c.Request.WithContext(ctx)
 }
 
 func NewPlanHandler(planSvc service.PlanService) *PlanHandler {
@@ -38,13 +53,16 @@ func respondPlanServiceError(c *gin.Context, err error, defaultStatus int, defau
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		dto.CreatePlanRequest	true	"Plan Creation Data"
-//	@Success		201		{object}	response.APIResponse{data=dto.CreatePlanResponse}
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string					false	"Workspace override (founder only)"
+//	@Param			request			body		dto.CreatePlanRequest	true	"Plan Creation Data"
+//	@Success		201				{object}	response.APIResponse{data=dto.CreatePlanResponse}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans [post]
 func (h *PlanHandler) CreatePlan(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	var req dto.CreatePlanRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
@@ -67,10 +85,11 @@ func (h *PlanHandler) CreatePlan(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"Plan ID"
-//	@Success		200	{object}	response.APIResponse{data=dto.PlanDetailResponse}
-//	@Failure		400	{object}	response.APIResponse
-//	@Failure		404	{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Plan ID"
+//	@Success		200				{object}	response.APIResponse{data=dto.PlanDetailResponse}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		404				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans/{id} [get]
 func (h *PlanHandler) GetPlan(c *gin.Context) {
@@ -79,6 +98,8 @@ func (h *PlanHandler) GetPlan(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "Plan ID is required")
 		return
 	}
+
+	withFounderWorkspaceOverride(c)
 
 	resp, err := h.planSvc.GetPlan(c.Request.Context(), id)
 	if err != nil {
@@ -96,10 +117,11 @@ func (h *PlanHandler) GetPlan(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			page	query		int	false	"Page number"		default(1)
-//	@Param			limit	query		int	false	"Items per page"	default(10)
-//	@Success		200		{object}	response.APIResponse{data=[]dto.PlanListItem}
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			page			query		int		false	"Page number"		default(1)
+//	@Param			limit			query		int		false	"Items per page"	default(10)
+//	@Success		200				{object}	response.APIResponse{data=[]dto.PlanListItem}
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans [get]
 func (h *PlanHandler) ListPlans(c *gin.Context) {
@@ -108,6 +130,8 @@ func (h *PlanHandler) ListPlans(c *gin.Context) {
 
 	page, _ := strconv.Atoi(pageStr)
 	limit, _ := strconv.Atoi(limitStr)
+
+	withFounderWorkspaceOverride(c)
 
 	resp, err := h.planSvc.ListPlans(c.Request.Context(), int32(page), int32(limit))
 	if err != nil {
@@ -125,11 +149,12 @@ func (h *PlanHandler) ListPlans(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string					true	"Plan ID"
-//	@Param			request	body		dto.UpdatePlanRequest	true	"Plan Update Data"
-//	@Success		200		{object}	response.APIResponse
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string					false	"Workspace override (founder only)"
+//	@Param			id				path		string					true	"Plan ID"
+//	@Param			request			body		dto.UpdatePlanRequest	true	"Plan Update Data"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans/{id} [put]
 func (h *PlanHandler) UpdatePlan(c *gin.Context) {
@@ -145,8 +170,9 @@ func (h *PlanHandler) UpdatePlan(c *gin.Context) {
 		return
 	}
 
-	err := h.planSvc.UpdatePlan(c.Request.Context(), id, req)
-	if err != nil {
+	withFounderWorkspaceOverride(c)
+
+	if err := h.planSvc.UpdatePlan(c.Request.Context(), id, req); err != nil {
 		respondPlanServiceError(c, err, http.StatusInternalServerError, "Failed to update plan: ")
 		return
 	}
@@ -157,14 +183,15 @@ func (h *PlanHandler) UpdatePlan(c *gin.Context) {
 // DeletePlan godoc
 //
 //	@Summary		Delete a plan
-//	@Description	Deletes a plan by ID.
+//	@Description	Deletes an existing plan.
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"Plan ID"
-//	@Success		200	{object}	response.APIResponse
-//	@Failure		400	{object}	response.APIResponse
-//	@Failure		500	{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Plan ID"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans/{id} [delete]
 func (h *PlanHandler) DeletePlan(c *gin.Context) {
@@ -173,6 +200,8 @@ func (h *PlanHandler) DeletePlan(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "Plan ID is required")
 		return
 	}
+
+	withFounderWorkspaceOverride(c)
 
 	err := h.planSvc.DeletePlan(c.Request.Context(), id)
 	if err != nil {
@@ -190,11 +219,12 @@ func (h *PlanHandler) DeletePlan(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string					true	"Plan ID"
-//	@Param			request	body		dto.AddPlanItemRequest	true	"Item Data"
-//	@Success		201		{object}	response.APIResponse{data=dto.PlanItemDetail}
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string					false	"Workspace override (founder only)"
+//	@Param			id				path		string					true	"Plan ID"
+//	@Param			request			body		dto.AddPlanItemRequest	true	"Item Data"
+//	@Success		201				{object}	response.APIResponse{data=dto.PlanItemDetail}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans/{id}/items [post]
 func (h *PlanHandler) AddPlanItem(c *gin.Context) {
@@ -209,6 +239,8 @@ func (h *PlanHandler) AddPlanItem(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
 		return
 	}
+
+	withFounderWorkspaceOverride(c)
 
 	resp, err := h.planSvc.AddPlanItem(c.Request.Context(), id, req)
 	if err != nil {
@@ -226,10 +258,11 @@ func (h *PlanHandler) AddPlanItem(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string	true	"Plan ID"
-//	@Param			itemId	path		string	true	"Item ID"
-//	@Success		200		{object}	response.APIResponse{data=dto.PlanItemDetail}
-//	@Failure		404		{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Plan ID"
+//	@Param			itemId			path		string	true	"Item ID"
+//	@Success		200				{object}	response.APIResponse{data=dto.PlanItemDetail}
+//	@Failure		404				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans/{id}/items/{itemId} [get]
 func (h *PlanHandler) GetPlanItem(c *gin.Context) {
@@ -239,6 +272,8 @@ func (h *PlanHandler) GetPlanItem(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "Plan ID and Item ID are required")
 		return
 	}
+
+	withFounderWorkspaceOverride(c)
 
 	resp, err := h.planSvc.GetPlanItem(c.Request.Context(), id, itemId)
 	if err != nil {
@@ -256,12 +291,13 @@ func (h *PlanHandler) GetPlanItem(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string						true	"Plan ID"
-//	@Param			itemId	path		string						true	"Item ID"
-//	@Param			request	body		dto.UpdatePlanItemRequest	true	"Update Data"
-//	@Success		200		{object}	response.APIResponse
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string						false	"Workspace override (founder only)"
+//	@Param			id				path		string						true	"Plan ID"
+//	@Param			itemId			path		string						true	"Item ID"
+//	@Param			request			body		dto.UpdatePlanItemRequest	true	"Update Data"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans/{id}/items/{itemId} [put]
 func (h *PlanHandler) UpdatePlanItem(c *gin.Context) {
@@ -277,6 +313,8 @@ func (h *PlanHandler) UpdatePlanItem(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
 		return
 	}
+
+	withFounderWorkspaceOverride(c)
 
 	err := h.planSvc.UpdatePlanItem(c.Request.Context(), id, itemId, req)
 	if err != nil {
@@ -294,11 +332,12 @@ func (h *PlanHandler) UpdatePlanItem(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string	true	"Plan ID"
-//	@Param			itemId	path		string	true	"Item ID"
-//	@Success		200		{object}	response.APIResponse
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Plan ID"
+//	@Param			itemId			path		string	true	"Item ID"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/plans/{id}/items/{itemId} [delete]
 func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
@@ -308,6 +347,8 @@ func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, "Plan ID and Item ID are required")
 		return
 	}
+
+	withFounderWorkspaceOverride(c)
 
 	err := h.planSvc.DeletePlanItem(c.Request.Context(), id, itemId)
 	if err != nil {
@@ -325,13 +366,15 @@ func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 //	@Tags			plans
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string						true	"Plan ID"
-//	@Param			request	body		dto.CalculatePlanRequest	false	"Calculation Options"
-//	@Success		200		{object}	response.APIResponse{data=dto.CalculationResult}
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
-//	@Security		BearerAuth
-//	@Router			/plans/{id}/calculate [post]
+//	@Param			workspace_id	query	string						false	"Workspace override (founder only)"
+//	@Param			id				path	string						true	"Plan ID"
+//	@Param			request			body	dto.CalculatePlanRequest	false	"Calculation Options"
+
+// @Success	200	{object}	response.APIResponse{data=dto.CalculationResult}
+// @Failure	400	{object}	response.APIResponse
+// @Failure	500	{object}	response.APIResponse
+// @Security	BearerAuth
+// @Router		/plans/{id}/calculate [post]
 func (h *PlanHandler) CalculatePlan(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -349,6 +392,8 @@ func (h *PlanHandler) CalculatePlan(c *gin.Context) {
 		}
 		req = dto.CalculatePlanRequest{}
 	}
+
+	withFounderWorkspaceOverride(c)
 
 	resp, err := h.planSvc.CalculatePlan(c.Request.Context(), id, req)
 	if err != nil {

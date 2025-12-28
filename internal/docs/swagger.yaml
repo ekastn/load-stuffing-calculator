@@ -19,10 +19,6 @@ definitions:
   dto.AddMemberRequest:
     properties:
       role:
-        enum:
-        - admin
-        - planner
-        - operator
         type: string
       user_identifier:
         description: email|username|uuid
@@ -80,17 +76,18 @@ definitions:
       total_users:
         type: integer
     type: object
-  dto.CalculatePlanRequest:
+  dto.AuthMeResponse:
     properties:
-      goal:
-        example: tightest
+      active_workspace_id:
         type: string
-      gravity:
-        example: true
+      is_platform_member:
         type: boolean
-      strategy:
-        example: bestfitdecreasing
-        type: string
+      permissions:
+        items:
+          type: string
+        type: array
+      user:
+        $ref: '#/definitions/dto.UserSummary'
     type: object
   dto.CalculationResult:
     properties:
@@ -176,10 +173,6 @@ definitions:
       email:
         type: string
       role:
-        enum:
-        - admin
-        - planner
-        - operator
         type: string
     required:
     - email
@@ -366,10 +359,6 @@ definitions:
         minLength: 6
         type: string
       role:
-        enum:
-        - admin
-        - planner
-        - operator
         example: planner
         type: string
       username:
@@ -665,13 +654,20 @@ definitions:
     type: object
   dto.RegisterRequest:
     properties:
+      account_type:
+        type: string
       email:
         type: string
       guest_token:
         type: string
       password:
+        minLength: 6
         type: string
       username:
+        maxLength: 50
+        minLength: 4
+        type: string
+      workspace_name:
         type: string
     required:
     - email
@@ -747,10 +743,6 @@ definitions:
   dto.UpdateMemberRoleRequest:
     properties:
       role:
-        enum:
-        - admin
-        - planner
-        - operator
         type: string
     required:
     - role
@@ -856,10 +848,6 @@ definitions:
         maxLength: 20
         type: string
       role:
-        enum:
-        - admin
-        - planner
-        - operator
         type: string
       username:
         maxLength: 50
@@ -1038,6 +1026,31 @@ paths:
       summary: User Login
       tags:
       - auth
+  /auth/me:
+    get:
+      description: Returns the current user, active workspace, permissions and platform
+        membership.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.AuthMeResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current session
+      tags:
+      - auth
   /auth/refresh:
     post:
       consumes:
@@ -1149,6 +1162,10 @@ paths:
       - application/json
       description: Retrieves a paginated list of containers.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - default: 1
         description: Page number
         in: query
@@ -1187,6 +1204,10 @@ paths:
       - application/json
       description: Creates a new container type. Requires admin privileges.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Container Creation Data
         in: body
         name: request
@@ -1224,6 +1245,10 @@ paths:
       - application/json
       description: Deletes a container by ID. Requires admin privileges.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Container ID
         in: path
         name: id
@@ -1254,6 +1279,10 @@ paths:
       - application/json
       description: Retrieves container details by ID.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Container ID
         in: path
         name: id
@@ -1289,6 +1318,10 @@ paths:
       - application/json
       description: Updates an existing container. Requires admin privileges.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Container ID
         in: path
         name: id
@@ -1883,6 +1916,10 @@ paths:
       - application/json
       description: Retrieves a paginated list of plans.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - default: 1
         description: Page number
         in: query
@@ -1921,6 +1958,10 @@ paths:
       - application/json
       description: Creates a new load plan with a container and items.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan Creation Data
         in: body
         name: request
@@ -1956,8 +1997,12 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Deletes a plan by ID.
+      description: Deletes an existing plan.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan ID
         in: path
         name: id
@@ -1988,6 +2033,10 @@ paths:
       - application/json
       description: Retrieves plan details including items and stats.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan ID
         in: path
         name: id
@@ -2023,6 +2072,10 @@ paths:
       - application/json
       description: Updates an existing plan (status, container).
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan ID
         in: path
         name: id
@@ -2056,22 +2109,6 @@ paths:
       - plans
   /plans/{id}/calculate:
     post:
-      consumes:
-      - application/json
-      description: Triggers the packing calculation for a plan.
-      parameters:
-      - description: Plan ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: Calculation Options
-        in: body
-        name: request
-        schema:
-          $ref: '#/definitions/dto.CalculatePlanRequest'
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
@@ -2092,15 +2129,16 @@ paths:
             $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
-      summary: Calculate plan
-      tags:
-      - plans
   /plans/{id}/items:
     post:
       consumes:
       - application/json
       description: Adds a new item to an existing plan.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan ID
         in: path
         name: id
@@ -2143,6 +2181,10 @@ paths:
       - application/json
       description: Deletes a specific item from a plan.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan ID
         in: path
         name: id
@@ -2178,6 +2220,10 @@ paths:
       - application/json
       description: Retrieves details of a specific item in a plan.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan ID
         in: path
         name: id
@@ -2214,6 +2260,10 @@ paths:
       - application/json
       description: Updates a specific item in a plan.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Plan ID
         in: path
         name: id
@@ -2256,6 +2306,10 @@ paths:
       - application/json
       description: Retrieves a paginated list of products.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - default: 1
         description: Page number
         in: query
@@ -2294,6 +2348,10 @@ paths:
       - application/json
       description: Creates a new product. Requires admin privileges.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Product Creation Data
         in: body
         name: request
@@ -2331,6 +2389,10 @@ paths:
       - application/json
       description: Deletes a product by ID. Requires admin privileges.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Product ID
         in: path
         name: id
@@ -2361,6 +2423,10 @@ paths:
       - application/json
       description: Retrieves product details by ID.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Product ID
         in: path
         name: id
@@ -2396,6 +2462,10 @@ paths:
       - application/json
       description: Updates an existing product. Requires admin privileges.
       parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
       - description: Product ID
         in: path
         name: id

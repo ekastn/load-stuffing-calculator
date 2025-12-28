@@ -7,50 +7,82 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { LogOut, Menu, X } from "lucide-react"
 import { useMemo, useState } from "react"
+import { useWorkspaces } from "@/hooks/use-workspaces"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+type Permission = string
+
+function permissionMatches(granted: Permission, required: Permission) {
+  if (granted === "*") return true
+  if (granted === required) return true
+  if (granted.endsWith(":*")) {
+    const prefix = granted.slice(0, -1)
+    return required.startsWith(prefix)
+  }
+  return false
+}
+
+function hasAnyPermission(granted: Permission[], required: Permission[]) {
+  if (required.length === 0) return true
+  for (const requiredPerm of required) {
+    for (const grantedPerm of granted) {
+      if (permissionMatches(grantedPerm, requiredPerm)) return true
+    }
+  }
+  return false
+}
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, logout } = useAuth()
+  const { user, logout, permissions, isPlatformMember, activeWorkspaceId, switchWorkspace } = useAuth()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  const canReadWorkspaces = hasAnyPermission(permissions ?? [], ["workspace:read"])
+  const { workspaces } = useWorkspaces()
 
   const handleLogout = () => {
     logout()
     router.push("/")
   }
 
-  const navigationItems = {
-    admin: [
-      { label: "Dashboard", path: "/dashboard" },
-      { label: "User Management", path: "/users" },
-      { label: "Role Management", path: "/roles" },
-      { label: "Permissions", path: "/permissions" },
-      { label: "Container Profiles", path: "/containers" },
-      { label: "Product Catalog", path: "/products" },
-      { label: "All Shipments", path: "/shipments" },
-      { label: "Create Shipment", path: "/shipments/new" },
-      { label: "Loading Instructions", path: "/loading" },
-      { label: "Audit Logs", path: "/reports/audit" },
-      { label: "Manifests", path: "/reports/manifest" },
-      { label: "Execution Logs", path: "/reports/execution" },
-    ],
-    planner: [
-      { label: "Dashboard", path: "/dashboard" },
-      { label: "Create Shipment", path: "/shipments/new" },
-      { label: "All Shipments", path: "/shipments" },
-      { label: "Manifests", path: "/reports/manifest" },
-    ],
-    operator: [
-      { label: "Dashboard", path: "/dashboard" },
-      { label: "Loading Instructions", path: "/loading" },
-      { label: "Execution Logs", path: "/reports/execution" },
-    ],
-  }
+  const navigationItems = [
+    { label: "Dashboard", path: "/dashboard", required: ["dashboard:read"] },
 
-  const items = navigationItems[user?.role as keyof typeof navigationItems] || []
+    { label: "Container Profiles", path: "/containers", required: ["container:read"] },
+    { label: "Product Catalog", path: "/products", required: ["product:read"] },
+
+    { label: "All Shipments", path: "/shipments", required: ["plan:read"] },
+    { label: "Create Shipment", path: "/shipments/new", required: ["plan:create"] },
+
+    { label: "Loading Instructions", path: "/loading", required: ["plan:read"] },
+
+    { label: "Members", path: "/settings/members", required: ["member:read"] },
+    { label: "Invites", path: "/settings/invites", required: ["invite:read"] },
+
+    { label: "Manifests", path: "/reports/manifest", required: ["plan:read"] },
+    { label: "Execution Logs", path: "/reports/execution", required: ["plan:read"] },
+    { label: "Audit Logs", path: "/reports/audit", required: ["*"] },
+
+    ...(isPlatformMember
+      ? [
+          { label: "Users", path: "/users", required: ["user:*"] },
+          { label: "Roles", path: "/roles", required: ["role:*"] },
+          { label: "Permissions", path: "/permissions", required: ["permission:*"] },
+        ]
+      : []),
+  ]
+
+  const items = navigationItems.filter((item) => hasAnyPermission(permissions ?? [], item.required))
   const pathname = usePathname()
 
   const activePath = useMemo(() => {
@@ -94,7 +126,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           ))}
         </nav>
 
-        <div className="border-t border-border p-4 space-y-2">
+        <div className="border-t border-border p-4 space-y-3">
+          {canReadWorkspaces && workspaces.length > 0 && user?.role !== "founder" && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Workspace</p>
+              <Select value={activeWorkspaceId ?? undefined} onValueChange={(val) => switchWorkspace(val)}>
+                <SelectTrigger className="w-full" size="sm">
+                  <SelectValue placeholder="Select workspace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workspaces.map((ws) => (
+                    <SelectItem key={ws.workspace_id} value={ws.workspace_id}>
+                      {ws.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="text-xs text-muted-foreground">
             <p className="font-medium text-foreground">{user?.username}</p>
             <p className="mt-1 inline-block rounded bg-primary/10 px-2 py-1 text-primary capitalize">{user?.role}</p>

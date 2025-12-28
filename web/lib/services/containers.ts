@@ -1,6 +1,12 @@
 import { apiGet, apiPost, apiPut, apiDelete } from "../api"
 import { CreateContainerRequest, UpdateContainerRequest, ContainerResponse } from "../types"
 
+function withWorkspaceId(url: string, workspaceId?: string | null) {
+  if (!workspaceId) return url
+  const separator = url.includes("?") ? "&" : "?"
+  return `${url}${separator}workspace_id=${encodeURIComponent(workspaceId)}`
+}
+
 export const ContainerService = {
   listContainers: async (page = 1, limit = 10): Promise<ContainerResponse[]> => {
     try {
@@ -21,9 +27,9 @@ export const ContainerService = {
     }
   },
 
-  createContainer: async (data: CreateContainerRequest): Promise<ContainerResponse> => {
+  createContainer: async (data: CreateContainerRequest, workspaceId?: string | null): Promise<ContainerResponse> => {
     try {
-      return await apiPost<ContainerResponse>("/containers", data)
+      return await apiPost<ContainerResponse>(withWorkspaceId("/containers", workspaceId), data)
     } catch (error: any) {
       console.error("ContainerService.createContainer failed:", error)
       throw new Error(error.message || "Failed to create container")

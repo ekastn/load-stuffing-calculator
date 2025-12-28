@@ -37,21 +37,32 @@ type MockQuerier struct {
 	DeletePermissionFunc            func(ctx context.Context, id uuid.UUID) error
 	CreateContainerFunc             func(ctx context.Context, arg store.CreateContainerParams) (store.Container, error)
 	GetContainerFunc                func(ctx context.Context, arg store.GetContainerParams) (store.Container, error)
+	GetContainerAnyFunc             func(ctx context.Context, containerID uuid.UUID) (store.Container, error)
 	ListContainersFunc              func(ctx context.Context, arg store.ListContainersParams) ([]store.Container, error)
+	ListContainersAllFunc           func(ctx context.Context, arg store.ListContainersAllParams) ([]store.Container, error)
 	UpdateContainerFunc             func(ctx context.Context, arg store.UpdateContainerParams) error
+	UpdateContainerAnyFunc          func(ctx context.Context, arg store.UpdateContainerAnyParams) error
 	DeleteContainerFunc             func(ctx context.Context, arg store.DeleteContainerParams) error
+	DeleteContainerAnyFunc          func(ctx context.Context, containerID uuid.UUID) error
 	CreateProductFunc               func(ctx context.Context, arg store.CreateProductParams) (store.Product, error)
 	GetProductFunc                  func(ctx context.Context, arg store.GetProductParams) (store.Product, error)
+	GetProductAnyFunc               func(ctx context.Context, productID uuid.UUID) (store.Product, error)
 	ListProductsFunc                func(ctx context.Context, arg store.ListProductsParams) ([]store.Product, error)
+	ListProductsAllFunc             func(ctx context.Context, arg store.ListProductsAllParams) ([]store.Product, error)
 	UpdateProductFunc               func(ctx context.Context, arg store.UpdateProductParams) error
+	UpdateProductAnyFunc            func(ctx context.Context, arg store.UpdateProductAnyParams) error
 	DeleteProductFunc               func(ctx context.Context, arg store.DeleteProductParams) error
+	DeleteProductAnyFunc            func(ctx context.Context, productID uuid.UUID) error
 	CreateLoadPlanFunc              func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error)
 	AddLoadItemFunc                 func(ctx context.Context, arg store.AddLoadItemParams) (store.LoadItem, error)
 	GetLoadPlanFunc                 func(ctx context.Context, arg store.GetLoadPlanParams) (store.LoadPlan, error)
+	GetLoadPlanAnyFunc              func(ctx context.Context, planID uuid.UUID) (store.LoadPlan, error)
 	GetLoadPlanForGuestFunc         func(ctx context.Context, arg store.GetLoadPlanForGuestParams) (store.LoadPlan, error)
 	ListLoadPlansFunc               func(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error)
+	ListLoadPlansAllFunc            func(ctx context.Context, arg store.ListLoadPlansAllParams) ([]store.LoadPlan, error)
 	ListLoadPlansForGuestFunc       func(ctx context.Context, arg store.ListLoadPlansForGuestParams) ([]store.LoadPlan, error)
 	UpdatePlanStatusFunc            func(ctx context.Context, arg store.UpdatePlanStatusParams) error
+	UpdatePlanStatusAnyFunc         func(ctx context.Context, arg store.UpdatePlanStatusAnyParams) error
 	ListLoadItemsFunc               func(ctx context.Context, planID *uuid.UUID) ([]store.LoadItem, error)
 	GetLoadItemFunc                 func(ctx context.Context, arg store.GetLoadItemParams) (store.LoadItem, error)
 	UpdateLoadItemFunc              func(ctx context.Context, arg store.UpdateLoadItemParams) error
@@ -172,6 +183,13 @@ func (m *MockQuerier) GetLoadPlan(ctx context.Context, arg store.GetLoadPlanPara
 	return store.LoadPlan{}, fmt.Errorf("GetLoadPlan not implemented")
 }
 
+func (m *MockQuerier) GetLoadPlanAny(ctx context.Context, planID uuid.UUID) (store.LoadPlan, error) {
+	if m.GetLoadPlanAnyFunc != nil {
+		return m.GetLoadPlanAnyFunc(ctx, planID)
+	}
+	return store.LoadPlan{}, fmt.Errorf("GetLoadPlanAny not implemented")
+}
+
 func (m *MockQuerier) GetLoadPlanForGuest(ctx context.Context, arg store.GetLoadPlanForGuestParams) (store.LoadPlan, error) {
 	if m.GetLoadPlanForGuestFunc != nil {
 		return m.GetLoadPlanForGuestFunc(ctx, arg)
@@ -186,6 +204,13 @@ func (m *MockQuerier) ListLoadPlans(ctx context.Context, arg store.ListLoadPlans
 	return nil, fmt.Errorf("ListLoadPlans not implemented")
 }
 
+func (m *MockQuerier) ListLoadPlansAll(ctx context.Context, arg store.ListLoadPlansAllParams) ([]store.LoadPlan, error) {
+	if m.ListLoadPlansAllFunc != nil {
+		return m.ListLoadPlansAllFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListLoadPlansAll not implemented")
+}
+
 func (m *MockQuerier) ListLoadPlansForGuest(ctx context.Context, arg store.ListLoadPlansForGuestParams) ([]store.LoadPlan, error) {
 	if m.ListLoadPlansForGuestFunc != nil {
 		return m.ListLoadPlansForGuestFunc(ctx, arg)
@@ -198,6 +223,13 @@ func (m *MockQuerier) UpdatePlanStatus(ctx context.Context, arg store.UpdatePlan
 		return m.UpdatePlanStatusFunc(ctx, arg)
 	}
 	return fmt.Errorf("UpdatePlanStatus not implemented")
+}
+
+func (m *MockQuerier) UpdatePlanStatusAny(ctx context.Context, arg store.UpdatePlanStatusAnyParams) error {
+	if m.UpdatePlanStatusAnyFunc != nil {
+		return m.UpdatePlanStatusAnyFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdatePlanStatusAny not implemented")
 }
 
 func (m *MockQuerier) ListLoadItems(ctx context.Context, planID *uuid.UUID) ([]store.LoadItem, error) {
@@ -256,11 +288,25 @@ func (m *MockQuerier) GetProduct(ctx context.Context, arg store.GetProductParams
 	return store.Product{}, fmt.Errorf("GetProduct not implemented")
 }
 
+func (m *MockQuerier) GetProductAny(ctx context.Context, productID uuid.UUID) (store.Product, error) {
+	if m.GetProductAnyFunc != nil {
+		return m.GetProductAnyFunc(ctx, productID)
+	}
+	return store.Product{}, fmt.Errorf("GetProductAny not implemented")
+}
+
 func (m *MockQuerier) ListProducts(ctx context.Context, arg store.ListProductsParams) ([]store.Product, error) {
 	if m.ListProductsFunc != nil {
 		return m.ListProductsFunc(ctx, arg)
 	}
 	return nil, fmt.Errorf("ListProducts not implemented")
+}
+
+func (m *MockQuerier) ListProductsAll(ctx context.Context, arg store.ListProductsAllParams) ([]store.Product, error) {
+	if m.ListProductsAllFunc != nil {
+		return m.ListProductsAllFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListProductsAll not implemented")
 }
 
 func (m *MockQuerier) UpdateProduct(ctx context.Context, arg store.UpdateProductParams) error {
@@ -270,11 +316,25 @@ func (m *MockQuerier) UpdateProduct(ctx context.Context, arg store.UpdateProduct
 	return fmt.Errorf("UpdateProduct not implemented")
 }
 
+func (m *MockQuerier) UpdateProductAny(ctx context.Context, arg store.UpdateProductAnyParams) error {
+	if m.UpdateProductAnyFunc != nil {
+		return m.UpdateProductAnyFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateProductAny not implemented")
+}
+
 func (m *MockQuerier) DeleteProduct(ctx context.Context, arg store.DeleteProductParams) error {
 	if m.DeleteProductFunc != nil {
 		return m.DeleteProductFunc(ctx, arg)
 	}
 	return fmt.Errorf("DeleteProduct not implemented")
+}
+
+func (m *MockQuerier) DeleteProductAny(ctx context.Context, productID uuid.UUID) error {
+	if m.DeleteProductAnyFunc != nil {
+		return m.DeleteProductAnyFunc(ctx, productID)
+	}
+	return fmt.Errorf("DeleteProductAny not implemented")
 }
 
 func (m *MockQuerier) CreateContainer(ctx context.Context, arg store.CreateContainerParams) (store.Container, error) {
@@ -291,11 +351,25 @@ func (m *MockQuerier) GetContainer(ctx context.Context, arg store.GetContainerPa
 	return store.Container{}, fmt.Errorf("GetContainer not implemented")
 }
 
+func (m *MockQuerier) GetContainerAny(ctx context.Context, containerID uuid.UUID) (store.Container, error) {
+	if m.GetContainerAnyFunc != nil {
+		return m.GetContainerAnyFunc(ctx, containerID)
+	}
+	return store.Container{}, fmt.Errorf("GetContainerAny not implemented")
+}
+
 func (m *MockQuerier) ListContainers(ctx context.Context, arg store.ListContainersParams) ([]store.Container, error) {
 	if m.ListContainersFunc != nil {
 		return m.ListContainersFunc(ctx, arg)
 	}
 	return nil, fmt.Errorf("ListContainers not implemented")
+}
+
+func (m *MockQuerier) ListContainersAll(ctx context.Context, arg store.ListContainersAllParams) ([]store.Container, error) {
+	if m.ListContainersAllFunc != nil {
+		return m.ListContainersAllFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListContainersAll not implemented")
 }
 
 func (m *MockQuerier) UpdateContainer(ctx context.Context, arg store.UpdateContainerParams) error {
@@ -305,11 +379,25 @@ func (m *MockQuerier) UpdateContainer(ctx context.Context, arg store.UpdateConta
 	return fmt.Errorf("UpdateContainer not implemented")
 }
 
+func (m *MockQuerier) UpdateContainerAny(ctx context.Context, arg store.UpdateContainerAnyParams) error {
+	if m.UpdateContainerAnyFunc != nil {
+		return m.UpdateContainerAnyFunc(ctx, arg)
+	}
+	return fmt.Errorf("UpdateContainerAny not implemented")
+}
+
 func (m *MockQuerier) DeleteContainer(ctx context.Context, arg store.DeleteContainerParams) error {
 	if m.DeleteContainerFunc != nil {
 		return m.DeleteContainerFunc(ctx, arg)
 	}
 	return fmt.Errorf("DeleteContainer not implemented")
+}
+
+func (m *MockQuerier) DeleteContainerAny(ctx context.Context, containerID uuid.UUID) error {
+	if m.DeleteContainerAnyFunc != nil {
+		return m.DeleteContainerAnyFunc(ctx, containerID)
+	}
+	return fmt.Errorf("DeleteContainerAny not implemented")
 }
 
 func (m *MockQuerier) CreatePermission(ctx context.Context, arg store.CreatePermissionParams) (store.Permission, error) {

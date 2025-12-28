@@ -5,7 +5,7 @@ import { ShipmentWizard } from "@/components/shipment-wizard"
 
 export default function NewShipmentPage() {
   return (
-    <RouteGuard allowedRoles={["planner"]}>
+    <RouteGuard requiredPermissions={["plan:create"]}>
       <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Create New Shipment</h1>

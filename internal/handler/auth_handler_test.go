@@ -16,6 +16,53 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+func TestAuthHandler_Me(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("successful_me", func(t *testing.T) {
+		mockSvc := new(MockAuthService)
+		h := handler.NewAuthHandler(mockSvc)
+
+		expected := &dto.AuthMeResponse{
+			ActiveWorkspaceID: nil,
+			Permissions:       []string{"dashboard:read"},
+			IsPlatformMember:  false,
+			User: dto.UserSummary{
+				ID:       "user-id",
+				Username: "testuser",
+				Role:     types.RoleAdmin.String(),
+			},
+		}
+
+		mockSvc.On("Me", mock.Anything).Return(expected, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/me", nil)
+
+		h.Me(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("unauthorized_me", func(t *testing.T) {
+		mockSvc := new(MockAuthService)
+		h := handler.NewAuthHandler(mockSvc)
+
+		mockSvc.On("Me", mock.Anything).Return((*dto.AuthMeResponse)(nil), errors.New("no session"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/me", nil)
+
+		h.Me(c)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+}
+
 func TestAuthHandler_Login(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 

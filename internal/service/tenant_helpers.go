@@ -21,6 +21,18 @@ func isFounder(ctx context.Context) bool {
 	return ok && role == types.RoleFounder.String()
 }
 
+func workspaceOverrideIDFromContext(ctx context.Context) (*uuid.UUID, error) {
+	wid, ok := auth.WorkspaceOverrideIDFromContext(ctx)
+	if !ok || wid == "" {
+		return nil, nil
+	}
+	parsed, err := uuid.Parse(wid)
+	if err != nil {
+		return nil, fmt.Errorf("invalid workspace id: %w", err)
+	}
+	return &parsed, nil
+}
+
 func userIDFromContext(ctx context.Context) (uuid.UUID, error) {
 	userIDStr, ok := auth.UserIDFromContext(ctx)
 	if !ok || userIDStr == "" {

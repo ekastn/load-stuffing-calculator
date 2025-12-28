@@ -123,6 +123,12 @@ func TestAuthService_Login(t *testing.T) {
 				GetPersonalWorkspaceByOwnerFunc: func(ctx context.Context, ownerUserID uuid.UUID) (store.Workspace, error) {
 					return store.Workspace{WorkspaceID: uuid.New(), OwnerUserID: ownerUserID, Type: "personal", Name: "Personal"}, nil
 				},
+				ListWorkspacesByOwnerFunc: func(ctx context.Context, arg store.ListWorkspacesByOwnerParams) ([]store.Workspace, error) {
+					return []store.Workspace{}, nil
+				},
+				ListWorkspacesForUserFunc: func(ctx context.Context, arg store.ListWorkspacesForUserParams) ([]store.Workspace, error) {
+					return []store.Workspace{}, nil
+				},
 				GetPlatformRoleByUserIDFunc: func(ctx context.Context, userID uuid.UUID) (string, error) {
 					return "", sql.ErrNoRows
 				},
@@ -182,6 +188,119 @@ func TestAuthService_Login(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("login_prefers_owned_workspace_when_no_personal", func(t *testing.T) {
+		jwtSecret := "test-jwt-secret"
+		validPassword := "password123"
+		hashedPassword, _ := auth.HashPassword(validPassword)
+
+		userID := uuid.New()
+		ownedWorkspaceID := uuid.New()
+		memberWorkspaceID := uuid.New()
+		expectedRole := types.RoleUser.String()
+
+		selectedWorkspaceID := uuid.Nil
+
+		mockQ := &MockQuerier{
+			GetUserByUsernameFunc: func(ctx context.Context, username string) (store.GetUserByUsernameRow, error) {
+				return store.GetUserByUsernameRow{
+					UserID:       userID,
+					Username:     username,
+					PasswordHash: hashedPassword,
+					RoleName:     expectedRole,
+				}, nil
+			},
+			GetPersonalWorkspaceByOwnerFunc: func(ctx context.Context, ownerUserID uuid.UUID) (store.Workspace, error) {
+				return store.Workspace{}, sql.ErrNoRows
+			},
+			ListWorkspacesByOwnerFunc: func(ctx context.Context, arg store.ListWorkspacesByOwnerParams) ([]store.Workspace, error) {
+				return []store.Workspace{{WorkspaceID: ownedWorkspaceID, OwnerUserID: userID, Type: "organization", Name: "Org"}}, nil
+			},
+			ListWorkspacesForUserFunc: func(ctx context.Context, arg store.ListWorkspacesForUserParams) ([]store.Workspace, error) {
+				return []store.Workspace{{WorkspaceID: memberWorkspaceID, OwnerUserID: uuid.New(), Type: "organization", Name: "Other"}}, nil
+			},
+			GetPlatformRoleByUserIDFunc: func(ctx context.Context, userID uuid.UUID) (string, error) {
+				return "", sql.ErrNoRows
+			},
+			GetMemberRoleNameByWorkspaceAndUserFunc: func(ctx context.Context, arg store.GetMemberRoleNameByWorkspaceAndUserParams) (string, error) {
+				return expectedRole, nil
+			},
+			CreateRefreshTokenFunc: func(ctx context.Context, arg store.CreateRefreshTokenParams) error {
+				if arg.WorkspaceID != nil {
+					selectedWorkspaceID = *arg.WorkspaceID
+				}
+				return nil
+			},
+		}
+
+		s := service.NewAuthService(mockQ, jwtSecret)
+		resp, err := s.Login(context.Background(), dto.LoginRequest{Username: "testuser", Password: validPassword})
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp.ActiveWorkspaceID == nil {
+			t.Fatalf("expected active workspace id")
+		}
+		if selectedWorkspaceID != ownedWorkspaceID {
+			t.Fatalf("expected owned workspace to be selected")
+		}
+	})
+
+	t.Run("login_falls_back_to_membership_when_no_personal_or_owned", func(t *testing.T) {
+		jwtSecret := "test-jwt-secret"
+		validPassword := "password123"
+		hashedPassword, _ := auth.HashPassword(validPassword)
+
+		userID := uuid.New()
+		memberWorkspaceID := uuid.New()
+		expectedRole := types.RoleUser.String()
+
+		selectedWorkspaceID := uuid.Nil
+
+		mockQ := &MockQuerier{
+			GetUserByUsernameFunc: func(ctx context.Context, username string) (store.GetUserByUsernameRow, error) {
+				return store.GetUserByUsernameRow{
+					UserID:       userID,
+					Username:     username,
+					PasswordHash: hashedPassword,
+					RoleName:     expectedRole,
+				}, nil
+			},
+			GetPersonalWorkspaceByOwnerFunc: func(ctx context.Context, ownerUserID uuid.UUID) (store.Workspace, error) {
+				return store.Workspace{}, sql.ErrNoRows
+			},
+			ListWorkspacesByOwnerFunc: func(ctx context.Context, arg store.ListWorkspacesByOwnerParams) ([]store.Workspace, error) {
+				return []store.Workspace{}, nil
+			},
+			ListWorkspacesForUserFunc: func(ctx context.Context, arg store.ListWorkspacesForUserParams) ([]store.Workspace, error) {
+				return []store.Workspace{{WorkspaceID: memberWorkspaceID, OwnerUserID: uuid.New(), Type: "organization", Name: "Other"}}, nil
+			},
+			GetPlatformRoleByUserIDFunc: func(ctx context.Context, userID uuid.UUID) (string, error) {
+				return "", sql.ErrNoRows
+			},
+			GetMemberRoleNameByWorkspaceAndUserFunc: func(ctx context.Context, arg store.GetMemberRoleNameByWorkspaceAndUserParams) (string, error) {
+				return expectedRole, nil
+			},
+			CreateRefreshTokenFunc: func(ctx context.Context, arg store.CreateRefreshTokenParams) error {
+				if arg.WorkspaceID != nil {
+					selectedWorkspaceID = *arg.WorkspaceID
+				}
+				return nil
+			},
+		}
+
+		s := service.NewAuthService(mockQ, jwtSecret)
+		resp, err := s.Login(context.Background(), dto.LoginRequest{Username: "testuser", Password: validPassword})
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp.ActiveWorkspaceID == nil {
+			t.Fatalf("expected active workspace id")
+		}
+		if selectedWorkspaceID != memberWorkspaceID {
+			t.Fatalf("expected membership workspace to be selected")
+		}
+	})
 }
 
 func TestAuthService_Register(t *testing.T) {
@@ -189,6 +308,7 @@ func TestAuthService_Register(t *testing.T) {
 
 	t.Run("successful_register_with_guest_token_claims_plans", func(t *testing.T) {
 		claimed := false
+		createdWorkspace := false
 		userID := uuid.New()
 		roleID := uuid.New()
 		trialJWT := mustMakeTrialJWT(t, jwtSecret)
@@ -206,6 +326,13 @@ func TestAuthService_Register(t *testing.T) {
 				return store.User{UserID: userID, Username: arg.Username}, nil
 			},
 			CreateWorkspaceFunc: func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+				createdWorkspace = true
+				if arg.Type != "personal" {
+					t.Fatalf("expected personal workspace type, got %q", arg.Type)
+				}
+				if arg.Name != "my workspace" {
+					t.Fatalf("expected default workspace name, got %q", arg.Name)
+				}
 				return store.Workspace{WorkspaceID: uuid.New(), OwnerUserID: arg.OwnerUserID, Type: arg.Type, Name: arg.Name}, nil
 			},
 			CreateMemberFunc: func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
@@ -234,6 +361,9 @@ func TestAuthService_Register(t *testing.T) {
 		if resp == nil {
 			t.Fatalf("expected response")
 		}
+		if !createdWorkspace {
+			t.Fatalf("expected a workspace to be created")
+		}
 		if !claimed {
 			t.Fatalf("expected guest plans to be claimed")
 		}
@@ -241,6 +371,7 @@ func TestAuthService_Register(t *testing.T) {
 
 	t.Run("successful_register_without_guest_token_does_not_claim_plans", func(t *testing.T) {
 		claimed := false
+		createdWorkspace := false
 		userID := uuid.New()
 		roleID := uuid.New()
 
@@ -255,6 +386,13 @@ func TestAuthService_Register(t *testing.T) {
 				return store.User{UserID: userID, Username: arg.Username}, nil
 			},
 			CreateWorkspaceFunc: func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+				createdWorkspace = true
+				if arg.Type != "personal" {
+					t.Fatalf("expected personal workspace type, got %q", arg.Type)
+				}
+				if arg.Name != "my workspace" {
+					t.Fatalf("expected default workspace name, got %q", arg.Name)
+				}
 				return store.Workspace{WorkspaceID: uuid.New(), OwnerUserID: arg.OwnerUserID, Type: arg.Type, Name: arg.Name}, nil
 			},
 			CreateMemberFunc: func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
@@ -282,8 +420,66 @@ func TestAuthService_Register(t *testing.T) {
 		if resp == nil {
 			t.Fatalf("expected response")
 		}
+		if !createdWorkspace {
+			t.Fatalf("expected a workspace to be created")
+		}
 		if claimed {
 			t.Fatalf("did not expect guest plans to be claimed")
+		}
+	})
+
+	t.Run("successful_register_with_org_workspace", func(t *testing.T) {
+		userID := uuid.New()
+		roleID := uuid.New()
+		accountType := "organization"
+		workspaceName := ""
+
+		createWorkspaceCalled := false
+		mockQ := &MockQuerier{
+			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+				if name == types.RolePlanner.String() || name == types.RoleOwner.String() {
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				}
+				return store.GetRoleByNameRow{}, fmt.Errorf("unexpected role name: %s", name)
+			},
+			CreateUserFunc: func(ctx context.Context, arg store.CreateUserParams) (store.User, error) {
+				return store.User{UserID: userID, Username: arg.Username}, nil
+			},
+			CreateWorkspaceFunc: func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+				createWorkspaceCalled = true
+				if arg.Type != "organization" {
+					t.Fatalf("expected organization workspace type, got %q", arg.Type)
+				}
+				if arg.Name != "my workspace" {
+					t.Fatalf("expected default workspace name, got %q", arg.Name)
+				}
+				return store.Workspace{WorkspaceID: uuid.New(), OwnerUserID: arg.OwnerUserID, Type: arg.Type, Name: arg.Name}, nil
+			},
+			CreateMemberFunc: func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+				return store.Member{MemberID: uuid.New(), WorkspaceID: arg.WorkspaceID, UserID: arg.UserID, RoleID: arg.RoleID}, nil
+			},
+			CreateRefreshTokenFunc: func(ctx context.Context, arg store.CreateRefreshTokenParams) error {
+				return nil
+			},
+		}
+
+		s := service.NewAuthService(mockQ, jwtSecret)
+		resp, err := s.Register(context.Background(), dto.RegisterRequest{
+			Username:      "newuser",
+			Email:         "newuser@example.com",
+			Password:      "password123",
+			AccountType:   &accountType,
+			WorkspaceName: &workspaceName,
+		})
+
+		if err != nil {
+			t.Fatalf("expected no error, got %v", err)
+		}
+		if resp == nil {
+			t.Fatalf("expected response")
+		}
+		if !createWorkspaceCalled {
+			t.Fatalf("expected CreateWorkspace to be called")
 		}
 	})
 }
