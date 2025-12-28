@@ -54,6 +54,10 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 	if err != nil {
 		return nil, fmt.Errorf("owner role not found: %w", err)
 	}
+	personalRole, err := s.q.GetRoleByName(ctx, types.RolePersonal.String())
+	if err != nil {
+		return nil, fmt.Errorf("personal role not found: %w", err)
+	}
 
 	username := strings.TrimSpace(req.Username)
 	email := strings.TrimSpace(strings.ToLower(req.Email))
@@ -101,13 +105,20 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 		return nil, fmt.Errorf("failed to create workspace: %w", err)
 	}
 
+	memberRole := ownerRole
+	roleName := types.RoleOwner.String()
+	if accountType == "personal" {
+		memberRole = personalRole
+		roleName = types.RolePersonal.String()
+	}
+
 	_, err = s.q.CreateMember(ctx, store.CreateMemberParams{
 		WorkspaceID: ws.WorkspaceID,
 		UserID:      user.UserID,
-		RoleID:      ownerRole.RoleID,
+		RoleID:      memberRole.RoleID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create owner membership: %w", err)
+		return nil, fmt.Errorf("failed to create membership: %w", err)
 	}
 
 	workspaceID := ws.WorkspaceID.String()
@@ -118,7 +129,6 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 		}
 	}
 
-	roleName := types.RoleOwner.String()
 	access, err := auth.GenerateAccessToken(user.UserID.String(), roleName, &workspaceID, s.jwtSecret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)

@@ -316,7 +316,7 @@ func TestAuthService_Register(t *testing.T) {
 		mockQ := &MockQuerier{
 			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
 				switch name {
-				case types.RolePlanner.String(), types.RoleOwner.String():
+				case types.RolePlanner.String(), types.RoleOwner.String(), types.RolePersonal.String():
 					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
 				default:
 					return store.GetRoleByNameRow{}, fmt.Errorf("unexpected role name: %s", name)
@@ -377,7 +377,7 @@ func TestAuthService_Register(t *testing.T) {
 
 		mockQ := &MockQuerier{
 			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
-				if name == types.RolePlanner.String() || name == types.RoleOwner.String() {
+				if name == types.RolePlanner.String() || name == types.RoleOwner.String() || name == types.RolePersonal.String() {
 					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
 				}
 				return store.GetRoleByNameRow{}, fmt.Errorf("unexpected role name: %s", name)
@@ -437,7 +437,7 @@ func TestAuthService_Register(t *testing.T) {
 		createWorkspaceCalled := false
 		mockQ := &MockQuerier{
 			GetRoleByNameFunc: func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
-				if name == types.RolePlanner.String() || name == types.RoleOwner.String() {
+				if name == types.RolePlanner.String() || name == types.RoleOwner.String() || name == types.RolePersonal.String() {
 					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
 				}
 				return store.GetRoleByNameRow{}, fmt.Errorf("unexpected role name: %s", name)

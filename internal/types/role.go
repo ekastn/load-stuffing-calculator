@@ -9,6 +9,7 @@ const (
 	RolePlanner  Role = "planner"
 	RoleOperator Role = "operator"
 	RoleOwner    Role = "owner"
+	RolePersonal Role = "personal"
 	RoleFounder  Role = "founder"
 	RoleTrial    Role = "trial"
 	RoleUser     Role = "user"
@@ -25,6 +26,7 @@ var workspaceRoles = map[string]struct{}{
 	RolePlanner.String():  {},
 	RoleOperator.String(): {},
 	RoleOwner.String():    {},
+	RolePersonal.String(): {},
 }
 
 var platformRoles = map[string]struct{}{
