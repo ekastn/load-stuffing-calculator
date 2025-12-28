@@ -27,9 +27,9 @@ export function useProducts() {
     fetchProducts()
   }, [fetchProducts])
 
-  const createProduct = async (data: CreateProductRequest) => {
+  const createProduct = async (data: CreateProductRequest, workspaceId?: string | null) => {
     try {
-      await ProductService.createProduct(data)
+      await ProductService.createProduct(data, workspaceId)
       await fetchProducts()
       return true
     } catch (err) {

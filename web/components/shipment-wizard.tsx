@@ -5,6 +5,7 @@ import { useState } from "react"
 import { useContainers } from "@/hooks/use-containers"
 import { useProducts } from "@/hooks/use-products"
 import { usePlans } from "@/hooks/use-plans"
+import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useRouter } from "next/navigation"
 import { Plus, Package, Trash2, Check, Loader2 } from "lucide-react"
 import { CreatePlanRequest, CreatePlanItem, CreatePlanContainer } from "@/lib/types"
+import { isUuidV4 } from "@/lib/utils"
 import { toast } from "sonner"
 import {
   Select,
@@ -22,10 +24,14 @@ import {
 } from "@/components/ui/select"
 
 export function ShipmentWizard() {
+  const { user } = useAuth()
   const { containers, isLoading: loadingContainers } = useContainers()
   const { products, isLoading: loadingProducts } = useProducts()
   const { createPlan } = usePlans()
   const router = useRouter()
+
+  const isFounder = user?.role === "founder"
+  const [createWorkspaceId, setCreateWorkspaceId] = useState("")
 
   const [shipmentName, setShipmentName] = useState("")
   const [containerMode, setContainerMode] = useState<"preset" | "custom">("preset")
@@ -136,7 +142,14 @@ export function ShipmentWizard() {
     }
 
     try {
-      const response = await createPlan(payload)
+      const trimmedWorkspaceId = createWorkspaceId.trim()
+      if (isFounder && trimmedWorkspaceId !== "" && !isUuidV4(trimmedWorkspaceId)) {
+        toast.error("workspace_id must be a valid UUIDv4")
+        return
+      }
+
+      const workspaceId = isFounder ? (trimmedWorkspaceId || null) : undefined
+      const response = await createPlan(payload, workspaceId)
       if (response) {
         toast.success("Shipment created successfully!")
         router.push(`/shipments/${response.plan_id}`)
@@ -167,6 +180,19 @@ export function ShipmentWizard() {
             <CardDescription>Basic details for this shipment</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {isFounder && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Workspace Override (optional)</label>
+                <Input
+                  value={createWorkspaceId}
+                  onChange={(e) => setCreateWorkspaceId(e.target.value)}
+                  placeholder="Paste workspace_id UUID to create this shipment in that workspace (leave blank for global)"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Founder accounts create global plans by default. Provide a workspace_id to scope this shipment to that workspace.
+                </p>
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-sm font-medium">Shipment Title</label>
               <Input

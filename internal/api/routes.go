@@ -34,6 +34,7 @@ func (a *App) setupRoutes(r *gin.Engine) {
 		authAuthed := v1.Group("/auth")
 		{
 			authAuthed.POST("/switch-workspace", a.authHandler.SwitchWorkspace)
+			authAuthed.GET("/me", a.authHandler.Me)
 		}
 
 		perm := middleware.NewPermissionMiddleware(a.querier, a.permCache)

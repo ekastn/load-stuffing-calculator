@@ -12,17 +12,28 @@ INSERT INTO containers (
 )
 RETURNING *;
 
+-- name: ListContainersAll :many
+SELECT *
+FROM containers
+ORDER BY (workspace_id IS NULL) DESC, name
+LIMIT $1 OFFSET $2;
+
+-- name: GetContainerAny :one
+SELECT *
+FROM containers
+WHERE container_id = $1;
+
 -- name: GetContainer :one
 SELECT *
 FROM containers
 WHERE container_id = $1
-  AND workspace_id = $2;
+  AND (workspace_id = $2 OR workspace_id IS NULL);
 
 -- name: ListContainers :many
 SELECT *
 FROM containers
-WHERE workspace_id = $1
-ORDER BY name
+WHERE workspace_id = $1 OR workspace_id IS NULL
+ORDER BY (workspace_id IS NULL) DESC, name
 LIMIT $2 OFFSET $3;
 
 -- name: UpdateContainer :exec
@@ -38,7 +49,23 @@ SET
 WHERE container_id = $1
   AND workspace_id = $2;
 
+-- name: UpdateContainerAny :exec
+UPDATE containers
+SET
+    name = $2,
+    inner_length_mm = $3,
+    inner_width_mm = $4,
+    inner_height_mm = $5,
+    max_weight_kg = $6,
+    description = $7,
+    updated_at = NOW()
+WHERE container_id = $1;
+
 -- name: DeleteContainer :exec
 DELETE FROM containers
 WHERE container_id = $1
   AND workspace_id = $2;
+
+-- name: DeleteContainerAny :exec
+DELETE FROM containers
+WHERE container_id = $1;

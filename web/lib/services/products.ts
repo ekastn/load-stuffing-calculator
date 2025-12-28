@@ -1,6 +1,12 @@
 import { apiGet, apiPost, apiPut, apiDelete } from "../api"
 import { CreateProductRequest, UpdateProductRequest, ProductResponse } from "../types"
 
+function withWorkspaceId(url: string, workspaceId?: string | null) {
+  if (!workspaceId) return url
+  const separator = url.includes("?") ? "&" : "?"
+  return `${url}${separator}workspace_id=${encodeURIComponent(workspaceId)}`
+}
+
 export const ProductService = {
   listProducts: async (page = 1, limit = 10): Promise<ProductResponse[]> => {
     try {
@@ -21,9 +27,9 @@ export const ProductService = {
     }
   },
 
-  createProduct: async (data: CreateProductRequest): Promise<ProductResponse> => {
+  createProduct: async (data: CreateProductRequest, workspaceId?: string | null): Promise<ProductResponse> => {
     try {
-      return await apiPost<ProductResponse>("/products", data)
+      return await apiPost<ProductResponse>(withWorkspaceId("/products", workspaceId), data)
     } catch (error: any) {
       console.error("ProductService.createProduct failed:", error)
       throw new Error(error.message || "Failed to create product")

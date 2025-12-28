@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { PermissionService } from "@/lib/services/permissions"
+
 import { CreatePermissionRequest, PermissionResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 import { usePermissions } from "@/hooks/use-permissions"
@@ -19,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { RouteGuard } from "@/lib/route-guard"
-import { RoleAdmin } from "@/lib/types"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -35,11 +33,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
-
-export default function PermissionsPage() {
-  const { user, isLoading: authLoading } = useAuth()
+export default function DevPermissionsPage() {
+  const { isLoading: authLoading } = useAuth()
   const { permissions, isLoading: dataLoading, error, createPermission, updatePermission, deletePermission } = usePermissions()
-  
+
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<CreatePermissionRequest>({ name: "", description: "" })
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -101,15 +98,11 @@ export default function PermissionsPage() {
   const columns: ColumnDef<PermissionResponse>[] = [
     {
       accessorKey: "name",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Name" />
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
     },
     {
       accessorKey: "description",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Description" />
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
     },
     {
       id: "actions",
@@ -127,20 +120,13 @@ export default function PermissionsPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => navigator.clipboard.writeText(permission.id)}
-                >
-                  Copy ID
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(permission.id)}>Copy ID</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleEdit(permission)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => handleDelete(permission.id)}
-                >
+                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(permission.id)}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
@@ -154,98 +140,94 @@ export default function PermissionsPage() {
 
   if (authLoading) {
     return (
-        <div className="flex h-screen items-center justify-center">
-            <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-            <p className="text-muted-foreground">Loading...</p>
-            </div>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
         </div>
+      </div>
     )
   }
 
   if (error) {
-      return (
-        <div className="flex h-screen items-center justify-center text-destructive">
-            Error: {error}
-        </div>
-      )
+    return <div className="flex h-screen items-center justify-center text-destructive">Error: {error}</div>
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]}>
+    <RouteGuard requiredPermissions={["permission:*"]}>
       <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Permissions</h1>
-              <p className="mt-1 text-muted-foreground">Manage system access permissions</p>
-            </div>
-            <Button onClick={openNewForm} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Permission
-            </Button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Permissions</h1>
+            <p className="mt-1 text-muted-foreground">Manage system access permissions</p>
           </div>
+          <Button onClick={openNewForm} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Permission
+          </Button>
+        </div>
 
-          {showForm && (
-            <Card className="border-border/50 bg-card/50">
-              <CardHeader>
-                <CardTitle>{editingId ? "Edit Permission" : "Create New Permission"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Name
-                      </label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g. read:reports"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="description" className="text-sm font-medium">
-                        Description
-                      </label>
-                      <Input
-                        id="description"
-                        value={formData.description || ""}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Optional description"
-                      />
-                    </div>
+        {showForm && (
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader>
+              <CardTitle>{editingId ? "Edit Permission" : "Create New Permission"}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium">
+                      Name
+                    </label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. read:reports"
+                      required
+                    />
                   </div>
-                  <div className="flex gap-3">
-                    <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                      Cancel
-                    </Button>
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-sm font-medium">
+                      Description
+                    </label>
+                    <Input
+                      id="description"
+                      value={formData.description || ""}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Optional description"
+                    />
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
+                </div>
+                <div className="flex gap-3">
+                  <Button type="submit">{editingId ? "Update" : "Create"}</Button>
+                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
-          {dataLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading permissions...</p>
-            </div>
-          ) : (
-            <div className="rounded-md border border-border/50 bg-card/50">
-              <DataTable columns={columns} data={permissions} />
-            </div>
-          )}
+        {dataLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading permissions...</p>
+          </div>
+        ) : (
+          <div className="rounded-md border border-border/50 bg-card/50">
+            <DataTable columns={columns} data={permissions} />
+          </div>
+        )}
 
         <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the permission
-                and remove its data from our servers.
+                This action cannot be undone. This will permanently delete the permission and remove its data from our
+                servers.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

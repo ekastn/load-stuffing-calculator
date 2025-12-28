@@ -277,6 +277,32 @@ func (q *Queries) GetLoadPlan(ctx context.Context, arg GetLoadPlanParams) (LoadP
 	return i, err
 }
 
+const getLoadPlanAny = `-- name: GetLoadPlanAny :one
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
+FROM load_plans
+WHERE plan_id = $1
+`
+
+func (q *Queries) GetLoadPlanAny(ctx context.Context, planID uuid.UUID) (LoadPlan, error) {
+	row := q.db.QueryRow(ctx, getLoadPlanAny, planID)
+	var i LoadPlan
+	err := row.Scan(
+		&i.PlanID,
+		&i.PlanCode,
+		&i.Status,
+		&i.ContLabel,
+		&i.LengthMm,
+		&i.WidthMm,
+		&i.HeightMm,
+		&i.MaxWeightKg,
+		&i.CreatedAt,
+		&i.CreatedByType,
+		&i.CreatedByID,
+		&i.WorkspaceID,
+	)
+	return i, err
+}
+
 const getLoadPlanForGuest = `-- name: GetLoadPlanForGuest :one
 SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
 FROM load_plans
@@ -380,6 +406,51 @@ type ListLoadPlansParams struct {
 
 func (q *Queries) ListLoadPlans(ctx context.Context, arg ListLoadPlansParams) ([]LoadPlan, error) {
 	rows, err := q.db.Query(ctx, listLoadPlans, arg.WorkspaceID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LoadPlan
+	for rows.Next() {
+		var i LoadPlan
+		if err := rows.Scan(
+			&i.PlanID,
+			&i.PlanCode,
+			&i.Status,
+			&i.ContLabel,
+			&i.LengthMm,
+			&i.WidthMm,
+			&i.HeightMm,
+			&i.MaxWeightKg,
+			&i.CreatedAt,
+			&i.CreatedByType,
+			&i.CreatedByID,
+			&i.WorkspaceID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLoadPlansAll = `-- name: ListLoadPlansAll :many
+SELECT plan_id, plan_code, status, cont_label, length_mm, width_mm, height_mm, max_weight_kg, created_at, created_by_type, created_by_id, workspace_id
+FROM load_plans
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListLoadPlansAllParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListLoadPlansAll(ctx context.Context, arg ListLoadPlansAllParams) ([]LoadPlan, error) {
+	rows, err := q.db.Query(ctx, listLoadPlansAll, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -591,5 +662,21 @@ type UpdatePlanStatusParams struct {
 
 func (q *Queries) UpdatePlanStatus(ctx context.Context, arg UpdatePlanStatusParams) error {
 	_, err := q.db.Exec(ctx, updatePlanStatus, arg.PlanID, arg.WorkspaceID, arg.Status)
+	return err
+}
+
+const updatePlanStatusAny = `-- name: UpdatePlanStatusAny :exec
+UPDATE load_plans
+SET status = $2
+WHERE plan_id = $1
+`
+
+type UpdatePlanStatusAnyParams struct {
+	PlanID uuid.UUID `json:"plan_id"`
+	Status *string   `json:"status"`
+}
+
+func (q *Queries) UpdatePlanStatusAny(ctx context.Context, arg UpdatePlanStatusAnyParams) error {
+	_, err := q.db.Exec(ctx, updatePlanStatusAny, arg.PlanID, arg.Status)
 	return err
 }

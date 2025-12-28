@@ -52,9 +52,9 @@ export function usePlans() {
     fetchPlans()
   }, [fetchPlans])
 
-  const createPlan = async (data: CreatePlanRequest) => {
+  const createPlan = async (data: CreatePlanRequest, workspaceId?: string | null) => {
     try {
-      const newPlan = await PlanService.createPlan(data)
+      const newPlan = await PlanService.createPlan(data, workspaceId)
       await fetchPlans()
       return newPlan
     } catch (err) {

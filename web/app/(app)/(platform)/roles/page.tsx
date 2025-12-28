@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+
 import { useRoles } from "@/hooks/use-roles"
 import { usePermissions } from "@/hooks/use-permissions"
 import { RoleService } from "@/lib/services/roles"
@@ -19,7 +20,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { RouteGuard } from "@/lib/route-guard"
-import { RoleAdmin } from "@/lib/types"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -37,12 +37,11 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 
-
-export default function RolesPage() {
-  const { user, isLoading: authLoading } = useAuth()
+export default function DevRolesPage() {
+  const { isLoading: authLoading } = useAuth()
   const { roles, isLoading: dataLoading, error, createRole, updateRole, deleteRole } = useRoles()
   const { permissions } = usePermissions()
-  
+
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<CreateRoleRequest>({ name: "", description: "" })
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -106,15 +105,13 @@ export default function RolesPage() {
       const assignedIds = await RoleService.getRolePermissions(role.id)
       setAssignedPermissionIds(assignedIds)
       setShowPermissionsDialog(true)
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch assigned permissions")
     }
   }
 
   const handleTogglePermission = (id: string) => {
-    setAssignedPermissionIds(prev => 
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    )
+    setAssignedPermissionIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]))
   }
 
   const savePermissions = async () => {
@@ -124,7 +121,7 @@ export default function RolesPage() {
       await RoleService.updateRolePermissions(selectedRole.id, assignedPermissionIds)
       toast.success("Permissions updated successfully")
       setShowPermissionsDialog(false)
-    } catch (err) {
+    } catch {
       toast.error("Failed to update permissions")
     } finally {
       setIsSavingPermissions(false)
@@ -140,15 +137,11 @@ export default function RolesPage() {
   const columns: ColumnDef<RoleResponse>[] = [
     {
       accessorKey: "name",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Name" />
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Name" />,
     },
     {
       accessorKey: "description",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Description" />
-      ),
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Description" />,
     },
     {
       id: "actions",
@@ -166,11 +159,7 @@ export default function RolesPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem
-                  onClick={() => navigator.clipboard.writeText(role.id)}
-                >
-                  Copy ID
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(role.id)}>Copy ID</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleEdit(role)}>
                   <Edit className="mr-2 h-4 w-4" />
@@ -180,10 +169,7 @@ export default function RolesPage() {
                   <Shield className="mr-2 h-4 w-4" />
                   Manage Permissions
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => handleDelete(role.id)}
-                >
+                <DropdownMenuItem className="text-destructive" onClick={() => handleDelete(role.id)}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete
                 </DropdownMenuItem>
@@ -197,98 +183,93 @@ export default function RolesPage() {
 
   if (authLoading) {
     return (
-        <div className="flex h-screen items-center justify-center">
-            <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-            <p className="text-muted-foreground">Loading...</p>
-            </div>
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+          <p className="text-muted-foreground">Loading...</p>
         </div>
+      </div>
     )
   }
 
   if (error) {
-      return (
-        <div className="flex h-screen items-center justify-center text-destructive">
-            Error: {error}
-        </div>
-      )
+    return <div className="flex h-screen items-center justify-center text-destructive">Error: {error}</div>
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]}>
+    <RouteGuard requiredPermissions={["role:*"]}>
       <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Roles</h1>
-              <p className="mt-1 text-muted-foreground">Manage user roles</p>
-            </div>
-            <Button onClick={openNewForm} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Role
-            </Button>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Roles</h1>
+            <p className="mt-1 text-muted-foreground">Manage user roles</p>
           </div>
+          <Button onClick={openNewForm} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New Role
+          </Button>
+        </div>
 
-          {showForm && (
-            <Card className="border-border/50 bg-card/50">
-              <CardHeader>
-                <CardTitle>{editingId ? "Edit Role" : "Create New Role"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label htmlFor="name" className="text-sm font-medium">
-                        Name
-                      </label>
-                      <Input
-                        id="name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="e.g. planner"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="description" className="text-sm font-medium">
-                        Description
-                      </label>
-                      <Input
-                        id="description"
-                        value={formData.description || ""}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Optional description"
-                      />
-                    </div>
+        {showForm && (
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader>
+              <CardTitle>{editingId ? "Edit Role" : "Create New Role"}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium">
+                      Name
+                    </label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. planner"
+                      required
+                    />
                   </div>
-                  <div className="flex gap-3">
-                    <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                      Cancel
-                    </Button>
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-sm font-medium">
+                      Description
+                    </label>
+                    <Input
+                      id="description"
+                      value={formData.description || ""}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      placeholder="Optional description"
+                    />
                   </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
+                </div>
+                <div className="flex gap-3">
+                  <Button type="submit">{editingId ? "Update" : "Create"}</Button>
+                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
-          {dataLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading roles...</p>
-            </div>
-          ) : (
-            <div className="rounded-md border border-border/50 bg-card/50">
-              <DataTable columns={columns} data={roles} />
-            </div>
-          )}
+        {dataLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading roles...</p>
+          </div>
+        ) : (
+          <div className="rounded-md border border-border/50 bg-card/50">
+            <DataTable columns={columns} data={roles} />
+          </div>
+        )}
 
         <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the role
-                and remove its data from our servers.
+                This action cannot be undone. This will permanently delete the role and remove its data from our servers.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -298,14 +279,11 @@ export default function RolesPage() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Manage Permissions Dialog */}
         <Dialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Manage Permissions for {selectedRole?.name}</DialogTitle>
-              <DialogDescription>
-                Select the permissions that should be assigned to this role.
-              </DialogDescription>
+              <DialogDescription>Select the permissions that should be assigned to this role.</DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4 py-4 max-h-[60vh] overflow-y-auto">
               {permissions.map((permission) => (
@@ -322,11 +300,7 @@ export default function RolesPage() {
                     >
                       {permission.name}
                     </label>
-                    {permission.description && (
-                      <p className="text-xs text-muted-foreground">
-                        {permission.description}
-                      </p>
-                    )}
+                    {permission.description && <p className="text-xs text-muted-foreground">{permission.description}</p>}
                   </div>
                 </div>
               ))}

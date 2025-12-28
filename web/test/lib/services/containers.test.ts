@@ -43,6 +43,16 @@ describe("ContainerService", () => {
     expect(result).toEqual(createdContainer)
   })
 
+  it("createContainer appends workspace_id when provided", async () => {
+    const newContainer = { name: "40ft", inner_length_mm: 12000, inner_width_mm: 2350, inner_height_mm: 2390, max_weight_kg: 28000 }
+    const createdContainer = { id: "1", ...newContainer }
+    ;(apiPost as Mock).mockResolvedValue(createdContainer)
+
+    const result = await ContainerService.createContainer(newContainer, "ws-123")
+    expect(apiPost).toHaveBeenCalledWith("/containers?workspace_id=ws-123", newContainer)
+    expect(result).toEqual(createdContainer)
+  })
+
   it("updateContainer calls apiPut correctly", async () => {
     const updateData = { name: "40ft HC", inner_length_mm: 12000, inner_width_mm: 2350, inner_height_mm: 2690, max_weight_kg: 28000 }
     ;(apiPut as Mock).mockResolvedValue(undefined)

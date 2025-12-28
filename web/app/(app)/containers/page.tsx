@@ -17,7 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { RouteGuard } from "@/lib/route-guard"
-import { RoleAdmin } from "@/lib/types"
+import { isUuidV4 } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -36,6 +36,9 @@ import {
 export default function ContainersPage() {
   const { user, isLoading: authLoading } = useAuth()
   const { containers, isLoading: dataLoading, error, createContainer, updateContainer, deleteContainer } = useContainers()
+
+  const [createWorkspaceId, setCreateWorkspaceId] = useState("")
+  const isFounder = user?.role === "founder"
   
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<CreateContainerRequest>({
@@ -59,7 +62,14 @@ export default function ContainersPage() {
         success = await updateContainer(editingId, formData)
         if (success) toast.success("Container updated successfully!")
       } else {
-        success = await createContainer(formData)
+        const trimmedWorkspaceId = createWorkspaceId.trim()
+        if (isFounder && trimmedWorkspaceId !== "" && !isUuidV4(trimmedWorkspaceId)) {
+          toast.error("workspace_id must be a valid UUIDv4")
+          return
+        }
+
+        const workspaceId = isFounder ? (trimmedWorkspaceId || null) : undefined
+        success = await createContainer(formData, workspaceId)
         if (success) toast.success("Container created successfully!")
       }
     } catch (err: any) {
@@ -205,7 +215,7 @@ export default function ContainersPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={[RoleAdmin]}>
+    <RouteGuard requiredPermissions={["container:read"]}>
       <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
@@ -225,6 +235,19 @@ export default function ContainersPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  {isFounder && !editingId && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Workspace Override (optional)</label>
+                      <Input
+                        value={createWorkspaceId}
+                        onChange={(e) => setCreateWorkspaceId(e.target.value)}
+                        placeholder="Paste workspace_id UUID to create in that workspace (leave blank for global)"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Founder accounts create global presets by default. Provide a workspace_id to scope this container to that workspace.
+                      </p>
+                    </div>
+                  )}
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Name</label>

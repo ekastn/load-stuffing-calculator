@@ -7,20 +7,48 @@ import { useEffect } from "react"
 
 type UserRole = "admin" | "planner" | "operator"
 
+type Permission = string
+
+function permissionMatches(granted: Permission, required: Permission) {
+  if (granted === "*") return true
+  if (granted === required) return true
+  if (granted.endsWith(":*")) {
+    const prefix = granted.slice(0, -1)
+    return required.startsWith(prefix)
+  }
+  return false
+}
+
+function hasAnyPermission(granted: Permission[], required: Permission[]) {
+  if (required.length === 0) return true
+  for (const requiredPerm of required) {
+    for (const grantedPerm of granted) {
+      if (permissionMatches(grantedPerm, requiredPerm)) return true
+    }
+  }
+  return false
+}
+
 interface RouteGuardProps {
   children: React.ReactNode
-  allowedRoles: UserRole[]
+  allowedRoles?: UserRole[]
+  requiredPermissions?: Permission[]
   redirectTo?: string
 }
 
-export function RouteGuard({ children, allowedRoles, redirectTo = "/dashboard" }: RouteGuardProps) {
-  const { user, isLoading } = useAuth()
+export function RouteGuard({
+  children,
+  allowedRoles,
+  requiredPermissions,
+  redirectTo = "/dashboard",
+}: RouteGuardProps) {
+  const { user, isLoading, permissions } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (isLoading) return
 
-    console.log("[v0] RouteGuard - User:", user?.role, "Allowed roles:", allowedRoles)
+    console.log("[v0] RouteGuard - User:", user?.role, "Allowed roles:", allowedRoles, "Required perms:", requiredPermissions)
 
     if (!user) {
       const nextPath = window.location.pathname + window.location.search
@@ -30,17 +58,24 @@ export function RouteGuard({ children, allowedRoles, redirectTo = "/dashboard" }
       return
     }
 
-    const isAdmin = user.role === "admin"
-    const hasAccess = isAdmin || allowedRoles.includes(user.role as UserRole)
+    const hasAccessByPermission = requiredPermissions
+      ? hasAnyPermission(permissions ?? [], requiredPermissions)
+      : null
+
+    const hasAccessByRole = allowedRoles?.length
+      ? user.role === "admin" || allowedRoles.includes(user.role as UserRole)
+      : null
+
+    const hasAccess = hasAccessByPermission ?? hasAccessByRole ?? true
 
     if (!hasAccess) {
-      console.log("[v0] RouteGuard - Unauthorized role, redirecting to", redirectTo)
+      console.log("[v0] RouteGuard - Unauthorized, redirecting to", redirectTo)
       router.replace(redirectTo)
       return
     }
 
     console.log("[v0] RouteGuard - Access granted, rendering children")
-  }, [user, isLoading, allowedRoles, redirectTo, router])
+  }, [user, isLoading, allowedRoles, requiredPermissions, permissions, redirectTo, router])
 
   if (isLoading) {
     return (
@@ -53,8 +88,15 @@ export function RouteGuard({ children, allowedRoles, redirectTo = "/dashboard" }
     )
   }
 
-  const isAdmin = user?.role === "admin"
-  const hasAccess = isAdmin || allowedRoles.includes(user?.role as UserRole)
+  const hasAccessByPermission = requiredPermissions
+    ? hasAnyPermission(permissions ?? [], requiredPermissions)
+    : null
+
+  const hasAccessByRole = allowedRoles?.length
+    ? user?.role === "admin" || allowedRoles.includes(user?.role as UserRole)
+    : null
+
+  const hasAccess = hasAccessByPermission ?? hasAccessByRole ?? true
 
   if (!user || !hasAccess) return null
 

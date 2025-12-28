@@ -147,3 +147,23 @@ func (h *AuthHandler) SwitchWorkspace(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, resp)
 }
+
+// Me godoc
+//
+//	@Summary		Get current session
+//	@Description	Returns the current user, active workspace, permissions and platform membership.
+//	@Tags			auth
+//	@Produce		json
+//	@Success		200	{object}	response.APIResponse{data=dto.AuthMeResponse}
+//	@Failure		401	{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/auth/me [get]
+func (h *AuthHandler) Me(c *gin.Context) {
+	resp, err := h.authSvc.Me(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusUnauthorized, "Failed to resolve session")
+		return
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}

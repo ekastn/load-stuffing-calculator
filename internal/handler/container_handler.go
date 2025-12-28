@@ -25,13 +25,16 @@ func NewContainerHandler(containerSvc service.ContainerService) *ContainerHandle
 //	@Tags			containers
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		dto.CreateContainerRequest	true	"Container Creation Data"
-//	@Success		201		{object}	response.APIResponse{data=dto.ContainerResponse}
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string						false	"Workspace override (founder only)"
+//	@Param			request			body		dto.CreateContainerRequest	true	"Container Creation Data"
+//	@Success		201				{object}	response.APIResponse{data=dto.ContainerResponse}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/containers [post]
 func (h *ContainerHandler) CreateContainer(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	var req dto.CreateContainerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.Error(c, http.StatusBadRequest, "Invalid request format: "+err.Error())
@@ -54,13 +57,16 @@ func (h *ContainerHandler) CreateContainer(c *gin.Context) {
 //	@Tags			containers
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"Container ID"
-//	@Success		200	{object}	response.APIResponse{data=dto.ContainerResponse}
-//	@Failure		400	{object}	response.APIResponse
-//	@Failure		404	{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Container ID"
+//	@Success		200				{object}	response.APIResponse{data=dto.ContainerResponse}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		404				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/containers/{id} [get]
 func (h *ContainerHandler) GetContainer(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	id := c.Param("id")
 	if id == "" {
 		response.Error(c, http.StatusBadRequest, "Container ID is required")
@@ -83,13 +89,16 @@ func (h *ContainerHandler) GetContainer(c *gin.Context) {
 //	@Tags			containers
 //	@Accept			json
 //	@Produce		json
-//	@Param			page	query		int	false	"Page number"		default(1)
-//	@Param			limit	query		int	false	"Items per page"	default(10)
-//	@Success		200		{object}	response.APIResponse{data=[]dto.ContainerResponse}
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			page			query		int		false	"Page number"		default(1)
+//	@Param			limit			query		int		false	"Items per page"	default(10)
+//	@Success		200				{object}	response.APIResponse{data=[]dto.ContainerResponse}
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/containers [get]
 func (h *ContainerHandler) ListContainers(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
 
@@ -112,14 +121,17 @@ func (h *ContainerHandler) ListContainers(c *gin.Context) {
 //	@Tags			containers
 //	@Accept			json
 //	@Produce		json
-//	@Param			id		path		string						true	"Container ID"
-//	@Param			request	body		dto.UpdateContainerRequest	true	"Container Update Data"
-//	@Success		200		{object}	response.APIResponse
-//	@Failure		400		{object}	response.APIResponse
-//	@Failure		500		{object}	response.APIResponse
+//	@Param			workspace_id	query		string						false	"Workspace override (founder only)"
+//	@Param			id				path		string						true	"Container ID"
+//	@Param			request			body		dto.UpdateContainerRequest	true	"Container Update Data"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/containers/{id} [put]
 func (h *ContainerHandler) UpdateContainer(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	id := c.Param("id")
 	if id == "" {
 		response.Error(c, http.StatusBadRequest, "Container ID is required")
@@ -148,13 +160,16 @@ func (h *ContainerHandler) UpdateContainer(c *gin.Context) {
 //	@Tags			containers
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"Container ID"
-//	@Success		200	{object}	response.APIResponse
-//	@Failure		400	{object}	response.APIResponse
-//	@Failure		500	{object}	response.APIResponse
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Container ID"
+//	@Success		200				{object}	response.APIResponse
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		500				{object}	response.APIResponse
 //	@Security		BearerAuth
 //	@Router			/containers/{id} [delete]
 func (h *ContainerHandler) DeleteContainer(c *gin.Context) {
+	withFounderWorkspaceOverride(c)
+
 	id := c.Param("id")
 	if id == "" {
 		response.Error(c, http.StatusBadRequest, "Container ID is required")

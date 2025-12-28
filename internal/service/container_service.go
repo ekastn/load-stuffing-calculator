@@ -26,9 +26,25 @@ func NewContainerService(q store.Querier) ContainerService {
 }
 
 func (s *containerService) CreateContainer(ctx context.Context, req dto.CreateContainerRequest) (*dto.ContainerResponse, error) {
+	overrideWorkspaceID, err := workspaceOverrideIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	workspaceID, err := workspaceIDFromContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// Founders can create either:
+	// - Global presets (workspace_id = NULL) when no override is provided.
+	// - Workspace-scoped records when ?workspace_id= is provided.
+	if isFounder(ctx) {
+		workspaceID = overrideWorkspaceID
+	}
+
+	if workspaceID == nil && !isFounder(ctx) {
+		return nil, fmt.Errorf("workspace id is required")
 	}
 
 	container, err := s.q.CreateContainer(ctx, store.CreateContainerParams{
@@ -53,9 +69,25 @@ func (s *containerService) GetContainer(ctx context.Context, id string) (*dto.Co
 		return nil, fmt.Errorf("invalid container id: %w", err)
 	}
 
+	overrideWorkspaceID, err := workspaceOverrideIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if isFounder(ctx) && overrideWorkspaceID == nil {
+		container, err := s.q.GetContainerAny(ctx, containerID)
+		if err != nil {
+			return nil, err
+		}
+		return mapContainerToResponse(container), nil
+	}
+
 	workspaceID, err := workspaceIDFromContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if overrideWorkspaceID != nil {
+		workspaceID = overrideWorkspaceID
 	}
 
 	container, err := s.q.GetContainer(ctx, store.GetContainerParams{ContainerID: containerID, WorkspaceID: workspaceID})
@@ -75,16 +107,32 @@ func (s *containerService) ListContainers(ctx context.Context, page, limit int32
 	}
 	offset := (page - 1) * limit
 
-	workspaceID, err := workspaceIDFromContext(ctx)
+	overrideWorkspaceID, err := workspaceOverrideIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	containers, err := s.q.ListContainers(ctx, store.ListContainersParams{
-		WorkspaceID: workspaceID,
-		Limit:       limit,
-		Offset:      offset,
-	})
+	if isFounder(ctx) && overrideWorkspaceID == nil {
+		containers, err := s.q.ListContainersAll(ctx, store.ListContainersAllParams{Limit: limit, Offset: offset})
+		if err != nil {
+			return nil, err
+		}
+		var result []dto.ContainerResponse
+		for _, c := range containers {
+			result = append(result, *mapContainerToResponse(c))
+		}
+		return result, nil
+	}
+
+	workspaceID, err := workspaceIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if overrideWorkspaceID != nil {
+		workspaceID = overrideWorkspaceID
+	}
+
+	containers, err := s.q.ListContainers(ctx, store.ListContainersParams{WorkspaceID: workspaceID, Limit: limit, Offset: offset})
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +151,36 @@ func (s *containerService) UpdateContainer(ctx context.Context, id string, req d
 		return fmt.Errorf("invalid container id: %w", err)
 	}
 
+	overrideWorkspaceID, err := workspaceOverrideIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	if isFounder(ctx) && overrideWorkspaceID == nil {
+		err = s.q.UpdateContainerAny(ctx, store.UpdateContainerAnyParams{
+			ContainerID:   containerID,
+			Name:          req.Name,
+			InnerLengthMm: toNumeric(req.InnerLengthMM),
+			InnerWidthMm:  toNumeric(req.InnerWidthMM),
+			InnerHeightMm: toNumeric(req.InnerHeightMM),
+			MaxWeightKg:   toNumeric(req.MaxWeightKG),
+			Description:   req.Description,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to update container: %w", err)
+		}
+		return nil
+	}
+
 	workspaceID, err := workspaceIDFromContext(ctx)
 	if err != nil {
 		return err
+	}
+	if overrideWorkspaceID != nil {
+		workspaceID = overrideWorkspaceID
+	}
+	if workspaceID == nil {
+		return fmt.Errorf("workspace id is required")
 	}
 
 	err = s.q.UpdateContainer(ctx, store.UpdateContainerParams{
@@ -130,9 +205,28 @@ func (s *containerService) DeleteContainer(ctx context.Context, id string) error
 		return fmt.Errorf("invalid container id: %w", err)
 	}
 
+	overrideWorkspaceID, err := workspaceOverrideIDFromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	if isFounder(ctx) && overrideWorkspaceID == nil {
+		err = s.q.DeleteContainerAny(ctx, containerID)
+		if err != nil {
+			return fmt.Errorf("failed to delete container: %w", err)
+		}
+		return nil
+	}
+
 	workspaceID, err := workspaceIDFromContext(ctx)
 	if err != nil {
 		return err
+	}
+	if overrideWorkspaceID != nil {
+		workspaceID = overrideWorkspaceID
+	}
+	if workspaceID == nil {
+		return fmt.Errorf("workspace id is required")
 	}
 
 	err = s.q.DeleteContainer(ctx, store.DeleteContainerParams{ContainerID: containerID, WorkspaceID: workspaceID})

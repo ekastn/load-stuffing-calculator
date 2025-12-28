@@ -123,6 +123,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns the current user, active workspace, permissions and platform membership.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Get current session",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.AuthMeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/refresh": {
             "post": {
                 "description": "Rotates the refresh token and issues a new access token.",
@@ -316,6 +359,12 @@ const docTemplate = `{
                 "summary": "List containers",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "Page number",
@@ -378,6 +427,12 @@ const docTemplate = `{
                 ],
                 "summary": "Create a new container",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "description": "Container Creation Data",
                         "name": "request",
@@ -443,6 +498,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Container ID",
                         "name": "id",
                         "in": "path",
@@ -502,6 +563,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Container ID",
                         "name": "id",
                         "in": "path",
@@ -556,6 +623,12 @@ const docTemplate = `{
                 ],
                 "summary": "Delete a container",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Container ID",
@@ -1509,6 +1582,12 @@ const docTemplate = `{
                 "summary": "List plans",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
                         "type": "integer",
                         "default": 1,
                         "description": "Page number",
@@ -1571,6 +1650,12 @@ const docTemplate = `{
                 ],
                 "summary": "Create a new load plan",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "description": "Plan Creation Data",
                         "name": "request",
@@ -1636,6 +1721,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Plan ID",
                         "name": "id",
                         "in": "path",
@@ -1695,6 +1786,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Plan ID",
                         "name": "id",
                         "in": "path",
@@ -1737,7 +1834,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Deletes a plan by ID.",
+                "description": "Deletes an existing plan.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1749,6 +1846,12 @@ const docTemplate = `{
                 ],
                 "summary": "Delete a plan",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Plan ID",
@@ -1784,34 +1887,6 @@ const docTemplate = `{
                 "security": [
                     {
                         "BearerAuth": []
-                    }
-                ],
-                "description": "Triggers the packing calculation for a plan.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "plans"
-                ],
-                "summary": "Calculate plan",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Plan ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Calculation Options",
-                        "name": "request",
-                        "in": "body",
-                        "schema": {
-                            "$ref": "#/definitions/dto.CalculatePlanRequest"
-                        }
                     }
                 ],
                 "responses": {
@@ -1867,6 +1942,12 @@ const docTemplate = `{
                 ],
                 "summary": "Add item to plan",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Plan ID",
@@ -1939,6 +2020,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Plan ID",
                         "name": "id",
                         "in": "path",
@@ -1997,6 +2084,12 @@ const docTemplate = `{
                 ],
                 "summary": "Update plan item",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Plan ID",
@@ -2062,6 +2155,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Plan ID",
                         "name": "id",
                         "in": "path",
@@ -2116,6 +2215,12 @@ const docTemplate = `{
                 ],
                 "summary": "List products",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "default": 1,
@@ -2179,6 +2284,12 @@ const docTemplate = `{
                 ],
                 "summary": "Create a new product",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "description": "Product Creation Data",
                         "name": "request",
@@ -2244,6 +2355,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Product ID",
                         "name": "id",
                         "in": "path",
@@ -2303,6 +2420,12 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
                         "description": "Product ID",
                         "name": "id",
                         "in": "path",
@@ -2357,6 +2480,12 @@ const docTemplate = `{
                 ],
                 "summary": "Delete a product",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Product ID",
@@ -3423,12 +3552,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "role": {
-                    "type": "string",
-                    "enum": [
-                        "admin",
-                        "planner",
-                        "operator"
-                    ]
+                    "type": "string"
                 },
                 "user_identifier": {
                     "description": "email|username|uuid",
@@ -3503,20 +3627,23 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CalculatePlanRequest": {
+        "dto.AuthMeResponse": {
             "type": "object",
             "properties": {
-                "goal": {
-                    "type": "string",
-                    "example": "tightest"
+                "active_workspace_id": {
+                    "type": "string"
                 },
-                "gravity": {
-                    "type": "boolean",
-                    "example": true
+                "is_platform_member": {
+                    "type": "boolean"
                 },
-                "strategy": {
-                    "type": "string",
-                    "example": "bestfitdecreasing"
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "user": {
+                    "$ref": "#/definitions/dto.UserSummary"
                 }
             }
         },
@@ -3645,12 +3772,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "role": {
-                    "type": "string",
-                    "enum": [
-                        "admin",
-                        "planner",
-                        "operator"
-                    ]
+                    "type": "string"
                 }
             }
         },
@@ -3908,11 +4030,6 @@ const docTemplate = `{
                 },
                 "role": {
                     "type": "string",
-                    "enum": [
-                        "admin",
-                        "planner",
-                        "operator"
-                    ],
                     "example": "planner"
                 },
                 "username": {
@@ -4355,6 +4472,9 @@ const docTemplate = `{
                 "username"
             ],
             "properties": {
+                "account_type": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
@@ -4362,9 +4482,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 6
                 },
                 "username": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 4
+                },
+                "workspace_name": {
                     "type": "string"
                 }
             }
@@ -4472,12 +4598,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "role": {
-                    "type": "string",
-                    "enum": [
-                        "admin",
-                        "planner",
-                        "operator"
-                    ]
+                    "type": "string"
                 }
             }
         },
@@ -4625,12 +4746,7 @@ const docTemplate = `{
                     "maxLength": 20
                 },
                 "role": {
-                    "type": "string",
-                    "enum": [
-                        "admin",
-                        "planner",
-                        "operator"
-                    ]
+                    "type": "string"
                 },
                 "username": {
                     "type": "string",

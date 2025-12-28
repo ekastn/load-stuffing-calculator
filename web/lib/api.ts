@@ -119,11 +119,14 @@ export async function apiFetch<T>(endpoint: string, options: RequestOptions = {}
             throw new Error(refreshData.message || "Refresh failed")
           }
 
-          const { access_token, refresh_token: newRefreshToken } = refreshData.data || refreshData
+          const { access_token, refresh_token: newRefreshToken, active_workspace_id } = refreshData.data || refreshData
 
           localStorage.setItem(ACCESS_TOKEN_KEY, access_token)
           if (newRefreshToken) {
             localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken)
+          }
+          if (active_workspace_id) {
+            localStorage.setItem("active_workspace_id", active_workspace_id)
           }
 
           isRefreshing = false

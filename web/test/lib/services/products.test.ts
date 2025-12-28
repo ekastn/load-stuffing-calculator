@@ -43,6 +43,16 @@ describe("ProductService", () => {
     expect(result).toEqual(createdProduct)
   })
 
+  it("createProduct appends workspace_id when provided", async () => {
+    const newProduct = { name: "Box", length_mm: 100, width_mm: 100, height_mm: 100, weight_kg: 1 }
+    const createdProduct = { id: "1", ...newProduct }
+    ;(apiPost as Mock).mockResolvedValue(createdProduct)
+
+    const result = await ProductService.createProduct(newProduct, "ws-123")
+    expect(apiPost).toHaveBeenCalledWith("/products?workspace_id=ws-123", newProduct)
+    expect(result).toEqual(createdProduct)
+  })
+
   it("updateProduct calls apiPut correctly", async () => {
     const updateData = { name: "Big Box", length_mm: 200, width_mm: 200, height_mm: 200, weight_kg: 2 }
     ;(apiPut as Mock).mockResolvedValue(undefined)

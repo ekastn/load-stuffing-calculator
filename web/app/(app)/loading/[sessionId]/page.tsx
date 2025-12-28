@@ -64,7 +64,7 @@ export default function ActiveLoadingPage() {
   const tolerance = 0.1
 
   return (
-    <RouteGuard allowedRoles={["operator"]}>
+    <RouteGuard requiredPermissions={["plan:read"]}>
       <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>

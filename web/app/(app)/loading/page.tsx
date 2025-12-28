@@ -32,7 +32,7 @@ export default function LoadingInstructionsPage() {
   }
 
   return (
-    <RouteGuard allowedRoles={["operator"]}>
+    <RouteGuard requiredPermissions={["plan:read"]}>
       <div className="space-y-8">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Loading Instructions</h1>

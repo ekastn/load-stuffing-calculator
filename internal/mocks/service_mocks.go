@@ -52,6 +52,14 @@ func (m *MockAuthService) SwitchWorkspace(ctx context.Context, req dto.SwitchWor
 	return args.Get(0).(*dto.SwitchWorkspaceResponse), args.Error(1)
 }
 
+func (m *MockAuthService) Me(ctx context.Context) (*dto.AuthMeResponse, error) {
+	args := m.Called(ctx)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.AuthMeResponse), args.Error(1)
+}
+
 // MockUserService is a mock implementation of service.UserService
 type MockUserService struct {
 	mock.Mock

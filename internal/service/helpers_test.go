@@ -13,6 +13,15 @@ func ctxWithWorkspaceID(workspaceID uuid.UUID) context.Context {
 	return auth.WithWorkspaceID(context.Background(), workspaceID.String())
 }
 
+func ctxWithRole(role string) context.Context {
+	return auth.WithRole(context.Background(), role)
+}
+
+func ctxWithRoleAndWorkspace(role string, workspaceID uuid.UUID) context.Context {
+	ctx := auth.WithRole(context.Background(), role)
+	return auth.WithWorkspaceID(ctx, workspaceID.String())
+}
+
 // toNumeric is a test helper to convert float64 to pgtype.Numeric.
 func toNumeric(f float64) pgtype.Numeric {
 	var n pgtype.Numeric
