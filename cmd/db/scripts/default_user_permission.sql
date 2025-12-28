@@ -2,6 +2,7 @@
 INSERT INTO roles (name, description) VALUES
 ('founder', 'Platform superuser (SaaS founder)'),
 ('owner', 'Workspace owner / CEO'),
+('personal', 'Personal workspace owner (single-user)'),
 ('admin', 'Workspace admin (can manage members)'),
 ('planner', 'Can create and manage shipment plans'),
 ('operator', 'Can validate loading steps & manage items'),
@@ -99,6 +100,21 @@ JOIN permissions p ON p.name IN (
   'dashboard:read'
 )
 WHERE r.name = 'owner'
+ON CONFLICT DO NOTHING;
+
+-- Personal permissions (workspace-scoped; no members/invites/workspace:create)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r
+JOIN permissions p ON p.name IN (
+  'workspace:read',
+  'product:*',
+  'container:*',
+  'plan:*',
+  'plan_item:*',
+  'dashboard:read'
+)
+WHERE r.name = 'personal'
 ON CONFLICT DO NOTHING;
 
 -- Admin permissions (workspace-scoped; no global "*")
