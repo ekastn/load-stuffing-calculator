@@ -97,6 +97,7 @@ type MockQuerier struct {
 	CreateWorkspaceFunc                     func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error)
 	GetWorkspaceFunc                        func(ctx context.Context, workspaceID uuid.UUID) (store.Workspace, error)
 	ListWorkspacesByOwnerFunc               func(ctx context.Context, arg store.ListWorkspacesByOwnerParams) ([]store.Workspace, error)
+	ListWorkspacesAllFunc                   func(ctx context.Context, arg store.ListWorkspacesAllParams) ([]store.ListWorkspacesAllRow, error)
 	UpdateWorkspaceFunc                     func(ctx context.Context, arg store.UpdateWorkspaceParams) error
 	DeleteWorkspaceFunc                     func(ctx context.Context, workspaceID uuid.UUID) error
 	TransferWorkspaceOwnershipFunc          func(ctx context.Context, arg store.TransferWorkspaceOwnershipParams) error
@@ -706,6 +707,13 @@ func (m *MockQuerier) ListWorkspacesByOwner(ctx context.Context, arg store.ListW
 		return m.ListWorkspacesByOwnerFunc(ctx, arg)
 	}
 	return nil, fmt.Errorf("ListWorkspacesByOwner not implemented")
+}
+
+func (m *MockQuerier) ListWorkspacesAll(ctx context.Context, arg store.ListWorkspacesAllParams) ([]store.ListWorkspacesAllRow, error) {
+	if m.ListWorkspacesAllFunc != nil {
+		return m.ListWorkspacesAllFunc(ctx, arg)
+	}
+	return nil, fmt.Errorf("ListWorkspacesAll not implemented")
 }
 
 func (m *MockQuerier) UpdateWorkspace(ctx context.Context, arg store.UpdateWorkspaceParams) error {

@@ -88,6 +88,7 @@ type Querier interface {
 	ListProductsAll(ctx context.Context, arg ListProductsAllParams) ([]Product, error)
 	ListRoles(ctx context.Context, arg ListRolesParams) ([]Role, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error)
+	ListWorkspacesAll(ctx context.Context, arg ListWorkspacesAllParams) ([]ListWorkspacesAllRow, error)
 	ListWorkspacesByOwner(ctx context.Context, arg ListWorkspacesByOwnerParams) ([]Workspace, error)
 	ListWorkspacesForUser(ctx context.Context, arg ListWorkspacesForUserParams) ([]Workspace, error)
 	RevokeInvite(ctx context.Context, arg RevokeInviteParams) error

@@ -7,6 +7,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -92,6 +93,62 @@ func (q *Queries) GetWorkspace(ctx context.Context, workspaceID uuid.UUID) (Work
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listWorkspacesAll = `-- name: ListWorkspacesAll :many
+SELECT
+    w.workspace_id, w.type, w.name, w.owner_user_id, w.created_at, w.updated_at,
+    u.username AS owner_username,
+    u.email AS owner_email
+FROM workspaces w
+JOIN users u ON u.user_id = w.owner_user_id
+ORDER BY w.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListWorkspacesAllParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+type ListWorkspacesAllRow struct {
+	WorkspaceID   uuid.UUID `json:"workspace_id"`
+	Type          string    `json:"type"`
+	Name          string    `json:"name"`
+	OwnerUserID   uuid.UUID `json:"owner_user_id"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	OwnerUsername string    `json:"owner_username"`
+	OwnerEmail    string    `json:"owner_email"`
+}
+
+func (q *Queries) ListWorkspacesAll(ctx context.Context, arg ListWorkspacesAllParams) ([]ListWorkspacesAllRow, error) {
+	rows, err := q.db.Query(ctx, listWorkspacesAll, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListWorkspacesAllRow
+	for rows.Next() {
+		var i ListWorkspacesAllRow
+		if err := rows.Scan(
+			&i.WorkspaceID,
+			&i.Type,
+			&i.Name,
+			&i.OwnerUserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OwnerUsername,
+			&i.OwnerEmail,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listWorkspacesByOwner = `-- name: ListWorkspacesByOwner :many
