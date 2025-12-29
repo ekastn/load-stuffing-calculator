@@ -76,6 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     ...(isPlatformMember
       ? [
           { label: "Users", path: "/users", required: ["user:*"] },
+          { label: "Workspaces", path: "/workspaces", required: ["workspace:*"] },
           { label: "Roles", path: "/roles", required: ["role:*"] },
           { label: "Permissions", path: "/permissions", required: ["permission:*"] },
         ]

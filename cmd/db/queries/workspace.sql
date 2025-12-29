@@ -28,6 +28,16 @@ WHERE m.user_id = $1
 ORDER BY w.created_at DESC
 LIMIT $2 OFFSET $3;
 
+-- name: ListWorkspacesAll :many
+SELECT
+    w.*,
+    u.username AS owner_username,
+    u.email AS owner_email
+FROM workspaces w
+JOIN users u ON u.user_id = w.owner_user_id
+ORDER BY w.created_at DESC
+LIMIT $1 OFFSET $2;
+
 -- name: ListWorkspacesByOwner :many
 SELECT *
 FROM workspaces
