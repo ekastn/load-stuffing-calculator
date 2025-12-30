@@ -2,11 +2,12 @@
 
 import { useAuth } from "@/lib/auth-context"
 import { usePlans } from "@/hooks/use-plans"
+import { RouteGuard } from "@/lib/route-guard"
 import { useParams } from "next/navigation"
 import { useEffect, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trash2, Package, CheckCircle, RefreshCw, Box, Info, Plus, AlertTriangle } from "lucide-react"
+import { Trash2, Package, RefreshCw, Box, Info, Plus, AlertTriangle } from "lucide-react"
 import { StuffingViewer } from "@/components/stuffing-viewer"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -24,8 +25,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import type { CalculatePlanRequest } from "@/lib/types"
 import { toStuffingPlanData } from "@/lib/stuffing/to-stuffing-plan"
 
+import { hasAnyPermission } from "@/lib/permissions"
+
 export default function ShipmentDetailPage() {
-  const { user } = useAuth()
+  const { user, permissions, isLoading: authLoading } = useAuth()
   const { fetchPlan, calculatePlan, deletePlanItem, currentPlan, isLoading, error } = usePlans()
   const params = useParams()
   const shipmentId = params.id as string
@@ -36,14 +39,25 @@ export default function ShipmentDetailPage() {
   const [calcStrategy, setCalcStrategy] = useState("bestfitdecreasing")
   const [calcGoal, setCalcGoal] = useState("tightest")
   const [calcGravity, setCalcGravity] = useState(true)
+  const canReadPlan = hasAnyPermission(permissions ?? [], ["plan:read"])
+  const canCalculatePlan = hasAnyPermission(permissions ?? [], ["plan:calculate"])
+  const canMutateItems = hasAnyPermission(permissions ?? [], ["plan_item:*"])
+
   useEffect(() => {
-    if (shipmentId) {
-      fetchPlan(shipmentId)
-    }
-  }, [shipmentId, fetchPlan])
+    if (authLoading) return
+    if (!shipmentId) return
+    if (!canReadPlan) return
+
+    fetchPlan(shipmentId)
+  }, [authLoading, canReadPlan, shipmentId, fetchPlan])
 
 
   const handleCalculate = async () => {
+    if (!canCalculatePlan) {
+      toast.error("You do not have permission to calculate plans")
+      return
+    }
+
     setIsCalculating(true)
 
     const options: CalculatePlanRequest = {
@@ -65,6 +79,11 @@ export default function ShipmentDetailPage() {
   }
 
   const handleDeleteItem = async (itemId: string) => {
+    if (!canMutateItems) {
+      toast.error("You do not have permission to edit plan items")
+      return
+    }
+
     if (!confirm("Remove this item from the plan?")) return
     const success = await deletePlanItem(shipmentId, itemId)
     if (success) {
@@ -102,7 +121,6 @@ export default function ShipmentDetailPage() {
     )
   }
 
-  const isPlanner = user?.role === "planner" || user?.role === "admin"
   const container = currentPlan.container
   const calc = currentPlan.calculation
   
@@ -112,6 +130,7 @@ export default function ShipmentDetailPage() {
   const volUtil = calc ? calc.volume_utilization_pct : 0
 
   return (
+    <RouteGuard requiredPermissions={["plan:read"]}>
     <div className="h-[calc(100vh-6rem)] flex flex-col gap-4">
       <div className="flex items-center justify-between shrink-0 bg-white p-4 rounded-lg border border-border/50 shadow-sm">
             <div>
@@ -125,38 +144,37 @@ export default function ShipmentDetailPage() {
               </p>
             </div>
             <div className="flex gap-2">
-                {isPlanner && (
-                <>
-                    <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)} className="gap-2">
-                        <Plus className="h-4 w-4" />
-                        Add Items
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleCalculate}
-                        disabled={isCalculating || currentPlan.items.length === 0}
-                        className="gap-2"
-                    >
-                        {isCalculating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                        Recalculate
-                    </Button>
+                {canMutateItems && (
+                <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Items
+                </Button>
+                )}
 
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAdvancedCalc(true)}
-                        className="gap-2"
-                    >
-                        <Info className="h-4 w-4" />
-                        Advanced
-                    </Button>
+                {canCalculatePlan && (
+                <>
+                  <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleCalculate}
+                      disabled={isCalculating || currentPlan.items.length === 0}
+                      className="gap-2"
+                  >
+                      {isCalculating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      Recalculate
+                  </Button>
+
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAdvancedCalc(true)}
+                      className="gap-2"
+                  >
+                      <Info className="h-4 w-4" />
+                      Advanced
+                  </Button>
                 </>
                 )}
-                <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
-                    <CheckCircle className="h-4 w-4" />
-                    Approve Plan
-                </Button>
             </div>
           </div>
 
@@ -191,7 +209,7 @@ export default function ShipmentDetailPage() {
                                 variant="secondary"
                                 size="sm"
                                 onClick={handleCalculate}
-                                disabled={isCalculating || currentPlan.items.length === 0}
+                                disabled={!canCalculatePlan || isCalculating || currentPlan.items.length === 0}
                                 className="gap-2"
                               >
                                 {isCalculating ? (
@@ -371,6 +389,7 @@ export default function ShipmentDetailPage() {
             </DialogContent>
         </Dialog>
 
+      {canMutateItems && (
       <Dialog open={showAddItem} onOpenChange={setShowAddItem}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -382,6 +401,8 @@ export default function ShipmentDetailPage() {
           <ItemInputForm shipmentId={shipmentId} onSuccess={() => setShowAddItem(false)} />
         </DialogContent>
       </Dialog>
+      )}
     </div>
+    </RouteGuard>
   )
 }

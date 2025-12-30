@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, Plus } from "lucide-react"
 
+import { hasAnyPermission } from "@/lib/permissions"
+
 export default function ShipmentsPage() {
-  const { user } = useAuth()
+  const { user, permissions } = useAuth()
   const { plans, isLoading, error } = usePlans()
+
+  const canCreatePlan = hasAnyPermission(permissions ?? [], ["plan:create"])
   const router = useRouter()
 
   const statusColors: Record<string, string> = {
@@ -38,7 +42,7 @@ export default function ShipmentsPage() {
                 {user?.role === "admin" && "View all shipments"}
               </p>
             </div>
-            {user?.role === "planner" && (
+            {canCreatePlan && (
               <Button onClick={() => router.push("/shipments/new")} className="gap-2">
                 <Plus className="h-4 w-4" />
                 Create Shipment
@@ -61,7 +65,7 @@ export default function ShipmentsPage() {
             <Card className="border-border/50 bg-card/50">
               <CardContent className="pt-6 text-center">
                 <p className="text-muted-foreground">No shipments found</p>
-                {user?.role === "planner" && (
+                {canCreatePlan && (
                   <Button onClick={() => router.push("/shipments/new")} className="mt-4">
                     Create First Shipment
                   </Button>
