@@ -4,3 +4,6 @@ tmp/
 testdata*
 .vscode/
 .DS_Store
+
+__pycache__/
+.venv*
