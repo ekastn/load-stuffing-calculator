@@ -12,6 +12,8 @@ type Config struct {
 	DatabaseURL string
 	JWTSecret   string
 
+	PackingServiceURL string
+
 	FounderUsername string
 	FounderEmail    string
 	FounderPassword string
@@ -28,6 +30,8 @@ func Load() Config {
 		Addr:        env.GetString("SRV_ADDR", ":8080"),
 		DatabaseURL: env.GetString("DATABASE_URL", ""),
 		JWTSecret:   env.GetString("JWT_SECRET", "secret"),
+
+		PackingServiceURL: env.GetString("PACKING_SERVICE_URL", "http://localhost:5051"),
 
 		// Founder bootstrap (backwards compatible with ADMIN_*).
 		FounderUsername: env.GetString("FOUNDER_USERNAME", env.GetString("ADMIN_USERNAME", "admin")),
