@@ -11,8 +11,8 @@ import (
 
 	"github.com/ekastn/load-stuffing-calculator/internal/cache"
 	"github.com/ekastn/load-stuffing-calculator/internal/config"
+	"github.com/ekastn/load-stuffing-calculator/internal/gateway"
 	"github.com/ekastn/load-stuffing-calculator/internal/handler"
-	"github.com/ekastn/load-stuffing-calculator/internal/packer"
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/ekastn/load-stuffing-calculator/internal/store"
 	"github.com/gin-contrib/cors"
@@ -43,7 +43,9 @@ type App struct {
 func NewApp(cfg config.Config, db *pgxpool.Pool) *App {
 	querier := store.New(db)
 	permCache := cache.NewPermissionCache()
-	pack := packer.NewPacker()
+
+	packingGW := gateway.NewHTTPPackingGateway(cfg.PackingServiceURL, 60*time.Second)
+	pack := service.NewPackingService(packingGW)
 
 	authSvc := service.NewAuthService(querier, cfg.JWTSecret)
 	userSvc := service.NewUserService(querier)
