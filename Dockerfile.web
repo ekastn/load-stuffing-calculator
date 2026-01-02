@@ -1,0 +1,38 @@
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+RUN corepack enable
+
+COPY web/package.json web/pnpm-lock.yaml ./web/
+RUN pnpm -C web install --frozen-lockfile
+
+
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN corepack enable
+
+COPY --from=deps /app/web/node_modules ./web/node_modules
+COPY web ./web
+
+# Build time API base URL (optional). If not set, app defaults apply.
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+
+RUN pnpm -C web build
+
+
+FROM node:20-alpine AS run
+WORKDIR /app
+RUN corepack enable
+
+ENV NODE_ENV=production
+
+COPY --from=build /app/web/.next ./web/.next
+COPY --from=build /app/web/public ./web/public
+COPY --from=build /app/web/package.json ./web/package.json
+COPY --from=build /app/web/next.config.ts ./web/next.config.ts
+COPY --from=build /app/web/node_modules ./web/node_modules
+
+EXPOSE 3000
+
+CMD ["pnpm", "-C", "web", "start", "-p", "3000"]
