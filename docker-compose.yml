@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-stuffing}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
+    ports:
+      - "${POSTGRES_EXPOSE_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    image: ghcr.io/pressly/goose:latest
+    environment:
+      GOOSE_DRIVER: "${GOOSE_DRIVER:-postgres}"
+      GOOSE_DBSTRING: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-stuffing}?sslmode=disable"
+    volumes:
+      - ./cmd/db/migrations:/migrations:ro
+    command: ["-dir=/migrations", "up"]
+    restart: "no"
+
+  packing:
+    build:
+      context: .
+      dockerfile: Dockerfile.packing
+    environment:
+      PACKING_HOST: "${PACKING_HOST:-0.0.0.0}"
+      PACKING_PORT: "${PACKING_PORT:-5051}"
+      PACKING_DEBUG: "${PACKING_DEBUG:-0}"
+      GUNICORN_WORKERS: "${GUNICORN_WORKERS:-2}"
+      GUNICORN_THREADS: "${GUNICORN_THREADS:-4}"
+      GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-60}"
+      GUNICORN_WORKER_CLASS: "${GUNICORN_WORKER_CLASS:-gthread}"
+    ports:
+      - "${PACKING_EXPOSE_PORT:-5051}:5051"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      SRV_ADDR: "${SRV_ADDR:-:8080}"
+      SRV_ENV: "${SRV_ENV:-prod}"
+      JWT_SECRET: "${JWT_SECRET:-super-secret}"
+      DATABASE_URL: "${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-stuffing}?sslmode=disable}"
+      PACKING_SERVICE_URL: "${PACKING_SERVICE_URL:-http://packing:5051}"
+      FOUNDER_USERNAME: "${FOUNDER_USERNAME:-admin}"
+      FOUNDER_EMAIL: "${FOUNDER_EMAIL:-admin@example.com}"
+      FOUNDER_PASSWORD: "${FOUNDER_PASSWORD:-admin123}"
+    ports:
+      - "${API_EXPOSE_PORT:-8080}:8080"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}"
+    environment:
+      NODE_ENV: "${NODE_ENV:-production}"
+    ports:
+      - "${WEB_EXPOSE_PORT:-3000}:3000"
+
+volumes:
+  pgdata:

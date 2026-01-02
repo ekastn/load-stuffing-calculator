@@ -1,0 +1,19 @@
+.git
+bin
+.tmp
+tmp
+.DS_Store
+.vscode
+
+# Python
+**/__pycache__
+**/*.pyc
+.venv*
+cmd/packing/.venv*
+
+# Next.js
+web/.next
+web/node_modules
+
+# Tests/artifacts
+testdata*
