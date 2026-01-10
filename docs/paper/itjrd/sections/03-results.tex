@@ -1,0 +1,116 @@
+\section{Result and Analysis}
+
+This section presents testing results of the Load \& Stuffing Calculator system based on scenarios defined in the methodology. Discussion encompasses space utilization analysis, computation time scalability, algorithm variant comparison, and visual validation of loading results.
+
+\subsection{Testing Environment}
+
+Testing was conducted in an environment with the following specifications: Intel Core i5-6440HQ @ 2.60GHz processor, 16 GB RAM memory, and Linux operating system. The system ran using Python 3.11 for the packing service and Go 1.21 for the backend API. Each scenario was executed five times to obtain representative mean values and standard deviations.
+
+The container used throughout testing was a 40-foot High Cube type with internal dimensions of 12.032 $\times$ 2.352 $\times$ 2.698 meters (volume 76.35 m\textsuperscript{3}) and maximum load capacity of 26,460 kg. Four product types with different dimensions were used to simulate cargo heterogeneity: Euro Pallet (1200$\times$800$\times$144 mm), Large Crate (1000$\times$600$\times$500 mm), Medium Box (600$\times$400$\times$400 mm), and Small Box (400$\times$300$\times$200 mm).
+
+\subsection{Performance Testing Results}
+
+Table \ref{tab:results} presents a summary of testing results for all five scenarios with baseline algorithm configuration (Bigger First strategy with active stability checking). Measured metrics include volume utilization, weight utilization, fill rate, and computation time.
+
+\begin{table}[h]
+	\centering
+	\caption{Loading Algorithm Performance Testing Results}
+	\label{tab:results}
+	\small
+	\begin{tabular}{lrrrrr}
+		\toprule
+		\textbf{Scenario} & \textbf{Items} & \textbf{Vol. Util. (\%)} & \textbf{Weight Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Time (ms)} \\
+		\midrule
+		S1                & 50             & 6.29 $\pm$ 0.00          & 2.83 $\pm$ 0.00            & 100.00                  & 320 $\pm$ 6        \\
+		S2                & 100            & 8.80 $\pm$ 0.00          & 4.16 $\pm$ 0.00            & 100.00                  & 1,684 $\pm$ 131    \\
+		S3                & 150            & 24.83 $\pm$ 0.00         & 11.15 $\pm$ 0.00           & 100.00                  & 5,213 $\pm$ 169    \\
+		S4                & 200            & 35.45 $\pm$ 0.00         & 16.25 $\pm$ 0.00           & 100.00                  & 10,826 $\pm$ 168   \\
+		S5                & 300            & 55.26 $\pm$ 0.00         & 25.32 $\pm$ 0.00           & 100.00                  & 38,343 $\pm$ 1,209 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Testing results demonstrate that the algorithm successfully placed all items (100\% fill rate) across all scenarios. This indicates that the 40-foot High Cube container capacity is adequate to accommodate all tested item configurations. Volume utilization increases proportionally as item count grows, from 6.29\% in S1 to 55.26\% in S5. Weight utilization values lower than volume utilization indicate that space constraints constitute the primary limiting factor (volume-constrained) compared to weight constraints.
+
+Figure \ref{fig:utilization} visualizes the comparison of volume and weight utilization for each scenario. A consistent pattern is evident where volume utilization is always higher than weight utilization with approximately a 2:1 ratio, confirming the volume-constrained characteristics of the test configuration.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/utilization_comparison.pdf}
+	\caption{Comparison of volume and weight utilization in each scenario}
+	\label{fig:utilization}
+\end{figure}
+
+\subsection{Computation Time Scalability Analysis}
+
+One critical aspect in 3D-BPP algorithm evaluation is computation time scalability with increasing item counts. Table \ref{tab:scalability} presents more detailed computation time statistics, including minimum, average, and maximum values for each scenario.
+
+\begin{table}[h]
+	\centering
+	\caption{Computation Time Scalability Analysis}
+	\label{tab:scalability}
+	\small
+	\begin{tabular}{lrrrr}
+		\toprule
+		\textbf{Scenario} & \textbf{Items} & \textbf{Min (ms)} & \textbf{Avg (ms)} & \textbf{Max (ms)} \\
+		\midrule
+		S1                & 50             & 311               & 320               & 325               \\
+		S2                & 100            & 1,489             & 1,684             & 1,791             \\
+		S3                & 150            & 5,012             & 5,213             & 5,391             \\
+		S4                & 200            & 10,544            & 10,826            & 10,972            \\
+		S5                & 300            & 36,334            & 38,343            & 39,288            \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Figure \ref{fig:scalability} illustrates the relationship between item count and computation time. The curve shows a growth pattern approaching quadratic ($O(n^2)$), consistent with heuristic-based bin packing algorithm characteristics \cite{Ma2025}. For each item to be placed, the algorithm must check for potential collisions with all previously positioned items, resulting in quadratic complexity growth.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{figures/computation_time.pdf}
+	\caption{Computation time scalability with respect to item count}
+	\label{fig:scalability}
+\end{figure}
+
+Although computation time in scenario S5 (300 items) reaches an average of 38 seconds, this value remains within tolerance limits for offline loading planning applications. In logistics operational contexts, loading planning processes are typically performed before physical loading activities commence, making wait times of several tens of seconds not a significant obstacle \cite{Tresca2022}.
+
+\subsection{Algorithm Variant Comparison}
+
+To understand the contribution of each algorithm component, comparative testing was performed with three configuration variants on scenario S3 (150 items). Table \ref{tab:variants} presents comparison results between baseline configuration (Bigger First + Stability), variant without stability checking, and variant with Smaller First strategy.
+
+\begin{table}[h]
+	\centering
+	\caption{Algorithm Variant Comparison in Scenario S3 (150 items)}
+	\label{tab:variants}
+	\small
+	\begin{tabular}{lrrrr}
+		\toprule
+		\textbf{Variant}            & \textbf{Vol. Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Time (ms)} & \textbf{Items Packed} \\
+		\midrule
+		Bigger First + Stability    & 24.83                    & 100.00                  & 5,386              & 150                   \\
+		Bigger First (No Stability) & 24.83                    & 100.00                  & 4,960              & 150                   \\
+		Smaller First + Stability   & 17.37                    & 87.33                   & 32,886             & 131                   \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Comparison results reveal several important findings. First, the Bigger First strategy proves superior to Smaller First, yielding 42.9\% relatively higher volume utilization (24.83\% absolute vs. 17.37\% absolute) and 12.67\% better fill rate (100\% vs. 87.33\%). This confirms the heuristic principle that placing large items first leaves small spaces that can be filled by small items, but not vice versa \cite{Silva2016}. Second, the impact of stability checking on computation time is minimal, where disabling stability checking only saves approximately 8\% computation time (5,386 ms vs. 4,960 ms) without changing utilization results. This indicates that stability checking overhead is relatively small and worthy of retention to ensure physical loading safety. Third, from computational efficiency perspective, the Smaller First variant requires 6.1 times longer (32,886 ms vs. 5,386 ms) compared to Bigger First. This drastic difference results from increased failed placement attempts when small items fill spaces that should be optimal for large items.
+
+\subsection{Visual and Functional Validation}
+
+Visual validation was performed through the implemented 3D visualization interface (Figure \ref{fig:visualization}). Examination covered three main aspects. The first aspect is non-overlap, ensuring all placed items do not overlap by verifying position coordinates and dimensions of each item to ensure no geometric intersections. The second aspect is container boundaries, ensuring all items remain within container dimension limits without any items exceeding container walls or floor. The third aspect is gravity stability, ensuring items positioned above other items have minimum support of 75\% of their base area, according to configured \texttt{support\_surface\_ratio} parameters.
+
+The step playback feature in the visualization interface enables verification of item placement sequence. By sliding the step control from 1 to total item count, it is evident that large items (such as Euro Pallet and Large Crate) are placed first, followed by smaller items filling remaining spaces. This pattern is consistent with the configured Bigger First strategy.
+
+\subsection{Discussion Summary}
+
+\begin{figure}[!htb]
+	\centering
+	\includegraphics[width=\textwidth]{figures/detailed_metrics.png}
+	\caption{Performance metric summary: (a) volume utilization, (b) fill rate, (c) time scalability, (d) volume and weight utilization correlation}
+	\label{fig:detailed}
+\end{figure}
+
+Overall, testing results demonstrate that the Load \& Stuffing Calculator system can handle loading of up to 300 heterogeneous items with 100\% fill rate, achieving volume utilization up to 55.26\% with tested item configurations, and completing calculations in reasonable time for offline planning applications with maximum duration of 38 seconds for 300 items (Figure \ref{fig:detailed}). The system also produces physically stable arrangements with minimum 75\% support and provides step-by-step visual guidance to assist operators in physical loading execution
+
+Comparison with literature shows that achieved volume utilization values (55.26\% in the densest scenario) fall within reasonable ranges for heterogeneous cases with stability constraints. Studies by Ananno and Ribeiro \cite{Ananno2024} reported 50-70\% utilization for industrial cases with similar constraints, while Ma et al. \cite{Ma2025} achieved 60-75\% on datasets with more homogeneous items. This difference can be attributed to the high degree of dimensional heterogeneity in this research's test configuration.

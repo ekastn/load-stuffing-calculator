@@ -1,0 +1,34 @@
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js
+    participant API as Go API
+    participant Service as Plan Service
+    participant DB as PostgreSQL
+    participant Packer as Python Service
+
+    User->>+Frontend: Fill form (container + items)
+    Frontend->>+API: POST /api/v1/plans
+    
+    API->>API: Validate JWT + Permission<br/>(workspace_members, role_permissions)
+    API->>+Service: CreateCompletePlan(req)
+    
+    Note over Service: Trial users: Check limit (max 3 plans)
+    
+    Service->>+DB: Get container dimensions<br/>(if container_id provided)
+    DB-->>-Service: Container data
+    Note over Service: Snapshot Pattern: Copy dimensions<br/>to load_plans (no FK reference)
+    
+    Service->>+DB: INSERT load_plans + load_items<br/>(workspace_id, snapshot dimensions)
+    DB-->>-Service: plan_id + item_ids
+    
+    opt auto_calculate
+        Service->>+Packer: Calculate(plan_id)
+        Note over Packer: Run py3dbp algorithm<br/>(See Diagram 3)
+        Packer->>+DB: Save results + placements
+        DB-->>-Packer: OK
+        Packer-->>-Service: Calculation result
+    end
+    
+    Service-->>-API: CreatePlanResponse
+    API-->>-Frontend: 201 Created
+    Frontend-->>-User: Success → Redirect to plan detail

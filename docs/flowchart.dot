@@ -1,0 +1,157 @@
+digraph flowchart {
+    // Global settings - horizontal for better paper fit
+    graph [
+        rankdir="LR"
+        splines=ortho
+        nodesep=0.3
+        ranksep=0.4
+        fontname="Arial"
+        fontsize=10
+        bgcolor="#FFFFFF"
+        pad="0.3"
+    ];
+
+    node [
+        fontname="Arial"
+        fontsize=8
+        shape=rect
+        style="filled,rounded"
+        penwidth=0.8
+        fillcolor="#FFFFFF"
+        height=0.4
+    ];
+
+    edge [
+        fontname="Arial"
+        fontsize=7
+        color="#555555"
+        arrowsize=0.5
+    ];
+
+    // ===== START/END =====
+    Start [label="Plan\nCreated" shape=ellipse fillcolor="#E8F5E9" width=0.7];
+    End [label="Visualization\nReady" shape=ellipse fillcolor="#E8F5E9" width=0.7];
+
+    // ===== FRONTEND =====
+    subgraph cluster_frontend {
+        label="Frontend"
+        labeljust="c"
+        style="filled,rounded"
+        color="#90CAF9"
+        bgcolor="#F5F9FF"
+        fontsize=9
+        fontcolor="#1565C0"
+        penwidth=1.2
+
+        FE_Trigger [label="User Clicks\nCalculate"];
+        FE_Receive [label="Receive\nPlacements"];
+        FE_Transform [label="Transform\nto Three.js\n(Y-up)"];
+        FE_Render [label="Render 3D\nVisualization"];
+    }
+
+    // ===== BACKEND =====
+    subgraph cluster_backend {
+        label="Backend API"
+        labeljust="c"
+        style="filled,rounded"
+        color="#FFCC80"
+        bgcolor="#FFFBF5"
+        fontsize=9
+        fontcolor="#E65100"
+        penwidth=1.2
+
+        BE_Fetch [label="Fetch Plan\n& Items"];
+        BE_Validate [label="Validate\nRequest"];
+        BE_Call [label="Call Packing\nGateway"];
+        BE_Save [label="Save Results\nto Database"];
+    }
+
+    // ===== PACKING SERVICE =====
+    subgraph cluster_packing {
+        label="Packing Service"
+        labeljust="c"
+        style="filled,rounded"
+        color="#F48FB1"
+        bgcolor="#FFF5F8"
+        fontsize=9
+        fontcolor="#C2185B"
+        penwidth=1.2
+
+        PS_Parse [label="Parse Request\n& Convert Units"];
+        PS_Init [label="Initialize\nPacker & Bin"];
+        PS_Expand [label="Expand Items\nby Quantity"];
+        
+        subgraph cluster_algorithm {
+            label="3D Bin Packing Algorithm"
+            labeljust="c"
+            style="filled,rounded"
+            color="#F8BBD0"
+            bgcolor="#FCE4EC"
+            fontsize=8
+            fontcolor="#D81B60"
+
+            PS_Sort [label="Sort by Volume\n(Bigger First)"];
+            PS_Place [label="Find Valid\nPosition"];
+            PS_Gravity [label="Apply Gravity\n(Fix Point)"];
+            PS_Stable [label="Check Stability\n(75% support)"];
+            PS_Rotate [label="Try 6 Rotations"];
+            
+            PS_Decision [label="Item\nFits?" shape=diamond fillcolor="#FFF9C4" height=0.5];
+            PS_NextItem [label="Next\nItem?" shape=diamond fillcolor="#FFF9C4" height=0.5];
+        }
+
+        PS_Transform [label="Transform\nCoordinates\n(Z-up)"];
+        PS_Order [label="Assign Step\nNumbers"];
+        PS_Return [label="Return\nPlacements"];
+    }
+
+    // ===== FLOW CONNECTIONS =====
+    
+    // Start to Frontend
+    Start -> FE_Trigger;
+
+    // Frontend to Backend
+    FE_Trigger -> BE_Fetch;
+
+    // Backend flow
+    BE_Fetch -> BE_Validate;
+    BE_Validate -> BE_Call;
+
+    // Backend to Packing Service
+    BE_Call -> PS_Parse;
+
+    // Packing Service flow
+    PS_Parse -> PS_Init;
+    PS_Init -> PS_Expand;
+    PS_Expand -> PS_Sort;
+
+    // Algorithm loop
+    PS_Sort -> PS_Place;
+    PS_Place -> PS_Gravity;
+    PS_Gravity -> PS_Stable;
+    PS_Stable -> PS_Rotate;
+    PS_Rotate -> PS_Decision;
+    
+    // Decision: Item Fits?
+    PS_Decision -> PS_NextItem [xlabel="Yes"];
+    PS_Decision -> PS_Place [xlabel="No" style=dashed];
+    
+    // Decision: Next Item?
+    PS_NextItem -> PS_Sort [xlabel="Yes" style=dashed];
+    PS_NextItem -> PS_Transform [xlabel="No"];
+
+    // Output flow
+    PS_Transform -> PS_Order;
+    PS_Order -> PS_Return;
+
+    // Response back
+    PS_Return -> BE_Save;
+    BE_Save -> FE_Receive;
+
+    // Frontend rendering
+    FE_Receive -> FE_Transform;
+    FE_Transform -> FE_Render;
+    FE_Render -> End;
+
+    // Layout hints removed - causes conflicts with clusters
+}

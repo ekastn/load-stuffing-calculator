@@ -1,0 +1,123 @@
+% =============================================================================
+% SECTION 3: HASIL DAN PEMBAHASAN
+% =============================================================================
+
+\section{HASIL DAN PEMBAHASAN}
+
+Bagian ini menyajikan hasil pengujian sistem \textit{Load \& Stuffing Calculator} berdasarkan skenario yang telah didefinisikan pada metodologi. Pembahasan mencakup analisis utilisasi ruang, skalabilitas waktu komputasi, perbandingan varian algoritma, serta validasi visual hasil pemuatan.
+
+\subsection{Lingkungan Pengujian}
+
+Pengujian dilakukan pada lingkungan dengan spesifikasi sebagai berikut: prosesor Intel Core i5-6440HQ @ 2.60GHz, memori RAM 16 GB, dan sistem operasi Linux. Sistem dijalankan menggunakan Python 3.11 untuk layanan \textit{packing} dan Go 1.21 untuk backend API. Setiap skenario dieksekusi sebanyak lima kali untuk memperoleh nilai rata-rata dan standar deviasi yang representatif.
+
+Kontainer yang digunakan dalam seluruh pengujian adalah tipe 40 kaki \textit{High Cube} dengan dimensi internal 12.032 $\times$ 2.352 $\times$ 2.698 meter (volume 76,35 m\textsuperscript{3}) dan kapasitas beban maksimum 26.460 kg. Empat jenis produk dengan dimensi berbeda digunakan untuk mensimulasikan heterogenitas kargo: \textit{Euro Pallet} (1200$\times$800$\times$144 mm), \textit{Large Crate} (1000$\times$600$\times$500 mm), \textit{Medium Box} (600$\times$400$\times$400 mm), dan \textit{Small Box} (400$\times$300$\times$200 mm).
+
+\subsection{Hasil Pengujian Performa}
+
+Tabel \ref{tab:results} menyajikan ringkasan hasil pengujian untuk kelima skenario dengan konfigurasi algoritma \textit{baseline} (strategi \textit{Bigger First} dengan pemeriksaan stabilitas aktif). Metrik yang diukur meliputi utilisasi volume, utilisasi berat, \textit{fill rate}, dan waktu komputasi.
+
+\begin{table}[H]
+	\centering
+	\caption{Hasil Pengujian Performa Algoritma Pemuatan}
+	\label{tab:results}
+	\small
+	\begin{tabular}{lrrrrr}
+		\toprule
+		\textbf{Skenario} & \textbf{Items} & \textbf{Vol. Util. (\%)} & \textbf{Weight Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Time (ms)} \\
+		\midrule
+		S1                & 50             & 6,29 $\pm$ 0,00          & 2,83 $\pm$ 0,00            & 100,00                  & 320 $\pm$ 6        \\
+		S2                & 100            & 8,80 $\pm$ 0,00          & 4,16 $\pm$ 0,00            & 100,00                  & 1.684 $\pm$ 131    \\
+		S3                & 150            & 24,83 $\pm$ 0,00         & 11,15 $\pm$ 0,00           & 100,00                  & 5.213 $\pm$ 169    \\
+		S4                & 200            & 35,45 $\pm$ 0,00         & 16,25 $\pm$ 0,00           & 100,00                  & 10.826 $\pm$ 168   \\
+		S5                & 300            & 55,26 $\pm$ 0,00         & 25,32 $\pm$ 0,00           & 100,00                  & 38.343 $\pm$ 1.209 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Hasil pengujian menunjukkan bahwa algoritma berhasil menempatkan seluruh item (\textit{fill rate} 100\%) pada semua skenario. Hal ini mengindikasikan bahwa kapasitas kontainer 40 kaki \textit{High Cube} memadai untuk menampung seluruh konfigurasi item yang diuji. Utilisasi volume meningkat secara proporsional seiring bertambahnya jumlah item, dari 6,29\% pada S1 hingga 55,26\% pada S5. Nilai utilisasi berat yang lebih rendah dibandingkan utilisasi volume menunjukkan bahwa batasan ruang menjadi faktor pembatas utama (\textit{volume-constrained}) dibandingkan batasan berat.
+
+Gambar \ref{fig:utilization} memvisualisasikan perbandingan utilisasi volume dan berat untuk setiap skenario. Pola konsisten terlihat di mana utilisasi volume selalu lebih tinggi dari utilisasi berat dengan rasio sekitar 2:1, mengkonfirmasi karakteristik \textit{volume-constrained} dari konfigurasi pengujian.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{utilization_comparison.pdf}
+	\caption{Perbandingan utilisasi volume dan berat pada setiap skenario}
+	\label{fig:utilization}
+\end{figure}
+
+\subsection{Analisis Skalabilitas Waktu Komputasi}
+
+Salah satu aspek kritis dalam evaluasi algoritma 3D-BPP adalah skalabilitas waktu komputasi terhadap peningkatan jumlah item. Tabel \ref{tab:scalability} menyajikan statistik waktu komputasi yang lebih detail, mencakup nilai minimum, rata-rata, dan maksimum untuk setiap skenario.
+
+\begin{table}[H]
+	\centering
+	\caption{Analisis Skalabilitas Waktu Komputasi}
+	\label{tab:scalability}
+	\small
+	\begin{tabular}{lrrrr}
+		\toprule
+		\textbf{Skenario} & \textbf{Items} & \textbf{Min (ms)} & \textbf{Avg (ms)} & \textbf{Max (ms)} \\
+		\midrule
+		S1                & 50             & 311               & 320               & 325               \\
+		S2                & 100            & 1.489             & 1.684             & 1.791             \\
+		S3                & 150            & 5.012             & 5.213             & 5.391             \\
+		S4                & 200            & 10.544            & 10.826            & 10.972            \\
+		S5                & 300            & 36.334            & 38.343            & 39.288            \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Gambar \ref{fig:scalability} mengilustrasikan hubungan antara jumlah item dan waktu komputasi. Kurva menunjukkan pola pertumbuhan yang mendekati kuadratik ($O(n^2)$), yang konsisten dengan karakteristik algoritma \textit{bin packing} berbasis heuristik \cite{Ma2025}. Untuk setiap item yang akan ditempatkan, algoritma perlu memeriksa kemungkinan tabrakan dengan seluruh item yang telah diposisikan sebelumnya, sehingga kompleksitas meningkat secara kuadratik.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.9\textwidth]{computation_time.pdf}
+	\caption{Skalabilitas waktu komputasi terhadap jumlah item}
+	\label{fig:scalability}
+\end{figure}
+
+Meskipun waktu komputasi pada skenario S5 (300 item) mencapai rata-rata 38 detik, nilai ini masih berada dalam batas toleransi untuk aplikasi perencanaan pemuatan yang bersifat \textit{offline}. Dalam konteks operasional logistik, proses perencanaan pemuatan umumnya dilakukan sebelum aktivitas pemuatan fisik dimulai, sehingga waktu tunggu beberapa puluh detik tidak menjadi hambatan signifikan \cite{Tresca2022}.
+
+\subsection{Perbandingan Varian Algoritma}
+
+Untuk memahami kontribusi masing-masing komponen algoritma, dilakukan pengujian komparatif dengan tiga varian konfigurasi pada skenario S3 (150 item). Tabel \ref{tab:variants} menyajikan hasil perbandingan antara konfigurasi \textit{baseline} (Bigger First + Stability), varian tanpa pemeriksaan stabilitas, dan varian dengan strategi \textit{Smaller First}.
+
+\begin{table}[H]
+	\centering
+	\caption{Perbandingan Varian Algoritma pada Skenario S3 (150 item)}
+	\label{tab:variants}
+	\small
+	\begin{tabular}{lrrrr}
+		\toprule
+		\textbf{Varian}                 & \textbf{Vol. Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Time (ms)} & \textbf{Items Packed} \\
+		\midrule
+		Bigger First + Stability        & 24,83                    & 100,00                  & 5.386              & 150                   \\
+		Bigger First (Tanpa Stabilitas) & 24,83                    & 100,00                  & 4.960              & 150                   \\
+		Smaller First + Stability       & 17,37                    & 87,33                   & 32.886             & 131                   \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Hasil perbandingan mengungkapkan beberapa temuan penting. Pertama, strategi \textit{Bigger First} terbukti superior dibandingkan \textit{Smaller First}, menghasilkan utilisasi volume 42,9\% lebih tinggi secara relatif (24,83\% absolut vs 17,37\% absolut) dan \textit{fill rate} 12,67\% lebih baik (100\% vs 87,33\%). Hal ini mengkonfirmasi prinsip heuristik bahwa menempatkan item berukuran besar terlebih dahulu akan menyisakan ruang-ruang kecil yang dapat diisi oleh item kecil, namun tidak sebaliknya \cite{Silva2016}. Kedua, dampak pemeriksaan stabilitas terhadap waktu komputasi tergolong minimal, di mana menonaktifkan pemeriksaan stabilitas hanya menghemat sekitar 8\% waktu komputasi (5.386 ms vs 4.960 ms) tanpa mengubah hasil utilisasi. Hal ini menunjukkan bahwa \textit{overhead} pemeriksaan stabilitas relatif kecil dan layak dipertahankan untuk menjamin keamanan pemuatan fisik. Ketiga, dari sisi efisiensi komputasi, varian \textit{Smaller First} membutuhkan waktu 6,1 kali lebih lama (32.886 ms vs 5.386 ms) dibandingkan \textit{Bigger First}. Perbedaan drastis ini disebabkan oleh meningkatnya jumlah percobaan penempatan yang gagal ketika item kecil mengisi ruang-ruang yang seharusnya optimal untuk item besar.
+
+\subsection{Validasi Visual dan Fungsional}
+
+Validasi visual dilakukan melalui antarmuka visualisasi 3D yang telah diimplementasikan (Gambar \ref{fig:visualization}). Pemeriksaan meliputi tiga aspek utama. Aspek pertama adalah \textit{non-overlap}, yaitu memastikan seluruh item yang ditempatkan tidak saling tumpang tindih dengan memverifikasi koordinat posisi dan dimensi setiap item untuk memastikan tidak ada interseksi geometris. Aspek kedua adalah batasan kontainer, memastikan semua item berada dalam batas dimensi kontainer tanpa ada item yang melampaui dinding atau dasar kontainer. Aspek ketiga adalah stabilitas gravitasi, memastikan item-item yang diposisikan di atas item lain memiliki penopang minimal 75\% dari luas dasarnya, sesuai dengan parameter \texttt{support\_surface\_ratio} yang dikonfigurasi.
+
+Fitur \textit{step playback} pada antarmuka visualisasi memungkinkan verifikasi urutan penempatan item. Dengan menggeser kontrol langkah dari 1 hingga jumlah total item, terlihat bahwa item-item besar (seperti \textit{Euro Pallet} dan \textit{Large Crate}) ditempatkan terlebih dahulu, diikuti oleh item berukuran lebih kecil yang mengisi ruang-ruang tersisa. Pola ini konsisten dengan strategi \textit{Bigger First} yang dikonfigurasi.
+
+\subsection{Ringkasan Pembahasan}
+
+Gambar \ref{fig:detailed} menyajikan visualisasi komprehensif dari keempat metrik utama yang dianalisis dalam penelitian ini.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{detailed_metrics.pdf}
+	\caption{Ringkasan metrik performa: (a) utilisasi volume, (b) \textit{fill rate}, (c) skalabilitas waktu, (d) korelasi utilisasi volume dan berat}
+	\label{fig:detailed}
+\end{figure}
+
+Secara keseluruhan, hasil pengujian menunjukkan bahwa sistem \textit{Load \& Stuffing Calculator} mampu menangani pemuatan hingga 300 item heterogen dengan \textit{fill rate} 100\%, mencapai utilisasi volume hingga 55,26\% dengan konfigurasi item yang diuji, serta menyelesaikan kalkulasi dalam waktu yang wajar untuk aplikasi perencanaan \textit{offline} dengan durasi maksimal 38 detik untuk 300 item. Sistem juga menghasilkan susunan yang stabil secara fisik dengan penopang minimal 75\% dan menyediakan panduan visual langkah demi langkah untuk membantu operator dalam eksekusi pemuatan fisik.
+
+Perbandingan dengan literatur menunjukkan bahwa nilai utilisasi volume yang dicapai (55,26\% pada skenario terpadat) berada dalam rentang yang wajar untuk kasus heterogen dengan batasan stabilitas. Studi oleh Ananno dan Ribeiro \cite{Ananno2024} melaporkan utilisasi 50-70\% untuk kasus industri dengan batasan serupa, sementara Ma \textit{et al.} \cite{Ma2025} mencapai 60-75\% pada dataset dengan item yang lebih homogen. Perbedaan ini dapat dikaitkan dengan tingkat heterogenitas dimensi item yang tinggi dalam konfigurasi pengujian penelitian ini.
+

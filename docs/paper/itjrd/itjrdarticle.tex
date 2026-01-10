@@ -1,0 +1,182 @@
+%%class
+\documentclass{itjrdarticle}
+
+%%required package. add for your convenient, but do not remove the initial
+\usepackage[none]{hyphenat}
+\usepackage{amsmath, amsfonts, amssymb, float, fancyhdr}
+\usepackage[figuresright]{rotating}
+\usepackage{authblk, graphicx, indentfirst, lastpage, lipsum}
+\setlength{\affilsep}{0cm}
+\renewcommand\Authfont{\normalsize}
+\renewcommand\Affilfont{\normalfont\small}
+\usepackage{subfig, caption, epstopdf}
+\usepackage[left=3cm, right=2.5cm, top=2.5cm, bottom=2.5cm, includehead, includefoot]{geometry}
+\usepackage{caption}
+\captionsetup{labelsep=period}
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\normalsize\bfseries\uppercase}{\thesection}{1em}{}
+\titlespacing*{\section}{0cm}{0.7cm}{0cm}
+
+%%additional packages for tables and algorithms
+\usepackage{tabularx, booktabs}
+% \usepackage{algorithm}
+% \usepackage{algpseudocode}
+\usepackage{microtype}
+
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+
+%%leave copyright info to the editor
+\CopyrightLine[]{}{This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.}
+
+%%author
+\author{\bfseries Muhamad Saladin Eka Septian$^1$}
+\author{\bfseries Dina Oktafiani$^2$}
+\author{\bfseries Roni Andarsyah$^3$}
+%%author's affiliation
+\affil{Department of Informatics Engineering, Universitas Logistik dan Bisnis Internasional$^{1,2,3}$}
+\email{ekaseptian.c@gmail.com$^1$, dinaoktafiani04@gmail.com$^2$, roniandarsyah@ulbi.ac.id$^3$}
+%%title and shortitle (for footer)
+\title{Interactive 3D Bin Packing System for Optimized Container Loading Operations}  
+\shorttitle{Interactive 3D Bin Packing System for Container Loading (Septian)}
+
+%%starting
+\begin{document}
+
+%%indentation. do not change
+\setlength{\parindent}{1.27cm}
+
+%%header and footer setting. do not change
+\pagestyle{fancy}
+\fancyhfoffset{0cm}
+
+%%journal info
+\journalname{IT Journal Research and Development (ITJRD)}
+\journalshortname{IT Jou Res and Dev}
+\journalhomepage{http://journal.uir.ac.id/index.php/ITJRD}
+\vol{x}
+\no{x}
+\doi{xxxxx}
+\months{Month}
+\years{20xx}
+\issn{2528-4053}
+
+%%build title
+\maketitle
+
+%%border setting. do not change
+\hrule
+\vspace{.1em}
+\hrule
+\vspace{.5em}
+\noindent
+\parbox[t][][s]{0.275\textwidth}{%
+	\textbf{Article Info}
+	\vspace{.5em}
+	\hrule
+	\vspace{.5em}
+	\begin{history}
+
+		%%article info. editor's privilege
+		Received xx, 20xx
+		\par
+		Revised xx, 20xx
+		\par
+		Accepted xx, 20xx
+
+	\end{history}
+	\vspace{.5em}
+	\hrule
+	\vspace{.5em}
+	\begin{keyword}
+
+		%%write keyword here. separate by \sep
+		3D bin packing \sep container loading \sep logistics optimization \sep heuristic algorithm \sep web visualization
+
+		\vspace{.5em}
+	\end{keyword}
+	\vspace{\fill}
+}
+\parbox{0.025\textwidth}{\hspace{0.5em}}
+\parbox[t][][s]{0.7\textwidth}{%
+	\begin{abstract}
+		%% Text of abstract
+		Manual container loading operations remain inefficient due to reliance on operator experience without decision support tools. This research develops Load \& Stuffing Calculator, a web-based system integrating 3D Bin Packing Problem algorithm with interactive visualization for container loading optimization. The system employs layered architecture separating the packing calculation service from the data management backend, with Three.js-based 3D visualization providing step-by-step loading guidance. Testing across five scenarios (50-300 heterogeneous items) demonstrates consistent 100\% fill rate with volume utilization reaching 55.26\%, while computation time remains under 40 seconds for offline planning requirements. Algorithm comparison confirms Bigger First strategy achieves 42.9\% higher utilization than Smaller First approach. Empirically, this research validates the feasibility of web-based 3D bin packing systems for practical logistics operations. Conceptually, the integration of step playback visualization bridges the gap between algorithmic calculation and physical execution, addressing the limitation of existing tools that lack operational guidance for warehouse staff.
+	\end{abstract}
+}
+\parbox[l]{\textwidth}{%
+	\rule{0.275\textwidth}{0.5pt} \hspace{0.5cm} \hrulefill
+	\\
+	\emph{\textbf{Corresponding Author:}}\\
+	%% correspondence info. separate by \\
+	Muhamad Saladin Eka Septian\\
+	Department of Informatics Engineering\\
+	Universitas Logistik dan Bisnis Internasional\\
+	Jl. Sariasih No. 54, Sarijadi, Bandung, West Java, Indonesia\\
+	ekaseptian.c@gmail.com
+}
+\vspace{.5em}
+\hrule
+\vspace{.1em}
+\hrule
+
+%% main text
+
+\input{sections/01-introduction}
+\input{sections/02-method}
+\input{sections/03-results}
+\input{sections/04-conclusion}
+
+\section*{Acknowledgement}
+\label{}
+The acknowledgment section is optional. The funding source of the research can be put here.
+
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+%% \appendix
+
+%% \section{}
+%% \label{}
+
+%% References
+%%
+%% Following citation commands can be used in the body text:
+%% Usage of \cite is as follows:
+%%   \cite{key}         ==>>  [#]
+%%   \cite[chap. 2]{key} ==>> [#, chap. 2]
+%%
+
+%% References with BibTeX database:
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+%% Authors are advised to use a BibTeX database file for their reference list.
+%% The provided style IEEEtran.bst formats references is generally used.
+
+%\section*{BIOGRAPHY OF AUTHORS}
+
+%\begin{biography}[{\includegraphics[width=3cm,height=4cm,clip,keepaspectratio]{First_Author's_Photo}}]
+%	\textbf{First Author}
+%	%% Affiliation and educational background.
+%	obtained Bachelor Degree in Computer Science from University of Somewhere in 2010, obtained Master Degree in Management Information System from University of Somewhere in 2012, and obtained Doctoral of Informatics from University of Somewhere in 2018.
+%	He has been a Lecturer with the Department of Informatics Engineering, University of Somewhere, since 2013.
+%	%% Research interests, teaching, professional experiences, etc.
+%	His current research interests include computational linguistics, natural language processing and machine learning.
+%% Related activities and services.
+%\end{biography}
+
+%\begin{biography}[{\includegraphics[width=3cm,height=4cm,clip,keepaspectratio]{Second_Author's_Photo}}]
+%	\textbf{Second Author}
+%% Affiliation and educational background.
+%	obtained Bachelor Degree in Computer Science from University of Somewhere in 2010, obtained Master Degree in Management Information System from University of Somewhere in 2012, and obtained Doctoral of Informatics from University of Somewhere in 2018.
+%	He has been a Lecturer with the Department of Informatics Engineering, University of Somewhere, since 2013.
+%% Research interests, teaching, professional experiences, etc.
+%	His current research interests include computational linguistics, natural language processing and machine learning.
+%% Related activities and services.
+%\end{biography}
+\end{document}
+
+%%
+%% End of file `iaesarticle2.tex'. 

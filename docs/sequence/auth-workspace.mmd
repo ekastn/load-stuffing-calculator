@@ -1,0 +1,42 @@
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Auth as Auth Service
+    participant DB as PostgreSQL
+    participant JWT as JWT Generator
+
+    User->>+Frontend: Input email & password
+    Frontend->>+API: POST /api/v1/auth/login<br/>{email, password}
+    
+    API->>+Auth: ValidateCredentials()
+    Auth->>+DB: SELECT * FROM users<br/>WHERE email = ?
+    DB-->>-Auth: User record
+    
+    Auth->>Auth: ComparePasswordHash()
+    
+    alt Password Valid
+        Auth->>+JWT: GenerateTokenPair()
+        JWT-->>-Auth: {access_token, refresh_token}
+        
+        Auth->>+DB: SELECT workspaces, roles<br/>FROM workspace_members<br/>JOIN roles
+        DB-->>-Auth: Workspace list + permissions
+        
+        Auth->>+DB: INSERT INTO refresh_tokens<br/>(user_id, token, expires_at)
+        DB-->>-Auth: Success
+        
+        Auth-->>API: {user, tokens, workspaces}
+        API-->>Frontend: 200 OK<br/>{access_token, refresh_token,<br/>user, workspaces}
+        
+        Frontend->>Frontend: Store tokens in<br/>localStorage/cookies
+        Frontend->>Frontend: Set active workspace<br/>context
+        Frontend-->>User: Redirect to Dashboard<br/>(based on role)
+    else Password Invalid
+        Auth-->>API: Error: Invalid credentials
+        API-->>Frontend: 401 Unauthorized
+        Frontend-->>User: Show error message
+    end
+    
+    deactivate Auth
+    deactivate API
+    deactivate Frontend
