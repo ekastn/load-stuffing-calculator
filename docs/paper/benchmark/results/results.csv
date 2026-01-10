@@ -1,0 +1,6 @@
+Scenario,Variant,Total Items,Avg Fitted,Avg Volume Util (%),Std Volume Util,Avg Weight Util (%),Avg Fill Rate (%),Avg Time (ms),Std Time (ms)
+S1,baseline,50,50.0,6.29,0.00,2.83,100.00,320.2,5.59
+S2,baseline,100,100.0,8.80,0.00,4.16,100.00,1684.4,130.54
+S3,baseline,150,150.0,24.83,0.00,11.15,100.00,5213.0,168.93
+S4,baseline,200,200.0,35.45,0.00,16.25,100.00,10825.8,167.75
+S5,baseline,300,300.0,55.26,0.00,25.32,100.00,38343.2,1209.03

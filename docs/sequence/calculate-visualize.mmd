@@ -1,0 +1,54 @@
+sequenceDiagram
+    actor User
+    participant Frontend as Next.js
+    participant API as Go API
+    participant Service as Plan Service
+    participant Packer as boxpacker3 (Go)
+    participant DB as PostgreSQL
+    participant Viewer as Three.js Viewer
+
+    User->>+Frontend: Click "Calculate" button<br/>(with options: strategy, gravity)
+    Frontend->>+API: POST /api/v1/plans/:id/calculate<br/>{strategy, goal, gravity}
+    
+    API->>+Service: CalculatePlan(plan_id, options)
+    
+    Service->>+DB: SELECT load_plans + load_items<br/>WHERE plan_id = ?
+    DB-->>-Service: Plan + Items data
+    
+    Note over Service: Prepare container input:<br/>dimensions (L,W,H), max_weight<br/>+ packing options
+    
+    Note over Service: Prepare item inputs:<br/>For each item, expand by quantity<br/>(1 item x 3 qty = 3 instances)
+    
+    Service->>+Packer: Pack(container, items[])
+    Note over Packer: Run 3D bin packing algorithm<br/>(BestFitDecreasing / Parallel)<br/>with rotation & gravity simulation
+    Packer-->>-Service: PackingResult<br/>{packed_items[], positions[],<br/>rotations[], efficiency, unfits[]}
+    
+    Service->>+DB: DELETE old plan_results<br/>WHERE plan_id = ?
+    DB-->>-Service: OK
+    
+    Service->>+DB: INSERT plan_results<br/>(volume_utilization, weight, feasible)
+    DB-->>-Service: result_id
+    
+    Service->>+DB: Bulk INSERT plan_placements<br/>(pos_x, pos_y, pos_z, rotation, step)
+    DB-->>-Service: Placements saved
+    
+    Service->>+DB: UPDATE load_plans<br/>SET status = 'COMPLETED'
+    DB-->>-Service: OK
+    
+    Service-->>-API: CalculationResult<br/>{efficiency, placements[], job_id}
+    API-->>-Frontend: 200 OK with result
+    
+    Frontend->>+Frontend: Convert placements to 3D objects
+    Note over Frontend: Map each placement:<br/>(pos_x, pos_y, pos_z) → Three.js coordinates<br/>rotation_code → 3D orientation
+    
+    Frontend->>+Viewer: Render scene<br/>(container + placed items)
+    Note over Viewer: Three.js creates:<br/>- Container box (wireframe)<br/>- Item meshes (colored boxes)<br/>- Camera + orbit controls
+    Viewer-->>-Frontend: Scene ready
+    
+    Frontend-->>-User: Show 3D visualization<br/>+ step-by-step playback controls
+    
+    User->>+Frontend: Interact with playback<br/>(step slider / play button)
+    Frontend->>Frontend: Filter placements by step_number
+    Frontend->>Viewer: Update visible items
+    Viewer-->>Frontend: Re-render scene
+    Frontend-->>-User: Animated loading sequence

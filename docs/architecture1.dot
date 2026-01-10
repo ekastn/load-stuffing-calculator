@@ -1,0 +1,310 @@
+digraph architecture {
+    // Global settings - horizontal layout
+    graph [
+        rankdir="LR"
+        splines=ortho
+        nodesep=0.3
+        ranksep=0.5
+        fontname="Arial"
+        fontsize=11
+        bgcolor="#FFFFFF"
+        pad="0.3"
+    ];
+
+    node [
+        fontname="Arial"
+        fontsize=8
+        shape=rect
+        style="filled,rounded"
+        penwidth=0.8
+        fillcolor="#FFFFFF"
+        height=0.35
+    ];
+
+    edge [
+        fontname="Arial"
+        fontsize=7
+        color="#666666"
+        arrowsize=0.5
+    ];
+
+    // ===== USERS =====
+    subgraph cluster_users {
+        label="Users"
+        labeljust="c"
+        style="filled,rounded"
+        color="#BDBDBD"
+        bgcolor="#FAFAFA"
+        fontsize=9
+        fontcolor="#616161"
+        penwidth=1.2
+
+        Admin [label="Admin" shape=ellipse fillcolor="#EEEEEE" height=0.3 width=0.6];
+        Planner [label="Planner" shape=ellipse fillcolor="#EEEEEE" height=0.3 width=0.6];
+        Operator [label="Operator" shape=ellipse fillcolor="#EEEEEE" height=0.3 width=0.6];
+        Guest [label="Guest\n(Trial)" shape=ellipse fillcolor="#EEEEEE" height=0.3 width=0.6];
+    }
+
+    // ===== WEB FRONTEND =====
+    subgraph cluster_frontend {
+        label="Web Frontend (Next.js 14)"
+        labeljust="c"
+        style="filled,rounded"
+        color="#90CAF9"
+        bgcolor="#F5F9FF"
+        fontsize=9
+        fontcolor="#1565C0"
+        penwidth=1.2
+
+        subgraph cluster_fe_pages {
+            label="Pages"
+            style="filled,rounded"
+            color="#BBDEFB"
+            bgcolor="#E3F2FD"
+            fontsize=8
+            fontcolor="#1976D2"
+
+            FE_Login [label="Login"];
+            FE_Dashboard [label="Dashboard"];
+            FE_Master [label="Products &\nContainers"];
+            FE_Plans [label="Plans"];
+            FE_Users [label="Users &\nRoles"];
+            FE_Workspace [label="Workspaces"];
+        }
+
+        subgraph cluster_fe_viz {
+            label="Visualization (Three.js)"
+            style="filled,rounded"
+            color="#BBDEFB"
+            bgcolor="#E3F2FD"
+            fontsize=8
+            fontcolor="#1976D2"
+
+            FE_3DView [label="3D Viewer"];
+            FE_Playback [label="Step\nPlayback"];
+        }
+
+        FE_API [label="API Client\n(JWT)" fillcolor="#E3F2FD"];
+    }
+
+    // ===== BACKEND API =====
+    subgraph cluster_backend {
+        label="Backend API (Go + Gin)"
+        labeljust="c"
+        style="filled,rounded"
+        color="#FFCC80"
+        bgcolor="#FFFBF5"
+        fontsize=9
+        fontcolor="#E65100"
+        penwidth=1.2
+
+        subgraph cluster_be_middleware {
+            label="Middleware"
+            style="filled,rounded"
+            color="#FFE0B2"
+            bgcolor="#FFF3E0"
+            fontsize=8
+            fontcolor="#F57C00"
+
+            BE_JWT [label="JWT Auth"];
+            BE_RBAC [label="RBAC\nPermissions"];
+            BE_Workspace [label="Workspace\nContext"];
+        }
+
+        subgraph cluster_be_handlers {
+            label="Handlers"
+            style="filled,rounded"
+            color="#FFE0B2"
+            bgcolor="#FFF3E0"
+            fontsize=8
+            fontcolor="#F57C00"
+
+            BE_AuthH [label="Auth"];
+            BE_CrudH [label="CRUD"];
+            BE_PlanH [label="Plan"];
+            BE_CalcH [label="Calculate"];
+        }
+
+        subgraph cluster_be_services {
+            label="Services"
+            style="filled,rounded"
+            color="#FFE0B2"
+            bgcolor="#FFF3E0"
+            fontsize=8
+            fontcolor="#F57C00"
+
+            BE_AuthS [label="Auth Svc"];
+            BE_CrudS [label="CRUD Svc"];
+            BE_PlanS [label="Plan Svc\n(Snapshot)"];
+        }
+
+        subgraph cluster_be_data {
+            label="Data Access"
+            style="filled,rounded"
+            color="#FFE0B2"
+            bgcolor="#FFF3E0"
+            fontsize=8
+            fontcolor="#F57C00"
+
+            BE_Store [label="SQLC Store"];
+            BE_PackerClient [label="Packer\nHTTP Client"];
+        }
+    }
+
+    // ===== DATABASE =====
+    subgraph cluster_database {
+        label="Database (PostgreSQL)"
+        labeljust="c"
+        style="filled,rounded"
+        color="#A5D6A7"
+        bgcolor="#F5FFF5"
+        fontsize=9
+        fontcolor="#2E7D32"
+        penwidth=1.2
+
+        DB_Auth [label="users\nroles\npermissions\nrefresh_tokens" shape=cylinder height=0.5];
+        DB_Workspace [label="workspaces\nworkspace_members\nworkspace_invites" shape=cylinder height=0.5];
+        DB_Master [label="products\ncontainers" shape=cylinder height=0.4];
+        DB_Plans [label="load_plans\nload_items\nplan_results\nplan_placements" shape=cylinder height=0.5];
+    }
+
+    // ===== PACKING SERVICE =====
+    subgraph cluster_packing {
+        label="Packing Service (Python)"
+        labeljust="c"
+        style="filled,rounded"
+        color="#F48FB1"
+        bgcolor="#FFF5F8"
+        fontsize=9
+        fontcolor="#C2185B"
+        penwidth=1.2
+
+        PS_API [label="POST /pack\n(HTTP)" fillcolor="#FCE4EC"];
+        
+        subgraph cluster_ps_algo {
+            label="py3dbp (forked)"
+            style="filled,rounded"
+            color="#F8BBD0"
+            bgcolor="#FCE4EC"
+            fontsize=8
+            fontcolor="#D81B60"
+
+            PS_Sort [label="Bigger-First\nSort"];
+            PS_Gravity [label="Gravity\nSimulation"];
+            PS_Stable [label="Stability\nCheck"];
+            PS_Rotate [label="Rotation\nOptimization"];
+        }
+
+        PS_Output [label="Placements\n+ Step Numbers" fillcolor="#FCE4EC"];
+    }
+
+    // ===== LAYOUT HINTS =====
+    
+    // Users vertical stack
+    Admin -> Planner [style=invis];
+    Planner -> Operator [style=invis];
+    Operator -> Guest [style=invis];
+
+    // Frontend pages vertical
+    FE_Login -> FE_Dashboard [style=invis];
+    FE_Dashboard -> FE_Master [style=invis];
+    FE_Master -> FE_Plans [style=invis];
+    FE_Plans -> FE_Users [style=invis];
+    FE_Users -> FE_Workspace [style=invis];
+
+    // Frontend viz vertical
+    FE_3DView -> FE_Playback [style=invis];
+
+    // Backend middleware vertical
+    BE_JWT -> BE_RBAC [style=invis];
+    BE_RBAC -> BE_Workspace [style=invis];
+
+    // Backend handlers vertical
+    BE_AuthH -> BE_CrudH [style=invis];
+    BE_CrudH -> BE_PlanH [style=invis];
+    BE_PlanH -> BE_CalcH [style=invis];
+
+    // Backend services vertical
+    BE_AuthS -> BE_CrudS [style=invis];
+    BE_CrudS -> BE_PlanS [style=invis];
+
+    // Backend data vertical
+    BE_Store -> BE_PackerClient [style=invis];
+
+    // Database vertical
+    DB_Auth -> DB_Workspace [style=invis];
+    DB_Workspace -> DB_Master [style=invis];
+    DB_Master -> DB_Plans [style=invis];
+
+    // Packing algo vertical
+    PS_Sort -> PS_Gravity [style=invis];
+    PS_Gravity -> PS_Stable [style=invis];
+    PS_Stable -> PS_Rotate [style=invis];
+
+    // ===== CONNECTIONS =====
+    
+    // Users to Frontend
+    Admin -> FE_Login;
+    Admin -> FE_Users;
+    Admin -> FE_Workspace;
+    Planner -> FE_Login;
+    Planner -> FE_Plans;
+    Planner -> FE_Master;
+    Operator -> FE_Login;
+    Operator -> FE_3DView;
+    Guest -> FE_Login;
+    Guest -> FE_Plans [style=dashed];
+
+    // Frontend internal
+    FE_Plans -> FE_API;
+    FE_Master -> FE_API;
+    FE_Users -> FE_API;
+    FE_Workspace -> FE_API;
+    FE_3DView -> FE_Playback;
+
+    // Frontend to Backend
+    FE_API -> BE_JWT;
+
+    // Backend middleware flow
+    BE_JWT -> BE_RBAC;
+    BE_RBAC -> BE_Workspace;
+
+    // Backend middleware to handlers
+    BE_Workspace -> BE_AuthH;
+    BE_Workspace -> BE_CrudH;
+    BE_Workspace -> BE_PlanH;
+    BE_Workspace -> BE_CalcH;
+
+    // Handlers to Services
+    BE_AuthH -> BE_AuthS;
+    BE_CrudH -> BE_CrudS;
+    BE_PlanH -> BE_PlanS;
+    BE_CalcH -> BE_PackerClient;
+
+    // Services to Store
+    BE_AuthS -> BE_Store;
+    BE_CrudS -> BE_Store;
+    BE_PlanS -> BE_Store;
+
+    // Store to Database
+    BE_Store -> DB_Auth;
+    BE_Store -> DB_Workspace;
+    BE_Store -> DB_Master;
+    BE_Store -> DB_Plans;
+
+    // Packer Client to Packing Service
+    BE_PackerClient -> PS_API [label="HTTP"];
+
+    // Packing internal
+    PS_API -> PS_Sort;
+    PS_Sort -> PS_Gravity;
+    PS_Gravity -> PS_Stable;
+    PS_Stable -> PS_Rotate;
+    PS_Rotate -> PS_Output;
+
+    // Response flow (dashed)
+    PS_Output -> BE_PackerClient [style=dashed color="#999999"];
+    BE_Store -> BE_PlanS [style=dashed color="#999999"];
+    DB_Plans -> BE_Store [style=dashed color="#999999"];
+    FE_API -> FE_3DView [style=dashed color="#999999"];
+}

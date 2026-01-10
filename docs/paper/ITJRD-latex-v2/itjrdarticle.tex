@@ -1,0 +1,258 @@
+%%class
+\documentclass{itjrdarticle}
+
+%%required package. add for your convenient, but do not remove the initial
+\usepackage[none]{hyphenat}
+\usepackage{amsmath, amsfonts, amssymb, float, fancyhdr}
+\usepackage[figuresright]{rotating}
+\usepackage{authblk, graphicx, indentfirst, lastpage, lipsum}
+\setlength{\affilsep}{0cm}
+\renewcommand\Authfont{\normalsize}
+\renewcommand\Affilfont{\normalfont\small}
+\usepackage{subfig, caption, epstopdf}
+%\usepackage[left=2.5cm, right=2cm, top=1.5cm, bottom=2cm, includehead, includefoot]{geometry}
+\usepackage[left=3cm, right=2.5cm, top=2.5cm, bottom=2.5cm, includehead, includefoot]{geometry}
+\usepackage{caption}
+\captionsetup{labelsep=period}
+\usepackage{titlesec}
+\titleformat{\section}
+  {\normalfont\normalsize\bfseries\uppercase}{\thesection}{1em}{}
+\titlespacing*{\section}{0cm}{0.7cm}{0cm}
+
+%%leave copyright info to the editor
+\CopyrightLine[]{}{This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License.}
+
+%%author
+\author{\bfmuhamad saladin$^1$}
+\author{\bfseries Second Author$^2$}
+\author{\bfseries Third Author$^3$}
+%%author's affiliation
+\affil{Faculty of Something, University of Somewhere$^{1,2}$}
+\affil{Department of Whatever, Institute of Wherever$^3$}
+\email{author1@affiliation.com$^1$, author2@affiliation.com$^2$, author3@affiliation.com$^3$}
+%%title and shortitle (for footer)
+\title{A Title Should Be the Fewest Possible Words That Accurately Describe the Content of the Paper}  
+\shorttitle{Title of manuscript is short and clear, implies research results (First Author)}
+
+%%starting
+\begin{document}
+
+%%indentation. do not change
+\setlength{\parindent}{1.27cm}
+
+%%header and footer setting. do not change
+\pagestyle{fancy}
+\fancyhfoffset{0cm}
+
+%%journal info
+\journalname{IT Journal Research and Development (ITJRD)}
+\journalshortname{IT Jou Res and Dev}
+\journalhomepage{http://journal.uir.ac.id/index.php/ITJRD}
+\vol{x}
+\no{x}
+\doi{xxxxx}
+\months{May}
+\years{2018}
+\issn{2528-4053}
+
+%%build title
+\maketitle
+
+%%border setting. do not change
+\hrule
+\vspace{.1em}
+\hrule
+\vspace{.5em}
+\noindent
+\parbox[t][][s]{0.275\textwidth}{%
+\textbf{Article Info}
+\vspace{.5em}
+\hrule
+\vspace{.5em}
+\begin{history}
+
+%%article info. editor's privilege
+Received Oct 27, 2018
+\par 
+Revised Dec 21, 2017
+\par 
+Accepted Jan 3, 2018
+
+\end{history}
+\vspace{.5em}
+\hrule
+\vspace{.5em}
+\begin{keyword}
+
+%%write keyword here. separate by \sep
+First keyword \sep Second keyword \sep Third keyword \sep Fourth keyword \sep Fifth keyword
+
+\vspace{.5em}
+\end{keyword}
+\vspace{\fill}
+}
+\parbox{0.025\textwidth}{\hspace{0.5em}}
+\parbox[t][][s]{0.7\textwidth}{%
+\begin{abstract}
+%% Text of abstract
+A well-prepared abstract enables the reader to identify the basic content of a document quickly and accurately, to determine its relevance to their interests, and thus to decide whether to read the document in its entirety. The Abstract should be informative and completely self-explanatory, provide a clear statement of the problem, the proposed approach or solution, and point out major findings and conclusions. The Abstract should be 100 to 200 words in length. The abstract should be written in the past tense. Standard nomenclature should be used and abbreviations should be avoided. No literature should be cited. The keyword list provides the opportunity to add keywords, used by the indexing and abstracting services, in addition to those already present in the title. Judicious use of keywords may increase the ease with which interested parties can locate our article (10 pt).
+\end{abstract}
+}
+\parbox[l]{\textwidth}{%
+\rule{0.275\textwidth}{0.5pt} \hspace{0.5cm} \hrulefill
+\\
+\emph{\textbf{Corresponding Author:}}\\
+%% correspondence info. separate by \\
+Name\\
+Department\\
+Affiliation\\
+Address, City, Country\\
+Email
+}
+\vspace{.5em}
+\hrule
+\vspace{.1em}
+\hrule
+
+
+%% main text
+
+\section{Introduction}
+\label{}
+The main text format consists of a flat left-right columns on A4 paper (quarto). The margin text from the left and top are 2.5 cm, right and bottom are 2 cm. The manuscript is written in Microsoft Word, single space, Time New Roman 10pt and maximum 12 pages, which can be downloaded at the website:http://journal.uir.ac.id/index.php/ITJRD
+\par
+A title of article should be the fewest possible words that accurately describe the content of the paper. Omit all waste words such as "A study of ...", "Investigations of ...", "Implementation of ...", "Observations on ...", "Effect of.....", "Analysis of ...", "Design of ..." etc. Indexing and abstracting services depend on the accuracy of the title, extracting from it keywords useful in cross-referencing and computer searching. An improperly titled paper may never reach the audience for which it was intended, so be specific.
+\par
+The Introduction should provide a clear background, a clear statement of the problem, the relevant literature on the subject, the proposed approach or solution, and the new value of research which it is innovation. It should be understandable to colleagues from a broad range of scientific disciplines. Organization and citation of the bibliography are made in Vancouver style in sign \cite{ishida2011language, nasution2017pivot} and so on. The terms in foreign languages are written italic (italic). The text should be divided into sections, each with a separate heading and numbered consecutively. The section/subsection headings should be typed on a separate line, e.g., 1. Introduction \cite{nasution2018collab,arta2016knoppix}. Authors are suggested to present their articles in the section structure: Introduction - the comprehensive theoretical basis and/or the Proposed Method/Algorithm - Research Method - Results and Discussion – Conclusion.\cite{arta2016knoppix}
+\par
+Literature review that has been done author used in the chapter "Introduction" to explain the difference of the manuscript with other papers, that it is innovative, it are used in the chapter "Research Method" to describe the step of research and used in the chapter "Results and Discussion" to support the analysis of the results \cite{arta2016knoppix}. If the manuscript was written really have high originality, which proposed a new method or algorithm, the additional chapter after the "Introduction" chapter and before the "Research Method" chapter can be added to explain briefly the theory and/or the proposed method/algorithm \cite{nasution2018collab}.
+
+\section{Research Method}
+\label{}
+Explaining research chronological, including research design, research procedure (in the form of algorithms, Pseudocode or other), how to test and data acquisition \cite{nasution2017pivot, arta2016knoppix}. The description of the course of research should be supported references, so the explanation can be accepted scientifically \cite{ishida2011language,nasution2018collab,arta2016knoppix}.
+\par
+Tables and Figures are presented center, as shown below and cited in the manuscript.\\
+
+\begin{table}[h]
+\caption{Integer type table.}
+\centering
+\begin{tabular}{lcr}
+\hline
+Type & Value Range & Format \\
+\hline
+Byte & 0 .. 255 & Unsigned 8-bit \\
+Shortint & -128 .. 127 & Signed 8-bit \\
+Word & 0 .. 65535 & Unsigned 16-bit \\
+Integer & -32768 .. 32767 & Signed 16-bit \\
+Longint & -2147483648 .. 2147483647 & Signed 32-bit \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[scale=1]{figure1}
+\caption{Effects of selecting different switching under dynamic condition.}
+\end{figure}
+
+\begin{figure}[!t]
+	\centering
+	\begin{minipage}{10pc}
+		\includegraphics[width=10pc]{figure1}
+		\caption{\label{query1}Effects of selecting different switching under dynamic condition}
+	\end{minipage}\hspace{2pc}
+	\begin{minipage}{10pc}
+		\includegraphics[width=10pc]{figure1}
+		\caption{\label{query2}Effects of selecting different switching under dynamic condition}
+	\end{minipage} 
+\end{figure}
+
+\section{Result and Analysis}
+\label{}
+In this section, it is explained the results of research and at the same time is given the comprehensive discussion. Results can be presented in figures, graphs, tables and others that make the reader understand easily \cite{nasution2018collab, arta2016knoppix}. The discussion can be made in several sub-chapters.
+
+\subsection{Equations}
+Equations should be placed at the center of the line and provided consecutively with equation numbers in parentheses flushed to the right margin, as in (1). The use of Microsoft Equation Editor or MathType is preferred.
+\\
+
+\begin{equation}
+E_v - E = \frac{\hbar}{2.m}(k_x^2 + k_y^2)
+\end{equation}
+\\
+All symbols that have not been mentioned in the equation should be explained in the following text.
+
+\subsubsection{Sub Sub Section 1}
+xxxx
+
+\subsubsection{Sub Sub Section 2}
+xxxx
+
+\subsection{Testing Environment}
+
+Testing was conducted in an environment with the following specifications: Intel Core i5-6440HQ @ 2.60GHz processor, 16 GB RAM memory, and Linux operating system. The system ran using Python 3.11 for the packing service and Go 1.21 for the backend API. Each scenario was executed five times to obtain representative mean values and standard deviations.
+
+The container used throughout testing was a 40-foot High Cube type with internal dimensions of 12.032 $\times$ 2.352 $\times$ 2.698 meters (volume 76.35 m\textsuperscript{3}) and maximum load capacity of 26,460 kg. Four product types with different dimensions were used to simulate cargo heterogeneity: Euro Pallet (1200$\times$800$\times$144 mm), Large Crate (1000$\times$600$\times$500 mm), Medium Box (600$\times$400$\times$400 mm), and Small Box (400$\times$300$\times$200 mm).
+
+\subsection{Performance Testing Results}
+
+Table \ref{tab:results} presents a summary of testing results for all five scenarios with baseline algorithm configuration (Bigger First strategy with active stability checking). Measured metrics include volume utilization, weight utilization, fill rate, and computation time.
+
+\subsection{Citations}
+Proper citation of other works should be made to avoid plagiarism. When referring to a reference item, please use the reference number as in \cite{nasution2018collab} or \cite{ishida2011language,nasution2018collab,arta2016knoppix} for multiple references ordered, not unordered as follow \cite{nasution2018collab,ishida2011language,arta2016knoppix}. The use of "Ref \cite{nasution2018collab}..." should be employed for any reference citation at the beginning of sentence. For any reference with more than 3 or more authors, only the first author is to be written followed by et al (e.g. in \cite{ishida2011language}).  Examples of reference items of different categories shown in the References section. Each items in the references section should be typed using 11pt font size.
+
+\section{Conclusion}
+\label{}
+Provide a statement that what is expected, as stated in the "Introduction" chapter can ultimately result in "Results and Discussion" chapter, so there is compatibility. Moreover, it can also be added the prospect of the development of research results and application prospects of further studies into the next (based on result and discussion).
+
+\section*{Acknowledgement}
+\label{}
+The acknowledgment section is optional. The funding source of the research can be put here.
+
+%% The Appendices part is started with the command \appendix;
+%% appendix sections are then done as normal sections
+%% \appendix
+
+%% \section{}
+%% \label{}
+
+%% References
+%%
+%% Following citation commands can be used in the body text:
+%% Usage of \cite is as follows:
+%%   \cite{key}         ==>>  [#]
+%%   \cite[chap. 2]{key} ==>> [#, chap. 2]
+%%
+
+%% References with BibTeX database:
+
+\bibliographystyle{IEEEtran}
+\bibliography{itjrd}
+
+%% Authors are advised to use a BibTeX database file for their reference list.
+%% The provided style IEEEtran.bst formats references is generally used.
+
+%\section*{BIOGRAPHY OF AUTHORS}
+
+%\begin{biography}[{\includegraphics[width=3cm,height=4cm,clip,keepaspectratio]{First_Author's_Photo}}]
+%	\textbf{First Author}
+%	%% Affiliation and educational background.
+%	obtained Bachelor Degree in Computer Science from University of Somewhere in 2010, obtained Master Degree in Management Information System from University of Somewhere in 2012, and obtained Doctoral of Informatics from University of Somewhere in 2018.
+%	He has been a Lecturer with the Department of Informatics Engineering, University of Somewhere, since 2013.
+%	%% Research interests, teaching, professional experiences, etc.
+%	His current research interests include computational linguistics, natural language processing and machine learning.
+	%% Related activities and services.
+%\end{biography}
+
+%\begin{biography}[{\includegraphics[width=3cm,height=4cm,clip,keepaspectratio]{Second_Author's_Photo}}]
+%	\textbf{Second Author}
+	%% Affiliation and educational background.
+%	obtained Bachelor Degree in Computer Science from University of Somewhere in 2010, obtained Master Degree in Management Information System from University of Somewhere in 2012, and obtained Doctoral of Informatics from University of Somewhere in 2018.
+%	He has been a Lecturer with the Department of Informatics Engineering, University of Somewhere, since 2013.
+	%% Research interests, teaching, professional experiences, etc.
+%	His current research interests include computational linguistics, natural language processing and machine learning.
+	%% Related activities and services.
+%\end{biography}
+\end{document}
+
+%%
+%% End of file `iaesarticle2.tex'. 
