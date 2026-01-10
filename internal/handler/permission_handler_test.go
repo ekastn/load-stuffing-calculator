@@ -99,6 +99,20 @@ func TestPermissionHandler_GetPermission(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(MockPermissionService)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/permissions/", nil)
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+
+		h.GetPermission(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
 	t.Run("not_found", func(t *testing.T) {
 		mockSvc := new(MockPermissionService)
 		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
@@ -137,6 +151,22 @@ func TestPermissionHandler_ListPermissions(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(MockPermissionService)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
+
+		mockSvc.On("ListPermissions", mock.Anything, int32(1), int32(10)).Return(nil, errors.New("db error"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/permissions?page=1&limit=10", nil)
+
+		h.ListPermissions(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
 }
 
 func TestPermissionHandler_UpdatePermission(t *testing.T) {
@@ -165,6 +195,62 @@ func TestPermissionHandler_UpdatePermission(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(MockPermissionService)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
+
+		req := dto.UpdatePermissionRequest{Name: "perm"}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPut, "/permissions/", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePermission(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("invalid_json", func(t *testing.T) {
+		mockSvc := new(MockPermissionService)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
+
+		id := "1"
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPut, "/permissions/"+id, bytes.NewBufferString("invalid"))
+		c.Params = gin.Params{{Key: "id", Value: id}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePermission(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(MockPermissionService)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
+
+		id := "1"
+		req := dto.UpdatePermissionRequest{Name: "perm"}
+		mockSvc.On("UpdatePermission", mock.Anything, id, req).Return(errors.New("db error"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPut, "/permissions/"+id, bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: id}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePermission(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
 }
 
 func TestPermissionHandler_DeletePermission(t *testing.T) {
@@ -185,6 +271,38 @@ func TestPermissionHandler_DeletePermission(t *testing.T) {
 		h.DeletePermission(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(MockPermissionService)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodDelete, "/permissions/", nil)
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+
+		h.DeletePermission(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(MockPermissionService)
+		h := handler.NewPermissionHandler(mockSvc, cache.NewPermissionCache())
+
+		id := "1"
+		mockSvc.On("DeletePermission", mock.Anything, id).Return(errors.New("db error"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodDelete, "/permissions/"+id, nil)
+		c.Params = gin.Params{{Key: "id", Value: id}}
+
+		h.DeletePermission(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }
