@@ -7,3 +7,17 @@ testdata*
 
 __pycache__/
 .venv*
+
+coverage.txt
+*.out
+
+out/
+aux/
+*.aux
+*.log
+*.bbl
+*.blg
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+*.bak*

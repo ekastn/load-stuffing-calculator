@@ -95,6 +95,11 @@ func TestContainerService_CreateContainer(t *testing.T) {
 			req:     dto.CreateContainerRequest{Name: name},
 			wantErr: true,
 		},
+		{
+			name:    "workspace_id_from_context_error",
+			req:     dto.CreateContainerRequest{Name: name},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -104,7 +109,7 @@ func TestContainerService_CreateContainer(t *testing.T) {
 				CreateContainerFunc: func(ctx context.Context, arg store.CreateContainerParams) (store.Container, error) {
 					sawWorkspaceID = arg.WorkspaceID
 					switch tt.name {
-					case "trial_no_workspace_forbidden", "non_founder_missing_workspace_errors", "founder_invalid_override_errors":
+					case "trial_no_workspace_forbidden", "non_founder_missing_workspace_errors", "founder_invalid_override_errors", "workspace_id_from_context_error":
 						return store.Container{}, fmt.Errorf("unexpected db call")
 					}
 					return tt.createResp, tt.createErr
@@ -130,6 +135,8 @@ func TestContainerService_CreateContainer(t *testing.T) {
 				ctx = auth.WithWorkspaceOverrideID(ctxWithRole("founder"), overrideWorkspaceID.String())
 			case "non_founder_missing_workspace_errors":
 				ctx = ctxWithRole("admin")
+			case "workspace_id_from_context_error":
+				ctx = auth.WithUserID(context.Background(), "invalid-uuid")
 			}
 
 			resp, err := s.CreateContainer(ctx, tt.req)
@@ -141,7 +148,7 @@ func TestContainerService_CreateContainer(t *testing.T) {
 
 			// Ensure we don't call the DB for validation-only failures.
 			switch tt.name {
-			case "trial_no_workspace_forbidden", "non_founder_missing_workspace_errors", "founder_invalid_override_errors":
+			case "trial_no_workspace_forbidden", "non_founder_missing_workspace_errors", "founder_invalid_override_errors", "workspace_id_from_context_error":
 				if sawWorkspaceID != nil {
 					t.Fatalf("unexpected db call")
 				}
@@ -202,6 +209,21 @@ func TestContainerService_GetContainer(t *testing.T) {
 			getErr:  fmt.Errorf("not found"),
 			wantErr: true,
 		},
+		{
+			name:    "invalid_uuid",
+			id:      "invalid-uuid",
+			wantErr: true,
+		},
+		{
+			name:    "workspace_override_id_error",
+			id:      id.String(),
+			wantErr: true,
+		},
+		{
+			name:    "workspace_id_from_context_error",
+			id:      id.String(),
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -209,8 +231,20 @@ func TestContainerService_GetContainer(t *testing.T) {
 			workspaceID := uuid.New()
 			ctx := ctxWithWorkspaceID(workspaceID)
 
+			// Setup context based on test case
+			switch tt.name {
+			case "workspace_override_id_error":
+				ctx = auth.WithWorkspaceOverrideID(ctxWithWorkspaceID(workspaceID), "invalid-uuid")
+			case "workspace_id_from_context_error":
+				ctx = auth.WithUserID(context.Background(), "invalid-uuid")
+			}
+
 			mockQ := &MockQuerier{
 				GetContainerFunc: func(ctx context.Context, arg store.GetContainerParams) (store.Container, error) {
+					// Should not be called for error cases
+					if tt.name == "invalid_uuid" || tt.name == "workspace_override_id_error" || tt.name == "workspace_id_from_context_error" {
+						return store.Container{}, fmt.Errorf("unexpected db call")
+					}
 					if arg.ContainerID.String() != tt.id {
 						return store.Container{}, fmt.Errorf("id mismatch")
 					}
@@ -329,12 +363,36 @@ func TestContainerService_ListContainers(t *testing.T) {
 			listErr: fmt.Errorf("db error"),
 			wantErr: true,
 		},
+		{
+			name:    "workspace_override_id_error",
+			wantErr: true,
+		},
+		{
+			name:    "workspace_id_from_context_error",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := ctxWithWorkspaceID(uuid.New())
+
+			// Setup context based on test case
+			switch tt.name {
+			case "trial_no_workspace_returns_global_presets":
+				ctx = context.Background()
+			case "workspace_override_id_error":
+				ctx = auth.WithWorkspaceOverrideID(ctxWithWorkspaceID(uuid.New()), "invalid-uuid")
+			case "workspace_id_from_context_error":
+				ctx = auth.WithUserID(context.Background(), "invalid-uuid")
+			}
+
 			mockQ := &MockQuerier{
 				ListContainersFunc: func(ctx context.Context, arg store.ListContainersParams) ([]store.Container, error) {
+					// Should not be called for error cases
+					if tt.name == "workspace_override_id_error" || tt.name == "workspace_id_from_context_error" {
+						return nil, fmt.Errorf("unexpected db call")
+					}
 					if tt.name == "trial_no_workspace_returns_global_presets" && arg.WorkspaceID != nil {
 						return nil, fmt.Errorf("expected nil workspace id")
 					}
@@ -343,10 +401,6 @@ func TestContainerService_ListContainers(t *testing.T) {
 			}
 
 			s := service.NewContainerService(mockQ)
-			ctx := ctxWithWorkspaceID(uuid.New())
-			if tt.name == "trial_no_workspace_returns_global_presets" {
-				ctx = context.Background()
-			}
 			resp, err := s.ListContainers(ctx, tt.page, tt.limit)
 
 			if (err != nil) != tt.wantErr {
@@ -458,13 +512,44 @@ func TestContainerService_UpdateContainer(t *testing.T) {
 			req:     dto.UpdateContainerRequest{Name: name},
 			wantErr: true,
 		},
+		{
+			name:    "invalid_uuid",
+			id:      "invalid-uuid",
+			req:     dto.UpdateContainerRequest{Name: name},
+			wantErr: true,
+		},
+		{
+			name:    "workspace_override_id_error",
+			id:      id.String(),
+			req:     dto.UpdateContainerRequest{Name: name},
+			wantErr: true,
+		},
+		{
+			name:    "workspace_id_from_context_error",
+			id:      id.String(),
+			req:     dto.UpdateContainerRequest{Name: name},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := ctxWithWorkspaceID(uuid.New())
+
+			// Setup context based on test case
+			switch tt.name {
+			case "trial_no_workspace_forbidden":
+				ctx = context.Background()
+			case "workspace_override_id_error":
+				ctx = auth.WithWorkspaceOverrideID(ctxWithWorkspaceID(uuid.New()), "invalid-uuid")
+			case "workspace_id_from_context_error":
+				ctx = auth.WithUserID(context.Background(), "invalid-uuid")
+			}
+
 			mockQ := &MockQuerier{
 				UpdateContainerFunc: func(ctx context.Context, arg store.UpdateContainerParams) error {
-					if tt.name == "trial_no_workspace_forbidden" {
+					// Should not be called for error cases
+					if tt.name == "trial_no_workspace_forbidden" || tt.name == "invalid_uuid" || tt.name == "workspace_override_id_error" || tt.name == "workspace_id_from_context_error" {
 						return fmt.Errorf("unexpected db call")
 					}
 					return tt.updateErr
@@ -472,10 +557,6 @@ func TestContainerService_UpdateContainer(t *testing.T) {
 			}
 
 			s := service.NewContainerService(mockQ)
-			ctx := ctxWithWorkspaceID(uuid.New())
-			if tt.name == "trial_no_workspace_forbidden" {
-				ctx = context.Background()
-			}
 			err := s.UpdateContainer(ctx, tt.id, tt.req)
 
 			if (err != nil) != tt.wantErr {
@@ -573,24 +654,55 @@ func TestContainerService_DeleteContainer(t *testing.T) {
 			deleteErr: fmt.Errorf("db error"),
 			wantErr:   true,
 		},
+		{
+			name:    "invalid_uuid",
+			id:      "invalid-uuid",
+			wantErr: true,
+		},
+		{
+			name:    "workspace_override_id_error",
+			id:      id.String(),
+			wantErr: true,
+		},
+		{
+			name:    "workspace_id_from_context_error",
+			id:      id.String(),
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			workspaceID := uuid.New()
+			ctx := ctxWithWorkspaceID(workspaceID)
+
+			// Setup context based on test case
+			switch tt.name {
+			case "trial_no_workspace_forbidden":
+				ctx = context.Background()
+			case "workspace_override_id_error":
+				ctx = auth.WithWorkspaceOverrideID(ctxWithWorkspaceID(workspaceID), "invalid-uuid")
+			case "workspace_id_from_context_error":
+				ctx = auth.WithUserID(context.Background(), "invalid-uuid")
+			}
+
 			mockQ := &MockQuerier{
 				DeleteContainerFunc: func(ctx context.Context, arg store.DeleteContainerParams) error {
-					if tt.name == "trial_no_workspace_forbidden" {
+					// Should not be called for error cases
+					if tt.name == "trial_no_workspace_forbidden" || tt.name == "invalid_uuid" || tt.name == "workspace_override_id_error" || tt.name == "workspace_id_from_context_error" {
 						return fmt.Errorf("unexpected db call")
+					}
+					if arg.ContainerID.String() != tt.id {
+						return fmt.Errorf("id mismatch")
+					}
+					if arg.WorkspaceID == nil || *arg.WorkspaceID != workspaceID {
+						return fmt.Errorf("workspace mismatch")
 					}
 					return tt.deleteErr
 				},
 			}
 
 			s := service.NewContainerService(mockQ)
-			ctx := ctxWithWorkspaceID(uuid.New())
-			if tt.name == "trial_no_workspace_forbidden" {
-				ctx = context.Background()
-			}
 			err := s.DeleteContainer(ctx, tt.id)
 
 			if (err != nil) != tt.wantErr {
