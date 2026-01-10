@@ -1,0 +1,158 @@
+\section{Research Method}
+\label{}
+This research methodology encompasses mathematical model formulation, system architecture design, algorithm integration procedure implementation, and system testing scenario design.
+
+\subsection{Theoretical Foundation and 3D-BPP Modeling}
+The Three-Dimensional Bin Packing Problem (3D-BPP) represents a combinatorial optimization problem focused on placing a set of three-dimensional items into containers (bins) to maximize available space utilization \cite{Ma2025}. This problem is NP-hard, meaning solution search complexity increases exponentially as the number and dimensional variation of items grows \cite{Silva2016}. Therefore, this research applies a heuristic approach to obtain efficient solutions within real logistics operational time constraints.
+
+In this system's mathematical modeling, a container is defined with dimensions length ($L$), width ($W$), and height ($H$) with maximum load capacity $M$. For each item $i$ from a total of $n$ items, there are dimensional attributes $(l_i, w_i, h_i)$, volume $v_i$, and mass $m_i$. Decision variables include $\eta_i \in \{0,1\}$ as an indicator of whether item $i$ is successfully loaded, position coordinates $(x_i, y_i, z_i)$, and orientation indicator $r_{i,p}$ to handle possible item rotations.
+
+The primary objective of this system is expressed in the objective function in Equation \ref{eq:objective}:
+\begin{equation}
+	\max \sum_{i=1}^{n} v_i \cdot \eta_i
+	\label{eq:objective}
+\end{equation}
+
+Equation \ref{eq:objective} explains that the algorithm's main target is to maximize the total volume of all items successfully placed ($\eta_i = 1$) within a single container. By maximizing the total volume of loaded items, the system automatically minimizes unused empty space (void space), which in turn reduces transportation cost per unit of goods.
+
+To measure the effectiveness of these calculation results, a space utilization metric ($U$) is used, formulated in Equation \ref{eq:utilization}:
+\begin{equation}
+	U = \frac{\sum_{i=1}^{n} v_i \cdot \eta_i}{L \times W \times H} \times 100\%
+	\label{eq:utilization}
+\end{equation}
+
+Equation \ref{eq:utilization} represents the loading efficiency ratio in percentage form. The numerator in this formula is the total volume of successfully loaded items, while the denominator is the total container capacity volume ($L \times W \times H$). A value of $U$ approaching 100\% indicates that the system successfully arranges goods very densely and efficiently.
+
+To ensure that generated solutions are not only volume-optimal but also physically stable, this model integrates a number of operational constraints. Table \ref{tab:constraints} summarizes these constraints, where stability constraint receives special attention by requiring a minimum support area ($\theta$) of 75\% of the item's base area to prevent cargo shifting during distribution \cite{Ananno2024}.
+
+\begin{table}[H]
+	\centering
+	\caption{Operational Constraints in 3D-BPP}
+	\label{tab:constraints}
+	\small
+	\begin{tabularx}{\textwidth}{lX}
+		\toprule
+		\textbf{Constraint} & \textbf{Formulation and Description}                                                                                                         \\
+		\midrule
+		Volume              & $\sum_{i=1}^{n} v_i \cdot \eta_i \leq L \times W \times H$. Total item volume does not exceed container capacity.                            \\
+		Mass                & $\sum_{i=1}^{n} m_i \cdot \eta_i \leq M$. Total weight does not exceed maximum load capacity.                                                \\
+		Orientation         & $\sum_{p=1}^{6} r_{i,p} = 1, \; \forall i$. Each item selects exactly one of six rotation orientations.                                      \\
+		Non-overlap         & $(x_i + d_{ix} \leq x_j) \lor (x_j + d_{jx} \leq x_i) \lor \dots, \; \forall i \neq j$. Items must not occupy the same space.                \\
+		Stability           & $z_c = 0 \;\lor\; \sum_{c' \in S_z} \text{OverlapArea}(c, c') \geq \theta \cdot A_c$. Items must be supported by at least 75\% of base area. \\
+		Load Bearing        & $D_i \leq R_i$, where $D_i = \sum_{j \in C_i}(m_j + D_j)$. Cumulative load above item does not exceed load-bearing capacity.                 \\
+		Center of Gravity   & $\text{con}_{x1} \leq G_x \leq \text{con}_{x2}$, etc. Center of gravity of cargo remains within safe zone (optional).                        \\
+		\bottomrule
+	\end{tabularx}
+\end{table}
+
+
+\subsection{System Architecture and Design}
+
+The Load \& Stuffing Calculator system is built using layered architecture to separate operational data management from heavy computation engines. This architecture is designed to ensure system scalability when handling complex cargo calculations. The system is divided into four components as illustrated in Figure \ref{fig:architecture}: (1) Web Frontend, (2) Backend API, (3) Database, and (4) Packing Service.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{figures/architecture0.pdf}
+	\caption{Container loading planning system architecture}
+	\label{fig:architecture}
+\end{figure}
+
+The first component is the \textbf{Web Frontend} which handles user interaction and loading result visualization. There are three user roles: Admin for user management and access rights, Planner for creating loading plans, and Operator for viewing loading guidance. An interactive 3D visualization module was developed for WebGL-based rendering. Unlike conventional visualization tools that are often static and aimed solely at researcher validation \cite{Krebs2023}, this system is specifically designed to assist field operators in executing physical loading plans through a step playback feature.
+
+The second component is the \textbf{Backend API} which acts as the system's main gateway. This component handles user authentication through JWT (JSON Web Token) and authorization through Role-Based Access Control (RBAC). The handler layer receives HTTP requests and forwards them to the service layer for business logic processing. The data access layer then interacts with the database or calls external services through the Packing Gateway.
+
+The third component is the \textbf{Database} which stores all persistent system data. Data is grouped into three categories: (1) authentication and RBAC data (\texttt{users}, \texttt{roles}, \texttt{permissions}); (2) master data (\texttt{products}, \texttt{containers}); and (3) planning data (\texttt{load\_plans}, \texttt{load\_items}, \texttt{plan\_placements}).
+
+The fourth component is the \textbf{Packing Service} which acts as a separate algorithmic calculation engine. This separation is performed so that business logic in the main API is not hindered by intensive 3D-BPP computation processes. This service encapsulates the 3D bin packing library and communicates with the backend through REST HTTP protocol. Calculation results in the form of a placement list with position coordinates and step sequence numbers are returned to the backend for storage and display in visualization (Figure \ref{fig:visualization}).
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{figures/antarmuka.png}
+	\caption{3D visualization interface with playback controls and loading summary}
+	\label{fig:visualization}
+\end{figure}
+
+This visualization design includes geometric representation of items as BoxGeometry objects with color codes representing different product types. A crucial implemented feature is the loading sequence playback mechanism that utilizes the \texttt{step\_number} variable from calculation results. This mechanism enables the system to display items one by one according to the optimal placement sequence generated by the algorithm, allowing operators to follow step-by-step loading guidance intuitively. This addresses the operational gap where 3D visualization often does not provide practical loading sequence context for warehouse staff \cite{Krebs2023}.
+
+\subsection{Algorithm and Loading Integration}
+
+This section explains the core mechanism of the packing service that integrates heuristic algorithms into the system workflow. The system implements an algorithm based on block-building heuristic modified to handle real-world physical constraints \cite{Silva2016, Ma2025}. The primary strategy employed is Bigger First, where items with the largest volumes are prioritized for placement first to ensure efficient space utilization from the beginning of the loading process.
+
+Algorithm integration is performed through a Python service that encapsulates functions from the 3D bin packing library. There are three key features activated in each calculation: (1) \textbf{Fix Point} which simulates gravity to ensure items are always at the lowest valid position; (2) \textbf{Check Stable} to validate the support area of items beneath; and (3) \textbf{Rotation Optimization} which evaluates six possible item orientations to find the best space fit. The data transformation flow from request to final result is illustrated in Figure \ref{fig:flowchart}.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{figures/flowchart.pdf}
+	\caption{Loading transformation and calculation process flow}
+	\label{fig:flowchart}
+\end{figure}
+
+One technical challenge in this integration is the difference in coordinate axis conventions between system components. The calculation library uses the $Y$ axis as height representation, while this system's API uses the $Z$ axis as height according to logistics coordinate standards. Furthermore, the Three.js frontend uses the $Y$-up convention ($Y$ axis as vertical), necessitating dual transformation. In the packing service, internal coordinates $(p_x, p_y, p_z)$ are mapped to API coordinates as $x = p_x$, $y = p_z$, $z = p_y$. Then in the frontend, API coordinates $(x, y, z)$ are transformed to Three.js as $X_{3D} = x$, $Y_{3D} = z$, $Z_{3D} = -y$. This integration procedure is summarized in Algorithm \ref{alg:integration}.
+
+% \begin{algorithm}[H]
+% 	\caption{Bin Packing Algorithm Integration Procedure}
+% 	\label{alg:integration}
+% 	\begin{algorithmic}[1]
+% 		\Require container dimensions, item list, option parameters (support\_ratio)
+% 		\Ensure sorted placement list
+% 		\State Convert all item and container dimension units to centimeters (cm)
+% 		\State Initialize Packer object and add container (Bin)
+% 		\For{each item in request list}
+% 		\State Add item to Packer queue based on its quantity
+% 		\EndFor
+% 		\State Execute \Call{Packer.pack}{bigger\_first, fix\_point, check\_stable}
+% 		\For{each successfully loaded item (based on putOrder sequence)}
+% 		\State Perform axis transformation: $x=p_x, y=p_z, z=p_y$
+% 		\State Calculate rotation\_code and assign step\_number
+% 		\State Save data to placement result collection
+% 		\EndFor
+% 		\State \Return placements in JSON format
+% 	\end{algorithmic}
+% \end{algorithm}
+
+\begin{algorithm}[!htb]
+	\caption{Bin Packing Algorithm Integration Procedure}
+	\label{alg:integration}
+	\KwIn{container dimensions, item list, option parameters (support\_ratio)}
+	\KwOut{sorted placement list}
+	
+	Convert all item and container dimension units to centimeters (cm)\;
+	Initialize Packer object and add container (Bin)\;
+	
+	\ForEach{item in request list}{
+		Add item to Packer queue based on its quantity\;
+	}
+	
+	Execute Packer.pack(bigger\_first, fix\_point, check\_stable)\;
+	
+	\ForEach{successfully loaded item (based on putOrder sequence)}{
+		Perform axis transformation: $x=p_x, y=p_z, z=p_y$\;
+		Calculate rotation\_code and assign step\_number\;
+		Save data to placement result collection\;
+	}
+	
+	\Return placements in JSON format\;
+\end{algorithm}
+
+\subsection{Evaluation Method and Testing}
+
+System evaluation was performed to measure system performance in handling various loading complexity levels. Testing was designed using realistic scenarios according to literature recommendations for logistics algorithm testing \cite{Ribeiro2023}. Test scenarios (S1--S5) were structured based on increasing item counts and product heterogeneity levels (Table \ref{tab:scenarios}). This aims to test computation response time scalability and algorithm consistency in maintaining optimal space utilization \cite{Jomthong2024}.
+
+\begin{table}[h]
+	\centering
+	\caption{System Performance Test Scenarios}
+	\label{tab:scenarios}
+	\begin{tabular}{clll}
+		\toprule
+		\textbf{Scenario} & \textbf{Items} & \textbf{Heterogeneity} & \textbf{Evaluation Purpose}                   \\
+		\midrule
+		S1                & 50             & Homogeneous            & Functional validation and coordinate accuracy \\
+		S2                & 100            & Light Heterogeneous    & Standard operational case testing             \\
+		S3                & 150            & Moderate Heterogeneous & Medium-level computational load testing       \\
+		S4                & 200            & Highly Heterogeneous   & High complexity testing                       \\
+		S5                & 300            & Highly Heterogeneous   & System scalability limit testing              \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Primary evaluation metrics include: (1) \textbf{Space Utilization} ($U$) calculated through Equation \ref{eq:utilization}; (2) \textbf{Computation Time} in milliseconds ($ms$); and (3) \textbf{Fill Rate} which measures the ratio of successfully loaded items compared to total requests. Testing also includes visual validation on the 3D interface to ensure absence of anomalies such as overlapping items or floating items due to gravity constraint violations.

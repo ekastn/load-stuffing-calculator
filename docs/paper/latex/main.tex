@@ -1,0 +1,84 @@
+\documentclass[a4paper,11pt]{article}
+
+% === PACKAGES ===
+% Language & Encoding
+\usepackage[indonesian,english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% Page Layout (A4, margins for academic paper)
+\usepackage[top=2.5cm,bottom=2.5cm,left=3cm,right=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing  % 1.5 line spacing per JITKOM requirement
+
+% Typography
+\usepackage{times}  % Times New Roman-like font
+
+% Graphics & Tables
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{float}
+
+% Math & Algorithms
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% Code Listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Code listing style
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    captionpos=b
+}
+
+% Citations (IEEE numeric style)
+\usepackage[numbers,sort&compress]{natbib}
+
+% Hyperlinks
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+% Captions
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+
+% === DOCUMENT INFO ===
+\title{\textbf{Integrasi Algoritma 3D Bin Packing dengan Visualisasi Interaktif untuk Optimasi Pemuatan Kontainer}}
+
+\author{
+  Muhamad Saladin Eka Septian$^{1}$, Dina Oktafiani$^{2}$ \\
+  \small $^{1,2}$Program Studi Teknik Informatika \\
+  \small Universitas Logistik dan Bisnis Internasional \\
+  \small Email: ekaseptian.c@gmail.com
+}
+
+\date{}
+
+% === DOCUMENT ===
+\begin{document}
+
+\maketitle
+
+\input{sections/00-abstract}
+\input{sections/01-pendahuluan}
+\input{sections/02-metodologi}
+\input{sections/03-hasil}
+\input{sections/04-simpulan}
+
+\bibliographystyle{ieeetr}
+\bibliography{references}
+
+\end{document}

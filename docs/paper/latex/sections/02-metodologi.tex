@@ -1,0 +1,134 @@
+\section{METODOLOGI PENELITIAN}
+
+Metodologi penelitian ini mencakup perumusan model matematis, perancangan arsitektur sistem, implementasi prosedur integrasi algoritma, hingga desain skenario pengujian sistem.
+
+\subsection{Landasan Teori dan Pemodelan 3D-BPP}
+
+\textit{Three-Dimensional Bin Packing Problem} (3D-BPP) merupakan permasalahan optimasi kombinatorial yang berfokus pada penempatan sekumpulan item tiga dimensi ke dalam kontainer (bin) sedemikian rupa sehingga memaksimalkan penggunaan ruang tersedia \cite{Ma2025}. Permasalahan ini bersifat \textit{NP-hard}, yang berarti kompleksitas pencarian solusi meningkat secara eksponensial seiring dengan bertambahnya jumlah dan variasi dimensi item \cite{Silva2016}. Oleh karena itu, penelitian ini menerapkan pendekatan heuristik untuk mendapatkan solusi yang efisien dalam batasan waktu operasional logistik nyata.
+
+Dalam pemodelan matematis sistem ini, kontainer didefinisikan memiliki dimensi panjang ($L$), lebar ($W$), dan tinggi ($H$) dengan kapasitas beban maksimal $M$. Untuk setiap item $i$ dari total $n$ item, terdapat atribut dimensi $(l_i, w_i, h_i)$, volume $v_i$, dan massa $m_i$. Variabel keputusan yang digunakan meliputi $\eta_i \in \{0,1\}$ sebagai indikator apakah item $i$ berhasil dimuat, koordinat posisi $(x_i, y_i, z_i)$, serta indikator orientasi $r_{i,p}$ untuk menangani kemungkinan rotasi item.
+
+Tujuan utama dari sistem ini dinyatakan dalam fungsi objektif pada Persamaan \ref{eq:objective}:
+\begin{equation}
+	\max \sum_{i=1}^{n} v_i \cdot \eta_i
+	\label{eq:objective}
+\end{equation}
+
+Persamaan \ref{eq:objective} menjelaskan bahwa target utama algoritma adalah memaksimalkan total volume dari seluruh item yang berhasil ditempatkan ($\eta_i = 1$) di dalam kontainer tunggal. Dengan memaksimalkan total volume item yang termuat, sistem secara otomatis meminimalkan ruang kosong (\textit{void space}) yang tidak terpakai, yang pada gilirannya akan menekan biaya transportasi per unit barang.
+
+Untuk mengukur efektivitas dari hasil perhitungan tersebut, digunakan metrik utilisasi ruang ($U$) yang dirumuskan pada Persamaan \ref{eq:utilization}:
+\begin{equation}
+	U = \frac{\sum_{i=1}^{n} v_i \cdot \eta_i}{L \times W \times H} \times 100\%
+	\label{eq:utilization}
+\end{equation}
+
+Persamaan \ref{eq:utilization} merepresentasikan rasio efisiensi pemuatan dalam bentuk persentase. Pembilang pada rumus tersebut adalah total volume item yang berhasil dimuat, sedangkan penyebutnya adalah volume total kapasitas kontainer ($L \times W \times H$). Nilai $U$ yang semakin mendekati 100\% menunjukkan bahwa sistem berhasil menyusun barang dengan sangat rapat dan efisien.
+
+Agar solusi yang dihasilkan tidak hanya optimal secara volume tetapi juga stabil secara fisik, model ini mengintegrasikan sejumlah batasan (\textit{constraints}) operasional. Tabel \ref{tab:constraints} merangkum batasan-batasan tersebut, di mana batasan stabilitas menjadi perhatian khusus dengan mensyaratkan luas penopang minimal ($\theta$) sebesar 75\% dari luas dasar item guna mencegah pergeseran barang selama proses distribusi \cite{Ananno2024}.
+
+\begin{table}[H]
+	\centering
+	\caption{Batasan-Batasan Operasional dalam 3D-BPP}
+	\label{tab:constraints}
+	\small
+	\begin{tabularx}{\textwidth}{lX}
+		\toprule
+		\textbf{Batasan}     & \textbf{Formulasi dan Keterangan}                                                                                                     \\
+		\midrule
+		Volume               & $\sum_{i=1}^{n} v_i \cdot \eta_i \leq L \times W \times H$. Total volume item tidak melebihi kapasitas kontainer.                     \\
+		Massa                & $\sum_{i=1}^{n} m_i \cdot \eta_i \leq M$. Berat total tidak melebihi kapasitas beban maksimum.                                        \\
+		Orientasi            & $\sum_{p=1}^{6} r_{i,p} = 1, \; \forall i$. Setiap item memilih tepat satu dari enam orientasi rotasi.                                \\
+		\textit{Non-overlap} & $(x_i + d_{ix} \leq x_j) \lor (x_j + d_{jx} \leq x_i) \lor \dots, \; \forall i \neq j$. Item tidak boleh menempati ruang yang sama.   \\
+		Stabilitas           & $z_c = 0 \;\lor\; \sum_{c' \in S_z} \text{OverlapArea}(c, c') \geq \theta \cdot A_c$. Item harus ditopang minimal 75\% luas dasarnya. \\
+		Daya Dukung          & $D_i \leq R_i$, dengan $D_i = \sum_{j \in C_i}(m_j + D_j)$. Beban kumulatif di atas item tidak melebihi kapasitas daya dukungnya.     \\
+		Pusat Gravitasi      & $\text{con}_{x1} \leq G_x \leq \text{con}_{x2}$, dst. Pusat gravitasi muatan berada dalam zona aman (opsional).                       \\
+		\bottomrule
+	\end{tabularx}
+\end{table}
+
+\subsection{Arsitektur dan Perancangan Sistem}
+
+Sistem \textit{Load \& Stuffing Calculator} dibangun menggunakan arsitektur berlapis untuk memisahkan manajemen data operasional dengan mesin komputasi berat. Arsitektur ini dirancang untuk memastikan skalabilitas sistem saat menangani perhitungan kargo yang kompleks. Sistem terbagi menjadi empat komponen sebagaimana diilustrasikan pada Gambar \ref{fig:architecture}: (1) \textit{Web Frontend}, (2) \textit{Backend API}, (3) \textit{Database}, dan (4) \textit{Packing Service}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{architecture0.pdf}
+	\caption{Arsitektur sistem perencanaan pemuatan kontainer}
+	\label{fig:architecture}
+\end{figure}
+
+Komponen pertama adalah \textbf{\textit{Web Frontend}} yang menangani interaksi pengguna dan visualisasi hasil pemuatan. Terdapat tiga peran pengguna: \textit{Admin} untuk manajemen pengguna dan hak akses, \textit{Planner} untuk pembuatan rencana pemuatan, dan \textit{Operator} untuk melihat panduan pemuatan. Modul visualisasi 3D interaktif dikembangkan untuk \textit{rendering} berbasis WebGL. Berbeda dengan alat visualisasi konvensional yang seringkali bersifat statis dan hanya ditujukan untuk keperluan validasi peneliti \cite{Krebs2023}, sistem ini dirancang khusus untuk membantu operator lapangan dalam mengeksekusi rencana pemuatan fisik melalui fitur \textit{step playback}.
+
+Komponen kedua adalah \textbf{\textit{Backend API}} yang bertindak sebagai \textit{gateway} utama sistem. Komponen ini menangani autentikasi pengguna melalui JWT (\textit{JSON Web Token}) dan otorisasi melalui \textit{Role-Based Access Control} (RBAC). Lapisan \textit{handler} menerima permintaan HTTP dan meneruskannya ke lapisan \textit{service} untuk pemrosesan logika bisnis. Lapisan \textit{data access} kemudian berinteraksi dengan basis data atau memanggil layanan eksternal melalui \textit{Packing Gateway}.
+
+Komponen ketiga adalah \textbf{\textit{Database}} yang menyimpan seluruh data persisten sistem. Data dikelompokkan menjadi tiga kategori: (1) data autentikasi dan RBAC (\texttt{users}, \texttt{roles}, \texttt{permissions}); (2) data master (\texttt{products}, \texttt{containers}); dan (3) data perencanaan (\texttt{load\_plans}, \texttt{load\_items}, \texttt{plan\_placements}).
+
+Komponen keempat adalah \textbf{\textit{Packing Service}} yang bertindak sebagai mesin kalkulasi algoritmik terpisah. Pemisahan ini dilakukan agar logika bisnis pada API utama tidak terhambat oleh proses komputasi 3D-BPP yang intensif. Layanan ini mengenkapsulasi pustaka \textit{3D bin packing} dan berkomunikasi dengan backend melalui protokol REST HTTP. Hasil perhitungan berupa daftar penempatan (\textit{placements}) dengan koordinat posisi dan nomor urut langkah dikembalikan ke backend untuk disimpan dan ditampilkan pada visualisasi (Gambar \ref{fig:visualization}).
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{antarmuka.png}
+	\caption{Antarmuka visualisasi 3D dengan kontrol \textit{playback} dan ringkasan pemuatan}
+	\label{fig:visualization}
+\end{figure}
+
+Perancangan visualisasi ini mencakup representasi geometris item sebagai objek \textit{BoxGeometry} dengan kode warna yang merepresentasikan jenis produk berbeda. Fitur krusial yang diimplementasikan adalah mekanisme \textit{playback} urutan pemuatan yang memanfaatkan variabel \texttt{step\_number} dari hasil kalkulasi. Mekanisme ini memungkinkan sistem untuk menampilkan barang satu per satu sesuai urutan penempatan optimal yang dihasilkan algoritma, sehingga operator dapat mengikuti panduan pemuatan tahap demi tahap secara intuitif. Hal ini menjawab kesenjangan operasional di mana visualisasi 3D seringkali tidak menyediakan konteks urutan pemuatan yang praktis bagi staf gudang \cite{Krebs2023}.
+
+\subsection{Algoritma dan Integrasi Pemuatan}
+
+Bagian ini menjelaskan mekanisme inti dari layanan \textit{packing} yang mengintegrasikan algoritma heuristik ke dalam alur kerja sistem. Sistem mengimplementasikan algoritma berbasis \textit{block-building heuristic} yang dimodifikasi untuk menangani batasan fisik dunia nyata \cite{Silva2016, Ma2025}. Strategi utama yang digunakan adalah \textit{Bigger First}, di mana item dengan volume terbesar diprioritaskan untuk ditempatkan terlebih dahulu guna memastikan utilisasi ruang yang efisien sejak awal proses pemuatan.
+
+Integrasi algoritma dilakukan melalui layanan Python yang mengenkapsulasi fungsi-fungsi dari pustaka \textit{3D bin packing}. Terdapat tiga fitur kunci yang diaktifkan dalam setiap perhitungan: (1) \textbf{\textit{Fix Point}} yang mensimulasikan gravitasi untuk memastikan item selalu berada pada posisi terendah yang valid; (2) \textbf{\textit{Check Stable}} untuk memvalidasi luas penopang item di bawahnya; dan (3) \textbf{Optimasi Rotasi} yang mengevaluasi enam kemungkinan orientasi item untuk mencari kecocokan ruang terbaik. Alur transformasi data dari permintaan hingga hasil akhir diilustrasikan pada Gambar \ref{fig:flowchart}.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{flowchart.pdf}
+	\caption{Alur proses transformasi dan kalkulasi pemuatan}
+	\label{fig:flowchart}
+\end{figure}
+
+Salah satu tantangan teknis dalam integrasi ini adalah perbedaan konvensi sumbu koordinat antar komponen sistem. Pustaka perhitungan menggunakan sumbu $Y$ sebagai representasi tinggi, sedangkan API sistem ini menggunakan sumbu $Z$ sebagai tinggi sesuai standar koordinat logistik. Lebih lanjut, \textit{frontend} Three.js menggunakan konvensi $Y$-\textit{up} (sumbu $Y$ sebagai vertikal), sehingga diperlukan transformasi ganda. Pada layanan \textit{packing}, koordinat internal $(p_x, p_y, p_z)$ dipetakan ke koordinat API sebagai $x = p_x$, $y = p_z$, $z = p_y$. Kemudian pada \textit{frontend}, koordinat API $(x, y, z)$ ditransformasi ke Three.js sebagai $X_{3D} = x$, $Y_{3D} = z$, $Z_{3D} = -y$. Prosedur integrasi ini dirangkum dalam Algoritma \ref{alg:integration}.
+
+\begin{algorithm}[H]
+	\caption{Prosedur Integrasi Algoritma \textit{Bin Packing}}
+	\label{alg:integration}
+	\begin{algorithmic}[1]
+		\Require dimensi kontainer, daftar item, parameter opsi (\textit{support\_ratio})
+		\Ensure daftar penempatan (\textit{placements}) terurut
+		\State Konversi seluruh satuan dimensi item dan kontainer ke centimeter (cm)
+		\State Inisialisasi objek \textit{Packer} dan tambahkan kontainer (\textit{Bin})
+		\For{setiap item dalam daftar permintaan}
+		\State Tambahkan item ke antrean \textit{Packer} berdasarkan kuantitasnya
+		\EndFor
+		\State Jalankan fungsi \Call{Packer.pack}{bigger\_first, fix\_point, check\_stable}
+		\For{setiap item yang berhasil dimuat (berdasarkan urutan \textit{putOrder})}
+		\State Lakukan transformasi sumbu: $x=p_x, y=p_z, z=p_y$
+		\State Hitung \texttt{rotation\_code} dan tetapkan \texttt{step\_number}
+		\State Simpan data ke dalam koleksi hasil penempatan (\textit{placements})
+		\EndFor
+		\State \Return \textit{placements} dalam format JSON
+	\end{algorithmic}
+\end{algorithm}
+
+\subsection{Metode Evaluasi dan Pengujian}
+
+Evaluasi sistem dilakukan untuk mengukur performa sistem dalam menangani berbagai tingkat kompleksitas pemuatan. Pengujian dirancang menggunakan skenario yang realistis sesuai dengan rekomendasi literatur untuk pengujian algoritma logistik \cite{Ribeiro2023}. Skenario pengujian (S1--S5) disusun berdasarkan peningkatan jumlah item dan tingkat heterogenitas produk (Tabel \ref{tab:scenarios}). Hal ini bertujuan untuk menguji skalabilitas waktu respons komputasi dan konsistensi algoritma dalam mempertahankan utilisasi ruang yang optimal \cite{Jomthong2024}.
+
+\begin{table}[H]
+	\centering
+	\caption{Skenario Pengujian Performa Sistem}
+	\label{tab:scenarios}
+	\begin{tabular}{clll}
+		\toprule
+		\textbf{Skenario} & \textbf{Jumlah Item} & \textbf{Heterogenitas} & \textbf{Tujuan Evaluasi}                   \\
+		\midrule
+		S1                & 50                   & Homogen                & Validasi fungsional dan akurasi koordinat  \\
+		S2                & 100                  & Heterogen Ringan       & Pengujian kasus standar operasional        \\
+		S3                & 150                  & Heterogen Sedang       & Pengujian beban komputasi tingkat menengah \\
+		S4                & 200                  & Sangat Heterogen       & Pengujian kompleksitas tinggi              \\
+		S5                & 300                  & Sangat Heterogen       & Pengujian batas skalabilitas sistem        \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+Metrik evaluasi utama meliputi: (1) \textbf{Utilisasi Ruang} ($U$) yang dihitung melalui Persamaan \ref{eq:utilization}; (2) \textbf{Waktu Komputasi} dalam milidetik ($ms$); dan (3) \textbf{Tingkat Keberhasilan Pemuatan} (\textit{fill rate}) yang mengukur rasio item yang berhasil masuk dibandingkan total permintaan. Pengujian juga mencakup validasi visual pada antarmuka 3D untuk memastikan tidak adanya anomali seperti item yang saling tumpang tindih (\textit{overlap}) atau melayang akibat pelanggaran batasan gravitasi.

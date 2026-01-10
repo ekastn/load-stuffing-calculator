@@ -1,0 +1,63 @@
+% Auto-generated LaTeX tables from benchmark results
+% Generated at: 2026-01-07T19:03:04.081365
+
+% =============================================================================
+% TABLE: Main Performance Results
+% =============================================================================
+\begin{table}[H]
+	\centering
+	\caption{Hasil Pengujian Performa Algoritma Pemuatan}
+	\label{tab:results}
+	\small
+	\begin{tabular}{lrrrrr}
+		\toprule
+		\textbf{Skenario} & \textbf{Item} & \textbf{Vol. Util. (\%)} & \textbf{Berat Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Waktu (ms)}  \\
+		\midrule
+		S1                & 50            & 6.29 $\pm$ 0.00          & 2.83 $\pm$ 0.00           & 100.00                  & 320.2 $\pm$ 5.6      \\
+		S2                & 100           & 8.80 $\pm$ 0.00          & 4.16 $\pm$ 0.00           & 100.00                  & 1684.4 $\pm$ 130.5   \\
+		S3                & 150           & 24.83 $\pm$ 0.00         & 11.15 $\pm$ 0.00          & 100.00                  & 5213.0 $\pm$ 168.9   \\
+		S4                & 200           & 35.45 $\pm$ 0.00         & 16.25 $\pm$ 0.00          & 100.00                  & 10825.8 $\pm$ 167.7  \\
+		S5                & 300           & 55.26 $\pm$ 0.00         & 25.32 $\pm$ 0.00          & 100.00                  & 38343.2 $\pm$ 1209.0 \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE: Algorithm Variant Comparison
+% =============================================================================
+\begin{table}[H]
+	\centering
+	\caption{Perbandingan Varian Algoritma pada Skenario S3 (150 item)}
+	\label{tab:variants}
+	\small
+	\begin{tabular}{lrrrr}
+		\toprule
+		\textbf{Varian}                 & \textbf{Vol. Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Waktu (ms)} & \textbf{Item Termuat} \\
+		\midrule
+		Bigger First + Stability        & 24.83                    & 100.00                  & 5386                & 150                   \\
+		Bigger First (Tanpa Stabilitas) & 24.83                    & 100.00                  & 4960                & 150                   \\
+		Smaller First + Stability       & 17.37                    & 87.33                   & 32886               & 131                   \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE: Scalability Analysis
+% =============================================================================
+\begin{table}[H]
+	\centering
+	\caption{Analisis Skalabilitas Waktu Komputasi}
+	\label{tab:scalability}
+	\small
+	\begin{tabular}{lrrrr}
+		\toprule
+		\textbf{Skenario} & \textbf{Jumlah Item} & \textbf{Min (ms)} & \textbf{Rata-rata (ms)} & \textbf{Max (ms)} \\
+		\midrule
+		S1                & 50                   & 311               & 320.2                   & 325               \\
+		S2                & 100                  & 1489              & 1684.4                  & 1791              \\
+		S3                & 150                  & 5012              & 5213.0                  & 5391              \\
+		S4                & 200                  & 10544             & 10825.8                 & 10972             \\
+		S5                & 300                  & 36334             & 38343.2                 & 39288             \\
+		\bottomrule
+	\end{tabular}
+\end{table}

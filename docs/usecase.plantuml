@@ -1,5 +1,4 @@
 @startuml
-left to right direction
 
 skinparam packageStyle rectangle
 skinparam shadow false
@@ -12,66 +11,97 @@ skinparam usecase {
     ArrowColor #333333
 }
 
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #666666
+}
+
+' Left side actors
 actor "Admin" as admin
 actor "Planner" as planner
 actor "Operator" as operator
-actor "IoT Hardware" as iot <<System>>
 
-' Layout trick: Urutkan aktor dari atas ke bawah
-admin -[hidden]-> planner
-planner -[hidden]-> operator
+' Right side actor
+actor "Guest" as guest
+
+' Layout: Stack left actors vertically
+admin -[hidden]down-> planner
+planner -[hidden]down-> operator
 
 rectangle "Load & Stuffing System" {
 
-    package "Administration" {
+    package "Authentication" #LightBlue {
+        usecase "Login" as UC_Login
+    }
+
+    package "Administration" #LightCoral {
         usecase "Manage Master Data" as UC_Master
         usecase "Manage Container Profiles" as UC_Cont
         usecase "Manage Product Catalog" as UC_Prod
-        usecase "Manage IoT Config" as UC_Dev
+        usecase "Manage Workspace" as UC_Workspace
+        usecase "Manage Members & Invites" as UC_Members
+        usecase "Manage Roles & Permissions" as UC_Roles
         
-        UC_Cont --|> UC_Master
-        UC_Prod --|> UC_Master
-        UC_Dev --|> UC_Master
+        ' Generalization relationships for Master Data
+        UC_Cont --|> UC_Master : <<generalize>>
+        UC_Prod --|> UC_Master : <<generalize>>
     }
 
-    package "Load Planning" {
+    package "Load Planning" #LightGreen {
         usecase "Create Shipment Plan" as UC_CreatePlan
         usecase "Manage Items" as UC_ManageItems
-        usecase "Add Item via IoT" as UC_Scan
         usecase "Calculate Load (Algo)" as UC_Calc
         usecase "View 3D Result" as UC_3D
+        usecase "Export PDF Report" as UC_PDF
         
-        UC_Scan .> UC_ManageItems : <<extend>>
+        ' Include relationships - mandatory dependencies
+        UC_CreatePlan ..> UC_Login : <<include>>
+        UC_ManageItems ..> UC_CreatePlan : <<include>>
+        UC_Calc ..> UC_ManageItems : <<include>>
+        UC_3D ..> UC_Calc : <<include>>
+        UC_PDF ..> UC_3D : <<include>>
     }
 
-    package "Execution" {
-        usecase "Validate Loading Step" as UC_Validate
+    package "Guest Access" #LightYellow {
+        usecase "Trial Access" as UC_Trial
+        
+        ' Extend relationship - optional enhancement
+        UC_Trial .> UC_Login : <<extend>>
     }
-
-    usecase "Login" as UC_Login
-    usecase "Read Sensor Data" as UC_Sensor
 }
 
+' Left side - Admin relationships
 admin --> UC_Login
-admin --> UC_Master 
+admin --> UC_Master
+admin --> UC_Workspace
+admin --> UC_Members
+admin --> UC_Roles
 
+' Left side - Planner relationships
 planner --> UC_Login
 planner --> UC_CreatePlan
 planner --> UC_ManageItems
 planner --> UC_Calc
 planner --> UC_3D
+planner --> UC_PDF
 
+' Left side - Operator relationships
 operator --> UC_Login
-operator --> UC_Validate
-operator --> UC_ManageItems
+operator --> UC_3D
+operator --> UC_PDF
 
-UC_Scan ..> UC_Sensor : <<include>>
+' Right side - Guest relationships
+UC_Trial <-- guest
 
-UC_Validate ..> UC_Sensor : <<include>>
+' Include relationships for administration
+UC_Workspace ..> UC_Login : <<include>>
+UC_Members ..> UC_Workspace : <<include>>
+UC_Roles ..> UC_Login : <<include>>
 
-UC_Sensor -- iot
-
-UC_Master -[hidden]-> UC_CreatePlan
-UC_ManageItems -[hidden]-> UC_Validate
+' Hidden layout constraints for better positioning
+UC_Master -[hidden]right-> UC_CreatePlan
+UC_Workspace -[hidden]right-> UC_CreatePlan
+UC_Login -[hidden]down-> UC_Master
+UC_CreatePlan -[hidden]right-> UC_Trial
 
 @enduml
