@@ -9,6 +9,7 @@ __pycache__/
 .venv*
 
 coverage.txt
+coverage*
 *.out
 
 out/
