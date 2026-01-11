@@ -165,6 +165,20 @@ func TestPlanHandler_GetPlan(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/plans/", nil)
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+
+		h.GetPlan(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
 	t.Run("not_found", func(t *testing.T) {
 		mockSvc := new(mocks.MockPlanService)
 		h := handler.NewPlanHandler(mockSvc)
@@ -206,6 +220,22 @@ func TestPlanHandler_ListPlans(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("ListPlans", mock.Anything, int32(1), int32(10)).Return(nil, errors.New("db error"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/plans?page=1&limit=10", nil)
+
+		h.ListPlans(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
 }
 
 func TestPlanHandler_UpdatePlan(t *testing.T) {
@@ -232,6 +262,59 @@ func TestPlanHandler_UpdatePlan(t *testing.T) {
 		h.UpdatePlan(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		req := dto.UpdatePlanRequest{Status: stringPtr("COMPLETED")}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPut, "/plans/", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePlan(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("invalid_json", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPut, "/plans/"+planID, bytes.NewBufferString("invalid"))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePlan(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		req := dto.UpdatePlanRequest{Status: stringPtr("COMPLETED")}
+		mockSvc.On("UpdatePlan", mock.Anything, planID, req).Return(errors.New("db error"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPut, "/plans/"+planID, bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePlan(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 
@@ -275,6 +358,37 @@ func TestPlanHandler_DeletePlan(t *testing.T) {
 		h.DeletePlan(c)
 
 		assert.Equal(t, http.StatusOK, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodDelete, "/plans/", nil)
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+
+		h.DeletePlan(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("DeletePlan", mock.Anything, planID).Return(errors.New("db error"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodDelete, "/plans/"+planID, nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.DeletePlan(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 
@@ -332,6 +446,56 @@ func TestPlanHandler_AddPlanItem(t *testing.T) {
 		mockSvc.AssertExpectations(t)
 	})
 
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(itemReq)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans//items", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.AddPlanItem(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("invalid_json", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/items", bytes.NewBufferString("invalid"))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.AddPlanItem(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("AddPlanItem", mock.Anything, planID, itemReq).Return(nil, errors.New("db error"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(itemReq)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/items", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.AddPlanItem(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+
 	t.Run("forbidden", func(t *testing.T) {
 		mockSvc := new(mocks.MockPlanService)
 		h := handler.NewPlanHandler(mockSvc)
@@ -376,6 +540,37 @@ func TestPlanHandler_GetPlanItem(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+
+	t.Run("missing_ids", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/plans//items/", nil)
+		c.Params = gin.Params{{Key: "id", Value: ""}, {Key: "itemId", Value: ""}}
+
+		h.GetPlanItem(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("not_found", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("GetPlanItem", mock.Anything, planID, itemID).Return(nil, errors.New("not found"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/plans/"+planID+"/items/"+itemID, nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}, {Key: "itemId", Value: itemID}}
+
+		h.GetPlanItem(c)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
 }
 
 func TestPlanHandler_UpdatePlanItem(t *testing.T) {
@@ -386,11 +581,42 @@ func TestPlanHandler_UpdatePlanItem(t *testing.T) {
 	newLabel := "Updated Item Label"
 	updateReq := dto.UpdatePlanItemRequest{Label: &newLabel}
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("missing_ids", func(t *testing.T) {
 		mockSvc := new(mocks.MockPlanService)
 		h := handler.NewPlanHandler(mockSvc)
 
-		mockSvc.On("UpdatePlanItem", mock.Anything, planID, itemID, updateReq).Return(nil)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(updateReq)
+		c.Request = httptest.NewRequest(http.MethodPut, "/plans//items/", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: ""}, {Key: "itemId", Value: ""}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePlanItem(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("invalid_json", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPut, "/plans/"+planID+"/items/"+itemID, bytes.NewBufferString("invalid"))
+		c.Params = gin.Params{{Key: "id", Value: planID}, {Key: "itemId", Value: itemID}}
+		c.Request.Header.Set("Content-Type", "application/json")
+
+		h.UpdatePlanItem(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("UpdatePlanItem", mock.Anything, planID, itemID, updateReq).Return(errors.New("db error"))
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -401,7 +627,7 @@ func TestPlanHandler_UpdatePlanItem(t *testing.T) {
 
 		h.UpdatePlanItem(c)
 
-		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }
@@ -412,11 +638,25 @@ func TestPlanHandler_DeletePlanItem(t *testing.T) {
 	planID := uuid.New().String()
 	itemID := uuid.New().String()
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("missing_ids", func(t *testing.T) {
 		mockSvc := new(mocks.MockPlanService)
 		h := handler.NewPlanHandler(mockSvc)
 
-		mockSvc.On("DeletePlanItem", mock.Anything, planID, itemID).Return(nil)
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodDelete, "/plans//items/", nil)
+		c.Params = gin.Params{{Key: "id", Value: ""}, {Key: "itemId", Value: ""}}
+
+		h.DeletePlanItem(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+	})
+
+	t.Run("service_error", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("DeletePlanItem", mock.Anything, planID, itemID).Return(errors.New("db error"))
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -425,7 +665,7 @@ func TestPlanHandler_DeletePlanItem(t *testing.T) {
 
 		h.DeletePlanItem(c)
 
-		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
 }
@@ -456,6 +696,20 @@ func TestPlanHandler_CalculatePlan(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("missing_id", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans//calculate", nil)
+		c.Params = gin.Params{{Key: "id", Value: ""}}
+
+		h.CalculatePlan(c)
+
+		assert.Equal(t, http.StatusBadRequest, w.Code)
 	})
 
 	t.Run("error_calc_failed", func(t *testing.T) {

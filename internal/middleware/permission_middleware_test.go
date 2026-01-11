@@ -186,4 +186,103 @@ func TestPermissionMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
+
+	t.Run("permission_all_success_when_all_granted", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				return []string{"plan:read", "plan:update", "plan:delete"}, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		c.Set("role", types.RolePlanner.String())
+
+		middleware.PermissionAll(mockQ, permCache, "plan:read", "plan:update")(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("role_not_in_context", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				t.Error("GetPermissionsByRole should not be called")
+				return nil, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		// Don't set role in context
+
+		middleware.Permission(mockQ, permCache, "article:create")(c)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "User role not found in context")
+	})
+
+	t.Run("invalid_role_type", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				t.Error("GetPermissionsByRole should not be called")
+				return nil, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		// Set role as int instead of string
+		c.Set("role", 123)
+
+		middleware.Permission(mockQ, permCache, "article:create")(c)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "Invalid role type")
+	})
+
+	t.Run("permission_all_role_not_in_context", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				t.Error("GetPermissionsByRole should not be called")
+				return nil, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		// Don't set role in context
+
+		middleware.PermissionAll(mockQ, permCache, "plan:read", "plan:update")(c)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "User role not found in context")
+	})
+
+	t.Run("permission_any_role_not_in_context", func(t *testing.T) {
+		mockQ := &MockQuerier{
+			GetPermissionsByRoleFunc: func(ctx context.Context, name string) ([]string, error) {
+				t.Error("GetPermissionsByRole should not be called")
+				return nil, nil
+			},
+		}
+		permCache := cache.NewPermissionCache()
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/", nil)
+		// Don't set role in context
+
+		middleware.PermissionAny(mockQ, permCache, "plan:read", "plan:update")(c)
+
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+		assert.Contains(t, w.Body.String(), "User role not found in context")
+	})
 }
