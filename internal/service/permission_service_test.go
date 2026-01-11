@@ -96,6 +96,11 @@ func TestPermissionService_GetPermission(t *testing.T) {
 			getErr:  fmt.Errorf("not found"),
 			wantErr: true,
 		},
+		{
+			name:    "invalid_id",
+			id:      "invalid-uuid",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -200,6 +205,12 @@ func TestPermissionService_UpdatePermission(t *testing.T) {
 			updateErr: fmt.Errorf("db error"),
 			wantErr:   true,
 		},
+		{
+			name:    "invalid_id",
+			id:      "invalid-uuid",
+			req:     dto.UpdatePermissionRequest{Name: name},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -239,6 +250,11 @@ func TestPermissionService_DeletePermission(t *testing.T) {
 			id:        id.String(),
 			deleteErr: fmt.Errorf("db error"),
 			wantErr:   true,
+		},
+		{
+			name:    "invalid_id",
+			id:      "invalid-uuid",
+			wantErr: true,
 		},
 	}
 

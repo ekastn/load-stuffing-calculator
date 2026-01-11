@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- [Go](https://go.dev/dl/): versi 1.20 atau lebih baru
+- [Go](https://go.dev/dl/): versi 1.24 atau lebih baru
 - [PostgreSQL](https://www.postgresql.org/download/): versi 14 atau lebih baru
 - [Goose](https://github.com/pressly/goose): Migrasi database
 - [swag](https://github.com/swaggo/swag): Swagger Generator (opsional)
@@ -34,17 +34,41 @@ swag init -g cmd/api/main.go -o internal/docs
 
 ## Run
 
+### Option A: Docker Compose (recommended)
+
+This starts Postgres, runs migrations, starts the packing microservice (py3dbp), then starts the Go API.
+
 ```bash
-# Manual go run
-go build -o bin/api ./cmd/api
-./bin/api
+# If you cloned fresh, fetch the vendored py3dbp submodule
+git submodule update --init --recursive
 
-# Opsi jika menggunakan make
-make run
-
-# Opsi jika menggunakan air
-air
+docker compose up --build
 ```
 
-Server API akan berjalan di `http://localhost:8080` secara default (sesuai konfigurasi di `.env`).
-**Swagger UI:** `http://localhost:8080/docs/index.html`
+API:
+- `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/docs/index.html`
+
+Web UI:
+- `http://localhost:3000`
+
+Packing service (internal, for debugging only):
+- Health: `http://localhost:5051/health`
+
+### Option B: Local (manual)
+
+You must run the packing microservice separately and set `PACKING_SERVICE_URL`.
+
+```bash
+# terminal 1: packing service
+python3 -m venv cmd/packing/.venv
+. cmd/packing/.venv/bin/activate
+pip install -r cmd/packing/requirements.txt
+python cmd/packing/app.py
+
+# terminal 2: API
+go build -o bin/api ./cmd/api
+./bin/api
+```
+
+Default URL if unset: `PACKING_SERVICE_URL=http://localhost:5051`
