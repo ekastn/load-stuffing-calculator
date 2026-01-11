@@ -99,6 +99,11 @@ func TestRoleService_GetRole(t *testing.T) {
 			getErr:  fmt.Errorf("not found"),
 			wantErr: true,
 		},
+		{
+			name:    "invalid_id",
+			id:      "invalid-uuid",
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -271,4 +276,188 @@ func TestRoleService_DeleteRole(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRoleService_UpdateRolePermissions(t *testing.T) {
+	roleID := uuid.New()
+	perm1 := uuid.New()
+	perm2 := uuid.New()
+
+	tests := []struct {
+		name             string
+		roleID           string
+		permissionIDs    []string
+		deletePermsErr   error
+		addPermErr       error
+		addPermCallCount int
+		wantErr          bool
+		errContains      string
+	}{
+		{
+			name:             "success_with_two_permissions",
+			roleID:           roleID.String(),
+			permissionIDs:    []string{perm1.String(), perm2.String()},
+			addPermCallCount: 2,
+			wantErr:          false,
+		},
+		{
+			name:             "success_with_no_permissions",
+			roleID:           roleID.String(),
+			permissionIDs:    []string{},
+			addPermCallCount: 0,
+			wantErr:          false,
+		},
+		{
+			name:          "invalid_role_id",
+			roleID:        "invalid-uuid",
+			permissionIDs: []string{perm1.String()},
+			wantErr:       true,
+			errContains:   "invalid role id",
+		},
+		{
+			name:          "invalid_permission_id",
+			roleID:        roleID.String(),
+			permissionIDs: []string{"invalid-uuid"},
+			wantErr:       true,
+			errContains:   "invalid permission id",
+		},
+		{
+			name:           "delete_permissions_error",
+			roleID:         roleID.String(),
+			permissionIDs:  []string{perm1.String()},
+			deletePermsErr: fmt.Errorf("delete error"),
+			wantErr:        true,
+			errContains:    "failed to clear existing permissions",
+		},
+		{
+			name:          "add_permission_error",
+			roleID:        roleID.String(),
+			permissionIDs: []string{perm1.String()},
+			addPermErr:    fmt.Errorf("add error"),
+			wantErr:       true,
+			errContains:   "failed to add permission",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			addPermCallCount := 0
+
+			mockQ := &MockQuerier{
+				DeleteRolePermissionsFunc: func(ctx context.Context, roleID uuid.UUID) error {
+					return tt.deletePermsErr
+				},
+				AddRolePermissionFunc: func(ctx context.Context, arg store.AddRolePermissionParams) error {
+					addPermCallCount++
+					return tt.addPermErr
+				},
+			}
+
+			s := service.NewRoleService(mockQ)
+			err := s.UpdateRolePermissions(context.Background(), tt.roleID, tt.permissionIDs)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateRolePermissions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && tt.errContains != "" {
+				if err == nil || !contains(err.Error(), tt.errContains) {
+					t.Errorf("UpdateRolePermissions() error = %v, want error containing %q", err, tt.errContains)
+				}
+			}
+
+			if !tt.wantErr && addPermCallCount != tt.addPermCallCount {
+				t.Errorf("AddRolePermission called %d times, want %d", addPermCallCount, tt.addPermCallCount)
+			}
+		})
+	}
+}
+
+func TestRoleService_GetRolePermissions(t *testing.T) {
+	roleID := uuid.New()
+	perm1 := uuid.New()
+	perm2 := uuid.New()
+
+	tests := []struct {
+		name        string
+		roleID      string
+		mockPerms   []uuid.UUID
+		mockErr     error
+		wantErr     bool
+		wantCount   int
+		errContains string
+	}{
+		{
+			name:      "success_with_permissions",
+			roleID:    roleID.String(),
+			mockPerms: []uuid.UUID{perm1, perm2},
+			wantErr:   false,
+			wantCount: 2,
+		},
+		{
+			name:      "success_with_no_permissions",
+			roleID:    roleID.String(),
+			mockPerms: []uuid.UUID{},
+			wantErr:   false,
+			wantCount: 0,
+		},
+		{
+			name:        "invalid_role_id",
+			roleID:      "invalid-uuid",
+			wantErr:     true,
+			errContains: "invalid role id",
+		},
+		{
+			name:    "db_error",
+			roleID:  roleID.String(),
+			mockErr: fmt.Errorf("database error"),
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockQ := &MockQuerier{
+				GetRolePermissionsFunc: func(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error) {
+					return tt.mockPerms, tt.mockErr
+				},
+			}
+
+			s := service.NewRoleService(mockQ)
+			perms, err := s.GetRolePermissions(context.Background(), tt.roleID)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRolePermissions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && tt.errContains != "" {
+				if err == nil || !contains(err.Error(), tt.errContains) {
+					t.Errorf("GetRolePermissions() error = %v, want error containing %q", err, tt.errContains)
+				}
+			}
+
+			if !tt.wantErr {
+				if len(perms) != tt.wantCount {
+					t.Errorf("GetRolePermissions() returned %d permissions, want %d", len(perms), tt.wantCount)
+				}
+			}
+		})
+	}
+}
+
+// Helper function to check if a string contains a substring
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
+		(len(s) > 0 && len(substr) > 0 && stringContains(s, substr)))
+}
+
+func stringContains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }

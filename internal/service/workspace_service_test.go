@@ -307,3 +307,544 @@ func TestWorkspaceService_ListWorkspaces_GlobalListErrorPropagates(t *testing.T)
 		t.Fatalf("expected wrapped error")
 	}
 }
+
+// Table-driven tests for UpdateWorkspace
+func TestWorkspaceService_UpdateWorkspace(t *testing.T) {
+	workspaceID := uuid.New()
+	ownerID := uuid.New()
+	newOwnerID := uuid.New()
+	roleID := uuid.New()
+
+	tests := []struct {
+		name      string
+		id        string
+		req       dto.UpdateWorkspaceRequest
+		ctx       context.Context
+		mockSetup func(*mocks.MockQuerier)
+		wantErr   bool
+	}{
+		{
+			name: "successful_name_update",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				Name: stringPtr("New Name"),
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Old Name",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+				mq.UpdateWorkspaceFunc = func(ctx context.Context, arg store.UpdateWorkspaceParams) error {
+					if arg.Name != "New Name" {
+						t.Errorf("expected name 'New Name', got %q", arg.Name)
+					}
+					return nil
+				}
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid_workspace_id",
+			id:   "invalid-uuid",
+			req: dto.UpdateWorkspaceRequest{
+				Name: stringPtr("Test"),
+			},
+			ctx:       ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {},
+			wantErr:   true,
+		},
+		{
+			name: "workspace_not_found",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				Name: stringPtr("Test"),
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{}, errors.New("not found")
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "forbidden_non_owner",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				Name: stringPtr("Test"),
+			},
+			ctx: ctxWithUserAndRole(types.RoleAdmin, uuid.New()), // Different user, not owner
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test",
+						OwnerUserID: ownerID, // Different from context user
+					}, nil
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid_new_owner_uuid",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				OwnerUserID: stringPtr("invalid-uuid"),
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "database_error_on_update",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				Name: stringPtr("New Name"),
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Old Name",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+				mq.UpdateWorkspaceFunc = func(ctx context.Context, arg store.UpdateWorkspaceParams) error {
+					return errors.New("database error")
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "database_error_on_transfer",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				OwnerUserID: stringPtr(newOwnerID.String()),
+			},
+			ctx: ctxWithUserAndRole(types.RoleFounder, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+				mq.GetMemberByWorkspaceAndUserFunc = func(ctx context.Context, arg store.GetMemberByWorkspaceAndUserParams) (store.Member, error) {
+					return store.Member{}, errors.New("not found")
+				}
+				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				}
+				mq.CreateMemberFunc = func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+					return store.Member{MemberID: uuid.New(), WorkspaceID: arg.WorkspaceID, UserID: arg.UserID}, nil
+				}
+				mq.TransferWorkspaceOwnershipFunc = func(ctx context.Context, arg store.TransferWorkspaceOwnershipParams) error {
+					return errors.New("transfer failed")
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "role_lookup_error_on_transfer",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				OwnerUserID: stringPtr(newOwnerID.String()),
+			},
+			ctx: ctxWithUserAndRole(types.RoleFounder, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+				mq.GetMemberByWorkspaceAndUserFunc = func(ctx context.Context, arg store.GetMemberByWorkspaceAndUserParams) (store.Member, error) {
+					return store.Member{}, errors.New("not found")
+				}
+				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+					return store.GetRoleByNameRow{}, errors.New("role not found")
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "create_member_error_on_transfer",
+			id:   workspaceID.String(),
+			req: dto.UpdateWorkspaceRequest{
+				OwnerUserID: stringPtr(newOwnerID.String()),
+			},
+			ctx: ctxWithUserAndRole(types.RoleFounder, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+				mq.GetMemberByWorkspaceAndUserFunc = func(ctx context.Context, arg store.GetMemberByWorkspaceAndUserParams) (store.Member, error) {
+					return store.Member{}, errors.New("not found")
+				}
+				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				}
+				mq.CreateMemberFunc = func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+					return store.Member{}, errors.New("create member failed")
+				}
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockQ := &mocks.MockQuerier{}
+			tt.mockSetup(mockQ)
+
+			svc := service.NewWorkspaceService(mockQ)
+			_, err := svc.UpdateWorkspace(tt.ctx, tt.id, tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UpdateWorkspace() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// Table-driven tests for DeleteWorkspace
+func TestWorkspaceService_DeleteWorkspace(t *testing.T) {
+	workspaceID := uuid.New()
+	ownerID := uuid.New()
+
+	tests := []struct {
+		name      string
+		id        string
+		ctx       context.Context
+		mockSetup func(*mocks.MockQuerier)
+		wantErr   bool
+	}{
+		{
+			name: "successful_delete_organization",
+			id:   workspaceID.String(),
+			ctx:  ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test Org",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+				mq.DeleteWorkspaceFunc = func(ctx context.Context, id uuid.UUID) error {
+					return nil
+				}
+			},
+			wantErr: false,
+		},
+		{
+			name:      "invalid_workspace_id",
+			id:        "invalid-uuid",
+			ctx:       ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {},
+			wantErr:   true,
+		},
+		{
+			name: "workspace_not_found",
+			id:   workspaceID.String(),
+			ctx:  ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{}, errors.New("not found")
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "forbidden_non_owner_organization",
+			id:   workspaceID.String(),
+			ctx:  ctxWithUserAndRole(types.RoleAdmin, uuid.New()), // Not the owner
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test",
+						OwnerUserID: ownerID, // Different from context user
+					}, nil
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "database_error_on_delete",
+			id:   workspaceID.String(),
+			ctx:  ctxWithUserAndRole(types.RoleOwner, ownerID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetWorkspaceFunc = func(ctx context.Context, id uuid.UUID) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: workspaceID,
+						Type:        "organization",
+						Name:        "Test",
+						OwnerUserID: ownerID,
+					}, nil
+				}
+				mq.DeleteWorkspaceFunc = func(ctx context.Context, id uuid.UUID) error {
+					return errors.New("database error")
+				}
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockQ := &mocks.MockQuerier{}
+			tt.mockSetup(mockQ)
+
+			svc := service.NewWorkspaceService(mockQ)
+			err := svc.DeleteWorkspace(tt.ctx, tt.id)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DeleteWorkspace() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// Table-driven tests for CreateWorkspace
+func TestWorkspaceService_CreateWorkspace(t *testing.T) {
+	userID := uuid.New()
+	roleID := uuid.New()
+
+	tests := []struct {
+		name      string
+		req       dto.CreateWorkspaceRequest
+		ctx       context.Context
+		mockSetup func(*mocks.MockQuerier)
+		wantErr   bool
+	}{
+		{
+			name: "successful_create_organization",
+			req: dto.CreateWorkspaceRequest{
+				Name: "Test Org",
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+					if name != types.RoleOwner.String() {
+						t.Errorf("expected role %q, got %q", types.RoleOwner, name)
+					}
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				}
+				mq.CreateWorkspaceFunc = func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+					if arg.Type != "organization" {
+						t.Errorf("expected type organization, got %q", arg.Type)
+					}
+					return store.Workspace{
+						WorkspaceID: uuid.New(),
+						Type:        arg.Type,
+						Name:        arg.Name,
+						OwnerUserID: arg.OwnerUserID,
+					}, nil
+				}
+				mq.CreateMemberFunc = func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+					return store.Member{MemberID: uuid.New()}, nil
+				}
+			},
+			wantErr: false,
+		},
+		{
+			name: "missing_user_id",
+			req: dto.CreateWorkspaceRequest{
+				Name: "Test",
+			},
+			ctx:       context.Background(), // No user ID in context
+			mockSetup: func(mq *mocks.MockQuerier) {},
+			wantErr:   true,
+		},
+		{
+			name: "founder_invalid_workspace_type",
+			req: dto.CreateWorkspaceRequest{
+				Name: "Test",
+				Type: stringPtr("invalid"),
+			},
+			ctx:       ctxWithUserAndRole(types.RoleFounder, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {},
+			wantErr:   true,
+		},
+		{
+			name: "founder_invalid_owner_uuid",
+			req: dto.CreateWorkspaceRequest{
+				Name:        "Test",
+				OwnerUserID: stringPtr("invalid-uuid"),
+			},
+			ctx:       ctxWithUserAndRole(types.RoleFounder, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {},
+			wantErr:   true,
+		},
+		{
+			name: "role_lookup_error",
+			req: dto.CreateWorkspaceRequest{
+				Name: "Test",
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+					return store.GetRoleByNameRow{}, errors.New("role not found")
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "database_error_on_create_workspace",
+			req: dto.CreateWorkspaceRequest{
+				Name: "Test",
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				}
+				mq.CreateWorkspaceFunc = func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+					return store.Workspace{}, errors.New("database error")
+				}
+			},
+			wantErr: true,
+		},
+		{
+			name: "database_error_on_create_member",
+			req: dto.CreateWorkspaceRequest{
+				Name: "Test",
+			},
+			ctx: ctxWithUserAndRole(types.RoleOwner, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
+					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil
+				}
+				mq.CreateWorkspaceFunc = func(ctx context.Context, arg store.CreateWorkspaceParams) (store.Workspace, error) {
+					return store.Workspace{
+						WorkspaceID: uuid.New(),
+						Type:        arg.Type,
+						Name:        arg.Name,
+						OwnerUserID: arg.OwnerUserID,
+					}, nil
+				}
+				mq.CreateMemberFunc = func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
+					return store.Member{}, errors.New("create member failed")
+				}
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockQ := &mocks.MockQuerier{}
+			tt.mockSetup(mockQ)
+
+			svc := service.NewWorkspaceService(mockQ)
+			_, err := svc.CreateWorkspace(tt.ctx, tt.req)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("CreateWorkspace() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// Table-driven tests for ListWorkspaces
+func TestWorkspaceService_ListWorkspaces(t *testing.T) {
+	userID := uuid.New()
+
+	tests := []struct {
+		name      string
+		page      int32
+		limit     int32
+		ctx       context.Context
+		mockSetup func(*mocks.MockQuerier)
+		wantErr   bool
+		wantLen   int
+	}{
+		{
+			name:  "pagination_defaults",
+			page:  0,
+			limit: 0,
+			ctx:   ctxWithUserAndRole(types.RoleOwner, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.ListWorkspacesForUserFunc = func(ctx context.Context, arg store.ListWorkspacesForUserParams) ([]store.Workspace, error) {
+					if arg.Limit != 10 {
+						t.Errorf("expected default limit 10, got %d", arg.Limit)
+					}
+					if arg.Offset != 0 {
+						t.Errorf("expected offset 0, got %d", arg.Offset)
+					}
+					return []store.Workspace{}, nil
+				}
+			},
+			wantErr: false,
+			wantLen: 0,
+		},
+		{
+			name:  "missing_user_id",
+			page:  1,
+			limit: 10,
+			ctx:   context.Background(), // No user ID
+			mockSetup: func(mq *mocks.MockQuerier) {
+				// Founder check will fail, then userIDFromContext will fail
+			},
+			wantErr: true,
+		},
+		{
+			name:  "database_error_for_user",
+			page:  1,
+			limit: 10,
+			ctx:   ctxWithUserAndRole(types.RoleOwner, userID),
+			mockSetup: func(mq *mocks.MockQuerier) {
+				mq.ListWorkspacesForUserFunc = func(ctx context.Context, arg store.ListWorkspacesForUserParams) ([]store.Workspace, error) {
+					return nil, errors.New("database error")
+				}
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockQ := &mocks.MockQuerier{}
+			tt.mockSetup(mockQ)
+
+			svc := service.NewWorkspaceService(mockQ)
+			resp, err := svc.ListWorkspaces(tt.ctx, tt.page, tt.limit)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ListWorkspaces() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !tt.wantErr && len(resp) != tt.wantLen {
+				t.Errorf("ListWorkspaces() returned %d workspaces, want %d", len(resp), tt.wantLen)
+			}
+		})
+	}
+}

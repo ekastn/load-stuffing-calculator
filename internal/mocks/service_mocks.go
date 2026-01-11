@@ -345,3 +345,118 @@ func (m *MockPlanService) CalculatePlan(ctx context.Context, planID string, opts
 	}
 	return args.Get(0).(*dto.CalculationResult), args.Error(1)
 }
+
+// MockInviteService is a mock implementation of service.InviteService
+type MockInviteService struct {
+	mock.Mock
+}
+
+func (m *MockInviteService) ListInvites(ctx context.Context, page, limit int32, overrideWorkspaceID *string) ([]dto.InviteResponse, error) {
+	args := m.Called(ctx, page, limit, overrideWorkspaceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.InviteResponse), args.Error(1)
+}
+
+func (m *MockInviteService) CreateInvite(ctx context.Context, req dto.CreateInviteRequest, overrideWorkspaceID *string) (*dto.CreateInviteResponse, error) {
+	args := m.Called(ctx, req, overrideWorkspaceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.CreateInviteResponse), args.Error(1)
+}
+
+func (m *MockInviteService) RevokeInvite(ctx context.Context, inviteID string, overrideWorkspaceID *string) error {
+	args := m.Called(ctx, inviteID, overrideWorkspaceID)
+	return args.Error(0)
+}
+
+func (m *MockInviteService) AcceptInvite(ctx context.Context, req dto.AcceptInviteRequest) (*dto.AcceptInviteResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.AcceptInviteResponse), args.Error(1)
+}
+
+// MockMemberService is a mock implementation of service.MemberService
+type MockMemberService struct {
+	mock.Mock
+}
+
+func (m *MockMemberService) ListMembers(ctx context.Context, page, limit int32, overrideWorkspaceID *string) ([]dto.MemberResponse, error) {
+	args := m.Called(ctx, page, limit, overrideWorkspaceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.MemberResponse), args.Error(1)
+}
+
+func (m *MockMemberService) AddMember(ctx context.Context, req dto.AddMemberRequest, overrideWorkspaceID *string) (*dto.MemberResponse, error) {
+	args := m.Called(ctx, req, overrideWorkspaceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.MemberResponse), args.Error(1)
+}
+
+func (m *MockMemberService) UpdateMemberRole(ctx context.Context, memberID string, req dto.UpdateMemberRoleRequest, overrideWorkspaceID *string) (*dto.MemberResponse, error) {
+	args := m.Called(ctx, memberID, req, overrideWorkspaceID)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.MemberResponse), args.Error(1)
+}
+
+func (m *MockMemberService) DeleteMember(ctx context.Context, memberID string, overrideWorkspaceID *string) error {
+	args := m.Called(ctx, memberID, overrideWorkspaceID)
+	return args.Error(0)
+}
+
+// MockDashboardService is a mock implementation of service.DashboardService
+type MockDashboardService struct {
+	mock.Mock
+}
+
+func (m *MockDashboardService) GetStats(ctx context.Context, role string) (*dto.DashboardStatsResponse, error) {
+	args := m.Called(ctx, role)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.DashboardStatsResponse), args.Error(1)
+}
+
+// MockWorkspaceService is a mock implementation of service.WorkspaceService
+type MockWorkspaceService struct {
+	mock.Mock
+}
+
+func (m *MockWorkspaceService) ListWorkspaces(ctx context.Context, page, limit int32) ([]dto.WorkspaceResponse, error) {
+	args := m.Called(ctx, page, limit)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]dto.WorkspaceResponse), args.Error(1)
+}
+
+func (m *MockWorkspaceService) CreateWorkspace(ctx context.Context, req dto.CreateWorkspaceRequest) (*dto.WorkspaceResponse, error) {
+	args := m.Called(ctx, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.WorkspaceResponse), args.Error(1)
+}
+
+func (m *MockWorkspaceService) UpdateWorkspace(ctx context.Context, id string, req dto.UpdateWorkspaceRequest) (*dto.WorkspaceResponse, error) {
+	args := m.Called(ctx, id, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*dto.WorkspaceResponse), args.Error(1)
+}
+
+func (m *MockWorkspaceService) DeleteWorkspace(ctx context.Context, id string) error {
+	args := m.Called(ctx, id)
+	return args.Error(0)
+}
