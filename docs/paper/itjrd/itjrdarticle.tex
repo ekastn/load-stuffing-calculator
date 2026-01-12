@@ -25,6 +25,7 @@
 \usepackage{microtype}
 
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\sloppy
 
 
 %%leave copyright info to the editor
@@ -102,7 +103,7 @@
 \parbox[t][][s]{0.7\textwidth}{%
 	\begin{abstract}
 		%% Text of abstract
-		Manual container loading operations remain inefficient due to reliance on operator experience without decision support tools. This research develops Load \& Stuffing Calculator, a web-based system integrating 3D Bin Packing Problem algorithm with interactive visualization for container loading optimization. The system employs layered architecture separating the packing calculation service from the data management backend, with Three.js-based 3D visualization providing step-by-step loading guidance. Testing across five scenarios (50-300 heterogeneous items) demonstrates consistent 100\% fill rate with volume utilization reaching 55.26\%, while computation time remains under 40 seconds for offline planning requirements. Algorithm comparison confirms Bigger First strategy achieves 42.9\% higher utilization than Smaller First approach. Empirically, this research validates the feasibility of web-based 3D bin packing systems for practical logistics operations. Conceptually, the integration of step playback visualization bridges the gap between algorithmic calculation and physical execution, addressing the limitation of existing tools that lack operational guidance for warehouse staff.
+		Container loading operations face persistent efficiency challenges due to reliance on operator experience without decision support tools, while existing algorithmic solutions lack practical guidance for warehouse staff. This research develops a web-based container loading planning system integrating a 3D bin packing algorithm with interactive visualization. The system employs a layered architecture separating the calculation engine from the data management backend, with WebGL-based 3D visualization providing step-by-step loading guidance accessible through standard web browsers. Evaluation across five heterogeneous item scenarios (50--300 items with varying dimensions and types) demonstrates consistent 100\% placement success rate with volume utilization reaching 55.26\% in the most complex scenario. Computation time exhibits quadratic growth, remaining under 40 seconds for 300 items, suitable for offline planning operations. Algorithm comparison reveals the Bigger First sorting strategy achieves 43\% higher utilization than Smaller First, while stability checking adds only 8\% computational overhead. Results validate the feasibility of web-based 3D bin packing systems for practical logistics operations and demonstrate that integrating step-by-step playback visualization effectively bridges the gap between algorithmic optimization and physical execution requirements.
 	\end{abstract}
 }
 \parbox[l]{\textwidth}{%
