@@ -8,9 +8,16 @@ import (
 	"load-stuffing-calculator/internal/config"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file jika ada (opsional untuk development)
+	// Di production, environment variables di-set langsung oleh orchestrator
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+
 	cfg := config.Load()
 
 	pool, err := pgxpool.New(context.Background(), cfg.DatabaseURL)

@@ -28,6 +28,25 @@ func NewPlanService(store store.Querier, gw gateway.PackingGateway) *PlanService
 	}
 }
 
+// GetByID mengambil satu plan berdasarkan ID.
+func (s *PlanService) GetByID(ctx context.Context, id uuid.UUID) (*store.Plan, error) {
+	plan, err := s.store.GetPlan(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get plan %s: %w", id, err)
+	}
+	return &plan, nil
+}
+
+// List mengambil semua plan yang tersedia.
+func (s *PlanService) List(ctx context.Context) ([]store.ListPlansRow, error) {
+	plans, err := s.store.ListPlans(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list plans: %w", err)
+	}
+	return plans, nil
+}
+
+// Create membuat plan baru.
 func (s *PlanService) Create(ctx context.Context, containerID uuid.UUID) (*store.Plan, error) {
 	// Validasi: container harus exist
 	_, err := s.store.GetContainer(ctx, containerID)
@@ -42,32 +61,107 @@ func (s *PlanService) Create(ctx context.Context, containerID uuid.UUID) (*store
 	return &plan, nil
 }
 
-func (s *PlanService) AddItem(ctx context.Context, planID, productID uuid.UUID, quantity int) error {
+// Update memperbarui plan (hanya container yang bisa diubah selama status draft).
+func (s *PlanService) Update(ctx context.Context, id uuid.UUID, containerID uuid.UUID) (*store.Plan, error) {
+	// Validasi: container harus exist
+	_, err := s.store.GetContainer(ctx, containerID)
+	if err != nil {
+		return nil, fmt.Errorf("container not found: %w", err)
+	}
+
+	plan, err := s.store.UpdatePlan(ctx, store.UpdatePlanParams{
+		ID:          id,
+		ContainerID: containerID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update plan %s: %w", id, err)
+	}
+	return &plan, nil
+}
+
+// Delete menghapus plan beserta semua items dan placements.
+func (s *PlanService) Delete(ctx context.Context, id uuid.UUID) error {
+	err := s.store.DeletePlan(ctx, id)
+	if err != nil {
+		return fmt.Errorf("delete plan %s: %w", id, err)
+	}
+	return nil
+}
+
+// GetItems mengambil semua items dalam plan.
+func (s *PlanService) GetItems(ctx context.Context, planID uuid.UUID) ([]store.GetPlanItemsRow, error) {
+	items, err := s.store.GetPlanItems(ctx, planID)
+	if err != nil {
+		return nil, fmt.Errorf("get plan items: %w", err)
+	}
+	return items, nil
+}
+
+// AddItem menambahkan item ke plan.
+func (s *PlanService) AddItem(ctx context.Context, planID, productID uuid.UUID, quantity int) (*store.PlanItem, error) {
 	// Validasi
 	if quantity <= 0 {
-		return fmt.Errorf("quantity must be positive")
+		return nil, fmt.Errorf("quantity must be positive")
 	}
 
 	_, err := s.store.GetProduct(ctx, productID)
 	if err != nil {
-		return fmt.Errorf("product not found: %w", err)
+		return nil, fmt.Errorf("product not found: %w", err)
 	}
 
-	_, err = s.store.AddPlanItem(ctx, store.AddPlanItemParams{
+	item, err := s.store.AddPlanItem(ctx, store.AddPlanItemParams{
 		PlanID:    planID,
 		ProductID: productID,
 		Quantity:  int32(quantity),
 	})
-	return err
+	if err != nil {
+		return nil, fmt.Errorf("add plan item: %w", err)
+	}
+	return &item, nil
+}
+
+// UpdateItem memperbarui quantity item.
+func (s *PlanService) UpdateItem(ctx context.Context, itemID uuid.UUID, quantity int) (*store.PlanItem, error) {
+	if quantity <= 0 {
+		return nil, fmt.Errorf("quantity must be positive")
+	}
+
+	item, err := s.store.UpdatePlanItem(ctx, store.UpdatePlanItemParams{
+		ID:       itemID,
+		Quantity: int32(quantity),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update plan item: %w", err)
+	}
+	return &item, nil
+}
+
+// DeleteItem menghapus item dari plan.
+func (s *PlanService) DeleteItem(ctx context.Context, itemID uuid.UUID) error {
+	err := s.store.DeletePlanItem(ctx, itemID)
+	if err != nil {
+		return fmt.Errorf("delete plan item: %w", err)
+	}
+	return nil
+}
+
+// GetPlacements mengambil semua placements hasil kalkulasi.
+func (s *PlanService) GetPlacements(ctx context.Context, planID uuid.UUID) ([]store.GetPlacementsRow, error) {
+	placements, err := s.store.GetPlacements(ctx, planID)
+	if err != nil {
+		return nil, fmt.Errorf("get placements: %w", err)
+	}
+	return placements, nil
 }
 
 // CalculateResult berisi hasil kalkulasi packing
 type CalculateResult struct {
-	Placements    []gateway.PackPlacement
-	UnfittedItems []gateway.PackUnfitted
-	Statistics    gateway.PackStats
+	Placements    []gateway.PackPlacement `json:"placements"`
+	UnfittedItems []gateway.PackUnfitted  `json:"unfitted_items"`
+	Statistics    gateway.PackStats       `json:"statistics"`
 }
 
+// Calculate menjalankan algoritma packing.
 func (s *PlanService) Calculate(ctx context.Context, planID uuid.UUID) (*CalculateResult, error) {
 	// 1. Ambil plan dan container
 	plan, err := s.store.GetPlan(ctx, planID)

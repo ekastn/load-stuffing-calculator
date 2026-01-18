@@ -22,3 +22,12 @@ type ContainerResponse struct {
 	HeightMm    float64 `json:"height_mm"`
 	MaxWeightKg float64 `json:"max_weight_kg"`
 }
+
+// UpdateContainerRequest adalah DTO untuk request update container
+type UpdateContainerRequest struct {
+	Name        string  `json:"name" binding:"required,min=2,max=100"`
+	LengthMm    float64 `json:"length_mm" binding:"required,gt=0"`
+	WidthMm     float64 `json:"width_mm" binding:"required,gt=0"`
+	HeightMm    float64 `json:"height_mm" binding:"required,gt=0"`
+	MaxWeightKg float64 `json:"max_weight_kg" binding:"required,gt=0"`
+}

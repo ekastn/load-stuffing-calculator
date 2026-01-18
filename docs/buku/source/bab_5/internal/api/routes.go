@@ -18,12 +18,35 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			containers.GET("", a.containerHandler.List)
 			containers.GET("/:id", a.containerHandler.GetByID)
 			containers.POST("", a.containerHandler.Create)
+			containers.PUT("/:id", a.containerHandler.Update)
+			containers.DELETE("/:id", a.containerHandler.Delete)
 		}
 
-		// Plan routes: pembuatan dan kalkulasi plan
+		// Product routes: CRUD operasi untuk product
+		products := v1.Group("/products")
+		{
+			products.GET("", a.productHandler.List)
+			products.GET("/:id", a.productHandler.GetByID)
+			products.POST("", a.productHandler.Create)
+			products.PUT("/:id", a.productHandler.Update)
+			products.DELETE("/:id", a.productHandler.Delete)
+		}
+
+		// Plan routes: CRUD dan kalkulasi
 		plans := v1.Group("/plans")
 		{
+			plans.GET("", a.planHandler.List)
+			plans.GET("/:id", a.planHandler.GetByID)
 			plans.POST("", a.planHandler.Create)
+			plans.PUT("/:id", a.planHandler.Update)
+			plans.DELETE("/:id", a.planHandler.Delete)
+
+			// Plan items management
+			plans.POST("/:id/items", a.planHandler.AddItem)
+			plans.PUT("/:id/items/:itemId", a.planHandler.UpdateItem)
+			plans.DELETE("/:id/items/:itemId", a.planHandler.DeleteItem)
+
+			// Calculation
 			plans.POST("/:id/calculate", a.planHandler.Calculate)
 		}
 	}

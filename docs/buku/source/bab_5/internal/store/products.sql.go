@@ -130,3 +130,44 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 	}
 	return items, nil
 }
+
+const updateProduct = `-- name: UpdateProduct :one
+UPDATE products
+SET label = $2, sku = $3, length_mm = $4, width_mm = $5, height_mm = $6, weight_kg = $7
+WHERE id = $1
+RETURNING id, label, sku, length_mm, width_mm, height_mm, weight_kg, created_at
+`
+
+type UpdateProductParams struct {
+	ID       uuid.UUID `json:"id"`
+	Label    string    `json:"label"`
+	Sku      string    `json:"sku"`
+	LengthMm float64   `json:"length_mm"`
+	WidthMm  float64   `json:"width_mm"`
+	HeightMm float64   `json:"height_mm"`
+	WeightKg float64   `json:"weight_kg"`
+}
+
+func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error) {
+	row := q.db.QueryRow(ctx, updateProduct,
+		arg.ID,
+		arg.Label,
+		arg.Sku,
+		arg.LengthMm,
+		arg.WidthMm,
+		arg.HeightMm,
+		arg.WeightKg,
+	)
+	var i Product
+	err := row.Scan(
+		&i.ID,
+		&i.Label,
+		&i.Sku,
+		&i.LengthMm,
+		&i.WidthMm,
+		&i.HeightMm,
+		&i.WeightKg,
+		&i.CreatedAt,
+	)
+	return i, err
+}
