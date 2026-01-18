@@ -7,6 +7,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -52,6 +53,24 @@ func (q *Queries) CreatePlan(ctx context.Context, containerID uuid.UUID) (Plan, 
 		&i.CalculatedAt,
 	)
 	return i, err
+}
+
+const deletePlan = `-- name: DeletePlan :exec
+DELETE FROM plans WHERE id = $1
+`
+
+func (q *Queries) DeletePlan(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deletePlan, id)
+	return err
+}
+
+const deletePlanItem = `-- name: DeletePlanItem :exec
+DELETE FROM plan_items WHERE id = $1
+`
+
+func (q *Queries) DeletePlanItem(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deletePlanItem, id)
+	return err
 }
 
 const deletePlanPlacements = `-- name: DeletePlanPlacements :exec
@@ -130,6 +149,42 @@ func (q *Queries) GetPlan(ctx context.Context, id uuid.UUID) (Plan, error) {
 	return i, err
 }
 
+const getPlanItem = `-- name: GetPlanItem :one
+SELECT pi.id, pi.plan_id, pi.product_id, pi.quantity, p.label, p.length_mm, p.width_mm, p.height_mm, p.weight_kg
+FROM plan_items pi
+JOIN products p ON pi.product_id = p.id
+WHERE pi.id = $1
+`
+
+type GetPlanItemRow struct {
+	ID        uuid.UUID `json:"id"`
+	PlanID    uuid.UUID `json:"plan_id"`
+	ProductID uuid.UUID `json:"product_id"`
+	Quantity  int32     `json:"quantity"`
+	Label     string    `json:"label"`
+	LengthMm  float64   `json:"length_mm"`
+	WidthMm   float64   `json:"width_mm"`
+	HeightMm  float64   `json:"height_mm"`
+	WeightKg  float64   `json:"weight_kg"`
+}
+
+func (q *Queries) GetPlanItem(ctx context.Context, id uuid.UUID) (GetPlanItemRow, error) {
+	row := q.db.QueryRow(ctx, getPlanItem, id)
+	var i GetPlanItemRow
+	err := row.Scan(
+		&i.ID,
+		&i.PlanID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.Label,
+		&i.LengthMm,
+		&i.WidthMm,
+		&i.HeightMm,
+		&i.WeightKg,
+	)
+	return i, err
+}
+
 const getPlanItems = `-- name: GetPlanItems :many
 SELECT pi.id, pi.plan_id, pi.product_id, pi.quantity, p.label, p.length_mm, p.width_mm, p.height_mm, p.weight_kg
 FROM plan_items pi
@@ -179,6 +234,49 @@ func (q *Queries) GetPlanItems(ctx context.Context, planID uuid.UUID) ([]GetPlan
 	return items, nil
 }
 
+const listPlans = `-- name: ListPlans :many
+SELECT p.id, p.container_id, p.status, p.created_at, p.calculated_at, c.name as container_name
+FROM plans p
+JOIN containers c ON p.container_id = c.id
+ORDER BY p.created_at DESC
+`
+
+type ListPlansRow struct {
+	ID            uuid.UUID `json:"id"`
+	ContainerID   uuid.UUID `json:"container_id"`
+	Status        string    `json:"status"`
+	CreatedAt     time.Time `json:"created_at"`
+	CalculatedAt  time.Time `json:"calculated_at"`
+	ContainerName string    `json:"container_name"`
+}
+
+func (q *Queries) ListPlans(ctx context.Context) ([]ListPlansRow, error) {
+	rows, err := q.db.Query(ctx, listPlans)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPlansRow{}
+	for rows.Next() {
+		var i ListPlansRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ContainerID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.CalculatedAt,
+			&i.ContainerName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const savePlacement = `-- name: SavePlacement :exec
 INSERT INTO placements (plan_id, product_id, pos_x, pos_y, pos_z, rotation, step_number)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -205,6 +303,53 @@ func (q *Queries) SavePlacement(ctx context.Context, arg SavePlacementParams) er
 		arg.StepNumber,
 	)
 	return err
+}
+
+const updatePlan = `-- name: UpdatePlan :one
+UPDATE plans SET container_id = $2
+WHERE id = $1
+RETURNING id, container_id, status, created_at, calculated_at
+`
+
+type UpdatePlanParams struct {
+	ID          uuid.UUID `json:"id"`
+	ContainerID uuid.UUID `json:"container_id"`
+}
+
+func (q *Queries) UpdatePlan(ctx context.Context, arg UpdatePlanParams) (Plan, error) {
+	row := q.db.QueryRow(ctx, updatePlan, arg.ID, arg.ContainerID)
+	var i Plan
+	err := row.Scan(
+		&i.ID,
+		&i.ContainerID,
+		&i.Status,
+		&i.CreatedAt,
+		&i.CalculatedAt,
+	)
+	return i, err
+}
+
+const updatePlanItem = `-- name: UpdatePlanItem :one
+UPDATE plan_items SET quantity = $2
+WHERE id = $1
+RETURNING id, plan_id, product_id, quantity
+`
+
+type UpdatePlanItemParams struct {
+	ID       uuid.UUID `json:"id"`
+	Quantity int32     `json:"quantity"`
+}
+
+func (q *Queries) UpdatePlanItem(ctx context.Context, arg UpdatePlanItemParams) (PlanItem, error) {
+	row := q.db.QueryRow(ctx, updatePlanItem, arg.ID, arg.Quantity)
+	var i PlanItem
+	err := row.Scan(
+		&i.ID,
+		&i.PlanID,
+		&i.ProductID,
+		&i.Quantity,
+	)
+	return i, err
 }
 
 const updatePlanStatus = `-- name: UpdatePlanStatus :one

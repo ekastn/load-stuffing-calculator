@@ -1002,6 +1002,7 @@ Terdapat beberapa tantangan teknis yang akan kita hadapi dalam bab ini:
 - Fondasi Bahasa Go
 - Idiom dan Konvensi Go
 - Setup Proyek dan Tooling
+- API Interface Design
 - Database Schema Design
 - Type-safe Repository Layer dengan SQLC
 - Business Logic Layer (Service)
@@ -1701,7 +1702,79 @@ Dengan *setup* ini, kita siap melanjutkan ke desain *database schema*.
 
 ---
 
-### 3.4 Database Schema Design
+### 3.4 API Interface Design (API-First Strategy)
+
+Sebelum kita mulai mendesain database atau menulis kode handler, kita harus berhenti sejenak dan menerapkan prinsip **API-First Development**.
+
+Seringkali developer terburu-buru mendesain tabel database, lalu membuat API yang sekadar menjadi "cermin" dari struktur tabel tersebut (Table-Driven Design). Pendekatan ini sering menghasilkan API yang kaku, membocorkan detail implementasi, dan sulit digunakan oleh frontend.
+
+Dengan API-First, kita mendefinisikan **kontrak** interaksi terlebih dahulu. Kita bertanya: "Apa resource yang dibutuhkan client?" dan "Bagaimana cara client berinteraksi dengan resource tersebut?"
+
+#### Identifikasi Resource
+
+Untuk *Load & Stuffing Calculator*, kita mengidentifikasi 3 resource utama (Noun) dan 1 action (Verb):
+
+1.  **Products**: Barang yang akan dimuat.
+2.  **Containers**: Wadah tempat memuat barang.
+3.  **Plans**: Document yang merepresentasikan satu sesi perencanaan muatan.
+4.  **Calculate**: Aksi untuk menghitung posisi barang dalam container (terkait dengan Plan).
+
+#### Standardisasi Response (Envelope)
+
+Agar frontend mudah mengkonsumsi API kita, semua endpoint harus mengembalikan format JSON yang konsisten. Kita akan menggunakan pola **Envelope**:
+
+```json
+{
+  "success": true,   // Indikator sukses/gagal yang eksplisit
+  "data": { ... },   // Payload utama (object atau array)
+  "errors": []       // Detail error jika success=false
+}
+```
+
+#### Daftar Endpoint (API Contract)
+
+Berikut adalah desain final API yang akan kita bangun di bab ini:
+
+**Master Data: Containers**
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| GET | `/api/v1/containers` | List semua container types |
+| POST | `/api/v1/containers` | Create container baru |
+| GET | `/api/v1/containers/:id` | Detail container |
+| PUT | `/api/v1/containers/:id` | Update spesifikasi container |
+| DELETE | `/api/v1/containers/:id` | Hapus container |
+
+**Master Data: Products**
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| GET | `/api/v1/products` | List semua produk |
+| POST | `/api/v1/products` | Create produk baru |
+| GET | `/api/v1/products/:id` | Detail produk |
+| PUT | `/api/v1/products/:id` | Update detail produk |
+| DELETE | `/api/v1/products/:id` | Hapus produk |
+
+**Planning & Calculation**
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| POST | `/api/v1/plans` | Buat plan baru (Draft) |
+| GET | `/api/v1/plans` | List history plans |
+| GET | `/api/v1/plans/:id` | Detail plan (termasuk items & placements) |
+| PUT | `/api/v1/plans/:id` | Update header plan (e.g. ganti container) |
+| DELETE | `/api/v1/plans/:id` | Hapus plan |
+| POST | `/api/v1/plans/:id/calculate` | **Trigger kalkulasi 3D packing** |
+
+**Plan Items (Nested Resource)**
+| Method | Endpoint | Deskripsi |
+|---|---|---|
+| POST | `/api/v1/plans/:id/items` | Tambah item ke dalam plan |
+| PUT | `/api/v1/plans/:id/items/:itemId` | Update quantity item |
+| DELETE | `/api/v1/plans/:id/items/:itemId` | Hapus item dari plan |
+
+Dengan kontrak ini, frontend developer bisa mulai bekerja membuat UI menggunakan mock data, sementara kita (backend developer) fokus mengimplementasikan kontrak ini agar "hidup".
+
+---
+
+### 3.5 Database Schema Design
 
 Sebelum menulis *query* atau *business logic*, kita perlu merancang struktur database yang akan menyimpan data sistem. Desain yang baik di tahap ini akan memudahkan pengembangan selanjutnya dan mencegah refaktor yang mahal di kemudian hari. Seperti kata pepatah dalam dunia *software engineering*: kesalahan desain yang ditemukan di tahap awal biaya perbaikannya jauh lebih murah daripada yang ditemukan di production.
 
@@ -2010,7 +2083,7 @@ Perhatikan pattern `getEnv` dengan fallback—ini memungkinkan development berja
 
 **Dependency Injection melalui main()**
 
-Koneksi database dibuat di `main()` lalu diteruskan (*inject*) ke komponen yang membutuhkan. Pola ini memungkinkan testability dan membuat dependencies eksplisit—kita akan membahas ini lebih detail di Section 3.6.
+Koneksi database dibuat di `main()` lalu diteruskan (*inject*) ke komponen yang membutuhkan. Pola ini memungkinkan testability dan membuat dependencies eksplisit—kita akan membahas ini lebih detail di Section 3.7.
 
 Update file `main.go` di dalam direktori `cmd/api/`:
 
@@ -2057,7 +2130,7 @@ Dengan *database schema* yang sudah terdefinisi dan koneksi yang berjalan, kita 
 
 ---
 
-### 3.5 Type-safe Repository Layer dengan SQLC
+### 3.6 Type-safe Repository Layer dengan SQLC
 
 Setelah database schema siap, langkah berikutnya adalah membangun *repository layer*—komponen yang bertanggung jawab untuk semua interaksi dengan database. Di sinilah kita menulis query SQL dan memetakan hasilnya ke struct Go.
 
@@ -2193,6 +2266,12 @@ INSERT INTO products (label, sku, length_mm, width_mm, height_mm, weight_kg)
 VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
+-- name: UpdateProduct :one
+UPDATE products
+SET label = $2, sku = $3, length_mm = $4, width_mm = $5, height_mm = $6, weight_kg = $7
+WHERE id = $1
+RETURNING *;
+
 -- name: DeleteProduct :exec
 DELETE FROM products WHERE id = $1;
 ```
@@ -2237,6 +2316,34 @@ ORDER BY pl.step_number ASC;
 
 -- name: DeletePlanPlacements :exec
 DELETE FROM placements WHERE plan_id = $1;
+
+-- name: ListPlans :many
+SELECT p.*, c.name as container_name
+FROM plans p
+JOIN containers c ON p.container_id = c.id
+ORDER BY p.created_at DESC;
+
+-- name: UpdatePlan :one
+UPDATE plans SET container_id = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: DeletePlan :exec
+DELETE FROM plans WHERE id = $1;
+
+-- name: GetPlanItem :one
+SELECT pi.*, p.label, p.length_mm, p.width_mm, p.height_mm, p.weight_kg
+FROM plan_items pi
+JOIN products p ON pi.product_id = p.id
+WHERE pi.id = $1;
+
+-- name: UpdatePlanItem :one
+UPDATE plan_items SET quantity = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: DeletePlanItem :exec
+DELETE FROM plan_items WHERE id = $1;
 ```
 
 Perhatikan query `GetPlanItems` dan `GetPlacements`—keduanya menggunakan JOIN untuk mengambil data dari tabel terkait dalam satu query. SQLC cukup pintar untuk men-generate struct yang mencakup kolom dari kedua tabel.
@@ -2361,7 +2468,7 @@ Dengan repository layer yang type-safe dan queries yang di-generate, kita siap m
 
 ---
 
-### 3.6 Business Logic Layer (Service)
+### 3.7 Business Logic Layer (Service)
 
 Dengan repository layer yang sudah siap, kita sekarang membangun **service layer**—lapisan yang berisi logika bisnis aplikasi. Ini adalah "otak" dari sistem, tempat keputusan dibuat dan berbagai komponen diorkestrasikan.
 
@@ -2415,7 +2522,7 @@ Dengan pemisahan ini, kita bisa mengganti repository tanpa mengubah handler, men
 
 #### Dependency Injection
 
-Seperti yang disebutkan di Section 3.4, koneksi database diteruskan dari `main()` ke komponen yang membutuhkan. Pola ini disebut **Dependency Injection** (DI)—komponen menerima dependencies-nya melalui constructor, bukan membuat sendiri.
+Seperti yang disebutkan di Section 3.5, koneksi database diteruskan dari `main()` ke komponen yang membutuhkan. Pola ini disebut **Dependency Injection** (DI)—komponen menerima dependencies-nya melalui constructor, bukan membuat sendiri.
 
 Mengapa ini penting? Mari bandingkan dua pendekatan:
 
@@ -2472,7 +2579,7 @@ type Querier interface {
 
 Interface ini sudah tersedia setelah menjalankan `sqlc generate`. Service layer cukup import dan menggunakannya.
 
-Untuk gateway ke Packing Service, kita akan mendefinisikan interface sendiri. Berikut preview dari interface yang akan kita implementasikan di Section 3.8:
+Untuk gateway ke Packing Service, kita akan mendefinisikan interface sendiri. Berikut preview dari interface yang akan kita implementasikan di Section 3.9:
 
 ```go
 // PackingGateway mendefinisikan kontrak untuk komunikasi dengan Packing Service
@@ -3029,7 +3136,7 @@ Dengan service layer yang solid, kita siap membangun HTTP handlers yang akan men
 
 ---
 
-### 3.7 HTTP Router dan Handler
+### 3.8 HTTP Router dan Handler
 
 Setelah service layer siap, kita perlu cara untuk menerima request dari dunia luar dan mengembalikan response. Inilah tugas HTTP handler—menjadi "pintu masuk" ke aplikasi kita.
 
@@ -3270,112 +3377,364 @@ Buat file `container_handler.go` di dalam direktori `internal/handler/`:
 package handler
 
 import (
-    "net/http"
+	"net/http"
 
-    "github.com/gin-gonic/gin"
-    "github.com/google/uuid"
-    "load-stuffing-calculator/internal/dto"
-    "load-stuffing-calculator/internal/response"
-    "load-stuffing-calculator/internal/service"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"load-stuffing-calculator/internal/dto"
+	"load-stuffing-calculator/internal/response"
+	"load-stuffing-calculator/internal/service"
 )
 
 type ContainerHandler struct {
-    svc *service.ContainerService
+	svc *service.ContainerService
 }
 
 func NewContainerHandler(svc *service.ContainerService) *ContainerHandler {
-    return &ContainerHandler{svc: svc}
+	return &ContainerHandler{svc: svc}
 }
 
 func (h *ContainerHandler) Create(c *gin.Context) {
-    var req dto.CreateContainerRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
-        return
-    }
+	var req dto.CreateContainerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
 
-    container, err := h.svc.Create(
-        c.Request.Context(),
-        req.Name,
-        req.LengthMm,
-        req.WidthMm,
-        req.HeightMm,
-        req.MaxWeightKg,
-    )
-    if err != nil {
-        response.Error(c, http.StatusInternalServerError, err.Error())
-        return
-    }
+	container, err := h.svc.Create(
+		c.Request.Context(),
+		req.Name,
+		req.LengthMm,
+		req.WidthMm,
+		req.HeightMm,
+		req.MaxWeightKg,
+	)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
-    // Convert ke DTO response
-    resp := dto.ContainerResponse{
-        ID:          container.ID.String(),
-        Name:        container.Name,
-        LengthMm:    container.LengthMm,
-        WidthMm:     container.WidthMm,
-        HeightMm:    container.HeightMm,
-        MaxWeightKg: container.MaxWeightKg,
-    }
+	// Convert ke DTO response
+	resp := dto.ContainerResponse{
+		ID:          container.ID.String(),
+		Name:        container.Name,
+		LengthMm:    container.LengthMm,
+		WidthMm:     container.WidthMm,
+		HeightMm:    container.HeightMm,
+		MaxWeightKg: container.MaxWeightKg,
+	}
 
-    response.Success(c, http.StatusCreated, resp)
+	response.Success(c, http.StatusCreated, resp)
 }
 
 func (h *ContainerHandler) GetByID(c *gin.Context) {
-    idStr := c.Param("id")
-    if idStr == "" {
-        response.Error(c, http.StatusBadRequest, "Container ID is required")
-        return
-    }
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Container ID is required")
+		return
+	}
 
-    id, err := uuid.Parse(idStr)
-    if err != nil {
-        response.Error(c, http.StatusBadRequest, "Invalid container ID format")
-        return
-    }
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid container ID format")
+		return
+	}
 
-    container, err := h.svc.GetByID(c.Request.Context(), id)
-    if err != nil {
-        response.Error(c, http.StatusNotFound, "Container not found")
-        return
-    }
+	container, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "Container not found")
+		return
+	}
 
-    resp := dto.ContainerResponse{
-        ID:          container.ID.String(),
-        Name:        container.Name,
-        LengthMm:    container.LengthMm,
-        WidthMm:     container.WidthMm,
-        HeightMm:    container.HeightMm,
-        MaxWeightKg: container.MaxWeightKg,
-    }
+	resp := dto.ContainerResponse{
+		ID:          container.ID.String(),
+		Name:        container.Name,
+		LengthMm:    container.LengthMm,
+		WidthMm:     container.WidthMm,
+		HeightMm:    container.HeightMm,
+		MaxWeightKg: container.MaxWeightKg,
+	}
 
-    response.Success(c, http.StatusOK, resp)
+	response.Success(c, http.StatusOK, resp)
 }
 
 func (h *ContainerHandler) List(c *gin.Context) {
-    containers, err := h.svc.List(c.Request.Context())
-    if err != nil {
-        response.Error(c, http.StatusInternalServerError, "Failed to list containers")
-        return
-    }
+	containers, err := h.svc.List(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to list containers")
+		return
+	}
 
-    // Convert slice ke DTO responses
-    resp := make([]dto.ContainerResponse, 0, len(containers))
-    for _, container := range containers {
-        resp = append(resp, dto.ContainerResponse{
-            ID:          container.ID.String(),
-            Name:        container.Name,
-            LengthMm:    container.LengthMm,
-            WidthMm:     container.WidthMm,
-            HeightMm:    container.HeightMm,
-            MaxWeightKg: container.MaxWeightKg,
-        })
-    }
+	// Convert slice ke DTO responses
+	resp := make([]dto.ContainerResponse, 0, len(containers))
+	for _, container := range containers {
+		resp = append(resp, dto.ContainerResponse{
+			ID:          container.ID.String(),
+			Name:        container.Name,
+			LengthMm:    container.LengthMm,
+			WidthMm:     container.WidthMm,
+			HeightMm:    container.HeightMm,
+			MaxWeightKg: container.MaxWeightKg,
+		})
+	}
 
-    response.Success(c, http.StatusOK, resp)
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *ContainerHandler) Update(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Container ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid container ID format")
+		return
+	}
+
+	var req dto.UpdateContainerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	container, err := h.svc.Update(
+		c.Request.Context(),
+		id,
+		req.Name,
+		req.LengthMm,
+		req.WidthMm,
+		req.HeightMm,
+		req.MaxWeightKg,
+	)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	resp := dto.ContainerResponse{
+		ID:          container.ID.String(),
+		Name:        container.Name,
+		LengthMm:    container.LengthMm,
+		WidthMm:     container.WidthMm,
+		HeightMm:    container.HeightMm,
+		MaxWeightKg: container.MaxWeightKg,
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *ContainerHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Container ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid container ID format")
+		return
+	}
+
+	err = h.svc.Delete(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
 }
 ```
 
 Handler menggunakan `response.Success` dan `response.Error` untuk memastikan format response yang konsisten. Setiap handler juga mengkonversi dari model internal ke DTO response—ini memberikan kontrol penuh atas data yang dikirim ke client.
+
+#### Implementasi ProductHandler
+
+ProductHandler mengikuti pola yang sama persis dengan ContainerHandler. Buat file `product_handler.go` di dalam direktori `internal/handler/`:
+
+```go
+package handler
+
+import (
+	"net/http"
+
+	"load-stuffing-calculator/internal/dto"
+	"load-stuffing-calculator/internal/response"
+	"load-stuffing-calculator/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type ProductHandler struct {
+	svc *service.ProductService
+}
+
+func NewProductHandler(svc *service.ProductService) *ProductHandler {
+	return &ProductHandler{svc: svc}
+}
+
+func (h *ProductHandler) Create(c *gin.Context) {
+	var req dto.CreateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	product, err := h.svc.Create(
+		c.Request.Context(),
+		req.Label,
+		req.SKU,
+		req.LengthMm,
+		req.WidthMm,
+		req.HeightMm,
+		req.WeightKg,
+	)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	resp := dto.ProductResponse{
+		ID:       product.ID.String(),
+		Label:    product.Label,
+		SKU:      product.Sku,
+		LengthMm: product.LengthMm,
+		WidthMm:  product.WidthMm,
+		HeightMm: product.HeightMm,
+		WeightKg: product.WeightKg,
+	}
+
+	response.Success(c, http.StatusCreated, resp)
+}
+
+func (h *ProductHandler) GetByID(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Product ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID format")
+		return
+	}
+
+	product, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "Product not found")
+		return
+	}
+
+	resp := dto.ProductResponse{
+		ID:       product.ID.String(),
+		Label:    product.Label,
+		SKU:      product.Sku,
+		LengthMm: product.LengthMm,
+		WidthMm:  product.WidthMm,
+		HeightMm: product.HeightMm,
+		WeightKg: product.WeightKg,
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *ProductHandler) List(c *gin.Context) {
+	products, err := h.svc.List(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to list products")
+		return
+	}
+
+	resp := make([]dto.ProductResponse, 0, len(products))
+	for _, product := range products {
+		resp = append(resp, dto.ProductResponse{
+			ID:       product.ID.String(),
+			Label:    product.Label,
+			SKU:      product.Sku,
+			LengthMm: product.LengthMm,
+			WidthMm:  product.WidthMm,
+			HeightMm: product.HeightMm,
+			WeightKg: product.WeightKg,
+		})
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *ProductHandler) Update(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Product ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID format")
+		return
+	}
+
+	var req dto.UpdateProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	product, err := h.svc.Update(
+		c.Request.Context(),
+		id,
+		req.Label,
+		req.SKU,
+		req.LengthMm,
+		req.WidthMm,
+		req.HeightMm,
+		req.WeightKg,
+	)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	resp := dto.ProductResponse{
+		ID:       product.ID.String(),
+		Label:    product.Label,
+		SKU:      product.Sku,
+		LengthMm: product.LengthMm,
+		WidthMm:  product.WidthMm,
+		HeightMm: product.HeightMm,
+		WeightKg: product.WeightKg,
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *ProductHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Product ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid product ID format")
+		return
+	}
+
+	err = h.svc.Delete(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
+}
+```
 
 Pattern yang sama diterapkan untuk `PlanHandler`. Buat file `plan_handler.go` di dalam direktori `internal/handler/`:
 
@@ -3383,62 +3742,292 @@ Pattern yang sama diterapkan untuk `PlanHandler`. Buat file `plan_handler.go` di
 package handler
 
 import (
-    "net/http"
+	"net/http"
 
-    "github.com/gin-gonic/gin"
-    "github.com/google/uuid"
-    "load-stuffing-calculator/internal/dto"
-    "load-stuffing-calculator/internal/response"
-    "load-stuffing-calculator/internal/service"
+	"load-stuffing-calculator/internal/dto"
+	"load-stuffing-calculator/internal/response"
+	"load-stuffing-calculator/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type PlanHandler struct {
-    svc *service.PlanService
+	svc *service.PlanService
 }
 
 func NewPlanHandler(svc *service.PlanService) *PlanHandler {
-    return &PlanHandler{svc: svc}
+	return &PlanHandler{svc: svc}
 }
 
 func (h *PlanHandler) Create(c *gin.Context) {
-    var req dto.CreatePlanRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        response.Error(c, http.StatusBadRequest, err.Error())
-        return
-    }
+	var req dto.CreatePlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
-    containerID, _ := uuid.Parse(req.ContainerID)
-    
-    plan, err := h.svc.Create(c.Request.Context(), containerID)
-    if err != nil {
-        response.Error(c, http.StatusBadRequest, err.Error())
-        return
-    }
+	containerID, _ := uuid.Parse(req.ContainerID)
 
-    resp := dto.PlanResponse{
-        ID:          plan.ID.String(),
-        ContainerID: plan.ContainerID.String(),
-        Status:      plan.Status,
-    }
+	plan, err := h.svc.Create(c.Request.Context(), containerID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
-    response.Success(c, http.StatusCreated, resp)
+	resp := dto.PlanResponse{
+		ID:          plan.ID.String(),
+		ContainerID: plan.ContainerID.String(),
+		Status:      plan.Status,
+	}
+
+	response.Success(c, http.StatusCreated, resp)
+}
+
+func (h *PlanHandler) GetByID(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Plan ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid plan ID format")
+		return
+	}
+
+	plan, err := h.svc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "Plan not found")
+		return
+	}
+
+	// Get items for this plan
+	items, err := h.svc.GetItems(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to get plan items")
+		return
+	}
+
+	// Get placements if plan is completed
+	var placements []dto.PlacementResponse
+	if plan.Status == "completed" {
+		pl, err := h.svc.GetPlacements(c.Request.Context(), id)
+		if err == nil {
+			for _, p := range pl {
+				placements = append(placements, dto.PlacementResponse{
+					ID:         p.ID.String(),
+					ProductID:  p.ProductID.String(),
+					Label:      p.Label,
+					PosX:       p.PosX,
+					PosY:       p.PosY,
+					PosZ:       p.PosZ,
+					Rotation:   int(p.Rotation),
+					StepNumber: int(p.StepNumber),
+				})
+			}
+		}
+	}
+
+	// Convert items to response
+	itemResponses := make([]dto.PlanItemResponse, 0, len(items))
+	for _, item := range items {
+		itemResponses = append(itemResponses, dto.PlanItemResponse{
+			ID:        item.ID.String(),
+			ProductID: item.ProductID.String(),
+			Label:     item.Label,
+			Quantity:  int(item.Quantity),
+			LengthMm:  item.LengthMm,
+			WidthMm:   item.WidthMm,
+			HeightMm:  item.HeightMm,
+			WeightKg:  item.WeightKg,
+		})
+	}
+
+	resp := dto.PlanDetailResponse{
+		ID:          plan.ID.String(),
+		ContainerID: plan.ContainerID.String(),
+		Status:      plan.Status,
+		Items:       itemResponses,
+		Placements:  placements,
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *PlanHandler) List(c *gin.Context) {
+	plans, err := h.svc.List(c.Request.Context())
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to list plans")
+		return
+	}
+
+	resp := make([]dto.PlanResponse, 0, len(plans))
+	for _, plan := range plans {
+		resp = append(resp, dto.PlanResponse{
+			ID:            plan.ID.String(),
+			ContainerID:   plan.ContainerID.String(),
+			ContainerName: plan.ContainerName,
+			Status:        plan.Status,
+		})
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *PlanHandler) Update(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Plan ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid plan ID format")
+		return
+	}
+
+	var req dto.UpdatePlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	containerID, _ := uuid.Parse(req.ContainerID)
+
+	plan, err := h.svc.Update(c.Request.Context(), id, containerID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	resp := dto.PlanResponse{
+		ID:          plan.ID.String(),
+		ContainerID: plan.ContainerID.String(),
+		Status:      plan.Status,
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *PlanHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Plan ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid plan ID format")
+		return
+	}
+
+	err = h.svc.Delete(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
+}
+
+func (h *PlanHandler) AddItem(c *gin.Context) {
+	planIDStr := c.Param("id")
+	planID, err := uuid.Parse(planIDStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid plan ID format")
+		return
+	}
+
+	var req dto.AddPlanItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	productID, _ := uuid.Parse(req.ProductID)
+
+	item, err := h.svc.AddItem(c.Request.Context(), planID, productID, req.Quantity)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp := gin.H{
+		"id":         item.ID.String(),
+		"plan_id":    item.PlanID.String(),
+		"product_id": item.ProductID.String(),
+		"quantity":   item.Quantity,
+	}
+
+	response.Success(c, http.StatusCreated, resp)
+}
+
+func (h *PlanHandler) UpdateItem(c *gin.Context) {
+	itemIDStr := c.Param("itemId")
+	itemID, err := uuid.Parse(itemIDStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid item ID format")
+		return
+	}
+
+	var req dto.UpdatePlanItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	item, err := h.svc.UpdateItem(c.Request.Context(), itemID, req.Quantity)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	resp := gin.H{
+		"id":         item.ID.String(),
+		"plan_id":    item.PlanID.String(),
+		"product_id": item.ProductID.String(),
+		"quantity":   item.Quantity,
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *PlanHandler) DeleteItem(c *gin.Context) {
+	itemIDStr := c.Param("itemId")
+	itemID, err := uuid.Parse(itemIDStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid item ID format")
+		return
+	}
+
+	err = h.svc.DeleteItem(c.Request.Context(), itemID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
 }
 
 func (h *PlanHandler) Calculate(c *gin.Context) {
-    idStr := c.Param("id")
-    id, err := uuid.Parse(idStr)
-    if err != nil {
-        response.Error(c, http.StatusBadRequest, "Invalid plan ID")
-        return
-    }
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid plan ID")
+		return
+	}
 
-    result, err := h.svc.Calculate(c.Request.Context(), id)
-    if err != nil {
-        response.Error(c, http.StatusBadRequest, err.Error())
-        return
-    }
+	result, err := h.svc.Calculate(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
 
-    response.Success(c, http.StatusOK, result)
+	response.Success(c, http.StatusOK, result)
 }
 ```
 
@@ -3464,63 +4053,125 @@ Buat file `api.go` di dalam direktori `internal/api/`:
 package api
 
 import (
-    "context"
-    "log"
-    "net/http"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
+	"context"
+	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-    "github.com/gin-contrib/cors"
-    "github.com/gin-gonic/gin"
-    "github.com/jackc/pgx/v5/pgxpool"
-    "load-stuffing-calculator/internal/config"
-    "load-stuffing-calculator/internal/handler"
-    "load-stuffing-calculator/internal/service"
-    "load-stuffing-calculator/internal/store"
+	"load-stuffing-calculator/internal/config"
+	"load-stuffing-calculator/internal/gateway"
+	"load-stuffing-calculator/internal/handler"
+	"load-stuffing-calculator/internal/service"
+	"load-stuffing-calculator/internal/store"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // App menampung semua dependencies aplikasi.
 // Dengan menyimpan semua komponen di satu struct, kita bisa dengan mudah
 // melihat apa saja yang dibutuhkan aplikasi untuk berjalan.
 type App struct {
-    config           *config.Config
-    router           *gin.Engine
-    db               *pgxpool.Pool
-    containerHandler *handler.ContainerHandler
-    planHandler      *handler.PlanHandler
+	config           *config.Config
+	router           *gin.Engine
+	db               *pgxpool.Pool
+	containerHandler *handler.ContainerHandler
+	productHandler   *handler.ProductHandler
+	planHandler      *handler.PlanHandler
 }
 
 // NewApp menginisialisasi semua layers dan dependencies.
 // Urutan inisialisasi mengikuti dependency graph:
 // database → store → services → handlers → router
 func NewApp(cfg *config.Config, db *pgxpool.Pool) *App {
-    // Store layer: wrapper untuk database queries
-    querier := store.New(db)
+	// Store layer: wrapper untuk database queries
+	querier := store.New(db)
 
-    // Service layer: business logic
-    containerSvc := service.NewContainerService(querier)
-    planSvc := service.NewPlanService(querier, nil) // gateway ditambahkan di section berikutnya
+	// Initialize gateway untuk Packing Service
+	// Gunakan MockPackingGateway untuk demo tanpa Packing Service,
+	// atau HTTPPackingGateway untuk koneksi ke service yang sebenarnya
+	packingGW := gateway.NewMockPackingGateway()
+	// Untuk production, gunakan:
+	// packingGW := gateway.NewHTTPPackingGateway("http://localhost:5000", 60*time.Second)
 
-    // Handler layer: HTTP request/response handling
-    containerHandler := handler.NewContainerHandler(containerSvc)
-    planHandler := handler.NewPlanHandler(planSvc)
+	// Service layer: business logic
+	containerSvc := service.NewContainerService(querier)
+	productSvc := service.NewProductService(querier)
+	planSvc := service.NewPlanService(querier, packingGW)
 
-    app := &App{
-        config:           cfg,
-        db:               db,
-        containerHandler: containerHandler,
-        planHandler:      planHandler,
-    }
+	// Handler layer: HTTP request/response handling
+	containerHandler := handler.NewContainerHandler(containerSvc)
+	productHandler := handler.NewProductHandler(productSvc)
+	planHandler := handler.NewPlanHandler(planSvc)
 
-    app.setupRouter()
+	app := &App{
+		config:           cfg,
+		db:               db,
+		containerHandler: containerHandler,
+		productHandler:   productHandler,
+		planHandler:      planHandler,
+	}
 
-    return app
+	app.setupRouter()
+
+	return app
+}
+
+func (a *App) setupRouter() {
+	// gin.Default() membuat router dengan Logger dan Recovery middleware
+	router := gin.Default()
+
+	// CORS middleware memungkinkan frontend dari domain berbeda
+	// untuk mengakses API kita
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
+	router.Use(cors.New(corsConfig))
+
+	// Setup routes di file terpisah untuk organisasi yang lebih baik
+	a.setupRoutes(router)
+	a.router = router
+}
+
+func (a *App) Run() error {
+	// Buat http.Server dengan konfigurasi kustom
+	srv := &http.Server{
+		Addr:    ":" + a.config.ServerPort,
+		Handler: a.router,
+	}
+
+	// Jalankan server di goroutine terpisah agar tidak blocking
+	go func() {
+		log.Printf("Server starting on :%s", a.config.ServerPort)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	// Graceful shutdown: tunggu signal interrupt (Ctrl+C) atau terminate
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit // Block sampai menerima signal
+	log.Println("Shutting down server...")
+
+	// Beri waktu 10 detik untuk request yang sedang berjalan
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server forced to shutdown:", err)
+	}
+
+	log.Println("Server exiting")
+	return nil
 }
 ```
 
-Struct `App` menyimpan semua dependencies yang dibutuhkan aplikasi. Pendekatan ini memiliki beberapa keuntungan. Pertama, kita bisa melihat dengan jelas apa saja komponen yang dibutuhkan hanya dengan membaca struct definition. Kedua, semua initialization logic terpusat di `NewApp()`—tidak tersebar di berbagai tempat. Ketiga, jika perlu menambah dependency baru, cukup tambah field di struct dan initialize di `NewApp()`.
+Graceful shutdown adalah fitur penting untuk production. Saat server menerima signal shutdown (misalnya dari Kubernetes atau saat user menekan Ctrl+C), server tidak langsung berhenti. Sebaliknya, server berhenti menerima request baru, menunggu request yang sedang berjalan selesai (dengan batas waktu 10 detik), lalu baru benar-benar berhenti. Ini mencegah client menerima error karena koneksi tiba-tiba terputus.
 
 Method `setupRouter()` mengkonfigurasi Gin router dengan middleware yang diperlukan:
 
@@ -3711,7 +4362,7 @@ Dengan HTTP layer yang lengkap dan terstruktur, API kita sudah bisa menerima req
 
 ---
 
-### 3.8 Integrasi dengan Packing Service
+### 3.9 Integrasi dengan Packing Service
 
 Sampai titik ini, kita sudah membangun API yang lengkap—dari database hingga HTTP handlers. Namun method `Calculate` di `PlanService` masih menerima `nil` sebagai gateway. Saatnya mengimplementasikan komponen yang menghubungkan backend Go dengan Packing Service Python.
 

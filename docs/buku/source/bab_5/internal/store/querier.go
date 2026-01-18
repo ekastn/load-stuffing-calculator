@@ -16,19 +16,26 @@ type Querier interface {
 	CreatePlan(ctx context.Context, containerID uuid.UUID) (Plan, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error)
 	DeleteContainer(ctx context.Context, id uuid.UUID) error
+	DeletePlan(ctx context.Context, id uuid.UUID) error
+	DeletePlanItem(ctx context.Context, id uuid.UUID) error
 	DeletePlanPlacements(ctx context.Context, planID uuid.UUID) error
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
 	GetContainer(ctx context.Context, id uuid.UUID) (Container, error)
 	GetPlacements(ctx context.Context, planID uuid.UUID) ([]GetPlacementsRow, error)
 	GetPlan(ctx context.Context, id uuid.UUID) (Plan, error)
+	GetPlanItem(ctx context.Context, id uuid.UUID) (GetPlanItemRow, error)
 	GetPlanItems(ctx context.Context, planID uuid.UUID) ([]GetPlanItemsRow, error)
 	GetProduct(ctx context.Context, id uuid.UUID) (Product, error)
 	GetProductBySKU(ctx context.Context, sku string) (Product, error)
 	ListContainers(ctx context.Context) ([]Container, error)
+	ListPlans(ctx context.Context) ([]ListPlansRow, error)
 	ListProducts(ctx context.Context) ([]Product, error)
 	SavePlacement(ctx context.Context, arg SavePlacementParams) error
 	UpdateContainer(ctx context.Context, arg UpdateContainerParams) (Container, error)
+	UpdatePlan(ctx context.Context, arg UpdatePlanParams) (Plan, error)
+	UpdatePlanItem(ctx context.Context, arg UpdatePlanItemParams) (PlanItem, error)
 	UpdatePlanStatus(ctx context.Context, arg UpdatePlanStatusParams) (Plan, error)
+	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -66,3 +66,36 @@ func (s *ContainerService) Create(ctx context.Context, name string, length, widt
 	}
 	return &container, nil
 }
+
+// Update memperbarui container yang sudah ada.
+func (s *ContainerService) Update(ctx context.Context, id uuid.UUID, name string, length, width, height, maxWeight float64) (*store.Container, error) {
+	// Validasi bisnis
+	if length <= 0 || width <= 0 || height <= 0 {
+		return nil, fmt.Errorf("dimensions must be positive")
+	}
+	if maxWeight <= 0 {
+		return nil, fmt.Errorf("max weight must be positive")
+	}
+
+	container, err := s.store.UpdateContainer(ctx, store.UpdateContainerParams{
+		ID:          id,
+		Name:        name,
+		LengthMm:    length,
+		WidthMm:     width,
+		HeightMm:    height,
+		MaxWeightKg: maxWeight,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("update container %s: %w", id, err)
+	}
+	return &container, nil
+}
+
+// Delete menghapus container berdasarkan ID.
+func (s *ContainerService) Delete(ctx context.Context, id uuid.UUID) error {
+	err := s.store.DeleteContainer(ctx, id)
+	if err != nil {
+		return fmt.Errorf("delete container %s: %w", id, err)
+	}
+	return nil
+}
