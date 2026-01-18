@@ -4311,3 +4311,4274 @@ Untuk memperdalam pemahaman tentang topik yang dibahas di bab ini:
 ---
 
 <!-- BAB 4 STARTS HERE -->
+
+## Bab 4: Packing Service dengan Python
+
+Di bab sebelumnya, kita membangun Backend API dengan Go yang menangani semua interaksi dengan dunia luar—menerima request HTTP, memvalidasi input, dan menyimpan data ke database. Namun, ada satu komponen krusial yang sengaja kita tunda: *kalkulasi penempatan barang*. Saat endpoint `/calculate` dipanggil, Backend API kita hanya berkomunikasi dengan MockGateway yang mengembalikan data simulasi. Sekarang saatnya membangun "otak" yang sesungguhnya.
+
+Mengapa kita memisahkan kalkulasi ke service terpisah, dan mengapa menggunakan Python? Jawaban singkatnya: *the right tool for the right job*. Kalkulasi 3D bin packing adalah operasi CPU-intensive yang jarang dipanggil—berbeda karakteristiknya dengan operasi CRUD yang sering terjadi. Memisahkan keduanya memungkinkan scaling independen: Backend API bisa di-scale horizontal untuk menangani banyak request ringan, sementara Packing Service di-optimize untuk komputasi berat.
+
+Python dipilih bukan karena performanya (Go jelas lebih cepat), melainkan karena *ekosistem*. Library py3dbp yang akan kita gunakan sudah teruji, well-documented, dan mengimplementasikan algoritma 3D bin packing yang kita bahas di Bab 1. Menulis ulang algoritma dari nol di Go tidak memberikan nilai tambah yang sepadan dengan effort-nya. Dalam dunia nyata, pragmatisme sering mengalahkan purisme teknologi.
+
+Dalam bab ini, kita akan membangun Packing Service dari nol. Struktur pembahasannya mengikuti alur yang sama dengan bab sebelumnya—dimulai dari setup project, lalu bergerak ke dalam layer by layer. Di akhir bab, kita akan mengintegrasikan Packing Service dengan Backend API sehingga flow kalkulasi bekerja end-to-end.
+
+**Dalam bab ini, kita akan membahas topik-topik berikut:**
+
+- Setup Project Python dan Flask
+- Membangun Flask Application dengan endpoint `/health` dan `/pack`
+- Mendefinisikan Schema dengan TypedDict
+- Unit Conversion untuk presisi kalkulasi
+- Mengintegrasikan library py3dbp untuk algoritma 3D bin packing
+- Orkestrasi packing logic dari request sampai response
+- Integrasi dengan Backend API Go
+
+**Technical Requirements**
+
+Untuk menyelesaikan bab ini, Anda memerlukan:
+
+- **Python 3.11 atau lebih baru** — [python.org/downloads](https://www.python.org/downloads/)
+- **pip** — Package manager Python (biasanya sudah terinstall dengan Python)
+- **Flask** — Web framework untuk REST API
+- **Backend API dari Bab 3** — Kita akan mengintegrasikan kedua service
+- **curl atau Postman** — Untuk testing manual endpoint
+- **VS Code dengan Python extension** — IDE yang direkomendasikan
+
+---
+
+### 4.1 Setup Project Python
+
+Berbeda dengan Go yang memiliki tooling built-in untuk project management (`go mod`), Python memerlukan sedikit setup tambahan. Ekosistem Python menawarkan berbagai pendekatan untuk dependency management—dari pip sederhana hingga Poetry yang lebih modern. Untuk Packing Service yang relatif sederhana, kita akan menggunakan pendekatan klasik: virtual environment dengan pip dan `requirements.txt`.
+
+Mengapa tidak Poetry atau pipenv? Alasan utamanya adalah **kesederhanaan**. Packing Service hanya memiliki dua dependencies (Flask dan Gunicorn), dan kita tidak memerlukan fitur advanced seperti dependency locking yang ketat atau build system terintegrasi. Prinsip yang sama dengan memilih Flask over Django—gunakan tool yang sesuai dengan skala masalah.
+
+#### Struktur Direktori
+
+Di Bab 2, kita membahas arsitektur microservices dengan Backend API dan Packing Service sebagai dua komponen terpisah. Pertanyaannya: di mana kita menempatkan kode Packing Service? Ada dua pendekatan umum:
+
+1. **Repository terpisah** — Setiap service memiliki repository Git sendiri
+2. **Monorepo** — Semua service dalam satu repository
+
+Kita memilih **monorepo** dengan alasan praktis: untuk project dengan tim kecil (atau developer tunggal), overhead mengelola multiple repository tidak sebanding dengan manfaatnya. Lebih penting lagi, sharing contract (seperti format request/response) lebih mudah dalam monorepo—perubahan bisa di-review dalam satu pull request.
+
+Packing Service ditempatkan di `cmd/packing/`, mengikuti konvensi Go dimana semua executable ditempatkan di bawah `cmd/`. Meskipun ini bukan konvensi standar Python (yang biasanya menggunakan `src/` atau nama package langsung di root), **konsistensi dalam satu project lebih penting daripada mengikuti konvensi berbeda untuk setiap bahasa**.
+
+```
+load-stuffing-calculator/
+├── cmd/
+│   ├── api/               # Go Backend API (Bab 3)
+│   │   └── main.go
+│   ├── db/                # Database migrations dan queries
+│   │   ├── migrations/
+│   │   └── queries/
+│   └── packing/           # Python Packing Service
+│       ├── __init__.py
+│       ├── app.py         # Flask application entry point
+│       ├── schema.py      # TypedDict definitions dan validasi
+│       ├── packing.py     # Core packing orchestration
+│       ├── units.py       # Unit conversion (mm/cm/m)
+│       ├── rotation.py    # Rotation code mapping
+│       ├── py3dbp/        # Vendored library
+│       └── requirements.txt
+├── internal/              # Go internal packages
+├── go.mod
+└── sqlc.yaml
+```
+
+Perhatikan bahwa `cmd/packing/` memiliki struktur flat—semua file Python berada di level yang sama. Ini berbeda dengan `internal/` pada Go yang memiliki sub-packages. Mengapa? Packing Service cukup kecil sehingga tidak memerlukan sub-packages. Jika service berkembang lebih kompleks, kita bisa memperkenalkan struktur berlapis kemudian. **Premature abstraction lebih berbahaya daripada kode yang sedikit flat.**
+
+Buat direktori:
+
+```bash
+mkdir -p cmd/packing
+cd cmd/packing
+```
+
+#### Virtual Environment
+
+Jika Anda familiar dengan Go, konsep virtual environment mungkin terasa aneh. Go memiliki `go.mod` yang mengisolasi dependencies per-project secara otomatis. Python, dengan sejarahnya yang lebih panjang, tidak memiliki ini secara built-in—virtual environment adalah solusi komunitas yang kemudian diadopsi ke standard library.
+
+Virtual environment menciptakan "bubble" terisolasi dimana packages yang kita install tidak mempengaruhi sistem global atau project lain. Ini penting karena dua project mungkin memerlukan versi berbeda dari library yang sama.
+
+```bash
+# Buat virtual environment bernama 'venv'
+python3 -m venv venv
+```
+
+Perintah ini membuat direktori `venv/` yang berisi:
+- Copy interpreter Python
+- pip untuk environment ini
+- Direktori `lib/` untuk packages yang diinstall
+
+Untuk menggunakan virtual environment, kita perlu "mengaktifkannya":
+
+```bash
+# Linux/macOS
+source venv/bin/activate
+
+# Windows (Command Prompt)
+venv\Scripts\activate.bat
+
+# Windows (PowerShell)
+venv\Scripts\Activate.ps1
+```
+
+Setelah aktivasi, prompt terminal berubah menunjukkan environment yang aktif:
+
+```
+(venv) $ python --version
+Python 3.11.x
+```
+
+> **Penting:** Virtual environment perlu diaktifasi setiap kali membuka terminal baru. Ini adalah "gotcha" umum bagi developer yang baru ke Python. Jika `pip install` memasang package ke sistem global bukan ke project, kemungkinan besar virtual environment belum diaktifasi.
+
+Untuk best practice, tambahkan `venv/` ke `.gitignore`—virtual environment tidak perlu di-commit karena bisa dibuat ulang dari `requirements.txt`.
+
+#### Dependencies
+
+Python menggunakan `requirements.txt` sebagai cara paling sederhana untuk mendefinisikan dependencies. Format ini telah ada sejak awal pip dan didukung secara universal.
+
+Buat file `requirements.txt`:
+
+```txt
+# Packing Service Dependencies
+flask>=3.0.0
+gunicorn>=21.0.0
+```
+
+Mari bahas setiap dependency:
+
+**Flask** adalah web framework yang kita gunakan untuk menerima HTTP request dan mengembalikan response. Flask mengikuti filosofi "micro-framework"—ia menyediakan routing, request handling, dan response formatting, tetapi tidak memaksakan struktur aplikasi atau menyertakan fitur yang mungkin tidak diperlukan (ORM, templating engine yang kompleks, dll).
+
+**Gunicorn** (Green Unicorn) adalah WSGI HTTP server untuk production. Flask's built-in server (`flask run`) hanya untuk development—ia single-threaded dan tidak aman untuk production. Gunicorn menjalankan multiple worker processes dan menangani concurrent requests dengan benar.
+
+> **Catatan:** Kita include Gunicorn di `requirements.txt` meskipun tidak akan digunakan dalam bab ini. Ini memastikan environment development dan production memiliki dependencies yang sama persis.
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Pip akan mengunduh Flask, Gunicorn, dan semua transitive dependencies mereka (Werkzeug, Jinja2, dll). Proses ini analog dengan `go mod download` di Go.
+
+Python memiliki ekosistem web framework yang kaya. **Django** adalah pilihan untuk aplikasi besar dengan database kompleks—ia menyediakan ORM, admin panel, dan banyak fitur out-of-the-box. **FastAPI** adalah framework modern yang async-first dengan auto-generated OpenAPI documentation—cocok untuk API dengan kebutuhan high-performance. **Flask** berada di ujung minimal spectrum—ia menyediakan routing dan request handling, sisanya terserah developer.
+
+Untuk Packing Service yang hanya memiliki dua endpoint (`/health` dan `/pack`), Django terlalu berat dan FastAPI memberikan fitur yang tidak kita butuhkan. Flask adalah pilihan yang tepat karena minimal boilerplate (aplikasi bisa dimulai dengan 5 baris kode), tidak ada konvensi tersembunyi, dokumentasi lengkap, dan pattern request-response yang mirip dengan Gin di Go.
+
+Flask mengikuti filosofi yang sama dengan Go: **explicit over implicit**. Jika sesuatu terjadi, Anda bisa melihatnya langsung di kode.
+
+#### Inisialisasi Package Python
+
+Terakhir, buat file `__init__.py` di dalam direktori `cmd/packing/` untuk menandai direktori sebagai Python package:
+
+```python
+"""Packing Service package."""
+```
+
+File ini memiliki dua fungsi: menandai direktori sebagai importable package, dan memungkinkan relative imports (`from .schema import ...`). Meskipun bisa kosong, docstring singkat membantu dokumentasi.
+
+Dengan setup selesai, kita siap membangun Flask application. Di section berikutnya, kita akan membuat entry point `app.py` yang mendefinisikan endpoints dan menangani request.
+
+### 4.2 Flask Application Entry Point
+
+Setiap aplikasi Flask dimulai dengan sebuah *application object*—instance dari class `Flask` yang menjadi pusat dari semua konfigurasi dan routing. Di Bab 3, kita menggunakan pattern *application factory* (`NewApp`) untuk Go. Flask memiliki pattern serupa yang disebut *application factory function*.
+
+Buat file `app.py` di dalam direktori `cmd/packing/`:
+
+```python
+"""Flask application for the Packing Service."""
+
+from __future__ import annotations
+
+import os
+import time
+from typing import Any
+
+from flask import Flask, jsonify, request
+
+from .packing import pack_request
+from .schema import ErrorResponse, HealthResponse, PackSuccessResponse
+```
+
+Mari bahas imports ini satu per satu. `from __future__ import annotations` mengaktifkan *postponed evaluation of annotations*—ini memungkinkan kita menggunakan type hints tanpa import yang berlebihan dan menyelesaikan beberapa edge cases dengan forward references. `Flask`, `jsonify`, dan `request` adalah komponen inti Flask yang akan kita gunakan. Imports dari `.packing` dan `.schema` adalah relative imports ke module yang akan kita buat nanti.
+
+#### Error Response Helper
+
+Sebelum mendefinisikan endpoints, kita buat helper function untuk standardized error responses:
+
+```python
+def _json_error(
+    status: int,
+    code: str,
+    message: str,
+    *,
+    details: dict[str, Any] | None = None,
+) -> tuple[Any, int]:
+    """Return a JSON error response."""
+    payload: ErrorResponse = {
+        "success": False,
+        "error": {
+            "code": code,
+            "message": message,
+            "details": details or {},
+        },
+    }
+    return jsonify(payload), status
+```
+
+Function ini mengembalikan tuple `(response, status_code)`—convention Flask untuk mengembalikan response dengan status code spesifik. Parameter `*` memaksa `details` untuk dipassing sebagai keyword argument, mencegah kesalahan urutan parameter. Type annotation `dict[str, Any] | None` adalah sintaks Python 3.10+ untuk optional types (sebelumnya `Optional[dict[str, Any]]`).
+
+Format error response kita konsisten dengan Backend API Go:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "missing required field: items",
+    "details": {}
+  }
+}
+```
+
+#### Application Factory
+
+Sekarang kita definisikan *application factory*—sebuah function yang membuat dan mengkonfigurasi Flask app:
+
+```python
+def create_app() -> Flask:
+    """Create and configure the Flask application."""
+    app = Flask(__name__)
+
+    @app.get("/health")
+    def health():
+        """Health check endpoint."""
+        payload: HealthResponse = {"success": True, "data": {"status": "ok"}}
+        return jsonify(payload)
+
+    @app.post("/pack")
+    def pack():
+        """Pack items into a container."""
+        started_at = time.perf_counter()
+
+        # Parse JSON body
+        body = request.get_json(silent=True)
+        if body is None:
+            return _json_error(400, "INVALID_JSON", "Request body must be JSON")
+
+        try:
+            result: PackSuccessResponse = pack_request(body)
+        except ValueError as e:
+            return _json_error(400, "INVALID_REQUEST", str(e))
+        except Exception as e:
+            return _json_error(
+                500, "PACKING_FAILED", "Packing failed", details={"error": str(e)}
+            )
+
+        # Add total time to stats
+        result["data"]["stats"]["total_time_ms"] = int(
+            (time.perf_counter() - started_at) * 1000
+        )
+        return jsonify(result)
+
+    return app
+```
+
+Mengapa *application factory* dan bukan global app object? Ada beberapa alasan. Pertama, **testing**—kita bisa membuat multiple instances dengan konfigurasi berbeda untuk berbagai test scenarios. Kedua, **late binding**—configuration bisa di-inject saat runtime, bukan saat module di-import. Ketiga, **explicit initialization**—tidak ada magic global state yang berubah saat import.
+
+Mari bedah kedua endpoints:
+
+**`/health`** adalah endpoint sederhana yang mengembalikan status "ok". Endpoint ini digunakan oleh load balancers dan container orchestrators untuk memeriksa apakah service hidup dan siap menerima traffic. Decorator `@app.get("/health")` adalah shorthand untuk `@app.route("/health", methods=["GET"])`.
+
+**`/pack`** adalah endpoint utama yang melakukan kalkulasi packing. Flow-nya sebagai berikut:
+
+1. Catat waktu mulai dengan `time.perf_counter()` untuk timing yang presisi
+2. Parse JSON body dengan `request.get_json(silent=True)`—`silent=True` mencegah exception jika body bukan JSON valid
+3. Panggil `pack_request()` yang akan kita implementasikan nanti
+4. Tangkap `ValueError` untuk validation errors (400) dan `Exception` untuk unexpected errors (500)
+5. Tambahkan `total_time_ms` ke response untuk observability
+6. Kembalikan hasil sebagai JSON
+
+Perhatikan bahwa kita menangkap `ValueError` secara spesifik—ini adalah convention kita untuk validation errors. Module `schema.py` akan raise `ValueError` untuk input yang tidak valid, dan kita konversi menjadi HTTP 400.
+
+#### Entry Point
+
+Terakhir, tambahkan entry point untuk menjalankan server:
+
+```python
+def main() -> None:
+    """Run the Flask development server."""
+    app = create_app()
+
+    host = os.environ.get("PACKING_HOST", "0.0.0.0")
+    port = int(os.environ.get("PACKING_PORT", "5000"))
+    debug = os.environ.get("PACKING_DEBUG", "0") in {"1", "true", "yes"}
+
+    print(f"Starting Packing Service on {host}:{port}")
+    app.run(host=host, port=port, debug=debug)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Konfigurasi dibaca dari environment variables dengan default values yang sensible. `0.0.0.0` berarti listen di semua network interfaces—diperlukan untuk containerized deployment. Port `5000` adalah default Flask. Debug mode disabled by default untuk keamanan.
+
+`if __name__ == "__main__":` adalah Python idiom untuk mendeteksi apakah script dijalankan langsung (bukan di-import). Ini memungkinkan menjalankan service dengan:
+
+```bash
+python -m cmd.packing.app
+```
+
+Atau dari direktori `cmd/packing/`:
+
+```bash
+python app.py
+```
+
+> **Catatan:** File `app.py` belum bisa dijalankan karena mengimport `pack_request` dan schema types yang belum ada. Kita akan mengimplementasikan module-module tersebut di section berikutnya.
+
+Berikut kode lengkap `app.py`:
+
+```python
+"""Flask application for the Packing Service."""
+
+from __future__ import annotations
+
+import os
+import time
+from typing import Any
+
+from flask import Flask, jsonify, request
+
+from .packing import pack_request
+from .schema import ErrorResponse, HealthResponse, PackSuccessResponse
+
+
+def _json_error(
+    status: int,
+    code: str,
+    message: str,
+    *,
+    details: dict[str, Any] | None = None,
+) -> tuple[Any, int]:
+    """Return a JSON error response."""
+    payload: ErrorResponse = {
+        "success": False,
+        "error": {
+            "code": code,
+            "message": message,
+            "details": details or {},
+        },
+    }
+    return jsonify(payload), status
+
+
+def create_app() -> Flask:
+    """Create and configure the Flask application."""
+    app = Flask(__name__)
+
+    @app.get("/health")
+    def health():
+        """Health check endpoint."""
+        payload: HealthResponse = {"success": True, "data": {"status": "ok"}}
+        return jsonify(payload)
+
+    @app.post("/pack")
+    def pack():
+        """Pack items into a container."""
+        started_at = time.perf_counter()
+
+        body = request.get_json(silent=True)
+        if body is None:
+            return _json_error(400, "INVALID_JSON", "Request body must be JSON")
+
+        try:
+            result: PackSuccessResponse = pack_request(body)
+        except ValueError as e:
+            return _json_error(400, "INVALID_REQUEST", str(e))
+        except Exception as e:
+            return _json_error(
+                500, "PACKING_FAILED", "Packing failed", details={"error": str(e)}
+            )
+
+        result["data"]["stats"]["total_time_ms"] = int(
+            (time.perf_counter() - started_at) * 1000
+        )
+        return jsonify(result)
+
+    return app
+
+
+def main() -> None:
+    """Run the Flask development server."""
+    app = create_app()
+
+    host = os.environ.get("PACKING_HOST", "0.0.0.0")
+    port = int(os.environ.get("PACKING_PORT", "5000"))
+    debug = os.environ.get("PACKING_DEBUG", "0") in {"1", "true", "yes"}
+
+    print(f"Starting Packing Service on {host}:{port}")
+    app.run(host=host, port=port, debug=debug)
+
+
+if __name__ == "__main__":
+    main()
+```
+
+### 4.3 Schema dan Validasi Request
+
+Packing Service menerima request berisi data container dan items, lalu mengembalikan koordinat penempatan. Untuk memastikan data yang masuk valid sebelum dikirim ke algoritma, kita perlu mendefinisikan struktur data dan melakukan validasi.
+
+Buat file `schema.py` di dalam direktori `cmd/packing/`:
+
+```python
+"""Schema definitions and request parsing for the packing service."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Literal, NotRequired, TypedDict
+
+from .units import LengthUnit
+```
+
+#### Struktur Request
+
+Request ke Packing Service terdiri dari empat bagian: units, container, items, dan options. Mari definisikan struktur untuk masing-masing.
+
+```python
+class ContainerIn(TypedDict):
+    """Container dimensions from the request."""
+    length: float
+    width: float
+    height: float
+    max_weight: float
+```
+
+`ContainerIn` merepresentasikan ruang yang akan diisi. Dalam konteks logistik, ini bisa berupa kontainer pengiriman (20ft, 40ft), box palet, atau truk. `length`, `width`, dan `height` adalah dimensi interior dalam unit yang ditentukan client (mm, cm, atau m). `max_weight` adalah kapasitas berat maksimum dalam kilogram—algoritma akan memastikan total berat items tidak melebihi batas ini.
+
+```python
+class ItemIn(TypedDict):
+    """Item to be packed from the request."""
+    item_id: str
+    label: str
+    length: float
+    width: float
+    height: float
+    weight: float
+    quantity: int
+```
+
+`ItemIn` adalah barang yang akan dimuat. `item_id` adalah identifier unik untuk tracking, `label` adalah nama yang ditampilkan di visualisasi. Dimensi `length`, `width`, `height` mengikuti konvensi sama dengan container. `weight` dalam kilogram. `quantity` memungkinkan client mengirim "10 unit Kardus A" tanpa perlu menduplikasi data—algoritma akan expand quantity menjadi individual items.
+
+```python
+class OptionsIn(TypedDict, total=False):
+    """Packing algorithm options."""
+    fix_point: bool
+    check_stable: bool
+    support_surface_ratio: float
+    bigger_first: bool
+```
+
+Options mengontrol perilaku algoritma py3dbp. `bigger_first` menentukan urutan penempatan—jika True, items besar diletakkan terlebih dahulu (strategi "Bigger First Fit Decreasing" dari Bab 1). `check_stable` mengaktifkan simulasi gravitasi—item harus memiliki support yang cukup di bawahnya. `support_surface_ratio` menentukan berapa persen permukaan bawah item harus ditopang (default 0.75 = 75%). `fix_point` mengontrol strategi penempatan corner. Semua options bersifat optional dengan default values yang sensible.
+
+```python
+class RequestIn(TypedDict):
+    """Parsed and validated request."""
+    units: LengthUnit
+    container: ContainerIn
+    items: list[ItemIn]
+    options: OptionsIn
+```
+
+`RequestIn` adalah struktur lengkap setelah validasi. `units` menentukan satuan panjang yang digunakan—algoritma akan mengkonversi ke representasi internal untuk kalkulasi.
+
+#### Struktur Response
+
+Response berisi koordinat penempatan untuk setiap item, plus informasi tentang items yang tidak muat.
+
+```python
+class PlacementOut(TypedDict):
+    """Placement result for a single item."""
+    item_id: str
+    label: str
+    pos_x: float
+    pos_y: float
+    pos_z: float
+    rotation: int
+    step_number: int
+```
+
+`PlacementOut` adalah inti dari response. `pos_x`, `pos_y`, `pos_z` adalah koordinat origin point (sudut kiri-bawah-depan) item dalam container. Koordinat dalam unit yang sama dengan request. `rotation` adalah kode 0-5 yang menunjukkan orientasi item setelah rotasi—frontend menggunakan ini untuk render 3D yang benar. `step_number` adalah urutan penempatan, berguna untuk animasi loading step-by-step.
+
+```python
+class UnfittedOut(TypedDict):
+    """Items that could not fit in the container."""
+    item_id: str
+    label: str
+    count: int
+```
+
+Tidak semua item akan muat—bisa karena ruang habis atau weight limit tercapai. `UnfittedOut` melaporkan items yang tidak bisa ditempatkan beserta jumlahnya. Informasi ini penting untuk warehouse planner: mereka perlu tahu bahwa diperlukan kontainer tambahan.
+
+```python
+class StatsOut(TypedDict):
+    """Packing statistics."""
+    expanded_items: int
+    fitted_count: int
+    unfitted_count: int
+    pack_time_ms: int
+    total_time_ms: NotRequired[int]
+```
+
+Statistics memberikan insight tentang efisiensi packing. `expanded_items` adalah total items setelah quantity di-expand (contoh: 3 types item dengan total quantity 15 = 15 expanded items). `fitted_count` dan `unfitted_count` menunjukkan seberapa baik algoritma bekerja. `pack_time_ms` adalah waktu kalkulasi murni, `total_time_ms` termasuk parsing dan transformation.
+
+```python
+class PackSuccessResponse(TypedDict):
+    """Successful pack response."""
+    success: Literal[True]
+    data: PackDataOut
+
+
+class ErrorResponse(TypedDict):
+    """Error response."""
+    success: Literal[False]
+    error: ErrorInfo
+```
+
+Response mengikuti format yang sama dengan Backend API Go: `success` boolean plus `data` atau `error`.
+
+#### NormalizedItem
+
+Selain types untuk API, kita mendefinisikan internal type untuk processing:
+
+```python
+@dataclass(frozen=True)
+class NormalizedItem:
+    """Item normalized to internal units (integer cm)."""
+    item_id: str
+    label: str
+    quantity: int
+    l_cm: int
+    w_cm: int
+    h_cm: int
+    weight_kg: float
+```
+
+`NormalizedItem` menyimpan dimensi dalam **integer centimeters**. Mengapa konversi ke integer? Algoritma packing melakukan banyak operasi perbandingan dan intersection checking. Floating-point arithmetic bisa menyebabkan precision errors—dua nilai yang "seharusnya" sama ternyata berbeda di digit ke-15. Dengan integer, perbandingan selalu deterministik. Centimeter dipilih sebagai balance antara presisi (cukup untuk most items) dan range (integer 32-bit bisa handle kontainer hingga 21 km).
+
+#### Validasi Request
+
+Validasi memastikan data yang masuk sesuai dengan apa yang diharapkan algoritma.
+
+```python
+def require_key(obj: dict[str, Any], key: str) -> Any:
+    """Get a required key from dict or raise ValueError."""
+    if key not in obj:
+        raise ValueError(f"missing required field: {key}")
+    return obj[key]
+
+
+def as_float(value: Any, field: str) -> float:
+    """Parse a value as a positive float."""
+    try:
+        n = float(value)
+    except Exception as e:
+        raise ValueError(f"invalid number for {field}") from e
+    if n <= 0:
+        raise ValueError(f"{field} must be > 0")
+    return n
+
+
+def as_int(value: Any, field: str) -> int:
+    """Parse a value as a positive integer."""
+    try:
+        n = int(value)
+    except Exception as e:
+        raise ValueError(f"invalid integer for {field}") from e
+    if n <= 0:
+        raise ValueError(f"{field} must be > 0")
+    return n
+```
+
+Validasi kita check bahwa dimensi dan weight positif—nilai nol atau negatif tidak masuk akal secara fisik. Error message menyertakan field path (`items[2].weight`) untuk memudahkan debugging.
+
+```python
+def parse_request(body: dict[str, Any]) -> RequestIn:
+    """Parse and validate a pack request body."""
+    units = require_key(body, "units")
+    if units not in {"mm", "cm", "m"}:
+        raise ValueError("units must be one of: mm, cm, m")
+
+    container_raw = require_key(body, "container")
+    if not isinstance(container_raw, dict):
+        raise ValueError("container must be an object")
+
+    container: ContainerIn = {
+        "length": as_float(require_key(container_raw, "length"), "container.length"),
+        "width": as_float(require_key(container_raw, "width"), "container.width"),
+        "height": as_float(require_key(container_raw, "height"), "container.height"),
+        "max_weight": as_float(require_key(container_raw, "max_weight"), "container.max_weight"),
+    }
+
+    items_raw = require_key(body, "items")
+    if not isinstance(items_raw, list) or len(items_raw) == 0:
+        raise ValueError("items must be a non-empty array")
+
+    items: list[ItemIn] = []
+    for idx, item in enumerate(items_raw):
+        if not isinstance(item, dict):
+            raise ValueError(f"items[{idx}] must be an object")
+        items.append({
+            "item_id": str(require_key(item, "item_id")),
+            "label": str(require_key(item, "label")),
+            "length": as_float(require_key(item, "length"), f"items[{idx}].length"),
+            "width": as_float(require_key(item, "width"), f"items[{idx}].width"),
+            "height": as_float(require_key(item, "height"), f"items[{idx}].height"),
+            "weight": as_float(require_key(item, "weight"), f"items[{idx}].weight"),
+            "quantity": as_int(require_key(item, "quantity"), f"items[{idx}].quantity"),
+        })
+
+    options_raw = body.get("options", {})
+    if not isinstance(options_raw, dict):
+        raise ValueError("options must be an object")
+
+    options: OptionsIn = {
+        "fix_point": bool(options_raw.get("fix_point", True)),
+        "check_stable": bool(options_raw.get("check_stable", True)),
+        "support_surface_ratio": float(options_raw.get("support_surface_ratio", 0.75)),
+        "bigger_first": bool(options_raw.get("bigger_first", True)),
+    }
+
+    return {
+        "units": units,
+        "container": container,
+        "items": items,
+        "options": options,
+    }
+```
+
+`parse_request` memvalidasi seluruh request body. Untuk arrays, kita iterate dengan index untuk memberikan error message yang spesifik (contoh: `items[2].weight must be > 0`). Options bersifat optional—jika tidak dikirim, default values digunakan.
+
+Dengan schema selesai, kita punya contract yang jelas antara client dan Packing Service. Di section berikutnya, kita akan mengimplementasikan unit conversion.
+
+Berikut kode lengkap `schema.py`:
+
+```python
+"""Schema definitions and request parsing for the packing service."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Literal, NotRequired, TypedDict
+
+from .units import LengthUnit
+
+
+# Request Types
+
+class ContainerIn(TypedDict):
+    """Container dimensions from the request."""
+    length: float
+    width: float
+    height: float
+    max_weight: float
+
+
+class ItemIn(TypedDict):
+    """Item to be packed from the request."""
+    item_id: str
+    label: str
+    length: float
+    width: float
+    height: float
+    weight: float
+    quantity: int
+
+
+class OptionsIn(TypedDict, total=False):
+    """Packing algorithm options."""
+    fix_point: bool
+    check_stable: bool
+    support_surface_ratio: float
+    bigger_first: bool
+
+
+class RequestIn(TypedDict):
+    """Parsed and validated request."""
+    units: LengthUnit
+    container: ContainerIn
+    items: list[ItemIn]
+    options: OptionsIn
+
+
+# Internal Types
+
+@dataclass(frozen=True)
+class NormalizedItem:
+    """Item normalized to internal units (integer cm)."""
+    item_id: str
+    label: str
+    quantity: int
+    l_cm: int
+    w_cm: int
+    h_cm: int
+    weight_kg: float
+
+
+# Response Types
+
+class PlacementOut(TypedDict):
+    """Placement result for a single item."""
+    item_id: str
+    label: str
+    pos_x: float
+    pos_y: float
+    pos_z: float
+    rotation: int
+    step_number: int
+
+
+class UnfittedOut(TypedDict):
+    """Items that could not fit in the container."""
+    item_id: str
+    label: str
+    count: int
+
+
+class StatsOut(TypedDict):
+    """Packing statistics."""
+    expanded_items: int
+    fitted_count: int
+    unfitted_count: int
+    pack_time_ms: int
+    total_time_ms: NotRequired[int]
+
+
+class PackDataOut(TypedDict):
+    """Data payload for successful pack response."""
+    units: LengthUnit
+    placements: list[PlacementOut]
+    unfitted: list[UnfittedOut]
+    stats: StatsOut
+
+
+class PackSuccessResponse(TypedDict):
+    """Successful pack response."""
+    success: Literal[True]
+    data: PackDataOut
+
+
+class ErrorInfo(TypedDict):
+    """Error details."""
+    code: str
+    message: str
+    details: dict[str, Any]
+
+
+class ErrorResponse(TypedDict):
+    """Error response."""
+    success: Literal[False]
+    error: ErrorInfo
+
+
+class HealthDataOut(TypedDict):
+    """Health check data."""
+    status: Literal["ok"]
+
+
+class HealthResponse(TypedDict):
+    """Health check response."""
+    success: Literal[True]
+    data: HealthDataOut
+
+
+# Request Parsing
+
+def require_key(obj: dict[str, Any], key: str) -> Any:
+    """Get a required key from dict or raise ValueError."""
+    if key not in obj:
+        raise ValueError(f"missing required field: {key}")
+    return obj[key]
+
+
+def as_float(value: Any, field: str) -> float:
+    """Parse a value as a positive float."""
+    try:
+        n = float(value)
+    except Exception as e:
+        raise ValueError(f"invalid number for {field}") from e
+    if n <= 0:
+        raise ValueError(f"{field} must be > 0")
+    return n
+
+
+def as_int(value: Any, field: str) -> int:
+    """Parse a value as a positive integer."""
+    try:
+        n = int(value)
+    except Exception as e:
+        raise ValueError(f"invalid integer for {field}") from e
+    if n <= 0:
+        raise ValueError(f"{field} must be > 0")
+    return n
+
+
+def parse_request(body: dict[str, Any]) -> RequestIn:
+    """Parse and validate a pack request body."""
+    units = require_key(body, "units")
+    if units not in {"mm", "cm", "m"}:
+        raise ValueError("units must be one of: mm, cm, m")
+
+    container_raw = require_key(body, "container")
+    if not isinstance(container_raw, dict):
+        raise ValueError("container must be an object")
+
+    container: ContainerIn = {
+        "length": as_float(require_key(container_raw, "length"), "container.length"),
+        "width": as_float(require_key(container_raw, "width"), "container.width"),
+        "height": as_float(require_key(container_raw, "height"), "container.height"),
+        "max_weight": as_float(require_key(container_raw, "max_weight"), "container.max_weight"),
+    }
+
+    items_raw = require_key(body, "items")
+    if not isinstance(items_raw, list) or len(items_raw) == 0:
+        raise ValueError("items must be a non-empty array")
+
+    items: list[ItemIn] = []
+    for idx, item in enumerate(items_raw):
+        if not isinstance(item, dict):
+            raise ValueError(f"items[{idx}] must be an object")
+        items.append({
+            "item_id": str(require_key(item, "item_id")),
+            "label": str(require_key(item, "label")),
+            "length": as_float(require_key(item, "length"), f"items[{idx}].length"),
+            "width": as_float(require_key(item, "width"), f"items[{idx}].width"),
+            "height": as_float(require_key(item, "height"), f"items[{idx}].height"),
+            "weight": as_float(require_key(item, "weight"), f"items[{idx}].weight"),
+            "quantity": as_int(require_key(item, "quantity"), f"items[{idx}].quantity"),
+        })
+
+    options_raw = body.get("options", {})
+    if not isinstance(options_raw, dict):
+        raise ValueError("options must be an object")
+
+    options: OptionsIn = {
+        "fix_point": bool(options_raw.get("fix_point", True)),
+        "check_stable": bool(options_raw.get("check_stable", True)),
+        "support_surface_ratio": float(options_raw.get("support_surface_ratio", 0.75)),
+        "bigger_first": bool(options_raw.get("bigger_first", True)),
+    }
+
+    return {
+        "units": units,
+        "container": container,
+        "items": items,
+        "options": options,
+    }
+```
+
+
+
+### 4.4 Unit Conversion
+
+Client bisa mengirim dimensi dalam milimeter, centimeter, atau meter—tergantung konteks. Gudang biasanya menggunakan centimeter, manufacturer mungkin menggunakan milimeter untuk presisi, dan spesifikasi kontainer pengiriman sering dalam meter. Packing Service harus menerima semua format ini dan mengkonversi ke representasi internal yang konsisten.
+
+Buat file `units.py` di dalam direktori `cmd/packing/`:
+
+```python
+"""Unit conversion utilities for the packing service."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+# Supported length units
+LengthUnit = Literal["mm", "cm", "m"]
+```
+
+`LengthUnit` adalah type alias yang membatasi nilai ke tiga string: "mm", "cm", atau "m". Type ini digunakan di `schema.py` untuk field `units` dalam request.
+
+#### Konversi ke Centimeter
+
+Algoritma py3dbp bekerja dengan angka tanpa unit—ia tidak peduli apakah dimensi dalam mm atau m. Kita perlu memilih satu unit internal untuk konsistensi. Centimeter dipilih karena menjadi balance yang baik: cukup presisi untuk kebanyakan items (1 cm = 10 mm), dan tidak terlalu besar sehingga angka menjadi tidak praktis.
+
+```python
+def to_cm(value: float, unit: LengthUnit) -> float:
+    """Convert a value from the given unit to centimeters."""
+    if unit == "mm":
+        return value / 10.0
+    elif unit == "cm":
+        return value
+    elif unit == "m":
+        return value * 100.0
+    else:
+        raise ValueError(f"unsupported unit: {unit}")
+```
+
+`to_cm` mengkonversi nilai dari unit apapun ke centimeter. Konversi straightforward: 1 cm = 10 mm, 1 m = 100 cm.
+
+#### Konversi Balik ke Unit Client
+
+Setelah algoritma menghitung koordinat penempatan (dalam cm internal), kita perlu mengkonversi balik ke unit yang client kirimkan. Jika client mengirim dimensi dalam meter, response juga harus dalam meter.
+
+```python
+def from_cm(value_cm: float, unit: LengthUnit) -> float:
+    """Convert a value from centimeters to the given unit."""
+    if unit == "mm":
+        return value_cm * 10.0
+    elif unit == "cm":
+        return value_cm
+    elif unit == "m":
+        return value_cm / 100.0
+    else:
+        raise ValueError(f"unsupported unit: {unit}")
+```
+
+#### Integer Centimeter
+
+Di section Schema, kita membahas bahwa `NormalizedItem` menyimpan dimensi dalam integer centimeter. Mengapa integer, bukan float?
+
+```python
+def cm_int(value: float) -> int:
+    """Round a float cm value to the nearest integer."""
+    return int(round(value))
+```
+
+Floating-point arithmetic memiliki masalah presisi. Contoh klasik:
+
+```python
+>>> 0.1 + 0.2
+0.30000000000000004
+```
+
+Dalam algoritma packing yang melakukan ribuan operasi perbandingan dan intersection checking, ketidakpresisian ini bisa terakumulasi. Dua box yang "seharusnya" pas bersebelahan ternyata overlap karena error di digit ke-15.
+
+Integer menghilangkan masalah ini sepenuhnya. Dengan presisi 1 cm, kita kehilangan detail sub-centimeter—tetapi untuk kebanyakan aplikasi logistik, 1 cm sudah cukup presisi. Box dengan panjang 50.3 cm dibulatkan ke 50 cm untuk kalkulasi, lalu response mengembalikan koordinat dalam unit original client.
+
+Jika aplikasi membutuhkan presisi lebih tinggi (misalnya untuk komponen elektronik kecil), pendekatan yang sama bisa digunakan dengan milimeter sebagai unit internal—range integer 32-bit masih cukup untuk kontainer hingga 2 kilometer.
+
+Berikut kode lengkap `units.py`:
+
+```python
+"""Unit conversion utilities for the packing service."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+# Supported length units
+LengthUnit = Literal["mm", "cm", "m"]
+
+
+def to_cm(value: float, unit: LengthUnit) -> float:
+    """Convert a value from the given unit to centimeters."""
+    if unit == "mm":
+        return value / 10.0
+    elif unit == "cm":
+        return value
+    elif unit == "m":
+        return value * 100.0
+    else:
+        raise ValueError(f"unsupported unit: {unit}")
+
+
+def from_cm(value_cm: float, unit: LengthUnit) -> float:
+    """Convert a value from centimeters to the given unit."""
+    if unit == "mm":
+        return value_cm * 10.0
+    elif unit == "cm":
+        return value_cm
+    elif unit == "m":
+        return value_cm / 100.0
+    else:
+        raise ValueError(f"unsupported unit: {unit}")
+
+
+def cm_int(value: float) -> int:
+    """Round a float cm value to the nearest integer."""
+    return int(round(value))
+```
+
+
+
+### 4.5 Integrasi py3dbp
+
+py3dbp adalah library Python yang mengimplementasikan algoritma 3D bin packing. Library ini sudah menangani kompleksitas utama: mencoba berbagai rotasi item, melakukan collision detection, dan menghitung apakah item bisa ditempatkan di posisi tertentu. Tugas kita adalah menjembatani antara format API kita dengan format yang py3dbp harapkan.
+
+#### Vendored Dependency
+
+Alih-alih menginstall py3dbp via pip, kita menyertakan library langsung di dalam project (vendoring). Alasannya: reproducibility. Kita bisa memastikan versi yang sama digunakan di development dan production, tanpa bergantung pada PyPI. Untuk proyek production, ini juga memungkinkan modifikasi jika diperlukan.
+
+Copy library py3dbp ke direktori `cmd/packing/py3dbp/`. Untuk load library dari lokasi ini:
+
+```python
+def _load_py3dbp() -> None:
+    """Add the vendored py3dbp library to the Python path."""
+    lib_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "py3dbp"))
+    if lib_root not in sys.path:
+        sys.path.insert(0, lib_root)
+```
+
+Function ini menambahkan path ke vendored library sebelum import. Dengan ini, `from py3dbp import Packer` akan menggunakan versi lokal kita.
+
+#### Coordinate System
+
+py3dbp menggunakan konvensi WHD (Width, Height, Depth) untuk dimensi, sementara API kita menggunakan LWH (Length, Width, Height). Ini adalah sumber kebingungan yang sering terjadi. Kita perlu mapping yang konsisten:
+
+| API Kita | py3dbp | Keterangan |
+|----------|--------|------------|
+| Length (L) | Width (W) | Dimensi paling panjang |
+| Height (H) | Height (H) | Tinggi vertikal |
+| Width (W) | Depth (D) | Kedalaman |
+
+Mapping ini diterapkan saat membuat `Bin` dan `Item`:
+
+```python
+bin_whd = (container_cm["length"], container_cm["height"], container_cm["width"])
+item_whd = (it.l_cm, it.h_cm, it.w_cm)
+```
+
+Setelah packing selesai, koordinat posisi dari py3dbp juga perlu di-mapping balik ke konvensi API kita.
+
+#### Inisialisasi Packer
+
+Buat file `packing.py` di dalam direktori `cmd/packing/`. Function utama `pack_request` mengorkestrasi seluruh proses:
+
+```python
+def pack_request(body: dict[str, Any]) -> PackSuccessResponse:
+    req = parse_request(body)
+    units: LengthUnit = req["units"]
+
+    # Convert container dimensions to integer cm
+    container_cm = {
+        "length": cm_int(to_cm(req["container"]["length"], units)),
+        "width": cm_int(to_cm(req["container"]["width"], units)),
+        "height": cm_int(to_cm(req["container"]["height"], units)),
+    }
+
+    bin_whd = (container_cm["length"], container_cm["height"], container_cm["width"])
+```
+
+Dimensi container dikonversi dari unit client ke integer centimeter, lalu di-mapping ke konvensi WHD py3dbp.
+
+```python
+    # Normalize items to internal representation
+    normalized_items: list[NormalizedItem] = []
+    for item in req["items"]:
+        normalized_items.append(
+            NormalizedItem(
+                item_id=item["item_id"],
+                label=item["label"],
+                quantity=int(item["quantity"]),
+                l_cm=cm_int(to_cm(item["length"], units)),
+                w_cm=cm_int(to_cm(item["width"], units)),
+                h_cm=cm_int(to_cm(item["height"], units)),
+                weight_kg=float(item["weight"]),
+            )
+        )
+```
+
+Setiap item dinormalisasi ke `NormalizedItem` dengan dimensi integer cm.
+
+```python
+    _load_py3dbp()
+    from py3dbp import Bin, Item, Packer
+
+    packer = Packer()
+    packer.addBin(
+        Bin(
+            partno="bin",
+            WHD=bin_whd,
+            max_weight=float(req["container"]["max_weight"]),
+            corner=0,
+            put_type=1,
+        )
+    )
+```
+
+py3dbp `Packer` adalah orchestrator utama. `Bin` merepresentasikan container dengan dimensi dan weight limit.
+
+#### Expanding Items by Quantity
+
+Request mungkin berisi item dengan `quantity: 5`. py3dbp tidak memahami quantity—ia bekerja dengan individual items. Kita perlu expand:
+
+```python
+    expanded_total = 0
+    labels_by_id: dict[str, str] = {it.item_id: it.label for it in normalized_items}
+
+    for it in normalized_items:
+        item_whd = (it.l_cm, it.h_cm, it.w_cm)
+        for i in range(it.quantity):
+            expanded_total += 1
+            packer.addItem(
+                Item(
+                    partno=f"{it.item_id}:{i + 1}",
+                    name=it.item_id,
+                    typeof="cube",
+                    WHD=item_whd,
+                    weight=it.weight_kg,
+                    level=1,
+                    loadbear=100,
+                    updown=True,
+                    color="#cccccc",
+                )
+            )
+```
+
+`partno` adalah unique ID per-instance (`BOX-001:1`, `BOX-001:2`, ...), `name` adalah item type ID yang sama untuk aggregasi. `updown=True` memungkinkan item dirotasi termasuk vertikal.
+
+#### Running the Algorithm
+
+```python
+    packer.pack(
+        bigger_first=bool(req["options"].get("bigger_first", True)),
+        distribute_items=False,
+        fix_point=bool(req["options"].get("fix_point", True)),
+        check_stable=bool(req["options"].get("check_stable", True)),
+        support_surface_ratio=float(req["options"].get("support_surface_ratio", 0.75)),
+        binding=[],
+        number_of_decimals=0,
+    )
+```
+
+Parameter ini mengontrol perilaku algoritma:
+
+- **bigger_first** — Sort items by volume descending sebelum packing (strategi Bab 1)
+- **distribute_items** — False karena kita hanya punya satu bin
+- **fix_point** — Corner placement strategy
+- **check_stable** — Simulasi gravitasi, item harus memiliki support
+- **support_surface_ratio** — Minimal 75% permukaan bawah harus ditopang
+- **number_of_decimals** — 0 karena kita gunakan integer
+
+#### Rotation Codes
+
+py3dbp bisa merotasi item ke berbagai orientasi. Untuk visualisasi 3D di frontend, kita perlu tahu rotasi apa yang diterapkan. `rotation.py` menangani mapping ini:
+
+```python
+def rotation_code(orig_lwh: tuple[int, int, int], rotated_lwh: tuple[int, int, int]) -> int:
+    """
+    Determine the rotation code (0-5) based on how dimensions changed.
+    
+    - 0: No rotation (L,W,H)
+    - 1: Rotate 90° around Z axis (W,L,H)
+    - 2: Rotate 90° around Y axis (H,W,L)
+    - 3: Rotate 90° around X axis (L,H,W)
+    - 4: Combined rotation (H,L,W)
+    - 5: Combined rotation (W,H,L)
+    """
+    l, w, h = orig_lwh
+    rotations = {
+        (l, w, h): 0,
+        (w, l, h): 1,
+        (h, w, l): 2,
+        (l, h, w): 3,
+        (h, l, w): 4,
+        (w, h, l): 5,
+    }
+    return rotations.get(rotated_lwh, 0)
+```
+
+Dengan membandingkan dimensi original dan hasil packing, kita bisa menentukan rotasi yang diterapkan.
+
+Berikut kode lengkap `rotation.py`:
+
+```python
+"""Rotation code utilities for mapping py3dbp rotation to visualization."""
+
+from __future__ import annotations
+
+
+def rotation_code(orig_lwh: tuple[int, int, int], rotated_lwh: tuple[int, int, int]) -> int:
+    """
+    Determine the rotation code (0-5) based on how dimensions changed.
+    
+    The rotation code indicates which rotation was applied:
+    - 0: No rotation (L,W,H)
+    - 1: Rotate 90° around Z axis (W,L,H)
+    - 2: Rotate 90° around Y axis (H,W,L)
+    - 3: Rotate 90° around X axis (L,H,W)
+    - 4: Rotate 180° around Z, then 90° Y (H,L,W)
+    - 5: Rotate 90° Z, then 90° Y (W,H,L)
+    """
+    l, w, h = orig_lwh
+    
+    rotations = {
+        (l, w, h): 0,
+        (w, l, h): 1,
+        (h, w, l): 2,
+        (l, h, w): 3,
+        (h, l, w): 4,
+        (w, h, l): 5,
+    }
+    
+    return rotations.get(rotated_lwh, 0)
+
+
+def permuted_lwh_from_packing_dims(pack_dims: tuple[int, int, int]) -> tuple[int, int, int]:
+    """
+    Convert py3dbp packing dimensions back to our L,W,H convention.
+    
+    py3dbp uses WHD (width, height, depth) internally.
+    We pack with WHD = (L, H, W), so we need to convert back.
+    """
+    return (pack_dims[0], pack_dims[2], pack_dims[1])
+```
+
+
+
+#### Processing Results
+
+Setelah packing selesai, kita extract hasil:
+
+```python
+    b = packer.bins[0]
+
+    placements: list[PlacementOut] = []
+    for step_idx, pit in enumerate(b.items):
+        item_id = pit.name
+        orig_lwh = item_dims_by_id[item_id]
+        rotated_lwh = permuted_lwh_from_packing_dims(pack_dims=pit.getDimension())
+        rot_code = rotation_code(orig_lwh, rotated_lwh)
+
+        px, py, pz = pit.position
+        
+        # Map py3dbp coordinates to API coordinates
+        api_pos_x_cm = int(px)
+        api_pos_y_cm = int(pz)  # py3dbp z -> API y
+        api_pos_z_cm = int(py)  # py3dbp y -> API z
+
+        placements.append({
+            "item_id": item_id,
+            "label": labels_by_id.get(item_id, item_id),
+            "pos_x": from_cm(api_pos_x_cm, units),
+            "pos_y": from_cm(api_pos_y_cm, units),
+            "pos_z": from_cm(api_pos_z_cm, units),
+            "rotation": rot_code,
+            "step_number": step_idx + 1,
+        })
+```
+
+Koordinat dari py3dbp di-mapping ke konvensi API kita, lalu dikonversi kembali ke unit client.
+
+Items yang tidak muat dikumpulkan dengan aggregasi by item_id:
+
+```python
+    unfitted_counts: dict[str, int] = {}
+    for uit in getattr(b, "unfitted_items", []):
+        unfitted_counts[uit.name] = unfitted_counts.get(uit.name, 0) + 1
+
+    unfitted: list[UnfittedOut] = [
+        {"item_id": item_id, "label": labels_by_id.get(item_id, item_id), "count": count}
+        for item_id, count in sorted(unfitted_counts.items())
+    ]
+```
+
+Response akhir menggabungkan placements, unfitted items, dan statistics:
+
+```python
+    return {
+        "success": True,
+        "data": {
+            "units": units,
+            "placements": placements,
+            "unfitted": unfitted,
+            "stats": {
+                "expanded_items": expanded_total,
+                "fitted_count": len(placements),
+                "unfitted_count": sum(unfitted_counts.values()),
+                "pack_time_ms": pack_time_ms,
+            },
+        },
+    }
+```
+
+Berikut kode lengkap `packing.py`:
+
+```python
+"""Core packing logic using py3dbp algorithm."""
+
+from __future__ import annotations
+
+import os
+import sys
+import time
+from typing import Any
+
+from .rotation import permuted_lwh_from_packing_dims, rotation_code
+from .schema import NormalizedItem, PackSuccessResponse, PlacementOut, UnfittedOut, parse_request
+from .units import LengthUnit, cm_int, from_cm, to_cm
+
+
+def _load_py3dbp() -> None:
+    """Add the vendored py3dbp library to the Python path."""
+    lib_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "py3dbp"))
+    if lib_root not in sys.path:
+        sys.path.insert(0, lib_root)
+
+
+def pack_request(body: dict[str, Any]) -> PackSuccessResponse:
+    """Process a pack request and return placements."""
+    req = parse_request(body)
+    units: LengthUnit = req["units"]
+
+    # Convert container dimensions to integer cm
+    container_cm = {
+        "length": cm_int(to_cm(req["container"]["length"], units)),
+        "width": cm_int(to_cm(req["container"]["width"], units)),
+        "height": cm_int(to_cm(req["container"]["height"], units)),
+    }
+
+    bin_whd = (container_cm["length"], container_cm["height"], container_cm["width"])
+
+    # Normalize items
+    normalized_items: list[NormalizedItem] = []
+    for item in req["items"]:
+        normalized_items.append(
+            NormalizedItem(
+                item_id=item["item_id"],
+                label=item["label"],
+                quantity=int(item["quantity"]),
+                l_cm=cm_int(to_cm(item["length"], units)),
+                w_cm=cm_int(to_cm(item["width"], units)),
+                h_cm=cm_int(to_cm(item["height"], units)),
+                weight_kg=float(item["weight"]),
+            )
+        )
+
+    _load_py3dbp()
+    from py3dbp import Bin, Item, Packer
+
+    start_pack_at = time.perf_counter()
+
+    packer = Packer()
+    packer.addBin(
+        Bin(
+            partno="bin",
+            WHD=bin_whd,
+            max_weight=float(req["container"]["max_weight"]),
+            corner=0,
+            put_type=1,
+        )
+    )
+
+    # Expand items by quantity
+    expanded_total = 0
+    labels_by_id: dict[str, str] = {it.item_id: it.label for it in normalized_items}
+
+    for it in normalized_items:
+        item_whd = (it.l_cm, it.h_cm, it.w_cm)
+        for i in range(it.quantity):
+            expanded_total += 1
+            packer.addItem(
+                Item(
+                    partno=f"{it.item_id}:{i + 1}",
+                    name=it.item_id,
+                    typeof="cube",
+                    WHD=item_whd,
+                    weight=it.weight_kg,
+                    level=1,
+                    loadbear=100,
+                    updown=True,
+                    color="#cccccc",
+                )
+            )
+
+    # Run packing algorithm
+    packer.pack(
+        bigger_first=bool(req["options"].get("bigger_first", True)),
+        distribute_items=False,
+        fix_point=bool(req["options"].get("fix_point", True)),
+        check_stable=bool(req["options"].get("check_stable", True)),
+        support_surface_ratio=float(req["options"].get("support_surface_ratio", 0.75)),
+        binding=[],
+        number_of_decimals=0,
+    )
+
+    pack_time_ms = int((time.perf_counter() - start_pack_at) * 1000)
+
+    b = packer.bins[0]
+    item_dims_by_id: dict[str, tuple[int, int, int]] = {
+        it.item_id: (it.l_cm, it.w_cm, it.h_cm) for it in normalized_items
+    }
+
+    # Process fitted items
+    placements: list[PlacementOut] = []
+    for step_idx, pit in enumerate(b.items):
+        item_id = pit.name
+        orig_lwh = item_dims_by_id[item_id]
+        rotated_lwh = permuted_lwh_from_packing_dims(pack_dims=pit.getDimension())
+        rot_code = rotation_code(orig_lwh, rotated_lwh)
+
+        px, py, pz = pit.position
+        api_pos_x_cm = int(px)
+        api_pos_y_cm = int(pz)
+        api_pos_z_cm = int(py)
+
+        placements.append({
+            "item_id": item_id,
+            "label": labels_by_id.get(item_id, item_id),
+            "pos_x": from_cm(api_pos_x_cm, units),
+            "pos_y": from_cm(api_pos_y_cm, units),
+            "pos_z": from_cm(api_pos_z_cm, units),
+            "rotation": rot_code,
+            "step_number": step_idx + 1,
+        })
+
+    # Process unfitted items
+    unfitted_counts: dict[str, int] = {}
+    for uit in getattr(b, "unfitted_items", []):
+        unfitted_counts[uit.name] = unfitted_counts.get(uit.name, 0) + 1
+
+    unfitted: list[UnfittedOut] = [
+        {"item_id": item_id, "label": labels_by_id.get(item_id, item_id), "count": count}
+        for item_id, count in sorted(unfitted_counts.items())
+    ]
+
+    return {
+        "success": True,
+        "data": {
+            "units": units,
+            "placements": placements,
+            "unfitted": unfitted,
+            "stats": {
+                "expanded_items": expanded_total,
+                "fitted_count": len(placements),
+                "unfitted_count": sum(unfitted_counts.values()),
+                "pack_time_ms": pack_time_ms,
+            },
+        },
+    }
+```
+
+### 4.6 Integrasi dengan Go Backend
+
+Packing Service sekarang siap dijalankan sebagai standalone service. Langkah terakhir adalah menghubungkannya dengan Backend API Go yang kita bangun di Bab 3. Ingat bahwa di Bab 3, kita menggunakan `MockPackingGateway` untuk simulasi—sekarang kita ganti dengan koneksi HTTP yang sesungguhnya.
+
+#### Update config.go
+
+Pertama, tambahkan field untuk Packing Service URL di config package. Buka `internal/config/config.go`:
+
+```go
+type Config struct {
+    DatabaseURL       string
+    ServerPort        string
+    PackingServiceURL string
+}
+
+func Load() *Config {
+    return &Config{
+        DatabaseURL:       getEnv("DATABASE_URL", "postgres://localhost:5432/loadstuff"),
+        ServerPort:        getEnv("SERVER_PORT", "8080"),
+        PackingServiceURL: getEnv("PACKING_SERVICE_URL", "http://localhost:5000"),
+    }
+}
+```
+
+Dengan ini, URL Packing Service dikonfigurasi via environment variable `PACKING_SERVICE_URL`, dengan default ke `http://localhost:5000` untuk development.
+
+#### Update api.go
+
+Di file `internal/api/api.go`, gunakan config untuk inisialisasi gateway:
+
+```go
+func NewApp(cfg *config.Config, db *pgxpool.Pool) *App {
+    querier := store.New(db)
+
+    // Initialize gateway untuk Packing Service
+    packingGW := gateway.NewHTTPPackingGateway(
+        cfg.PackingServiceURL,
+        60*time.Second,
+    )
+
+    containerSvc := service.NewContainerService(querier)
+    planSvc := service.NewPlanService(querier, packingGW)
+    // ...
+}
+```
+
+Dengan perubahan ini, gateway membaca URL dari config yang di-load saat startup. Jika environment variable `PACKING_SERVICE_URL` di-set, nilai tersebut digunakan. Jika tidak, default `http://localhost:5000` digunakan. Ini memudahkan deployment ke environment berbeda tanpa mengubah kode.
+
+#### Menjalankan Kedua Service
+
+Untuk development, kita perlu menjalankan dua service di terminal terpisah.
+
+**Terminal 1 - Packing Service (Python):**
+
+```bash
+cd cmd/packing
+source venv/bin/activate
+python app.py
+```
+
+Output:
+```
+Starting Packing Service on 0.0.0.0:5000
+```
+
+**Terminal 2 - Backend API (Go):**
+
+```bash
+air
+# atau
+go run cmd/api/main.go
+```
+
+Output:
+```
+Server starting on :8080
+```
+
+Sekarang kedua service berjalan dan terhubung. Request ke `/api/v1/plans/:id/calculate` di Backend API akan diteruskan ke Packing Service.
+
+#### Flow End-to-End
+
+Mari trace request dari client sampai packing result:
+
+1. Client POST ke `http://localhost:8080/api/v1/plans/abc123/calculate`
+2. Backend API (`PlanHandler.Calculate`) menerima request
+3. `PlanService.Calculate` fetch plan dari database
+4. `PlanService` memanggil `PackingGateway.Pack` dengan container dan items
+5. `HTTPPackingGateway` mengirim HTTP POST ke `http://localhost:5000/pack`
+6. Packing Service (`app.py`) menerima request, memanggil `pack_request`
+7. py3dbp menjalankan algoritma packing
+8. Packing Service mengembalikan placements ke Backend API
+9. Backend API menyimpan result ke database dan mengembalikan ke client
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Backend API<br/>(Go:8080)
+    participant PS as Packing Service<br/>(Python:5000)
+    
+    C->>API: POST /plans/{id}/calculate
+    API->>PS: POST /pack {container, items}
+    PS-->>API: {placements, unfitted, stats}
+    API-->>C: {placements, stats}
+```
+
+### 4.7 Testing dan Verifikasi
+
+Sebelum mengintegrasikan dengan Go backend, kita test Packing Service secara standalone. Ini memastikan service bekerja dengan benar sebelum menambahkan kompleksitas integrasi.
+
+#### Test Health Endpoint
+
+Jalankan Packing Service:
+
+```bash
+cd cmd/packing
+source venv/bin/activate
+python app.py
+```
+
+Test health endpoint:
+
+```bash
+curl http://localhost:5000/health
+```
+
+Response:
+
+```json
+{"success": true, "data": {"status": "ok"}}
+```
+
+#### Test Pack Endpoint
+
+Kirim request packing sederhana:
+
+```bash
+curl -X POST http://localhost:5000/pack \
+  -H "Content-Type: application/json" \
+  -d '{
+    "units": "cm",
+    "container": {
+      "length": 100,
+      "width": 80,
+      "height": 60,
+      "max_weight": 500
+    },
+    "items": [
+      {"item_id": "BOX-001", "label": "Kardus A", "length": 30, "width": 20, "height": 15, "weight": 5, "quantity": 3},
+      {"item_id": "BOX-002", "label": "Kardus B", "length": 40, "width": 30, "height": 20, "weight": 8, "quantity": 2}
+    ]
+  }'
+```
+
+Response berisi placements untuk setiap item:
+
+```json
+{
+  "success": true,
+  "data": {
+    "units": "cm",
+    "placements": [
+      {"item_id": "BOX-002", "label": "Kardus B", "pos_x": 0, "pos_y": 0, "pos_z": 0, "rotation": 0, "step_number": 1},
+      {"item_id": "BOX-002", "label": "Kardus B", "pos_x": 40, "pos_y": 0, "pos_z": 0, "rotation": 0, "step_number": 2},
+      {"item_id": "BOX-001", "label": "Kardus A", "pos_x": 0, "pos_y": 30, "pos_z": 0, "rotation": 0, "step_number": 3},
+      {"item_id": "BOX-001", "label": "Kardus A", "pos_x": 30, "pos_y": 30, "pos_z": 0, "rotation": 0, "step_number": 4},
+      {"item_id": "BOX-001", "label": "Kardus A", "pos_x": 60, "pos_y": 30, "pos_z": 0, "rotation": 0, "step_number": 5}
+    ],
+    "unfitted": [],
+    "stats": {
+      "expanded_items": 5,
+      "fitted_count": 5,
+      "unfitted_count": 0,
+      "pack_time_ms": 12
+    }
+  }
+}
+```
+
+Perhatikan bahwa `BOX-002` (lebih besar) ditempatkan terlebih dahulu karena `bigger_first` default ke `true`.
+
+#### Test dengan Items Tidak Muat
+
+Kirim request dengan items yang terlalu banyak:
+
+```bash
+curl -X POST http://localhost:5000/pack \
+  -H "Content-Type: application/json" \
+  -d '{
+    "units": "cm",
+    "container": {"length": 50, "width": 40, "height": 30, "max_weight": 100},
+    "items": [
+      {"item_id": "BIG-001", "label": "Big Box", "length": 45, "width": 35, "height": 25, "weight": 10, "quantity": 3}
+    ]
+  }'
+```
+
+Response menunjukkan items yang tidak muat:
+
+```json
+{
+  "success": true,
+  "data": {
+    "units": "cm",
+    "placements": [
+      {"item_id": "BIG-001", "label": "Big Box", "pos_x": 0, "pos_y": 0, "pos_z": 0, "rotation": 0, "step_number": 1}
+    ],
+    "unfitted": [
+      {"item_id": "BIG-001", "label": "Big Box", "count": 2}
+    ],
+    "stats": {
+      "expanded_items": 3,
+      "fitted_count": 1,
+      "unfitted_count": 2,
+      "pack_time_ms": 5
+    }
+  }
+}
+```
+
+Hanya 1 dari 3 item muat. Frontend bisa menggunakan informasi `unfitted` untuk memberitahu user bahwa diperlukan container tambahan.
+
+#### Test End-to-End
+
+Dengan kedua service berjalan (Go:8080, Python:5000), test integrasi penuh:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/plans/[PLAN_ID]/calculate
+```
+
+Response berisi placements dari Packing Service yang sudah disimpan ke database:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "abc123",
+    "status": "calculated",
+    "placements": [
+      {"item_id": "BOX-001", "label": "Kardus A", "pos_x": 0, "pos_y": 0, "pos_z": 0, "rotation": 0, "step_number": 1}
+    ],
+    "stats": {
+      "fitted_count": 5,
+      "unfitted_count": 2,
+      "pack_time_ms": 45
+    }
+  }
+}
+```
+
+### Summary
+
+Di bab ini kita membangun Packing Service—microservice Python yang menjalankan algoritma 3D bin packing menggunakan library py3dbp.
+
+Poin-poin utama:
+
+- **Separation of concerns**: Backend API Go menangani CRUD dan orchestration, sementara Packing Service Python fokus pada kalkulasi intensif
+- **Flask application**: Minimal setup dengan dua endpoints (`/health` dan `/pack`)
+- **Type safety**: TypedDict untuk schema definition, validasi manual untuk runtime checks
+- **Unit conversion**: Client mengirim dalam mm/cm/m, service mengkonversi ke integer centimeters untuk presisi
+- **py3dbp integration**: Vendored dependency, coordinate mapping (LWH ↔ WHD), rotation codes untuk visualisasi 3D
+- **Configuration**: Environment variables via config package untuk portability antar environment
+
+Arsitektur dua service ini memungkinkan scaling independen. Jika packing menjadi bottleneck, kita bisa menjalankan multiple instances Packing Service di belakang load balancer tanpa mengubah Backend API.
+
+### Further Reading
+
+- py3dbp GitHub: https://github.com/enzoruiz/3dbinpacking
+- Flask Documentation: https://flask.palletsprojects.com/
+- 3D Bin Packing Problem pada Wikipedia: https://en.wikipedia.org/wiki/Bin_packing_problem
+- TypedDict PEP 589: https://peps.python.org/pep-0589/
+
+## Bab 5: Visualisasi 3D Interaktif dengan Three.js
+
+Di bab sebelumnya, kita membangun Packing Service yang menghasilkan data placement—koordinat `pos_x`, `pos_y`, `pos_z` untuk setiap item di dalam container. Data ini cukup untuk diproses oleh sistem lain, tetapi tidak praktis sebagai panduan operasional. Operator gudang membutuhkan visualisasi—bukan spreadsheet koordinat—untuk memahami bagaimana barang harus dimuat ke dalam container.
+
+Three.js dipilih sebagai library rendering karena menyediakan abstraksi tingkat tinggi di atas WebGL. Daripada menulis shader programs dan mengelola vertex buffers, kita cukup bekerja dengan konsep yang lebih intuitif: geometry, material, dan mesh. Three.js sudah mature, well-documented, dan menjadi standar de facto untuk 3D di browser.
+
+Dalam bab ini, kita akan membangun visualizer 3D menggunakan arsitektur modular dengan Manager pattern. Setiap komponen—scene, camera, renderer, lights, controls—dikelola oleh class terpisah yang diorkestrasi oleh `StuffingVisualizer` utama.
+
+**Dalam bab ini, kita akan membahas topik-topik berikut:**
+
+- Setup Project Next.js dengan Three.js dan shadcn/ui
+- Type Definitions untuk data visualisasi
+- Scene, Camera, dan Renderer Setup
+- Light dan Controls Management
+- Container Wireframe Rendering
+- Item Box Rendering dengan Rotation Handling
+- Coordinate Conversion dari API ke Three.js Space
+- Step-by-Step Animation System
+- React Component Integration
+
+**Technical Requirements**
+
+Untuk menyelesaikan bab ini, Anda memerlukan:
+
+- **Node.js 20+** dan pnpm — [nodejs.org](https://nodejs.org/)
+- **Browser modern** dengan WebGL support (Chrome, Firefox, Safari, Edge)
+- **VS Code dengan TypeScript extension** — IDE yang direkomendasikan
+
+---
+
+### 5.1 Setup Project Frontend
+
+Kita akan menggunakan Next.js sebagai framework frontend. Next.js menyediakan fitur-fitur yang mempermudah development: file-based routing, TypeScript support out of the box, dan optimasi build yang sudah dikonfigurasi. Untuk UI components, kita menggunakan shadcn/ui—collection of reusable components yang dibangun di atas Radix UI primitives.
+
+#### Inisialisasi Next.js
+
+Buat project Next.js di dalam direktori `web/`:
+
+```bash
+pnpm create next-app@latest web --yes
+```
+
+Flag `--yes` menggunakan semua default settings: TypeScript, ESLint, Tailwind CSS, App Router, dan tanpa `src/` directory. Setelah selesai, kita memiliki struktur dasar:
+
+```
+web/
+├── app/
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── public/
+├── next.config.ts
+├── package.json
+├── tailwind.config.ts
+└── tsconfig.json
+```
+
+#### Setup shadcn/ui
+
+shadcn/ui bukan library tradisional yang di-install sebagai dependency. Sebaliknya, components di-copy ke project kita, memberikan kontrol penuh untuk modifikasi. Inisialisasi shadcn:
+
+```bash
+cd web
+pnpm dlx shadcn@latest init
+```
+
+Pilih "Neutral" sebagai base color. Ini membuat file `components.json` dan mengupdate `globals.css` dengan CSS variables untuk theming.
+
+Install components yang kita butuhkan:
+
+```bash
+pnpm dlx shadcn@latest add button slider card input table badge
+```
+
+Components akan di-generate di `components/ui/`. Setiap component adalah file `.tsx` yang bisa kita modifikasi sesuai kebutuhan.
+
+#### Install Three.js
+
+Tambahkan Three.js dan type definitions:
+
+```bash
+pnpm add three
+pnpm add -D @types/three
+```
+
+Package `three` adalah library utama, sedangkan `@types/three` menyediakan TypeScript type definitions untuk autocomplete dan type checking.
+
+#### Struktur Direktori Visualizer
+
+Buat struktur direktori untuk StuffingVisualizer:
+
+```bash
+mkdir -p lib/StuffingVisualizer/core
+mkdir -p lib/StuffingVisualizer/components
+mkdir -p lib/StuffingVisualizer/utils
+```
+
+Struktur lengkap setelah setup:
+
+```
+web/
+├── app/
+│   ├── globals.css        # Tailwind + shadcn CSS variables
+│   ├── layout.tsx         # Root layout
+│   └── page.tsx           # Demo page (akan kita buat nanti)
+├── components/
+│   ├── ui/                # shadcn components
+│   │   ├── button.tsx
+│   │   ├── slider.tsx
+│   │   └── ...
+│   ├── animation-controls.tsx
+│   └── stuffing-viewer.tsx
+├── lib/
+│   ├── utils.ts           # shadcn utility (cn function)
+│   └── StuffingVisualizer/
+│       ├── index.ts
+│       ├── stuffing-visualizer.ts
+│       ├── types.ts
+│       ├── core/
+│       │   ├── scene-manager.ts
+│       │   ├── camera-manager.ts
+│       │   ├── renderer-manager.ts
+│       │   ├── light-manager.ts
+│       │   ├── controls-manager.ts
+│       │   └── animation-manager.ts
+│       ├── components/
+│       │   ├── container-mesh.ts
+│       │   └── item-mesh.ts
+│       └── utils/
+│           └── conversions.ts
+└── package.json
+```
+
+Direktori `lib/StuffingVisualizer/` berisi semua logic Three.js, terpisah dari React components. Pemisahan ini memudahkan testing dan reuse—logic visualisasi tidak tergantung pada React.
+
+#### Verifikasi Setup
+
+Jalankan development server untuk memastikan setup berhasil:
+
+```bash
+pnpm dev
+```
+
+Buka `http://localhost:3000` di browser. Jika muncul halaman default Next.js, setup berhasil. Di terminal, pastikan tidak ada error TypeScript.
+
+---
+
+### 5.2 Arsitektur StuffingVisualizer
+
+Three.js memerlukan koordinasi banyak komponen: scene untuk menampung objects, camera untuk viewpoint, renderer untuk menggambar ke canvas, lights untuk pencahayaan, dan controls untuk interaktivitas. Menggabungkan semua ini dalam satu file akan menghasilkan kode yang sulit di-maintain dan sulit di-test.
+
+Kita menggunakan **Manager pattern**—setiap aspek rendering dikelola oleh class terpisah yang diorkestrasi oleh `StuffingVisualizer` utama. Pattern ini terinspirasi dari bagaimana game engines menyusun subsystems: rendering engine, physics engine, input handler, dan audio manager masing-masing berdiri sendiri tetapi bekerja sama melalui orchestrator.
+
+Berikut class diagram yang menunjukkan hubungan antar komponen:
+
+```mermaid
+classDiagram
+    class StuffingViewer {
+        <<React Component>>
+        -visualizerRef
+        -currentStep
+        -isPlaying
+        +useEffect() lifecycle
+    }
+    
+    class StuffingVisualizer {
+        -sceneManager
+        -cameraManager
+        -rendererManager
+        -lightManager
+        -controlsManager
+        -animationManager
+        +loadData(planData)
+        +attach(element)
+        +dispose()
+    }
+    
+    class SceneManager {
+        -scene: Scene
+        +add(object)
+        +clear()
+        +getScene()
+    }
+    
+    class CameraManager {
+        -camera: OrthographicCamera
+        +updateAspect(ratio)
+        +getCamera()
+    }
+    
+    class RendererManager {
+        -renderer: WebGLRenderer
+        -animationId
+        +attach(element)
+        +startLoop(scene, camera)
+        +dispose()
+    }
+    
+    class AnimationManager {
+        -currentStep
+        -maxStep
+        -isPlaying
+        +play()
+        +pause()
+        +setStep(n)
+        +onStepChange(callback)
+    }
+    
+    class ContainerMesh {
+        -group: Group
+        +getGroup()
+        +dispose()
+    }
+    
+    class ItemMesh {
+        -group: Group
+        -stepNumber
+        +getGroup()
+        +getStepNumber()
+        +dispose()
+    }
+    
+    StuffingViewer --> StuffingVisualizer : creates & controls
+    StuffingVisualizer --> SceneManager : manages scene
+    StuffingVisualizer --> CameraManager : manages camera
+    StuffingVisualizer --> RendererManager : manages rendering
+    StuffingVisualizer --> AnimationManager : manages playback
+    StuffingVisualizer --> ContainerMesh : creates
+    StuffingVisualizer --> ItemMesh : creates many
+```
+
+Perhatikan bagaimana `StuffingViewer` (React component) hanya berkomunikasi dengan `StuffingVisualizer`. React tidak perlu tahu tentang `SceneManager` atau `RendererManager`—semua kompleksitas Three.js ter-encapsulate di dalam `StuffingVisualizer`. Ini membuat React component tetap sederhana: hanya memanggil `loadData()`, `attach()`, dan `dispose()`.
+
+Di sisi lain, `StuffingVisualizer` meng-compose enam managers yang masing-masing menangani satu aspek rendering:
+
+- **SceneManager**: Membuat Three.js Scene, mengelola background color, add/remove objects
+- **CameraManager**: Mengatur OrthographicCamera, aspect ratio, zoom, dan posisi default
+- **RendererManager**: Mengelola WebGLRenderer, animation loop, resize handling
+- **LightManager**: Setup ambient dan directional lights
+- **ControlsManager**: OrbitControls untuk rotate, zoom, pan
+- **AnimationManager**: Step-by-step playback, event emission
+
+`ContainerMesh` dan `ItemMesh` adalah komponen visual yang dibuat berdasarkan data dan ditambahkan ke scene melalui `SceneManager`.
+
+Pemisahan ini memberikan keuntungan praktis. `AnimationManager` bisa di-test tanpa memerlukan actual WebGL context—cukup verifikasi bahwa `play()` mengubah state dan memanggil callback. Jika ada bug di lighting, debugging terfokus pada `LightManager` tanpa perlu menyentuh animation logic. Dan jika suatu saat kita ingin mengganti `OrthographicCamera` dengan `PerspectiveCamera`, perubahan hanya terjadi di `CameraManager`.
+
+#### Lifecycle
+
+Berbeda dengan React component yang memiliki lifecycle hooks (`useEffect`, `useLayoutEffect`), Three.js objects memerlukan lifecycle management manual. WebGL resources (geometries, materials, textures) tidak di-garbage-collected secara otomatis—kita harus explicitly memanggil `dispose()` untuk melepaskan memory.
+
+`StuffingVisualizer` mengikuti lifecycle yang konsisten:
+
+```mermaid
+flowchart LR
+    A[loadData] --> B[clear scene]
+    B --> C[build meshes]
+    C --> D[attach to DOM]
+    D --> E[start render loop]
+    E --> F[dispose]
+```
+
+Setiap stage memiliki tanggung jawab spesifik:
+
+1. **loadData(planData)**: Menerima data placement dari API. Data disimpan ke internal state, kemudian `clear()` dipanggil untuk menghapus meshes sebelumnya (jika ada), lalu `build()` mem-generate meshes baru.
+
+2. **build()**: Membuat `ContainerMesh` dari dimensi container dan `ItemMesh[]` untuk setiap placement. Setiap mesh ditambahkan ke scene melalui `SceneManager.add()`.
+
+3. **attach(element)**: Renderer di-mount ke DOM element yang disediakan React. `ResizeObserver` di-setup untuk responsiveness—ketika container berubah ukuran, camera aspect ratio dan renderer size di-update.
+
+4. **startLoop()**: `requestAnimationFrame` loop dimulai. Setiap frame, `OrbitControls.update()` dipanggil untuk smooth damping, lalu `renderer.render(scene, camera)` menggambar frame.
+
+5. **dispose()**: Semua resources di-cleanup. Geometries dan materials dari setiap mesh di-dispose. `ResizeObserver` di-disconnect. Animation frame di-cancel. Event listeners di-remove. Ini penting untuk mencegah memory leaks saat React component unmount.
+
+#### Event System
+
+Three.js logic berjalan sepenuhnya di luar React render cycle. Animation state (`currentStep`, `isPlaying`) berubah karena timer internal di `AnimationManager`, bukan karena React `setState`. Tanpa mekanisme notifikasi, React tidak akan tahu bahwa state berubah.
+
+Kita menggunakan observer pattern untuk menjembatani dua dunia ini:
+
+```typescript
+// AnimationManager menyediakan subscription
+public onStepChange(callback: (step: number) => void): () => void {
+    this.stepListeners.push(callback);
+    return () => {
+        this.stepListeners = this.stepListeners.filter(cb => cb !== callback);
+    };
+}
+
+// Ketika step berubah, semua listeners di-notify
+private notifyStepChange(): void {
+    this.stepListeners.forEach(cb => cb(this.currentStep));
+}
+```
+
+Di React component, subscription di-setup di `useEffect`:
+
+```typescript
+useEffect(() => {
+    const unsubStep = visualizer.onStepChange(setCurrentStep);
+    const unsubPlay = visualizer.onPlayStateChange(setIsPlaying);
+    
+    return () => {
+        unsubStep();
+        unsubPlay();
+    };
+}, []);
+```
+
+Return value dari `onStepChange` adalah unsubscribe function. Pattern ini familiar di ekosistem JavaScript—Redux store `subscribe()`, RxJS subscriptions, dan DOM `addEventListener` semuanya mengembalikan cleanup function. Dengan mengembalikan unsubscribe dari `useEffect`, kita memastikan tidak ada lingering listeners saat component unmount.
+
+#### Mengapa Class-Based?
+
+Pendekatan functional dengan hooks bisa digunakan untuk Three.js, tetapi ada friction yang signifikan. Pertimbangkan perbedaan paradigma:
+
+| Aspek     | React (Functional)             | Three.js                     |
+| --------- | ------------------------------ | ---------------------------- |
+| State     | Immutable, re-render on change | Mutable, direct manipulation |
+| Updates   | Declarative (describe what)    | Imperative (describe how)    |
+| Lifecycle | Automatic (hooks)              | Manual (dispose)             |
+| Identity  | Recreated on render            | Long-lived objects           |
+
+Three.js `Scene` adalah object yang hidup selama visualisasi aktif. Kita tidak ingin membuat scene baru setiap render—justru kita manipulasi scene yang sama: `scene.add(mesh)`, `mesh.position.set(x, y, z)`.
+
+Class memberikan boundary yang natural:
+
+- **State encapsulation**: `scene`, `camera`, dan `itemMeshes` adalah instance properties yang persist across method calls
+- **Lifecycle management**: Constructor untuk setup, methods untuk operations, `dispose()` untuk cleanup
+- **Composition**: Managers di-instantiate di constructor dan digunakan sepanjang lifecycle
+
+React component bertugas sebagai "bridge": mounting/unmounting, passing data, dan syncing UI state. Three.js logic tetap di class yang tidak tahu apa itu React. Pemisahan ini membuat kedua sisi lebih mudah di-maintain dan di-test.
+
+---
+
+### 5.3 Type Definitions
+
+Sebelum menulis logic visualisasi, kita perlu mendefinisikan kontrak data. Visualizer akan menerima data dari backend—data yang sama dengan hasil kalkulasi Packing Service di Bab 4. Dengan mendefinisikan types terlebih dahulu, kita bisa menulis code dengan confidence bahwa autocomplete dan compiler akan menangkap kesalahan.
+
+Buat file `lib/StuffingVisualizer/types.ts`. Kita mulai dengan data container:
+
+```typescript
+export interface ContainerData {
+    name: string;
+    length_mm: number;
+    width_mm: number;
+    height_mm: number;
+    max_weight_kg: number;
+}
+```
+
+Mengapa dimensi dalam millimeter? Konsistensi dengan backend. Packing Service menyimpan dimensi dalam mm, dan kita tidak ingin melakukan konversi bolak-balik. Konversi ke unit Three.js (meter) akan dilakukan di satu tempat saat rendering.
+
+Selanjutnya, definisikan item:
+
+```typescript
+export interface ItemData {
+    item_id: string;
+    label: string;
+    length_mm: number;
+    width_mm: number;
+    height_mm: number;
+    weight_kg: number;
+    quantity: number;
+    color_hex: string;
+}
+```
+
+Field `color_hex` adalah tambahan untuk visualisasi—setiap jenis item mendapat warna berbeda agar mudah dibedakan. Backend bisa menyimpan ini, atau frontend bisa generate berdasarkan `item_id`.
+
+Bagian terpenting adalah placement—hasil dari algoritma packing:
+
+```typescript
+export interface PlacementData {
+    placement_id: string;
+    item_id: string;
+    pos_x: number;
+    pos_y: number;
+    pos_z: number;
+    rotation: number;
+    step_number: number;
+}
+```
+
+Field `pos_x`, `pos_y`, `pos_z` adalah koordinat dalam millimeter dari corner container. Field `rotation` (0-5) menentukan orientasi item—ini akan kita mapping ke rotasi Three.js nanti. `step_number` adalah urutan pemuatan: step 1 masuk pertama, step 2 kedua, dan seterusnya. Ini yang membuat animasi step-by-step bekerja.
+
+Terakhir, gabungkan semuanya dalam satu root type:
+
+```typescript
+export interface StuffingPlanData {
+    plan_id: string;
+    plan_code: string;
+    container: ContainerData;
+    items: ItemData[];
+    placements: PlacementData[];
+    stats: {
+        total_items: number;
+        fitted_count: number;
+        unfitted_count: number;
+        volume_utilization_pct: number;
+    };
+}
+```
+
+`StuffingPlanData` adalah data yang diterima `StuffingVisualizer.loadData()`. Dengan memiliki satu root type, kita memastikan semua data yang dibutuhkan tersedia dalam satu object.
+
+Tambahkan juga type untuk konfigurasi:
+
+```typescript
+export interface SceneConfig {
+    backgroundColor?: string;
+    stepDuration?: number;
+}
+```
+
+Optional fields dengan `?` memungkinkan caller untuk override hanya yang dibutuhkan—sisanya menggunakan default values.
+
+> **Catatan:** Nama field menggunakan `snake_case` agar match dengan JSON response dari backend. Ini menghindari transformasi di frontend—data langsung bisa di-cast ke types kita.
+
+---
+
+### 5.4 Scene dan Renderer Setup
+
+Dengan types sudah didefinisikan, sekarang kita mulai membangun core Three.js. Setiap aplikasi Three.js membutuhkan minimal tiga komponen: Scene (wadah objects), Camera (viewpoint), dan Renderer (yang menggambar). Kita mulai dengan dua yang pertama di section ini.
+
+#### Membangun SceneManager
+
+Buat file `lib/StuffingVisualizer/core/scene-manager.ts`. Scene adalah container untuk semua objects 3D—meshes, lights, helpers. Kita wrap Three.js Scene dalam class sendiri:
+
+```typescript
+import { Scene, Color, Object3D } from "three";
+
+export class SceneManager {
+    public scene: Scene;
+
+    constructor(backgroundColor = "#1a1a1a") {
+        this.scene = new Scene();
+        this.scene.background = new Color(backgroundColor);
+    }
+
+    public add(object: Object3D): void {
+        this.scene.add(object);
+    }
+
+    public remove(object: Object3D): void {
+        this.scene.remove(object);
+    }
+
+    public clear(): void {
+        while (this.scene.children.length > 0) {
+            this.scene.remove(this.scene.children[0]);
+        }
+    }
+
+    public getScene(): Scene {
+        return this.scene;
+    }
+}
+```
+
+Mengapa wrapper dan bukan Scene langsung? Dua alasan. Pertama, **uniformity**—semua managers memiliki pattern yang sama, membuat code lebih predictable. Kedua, **extension point**—jika nanti kita perlu logging setiap `add()` atau filtering object tertentu, perubahan terpusat di sini.
+
+Method `clear()` penting untuk lifecycle. Saat user me-load plan baru, scene harus di-clear sebelum meshes baru dibuat. Loop `while` lebih safe daripada iterasi `forEach` karena kita memodifikasi array yang sedang di-iterate.
+
+Default background `#1a1a1a` (dark gray) dipilih agar container dan items (yang berwarna lebih terang) terlihat jelas. User bisa override via `SceneConfig`.
+
+#### Membangun RendererManager
+
+Buat file `lib/StuffingVisualizer/core/renderer-manager.ts`. Renderer adalah yang paling kompleks—ia menangani WebGL context, animation loop, dan responsiveness:
+
+```typescript
+import { WebGLRenderer, Scene, Camera } from "three";
+
+export class RendererManager {
+    private renderer: WebGLRenderer;
+    private animationId: number | null = null;
+    private container: HTMLElement | null = null;
+    private resizeObserver: ResizeObserver | null = null;
+    private onResizeCallback: ((width: number, height: number, aspect: number) => void) | null = null;
+
+    constructor() {
+        this.renderer = new WebGLRenderer({
+            antialias: true,
+            alpha: false,
+            preserveDrawingBuffer: true,
+        });
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        
+        this.renderer.domElement.style.display = "block";
+        this.renderer.domElement.style.width = "100%";
+        this.renderer.domElement.style.height = "100%";
+    }
+}
+```
+
+Mari bahas constructor options:
+
+- **antialias: true** — Mengaktifkan anti-aliasing untuk mengurangi "jagged edges". Ini memerlukan GPU lebih, tapi hasilnya jauh lebih clean. Untuk use case kita (boxes dengan edges jelas), anti-aliasing sangat membantu.
+
+- **preserveDrawingBuffer: true** — Membuat buffer canvas persist. Tanpa ini, screenshot canvas akan kosong karena buffer sudah di-swap. Kita aktifkan untuk memungkinkan export gambar nanti.
+
+- **setPixelRatio** — Device dengan retina display memiliki pixel ratio 2x atau 3x. Kita render di resolusi tinggi agar tidak blur, tapi dibatasi ke 2 untuk mencegah performance issues pada device 3x.
+
+#### Menangani Resize
+
+Browser tidak otomatis resize canvas Three.js. Jika container berubah ukuran (misal window resize atau sidebar collapse), canvas tetap ukuran semula dan hasilnya stretched atau cropped. Kita perlu detect resize dan update renderer plus camera.
+
+Tambahkan methods berikut ke `RendererManager`:
+
+```typescript
+public attach(
+    container: HTMLElement, 
+    onResize?: (width: number, height: number, aspect: number) => void
+): void {
+    this.container = container;
+    this.onResizeCallback = onResize ?? null;
+    this.container.appendChild(this.renderer.domElement);
+    
+    // Setup resize observer
+    this.resizeObserver = new ResizeObserver(() => this.handleResize());
+    this.resizeObserver.observe(this.container);
+    
+    this.handleResize(); // Initial size
+}
+
+private handleResize(): void {
+    if (!this.container) return;
+    
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    
+    if (width === 0 || height === 0) return; // Skip if not visible
+
+    this.renderer.setSize(width, height);
+    
+    if (this.onResizeCallback) {
+        this.onResizeCallback(width, height, width / height);
+    }
+}
+```
+
+Mengapa `ResizeObserver` bukan `window.onresize`? `ResizeObserver` lebih precise—ia detect perubahan ukuran element spesifik, bukan hanya window. Jika sidebar collapse, `window.onresize` tidak fire, tapi `ResizeObserver` akan.
+
+Callback `onResize` memungkinkan `StuffingVisualizer` untuk update camera aspect ratio. Kita kirim `width`, `height`, dan `aspect` agar camera manager tidak perlu mengakses DOM.
+
+#### Animation Loop
+
+Three.js tidak render otomatis—kita perlu memanggil `renderer.render()` secara terus-menerus. Ini dilakukan dengan `requestAnimationFrame`:
+
+```typescript
+public startLoop(scene: Scene, camera: Camera, onUpdate?: () => void): void {
+    if (this.animationId !== null) return; // Prevent double loop
+
+    const render = () => {
+        if (onUpdate) onUpdate();
+        this.renderer.render(scene, camera);
+        this.animationId = requestAnimationFrame(render);
+    };
+    render();
+}
+
+public stopLoop(): void {
+    if (this.animationId !== null) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+    }
+}
+```
+
+`requestAnimationFrame` adalah browser API yang memanggil callback sebelum repaint berikutnya—sekitar 60 kali per detik di monitor 60Hz. Ini lebih efficient dari `setInterval` karena browser bisa pause saat tab inactive.
+
+`onUpdate` callback dipanggil setiap frame untuk update OrbitControls damping. Tanpa ini, controls akan laggy karena damping memerlukan continuous update.
+
+Guard `if (this.animationId !== null) return` mencegah dua loop berjalan bersamaan—bug yang sering terjadi saat React StrictMode memanggil useEffect dua kali.
+
+#### Cleanup Resources
+
+WebGL resources tidak otomatis di-garbage-collect. Jika user navigate away tanpa cleanup, WebGL context tetap hidup dan memory tidak direlease. Beberapa navigasi cukup untuk crash browser.
+
+```typescript
+public dispose(): void {
+    this.stopLoop();
+    this.resizeObserver?.disconnect();
+    this.renderer.domElement.remove();
+    this.renderer.dispose();
+}
+```
+
+`dispose()` melakukan cleanup lengkap: stop render loop, disconnect observer, remove canvas dari DOM, dan release WebGL context. Method ini dipanggil di React useEffect cleanup.
+
+---
+
+### 5.5 Camera dan Controls
+
+Camera menentukan dari sudut mana kita melihat scene, sementara controls memungkinkan user untuk rotate, zoom, dan pan. Keduanya bekerja sama untuk memberikan pengalaman interaktif.
+
+#### Memilih Jenis Camera
+
+Three.js menyediakan dua jenis camera utama:
+
+- **PerspectiveCamera** — Objects jauh terlihat lebih kecil (seperti mata manusia). Natural untuk games dan simulasi.
+- **OrthographicCamera** — Objects sama besar terlepas dari jarak. Cocok untuk technical drawings dan CAD.
+
+Untuk visualisasi packing, kita memilih **OrthographicCamera**. Mengapa? Container dan items adalah boxes dengan dimensi yang harus bisa dibandingkan secara visual. Dengan perspective, box di belakang terlihat lebih kecil—ini membingungkan ketika kita ingin membandingkan ukuran items. Orthographic memberikan representasi dimensi yang akurat.
+
+#### Membangun CameraManager
+
+Buat file `lib/StuffingVisualizer/core/camera-manager.ts`:
+
+```typescript
+import { OrthographicCamera } from "three";
+
+export class CameraManager {
+    public camera: OrthographicCamera;
+
+    constructor(aspect = 1, near = 0.1, far = 2000) {
+        const frustumSize = 20;
+        const left = (-frustumSize * aspect) / 2;
+        const right = (frustumSize * aspect) / 2;
+        const top = frustumSize / 2;
+        const bottom = -frustumSize / 2;
+
+        this.camera = new OrthographicCamera(left, right, top, bottom, near, far);
+        this.setDefaultPosition();
+    }
+
+    public setDefaultPosition(): void {
+        this.camera.position.set(15, 8, -10);
+        this.camera.zoom = 1;
+        this.camera.lookAt(0, 0, 0);
+    }
+
+    public updateAspect(aspect: number): void {
+        const frustumSize = 20;
+        this.camera.left = (-frustumSize * aspect) / 2;
+        this.camera.right = (frustumSize * aspect) / 2;
+        this.camera.top = frustumSize / 2;
+        this.camera.bottom = -frustumSize / 2;
+        this.camera.updateProjectionMatrix();
+    }
+
+    public getCamera(): OrthographicCamera {
+        return this.camera;
+    }
+}
+```
+
+Mari bahas parameter OrthographicCamera:
+
+- **frustumSize** — Menentukan seberapa besar area yang terlihat. Nilai 20 berarti 20 unit Three.js tingginya. Container typical kita sekitar 2-12 meter (2-12 unit setelah konversi), jadi frustumSize 20 memberi ruang yang cukup.
+
+- **left, right, top, bottom** — Batas frustum. Dihitung dari frustumSize dan aspect ratio agar proporsional dengan viewport.
+
+- **near, far** — Clipping planes. Objects lebih dekat dari `near` atau lebih jauh dari `far` tidak di-render. Kita set `far = 2000` untuk mengakomodasi scene besar.
+
+Position `(15, 8, -10)` menempatkan camera di sudut isometric—agak di atas dan di depan. `lookAt(0, 0, 0)` mengarahkan camera ke origin dimana container akan ditempatkan.
+
+Method `updateAspect()` dipanggil saat resize. Penting untuk memanggil `updateProjectionMatrix()` setelah mengubah parameter camera—tanpa ini, perubahan tidak akan terlihat.
+
+#### Membangun ControlsManager
+
+Buat file `lib/StuffingVisualizer/core/controls-manager.ts`. OrbitControls memungkinkan user untuk rotate, zoom, dan pan dengan mouse:
+
+```typescript
+import { Camera, WebGLRenderer } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+export class ControlsManager {
+    private controls: OrbitControls | null = null;
+
+    public init(camera: Camera, renderer: WebGLRenderer): void {
+        this.controls = new OrbitControls(camera, renderer.domElement);
+        
+        // Enable smooth damping
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.05;
+        
+        // Constraints
+        this.controls.minDistance = 1;
+        this.controls.maxPolarAngle = Math.PI / 2;
+    }
+
+    public update(): void {
+        this.controls?.update();
+    }
+
+    public getControls(): OrbitControls | null {
+        return this.controls;
+    }
+
+    public dispose(): void {
+        this.controls?.dispose();
+        this.controls = null;
+    }
+}
+```
+
+OrbitControls bukan bagian dari core Three.js—ia diimport dari `three/examples/jsm/controls/`. Ini pattern umum di Three.js: core library kecil, features tambahan sebagai examples.
+
+Mari bahas konfigurasi:
+
+- **enableDamping** — Membuat gerakan smooth, tidak langsung berhenti saat mouse release. Efek "momentum" yang natural.
+
+- **dampingFactor** — Seberapa cepat damping decay. Value kecil = lebih smooth tapi lebih lambat berhenti.
+
+- **maxPolarAngle = Math.PI / 2** — Mencegah camera melewati "bawah" scene. Tanpa constraint ini, user bisa rotate sampai melihat container dari bawah—tidak berguna untuk use case kita.
+
+- **minDistance** — Mencegah zoom in terlalu dekat sampai masuk ke dalam objects.
+
+Method `update()` harus dipanggil setiap frame agar damping bekerja. Inilah mengapa kita passing `onUpdate` callback ke `RendererManager.startLoop()`.
+
+> **Catatan import:** Path import `three/examples/jsm/controls/OrbitControls.js` mungkin berbeda tergantung bundler. Di Next.js dengan TypeScript, extension `.js` diperlukan meskipun file source adalah TypeScript.
+
+---
+
+### 5.6 Lighting Setup
+
+Tanpa lighting, scene Three.js dengan `MeshStandardMaterial` akan terlihat hitam. Materials physically-based seperti `MeshStandardMaterial` membutuhkan lights untuk menghitung bagaimana permukaan memantulkan cahaya.
+
+#### Jenis-jenis Light
+
+Three.js menyediakan beberapa tipe light:
+
+- **AmbientLight** — Menerangi seluruh scene secara merata dari semua arah. Tidak ada shadows, tidak ada depth perception. Berguna sebagai "fill light" agar area gelap tidak terlalu hitam.
+
+- **DirectionalLight** — Cahaya paralel dari satu arah, seperti matahari. Memberikan depth melalui shading—permukaan yang menghadap cahaya lebih terang.
+
+- **PointLight** — Cahaya dari satu titik ke semua arah, seperti lampu bohlam.
+
+- **SpotLight** — Cahaya kerucut dari satu titik, seperti lampu sorot.
+
+Untuk visualisasi packing, kita menggunakan kombinasi **AmbientLight** dan **DirectionalLight**. Ambient memberikan base visibility, directional memberikan depth perception agar boxes terlihat 3D.
+
+#### Membangun LightManager
+
+Buat file `lib/StuffingVisualizer/core/light-manager.ts`:
+
+```typescript
+import { Light, AmbientLight, DirectionalLight } from "three";
+
+export class LightManager {
+    private lights: Light[] = [];
+
+    public createDefaultLights(): Light[] {
+        // Ambient: overall illumination
+        const ambientLight = new AmbientLight(0xffffff, 0.8);
+        
+        // Directional: depth perception
+        const directionalLight = new DirectionalLight(0xffffff, 0.5);
+        directionalLight.position.set(20, 30, 20);
+
+        this.lights = [ambientLight, directionalLight];
+        return this.lights;
+    }
+
+    public getLights(): Light[] {
+        return this.lights;
+    }
+
+    public dispose(): void {
+        this.lights.forEach((light) => {
+            if (light.parent) {
+                light.parent.remove(light);
+            }
+        });
+        this.lights = [];
+    }
+}
+```
+
+Mari bahas konfigurasi lighting:
+
+**AmbientLight(0xffffff, 0.8)** — Warna putih dengan intensity 0.8 (dari 0-1). Intensity tinggi agar scene tidak terlalu gelap. Jika terlalu rendah, permukaan yang tidak menghadap DirectionalLight akan hampir hitam.
+
+**DirectionalLight(0xffffff, 0.5)** — Intensity lebih rendah dari ambient karena ini "accent light", bukan primary illumination. Jika terlalu tinggi, permukaan yang menghadap cahaya akan terlalu terang (washed out).
+
+**position.set(20, 30, 20)** — Menempatkan cahaya di atas dan di depan scene. Posisi ini dekat dengan posisi camera default, sehingga permukaan yang menghadap user akan lebih terang—intuitif secara visual.
+
+Method `createDefaultLights()` mengembalikan array lights yang harus ditambahkan ke scene oleh `StuffingVisualizer`:
+
+```typescript
+// Di StuffingVisualizer.build()
+const lights = this.lightManager.createDefaultLights();
+lights.forEach(light => this.sceneManager.add(light));
+```
+
+> **Catatan Shadows:** Kita tidak mengaktifkan shadows karena menambah kompleksitas (shadow maps, shadow camera) dan GPU usage. Untuk visualisasi packing, depth perception dari shading sudah cukup. Shadows bisa ditambahkan nanti sebagai enhancement.
+
+---
+
+### 5.7 Container Wireframe Rendering
+
+Sekarang kita mulai membuat objects visual. Container adalah "batas" dimana items ditempatkan. Kita render sebagai wireframe agar items di dalamnya tetap terlihat—solid box akan menyembunyikan isinya.
+
+#### Konversi Unit
+
+Sebelum membangun meshes, kita perlu fungsi konversi. Data dari API dalam millimeter, tapi Three.js bekerja dalam unit arbitrary. Kita gunakan 1 unit = 1 meter untuk scale yang masuk akal:
+
+Buat file `lib/StuffingVisualizer/utils/conversions.ts`:
+
+```typescript
+export function mmToMeters(mm: number): number {
+    return mm / 1000;
+}
+```
+
+Mengapa konversi terpisah? Container 12 meter akan menjadi 12000 dalam mm—angka besar yang menyulitkan debugging. Dengan konversi ke meter, dimensi visualisasi match dengan dimensi real-world (container 12m = 12 unit Three.js).
+
+#### Membangun ContainerMesh
+
+Buat file `lib/StuffingVisualizer/components/container-mesh.ts`:
+
+```typescript
+import {
+    Group,
+    BoxGeometry,
+    EdgesGeometry,
+    LineBasicMaterial,
+    LineSegments,
+    MeshBasicMaterial,
+    Mesh,
+} from "three";
+import type { ContainerData } from "../types";
+import { mmToMeters } from "../utils/conversions";
+
+export class ContainerMesh {
+    private group: Group;
+    private data: ContainerData;
+
+    constructor(containerData: ContainerData) {
+        this.data = containerData;
+        this.group = new Group();
+        this.createContainer();
+    }
+
+    private createContainer(): void {
+        const length = mmToMeters(this.data.length_mm);
+        const width = mmToMeters(this.data.width_mm);
+        const height = mmToMeters(this.data.height_mm);
+
+        // Wireframe box for the container
+        const geometry = new BoxGeometry(length, height, width);
+        const edges = new EdgesGeometry(geometry);
+        const lineMaterial = new LineBasicMaterial({
+            color: 0x888888,
+            linewidth: 1,
+        });
+        const wireframe = new LineSegments(edges, lineMaterial);
+
+        // Floor platform
+        const platformGeometry = new BoxGeometry(length, 0.02, width);
+        const platformMaterial = new MeshBasicMaterial({
+            color: 0xff8800,
+        });
+        const platform = new Mesh(platformGeometry, platformMaterial);
+        platform.position.y = -height / 2 - 0.01;
+
+        this.group.add(wireframe);
+        this.group.add(platform);
+    }
+
+    public getGroup(): Group {
+        return this.group;
+    }
+
+    public dispose(): void {
+        this.group.traverse((child) => {
+            if (child instanceof Mesh || child instanceof LineSegments) {
+                child.geometry.dispose();
+                if (Array.isArray(child.material)) {
+                    child.material.forEach((m) => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    }
+}
+```
+
+Mari bahas teknik yang digunakan:
+
+#### Wireframe dengan EdgesGeometry
+
+Three.js menyediakan `WireframeGeometry`, tapi ini menggambar semua triangles—hasilnya "segitiga-segitiga" yang terlihat ramai. `EdgesGeometry` lebih baik—ia hanya menggambar edges yang membentuk sudut tajam, menghasilkan wireframe box clean dengan 12 garis.
+
+```typescript
+const geometry = new BoxGeometry(length, height, width);
+const edges = new EdgesGeometry(geometry);  // Extract edges only
+const wireframe = new LineSegments(edges, lineMaterial);
+```
+
+#### Platform Lantai
+
+Platform oranye tipis di bawah container berfungsi sebagai visual ground reference. Tanpa ini, container terlihat "melayang" dan sulit menentukan orientasi atas-bawah.
+
+```typescript
+const platform = new Mesh(platformGeometry, platformMaterial);
+platform.position.y = -height / 2 - 0.01;  // Sedikit di bawah container
+```
+
+Position `-height / 2` karena BoxGeometry centered di origin. Kita geser turun setengah tinggi untuk menempatkan di dasar, plus sedikit offset agar tidak z-fighting dengan container.
+
+#### Group untuk Organization
+
+`Group` adalah container kosong untuk mengorganisir objects terkait. Semua sub-objects (wireframe, platform) ditambahkan ke group, lalu group yang ditambahkan ke scene. Ini memudahkan manipulasi—move group = move semua children.
+
+#### Dispose untuk Memory Management
+
+```typescript
+public dispose(): void {
+    this.group.traverse((child) => {
+        if (child instanceof Mesh || child instanceof LineSegments) {
+            child.geometry.dispose();
+            // ... material dispose
+        }
+    });
+}
+```
+
+`traverse()` berjalan ke semua children recursively. Setiap geometry dan material harus di-dispose agar WebGL resources direlease. Ini dipanggil saat container diganti atau component unmount.
+
+---
+
+### 5.8 Item Box Rendering
+
+Item adalah bagian paling kompleks—setiap placement memiliki posisi dan rotasi yang harus ditransformasi dari coordinate system API ke Three.js.
+
+#### Coordinate System Mismatch
+
+API dan Three.js menggunakan coordinate system berbeda:
+
+| System                | X          | Y        | Z      | Origin                     |
+| --------------------- | ---------- | -------- | ------ | -------------------------- |
+| API (Packing Service) | Length     | Width    | Height | Corner (front-left-bottom) |
+| Three.js              | Horizontal | Vertical | Depth  | Center                     |
+
+Artinya, placement `pos_x=0, pos_y=0, pos_z=0` di API adalah corner container. Di Three.js dengan centered container, titik yang sama adalah `(-length/2, -height/2, +width/2)`.
+
+Tambahkan fungsi konversi ke `lib/StuffingVisualizer/utils/conversions.ts`:
+
+```typescript
+export function containerToThreeCoords(
+    x: number,
+    y: number,
+    z: number,
+    containerLength: number,
+    containerWidth: number,
+    containerHeight: number
+): [number, number, number] {
+    const xMeters = mmToMeters(x);
+    const yMeters = mmToMeters(y);
+    const zMeters = mmToMeters(z);
+
+    const containerLengthMeters = mmToMeters(containerLength);
+    const containerWidthMeters = mmToMeters(containerWidth);
+    const containerHeightMeters = mmToMeters(containerHeight);
+
+    return [
+        xMeters - containerLengthMeters / 2,    // X stays horizontal
+        zMeters - containerHeightMeters / 2,    // API Z (height) → Three.js Y
+        -(yMeters - containerWidthMeters / 2),  // API Y (width) → Three.js -Z
+    ];
+}
+```
+
+Perhatikan swapping: API Z (height) menjadi Three.js Y (vertical), dan API Y (width) menjadi Three.js Z (depth) dengan negasi karena arah berlawanan.
+
+#### Center Offset
+
+API positions items by corner, tapi Three.js positions meshes by center. Ini perbedaan penting yang sering menyebabkan bug visual.
+
+**Ilustrasi masalah:**
+
+```
+API positioning (corner):          Three.js positioning (center):
+┌──────────┐                       ┌──────────┐
+│          │                       │    ●     │  ← center point
+│          │                       │          │
+●──────────┘  ← origin (0,0,0)     └──────────┘
+```
+
+Jika kita langsung gunakan API coordinates untuk Three.js mesh position, item akan offset setengah dimensi ke arah salah. Solusinya: tambahkan offset setengah dimensi item ke setiap axis.
+
+Tambahkan fungsi ke `lib/StuffingVisualizer/utils/conversions.ts`:
+
+```typescript
+export function getItemCenterOffset(
+    itemLength: number,
+    itemWidth: number,
+    itemHeight: number
+): [number, number, number] {
+    // Offset = setengah dimensi di setiap axis
+    // Koordinat di-convert ke Three.js coordinate system
+    return [
+        mmToMeters(itemLength) / 2,   // X: tambah setengah length
+        mmToMeters(itemHeight) / 2,   // Y (Three.js): tambah setengah height
+        -mmToMeters(itemWidth) / 2    // Z (Three.js): kurang setengah width (arah berlawanan)
+    ];
+}
+```
+
+Mengapa Z negatif? Karena API Y (width) menjadi Three.js -Z, offset juga harus negatif agar item bergerak ke arah yang benar.
+
+**Penggunaan di ItemMesh:**
+
+```typescript
+// Dapatkan posisi dari container coordinate system
+const [baseX, baseY, baseZ] = containerToThreeCoords(
+    placement.pos_x, placement.pos_y, placement.pos_z,
+    container.length_mm, container.width_mm, container.height_mm
+);
+
+// Tambahkan center offset
+const [offsetX, offsetY, offsetZ] = getItemCenterOffset(
+    rotatedDims.length_mm, rotatedDims.width_mm, rotatedDims.height_mm
+);
+
+// Final position
+mesh.position.set(baseX + offsetX, baseY + offsetY, baseZ + offsetZ);
+```
+
+Dua langkah terpisah ini membuat debugging lebih mudah—jika item salah posisi, kita bisa check apakah masalah di coordinate conversion atau center offset.
+
+#### Rotation Handling
+
+Packing Service menggunakan rotation codes 0-5 untuk merepresentasikan 6 orientasi item. Daripada merotasi mesh di Three.js (yang kompleks karena euler angles), kita swap dimensi:
+
+```typescript
+private getRotatedDims(): { length_mm: number; width_mm: number; height_mm: number } {
+    const l = this.itemData.length_mm;
+    const w = this.itemData.width_mm;
+    const h = this.itemData.height_mm;
+
+    switch (this.placement.rotation) {
+        case 0: return { length_mm: l, width_mm: w, height_mm: h }; // LWH
+        case 1: return { length_mm: w, width_mm: l, height_mm: h }; // WLH
+        case 2: return { length_mm: w, width_mm: h, height_mm: l }; // WHL
+        case 3: return { length_mm: h, width_mm: w, height_mm: l }; // HWL
+        case 4: return { length_mm: h, width_mm: l, height_mm: w }; // HLW
+        case 5: return { length_mm: l, width_mm: h, height_mm: w }; // LHW
+        default: return { length_mm: l, width_mm: w, height_mm: h };
+    }
+}
+```
+
+Pendekatan ini lebih sederhana: buat BoxGeometry dengan dimensi yang sudah di-swap, tanpa perlu rotasi.
+
+#### Membangun ItemMesh
+
+Buat file `lib/StuffingVisualizer/components/item-mesh.ts`:
+
+```typescript
+import {
+    Group, BoxGeometry, Color, MeshStandardMaterial, Mesh,
+    EdgesGeometry, LineBasicMaterial, LineSegments,
+} from "three";
+import type { ItemData, PlacementData } from "../types";
+import { mmToMeters, containerToThreeCoords, getItemCenterOffset } from "../utils/conversions";
+
+export class ItemMesh {
+    private group: Group;
+    private itemData: ItemData;
+    private placement: PlacementData;
+
+    constructor(
+        itemData: ItemData,
+        placement: PlacementData,
+        containerLength: number,
+        containerWidth: number,
+        containerHeight: number
+    ) {
+        this.itemData = itemData;
+        this.placement = placement;
+        this.group = new Group();
+        this.createItem(containerLength, containerWidth, containerHeight);
+    }
+
+    private createItem(
+        containerLength: number,
+        containerWidth: number,
+        containerHeight: number
+    ): void {
+        const rotated = this.getRotatedDims();
+        const length = mmToMeters(rotated.length_mm);
+        const width = mmToMeters(rotated.width_mm);
+        const height = mmToMeters(rotated.height_mm);
+
+        // Solid box with color
+        const geometry = new BoxGeometry(length, height, width);
+        const material = new MeshStandardMaterial({
+            color: new Color(this.itemData.color_hex),
+            metalness: 0.1,
+            roughness: 0.6,
+        });
+        const mesh = new Mesh(geometry, material);
+        
+        // Store metadata for hover/tooltip
+        mesh.userData = {
+            label: this.itemData.label,
+            step_number: this.placement.step_number,
+        };
+
+        // White wireframe outline
+        const edges = new EdgesGeometry(geometry);
+        const wireframe = new LineSegments(edges, new LineBasicMaterial({ color: 0xffffff }));
+
+        // Position calculation
+        const [x, y, z] = containerToThreeCoords(
+            this.placement.pos_x, this.placement.pos_y, this.placement.pos_z,
+            containerLength, containerWidth, containerHeight
+        );
+        const [offsetX, offsetY, offsetZ] = getItemCenterOffset(
+            rotated.length_mm, rotated.width_mm, rotated.height_mm
+        );
+
+        this.group.position.set(x + offsetX, y + offsetY, z + offsetZ);
+        this.group.add(mesh);
+        this.group.add(wireframe);
+    }
+
+    public getStepNumber(): number {
+        return this.placement.step_number;
+    }
+
+    public getGroup(): Group {
+        return this.group;
+    }
+
+    public dispose(): void {
+        this.group.traverse((child) => {
+            if (child instanceof Mesh || child instanceof LineSegments) {
+                child.geometry.dispose();
+                if (Array.isArray(child.material)) {
+                    child.material.forEach((m) => m.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    }
+}
+```
+
+Mari bahas komponen penting:
+
+#### MeshStandardMaterial
+
+Kita menggunakan `MeshStandardMaterial` karena ia physically-based—hasilnya realistic dengan lighting. Properties:
+
+- **metalness: 0.1** — Sedikit metallic untuk subtle reflections
+- **roughness: 0.6** — Tidak terlalu glossy, tidak terlalu matte
+
+#### Wireframe Outline
+
+Setiap item mendapat white wireframe overlay agar edges terlihat jelas meski warna item gelap. Ini memudahkan distinguishing items yang bersebelahan.
+
+#### UserData untuk Metadata
+
+```typescript
+mesh.userData = {
+    label: this.itemData.label,
+    step_number: this.placement.step_number,
+};
+```
+
+`userData` adalah property Three.js untuk menyimpan custom data di object. Nanti berguna untuk tooltip saat hover—raycaster hit mesh, kita baca `userData.label`.
+
+---
+
+### 5.9 Animation System
+
+Animation system memungkinkan user melihat proses pemuatan step-by-step—item pertama muncul, lalu kedua, dan seterusnya. Ini lebih informatif daripada menampilkan semua item sekaligus.
+
+#### Konsep Animasi
+
+Animasi kita bukan "gerakan"—item tidak bergerak dari luar ke dalam container. Yang kita lakukan adalah mengontrol visibility: step 1 menampilkan item step_number ≤ 1, step 2 menampilkan item step_number ≤ 2, dan seterusnya.
+
+Mengapa pendekatan ini? Dua alasan:
+
+1. **Simplicity** — Animating movement memerlukan interpolasi posisi, easing functions, dan handling collision visual. Visibility toggle hanya perlu set `visible = true/false`.
+
+2. **Clarity** — User langsung melihat dimana item ditempatkan, tanpa menunggu animasi selesai atau distraksi gerakan.
+
+#### Membangun AnimationManager
+
+Buat file `lib/StuffingVisualizer/core/animation-manager.ts`. Kita mulai dengan type definitions dan class structure:
+
+```typescript
+export type StepChangeCallback = (step: number) => void;
+export type PlayStateChangeCallback = (isPlaying: boolean) => void;
+
+export class AnimationManager {
+    private isPlaying = false;
+    private currentStep = 0;
+    private maxStep = 0;
+    private stepDuration = 500;  // ms per step
+    private lastStepTime = 0;
+    private animationFrameId: number | null = null;
+    
+    private stepListeners = new Set<StepChangeCallback>();
+    private playStateListeners = new Set<PlayStateChangeCallback>();
+
+    constructor(initialStepDuration: number = 500) {
+        this.stepDuration = initialStepDuration;
+    }
+}
+```
+
+Mari bahas state yang kita track:
+
+- **isPlaying** — Boolean untuk play/pause state. UI buttons akan toggle ini.
+- **currentStep** — Step yang sedang ditampilkan. Items dengan `step_number <= currentStep` akan visible.
+- **maxStep** — Step tertinggi dari semua items. Ini dihitung saat `loadData()`.
+- **stepDuration** — Interval antar step dalam milliseconds. Default 500ms = 2 steps per detik.
+- **lastStepTime** — Timestamp terakhir kali step diincrement. Untuk menghitung elapsed time.
+- **animationFrameId** — Handle untuk `cancelAnimationFrame()` saat pause.
+
+Mengapa dua Set untuk listeners? Karena kita perlu notify dua jenis event terpisah:
+- **stepListeners** — React perlu tahu currentStep untuk update slider
+- **playStateListeners** — React perlu tahu isPlaying untuk toggle play/pause icon
+
+#### Step Control Methods
+
+Tambahkan methods untuk mengontrol step:
+
+```typescript
+public setMaxStep(max: number): void {
+    this.maxStep = max;
+}
+
+public getMaxStep(): number {
+    return this.maxStep;
+}
+
+public setCurrentStep(step: number): void {
+    // Clamp step ke range valid
+    const newStep = Math.max(0, Math.min(step, this.maxStep));
+    if (this.currentStep === newStep) return;  // Early return jika tidak berubah
+    
+    this.currentStep = newStep;
+    this.notifyStepChange();  // Notify semua listeners
+}
+
+public getCurrentStep(): number {
+    return this.currentStep;
+}
+```
+
+`setCurrentStep()` melakukan **clamping**—memastikan step tidak negatif atau melebihi `maxStep`. Ini penting karena slider bisa di-drag ke posisi arbitrary, dan kita tidak ingin crash atau undefined behavior.
+
+Early return `if (this.currentStep === newStep) return` mencegah unnecessary notifications saat value tidak berubah—misalnya saat drag slider ke posisi yang sama.
+
+#### Observer Pattern untuk React Sync
+
+Kita menggunakan observer pattern untuk menghubungkan AnimationManager ke React state:
+
+```typescript
+public onStepChange(callback: StepChangeCallback): () => void {
+    this.stepListeners.add(callback);
+    return () => this.stepListeners.delete(callback);  // Unsubscribe function
+}
+
+public onPlayStateChange(callback: PlayStateChangeCallback): () => void {
+    this.playStateListeners.add(callback);
+    return () => this.playStateListeners.delete(callback);
+}
+
+private notifyStepChange(): void {
+    this.stepListeners.forEach(callback => callback(this.currentStep));
+}
+
+private notifyPlayStateChange(): void {
+    this.playStateListeners.forEach(callback => callback(this.isPlaying));
+}
+```
+
+Pattern ini familiar dari React hooks seperti `useEffect` cleanup. Caller memanggil `onStepChange(callback)` dan mendapat unsubscribe function yang dipanggil di cleanup. Ini mencegah memory leaks—jika component unmount tapi tidak unsubscribe, callback akan terus dipanggil dengan stale references.
+
+`Set` dipilih daripada array karena `delete()` operation O(1) dan otomatis prevents duplicate subscriptions.
+
+#### Play/Pause Logic
+
+Tambahkan methods untuk playback control:
+
+```typescript
+public play(): void {
+    if (this.isPlaying) return;  // Already playing
+
+    // Reset ke awal jika sudah di akhir
+    if (this.currentStep >= this.maxStep) {
+        this.setCurrentStep(0);
+    }
+
+    this.isPlaying = true;
+    this.notifyPlayStateChange();
+    this.lastStepTime = Date.now();
+    this.animate();
+}
+
+public pause(): void {
+    if (!this.isPlaying) return;  // Already paused
+    
+    this.isPlaying = false;
+    this.notifyPlayStateChange();
+    if (this.animationFrameId !== null) {
+        cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
+    }
+}
+```
+
+`play()` melakukan beberapa hal:
+1. **Guard clause** — Jika sudah playing, jangan double-start
+2. **Auto-reset** — Jika user menekan play di akhir animasi, reset ke step 0
+3. **Set state** — Update `isPlaying` dan notify React
+4. **Start timer** — Record `lastStepTime` untuk interval calculation
+5. **Start loop** — Call `animate()` untuk memulai animation loop
+
+`pause()` melakukan cleanup:
+1. Update state dan notify
+2. Cancel pending animation frame agar loop berhenti
+
+#### Animation Loop
+
+Animation loop berjalan dengan `requestAnimationFrame`:
+
+```typescript
+private animate = (): void => {
+    if (!this.isPlaying) return;  // Exit jika paused mid-frame
+
+    const now = Date.now();
+    const elapsed = now - this.lastStepTime;
+
+    if (elapsed >= this.stepDuration) {
+        this.lastStepTime = now;
+        const nextStep = this.currentStep + 1;
+
+        if (nextStep > this.maxStep) {
+            // Animasi selesai
+            this.pause();
+            this.setCurrentStep(this.maxStep);
+            return;
+        } else {
+            this.setCurrentStep(nextStep);
+        }
+    }
+
+    this.animationFrameId = requestAnimationFrame(this.animate);
+}
+```
+
+Mengapa arrow function `animate = () =>` bukan method `animate()`? Karena ia digunakan sebagai callback ke `requestAnimationFrame(this.animate)`. Regular method akan lose `this` binding, arrow function mempertahankannya.
+
+Logic:
+1. **Check elapsed time** — Hitung berapa ms sejak step terakhir
+2. **Increment jika waktunya** — Jika `elapsed >= stepDuration`, pindah ke step berikutnya
+3. **Auto-stop di akhir** — Jika sudah `maxStep`, pause animasi
+4. **Schedule next frame** — `requestAnimationFrame` akan call `animate` lagi ~16ms kemudian (60fps)
+
+#### Utility Methods
+
+Tambahkan beberapa utility:
+
+```typescript
+public toggle(): void {
+    if (this.isPlaying) {
+        this.pause();
+    } else {
+        this.play();
+    }
+}
+
+public reset(): void {
+    this.pause();
+    this.setCurrentStep(0);
+}
+
+public dispose(): void {
+    this.pause();
+    this.stepListeners.clear();
+    this.playStateListeners.clear();
+}
+
+public isRunning(): boolean {
+    return this.isPlaying;
+}
+```
+
+`toggle()` berguna untuk single button yang bisa play/pause. `reset()` untuk tombol "kembali ke awal". `dispose()` untuk cleanup saat component unmount—stop loop dan clear listeners.
+
+#### Kode Lengkap animation-manager.ts
+
+Berikut kode lengkap `lib/StuffingVisualizer/core/animation-manager.ts`:
+
+```typescript
+export type StepChangeCallback = (step: number) => void;
+export type PlayStateChangeCallback = (isPlaying: boolean) => void;
+
+export class AnimationManager {
+    private isPlaying = false;
+    private currentStep = 0;
+    private maxStep = 0;
+    private stepDuration = 500;
+    private lastStepTime = 0;
+    private animationFrameId: number | null = null;
+    
+    private stepListeners = new Set<StepChangeCallback>();
+    private playStateListeners = new Set<PlayStateChangeCallback>();
+
+    constructor(initialStepDuration: number = 500) {
+        this.stepDuration = initialStepDuration;
+    }
+
+    public setMaxStep(max: number): void {
+        this.maxStep = max;
+    }
+
+    public getMaxStep(): number {
+        return this.maxStep;
+    }
+
+    public setCurrentStep(step: number): void {
+        const newStep = Math.max(0, Math.min(step, this.maxStep));
+        if (this.currentStep === newStep) return;
+        
+        this.currentStep = newStep;
+        this.notifyStepChange();
+    }
+
+    public getCurrentStep(): number {
+        return this.currentStep;
+    }
+
+    public onStepChange(callback: StepChangeCallback): () => void {
+        this.stepListeners.add(callback);
+        return () => this.stepListeners.delete(callback);
+    }
+
+    public onPlayStateChange(callback: PlayStateChangeCallback): () => void {
+        this.playStateListeners.add(callback);
+        return () => this.playStateListeners.delete(callback);
+    }
+
+    public play(): void {
+        if (this.isPlaying) return;
+
+        if (this.currentStep >= this.maxStep) {
+            this.setCurrentStep(0);
+        }
+
+        this.isPlaying = true;
+        this.notifyPlayStateChange();
+        this.lastStepTime = Date.now();
+        this.animate();
+    }
+
+    public pause(): void {
+        if (!this.isPlaying) return;
+        
+        this.isPlaying = false;
+        this.notifyPlayStateChange();
+        if (this.animationFrameId !== null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+        }
+    }
+
+    public toggle(): void {
+        if (this.isPlaying) {
+            this.pause();
+        } else {
+            this.play();
+        }
+    }
+
+    public reset(): void {
+        this.pause();
+        this.setCurrentStep(0);
+    }
+
+    public dispose(): void {
+        this.pause();
+        this.stepListeners.clear();
+        this.playStateListeners.clear();
+    }
+
+    public isRunning(): boolean {
+        return this.isPlaying;
+    }
+
+    private notifyStepChange(): void {
+        this.stepListeners.forEach(callback => callback(this.currentStep));
+    }
+
+    private notifyPlayStateChange(): void {
+        this.playStateListeners.forEach(callback => callback(this.isPlaying));
+    }
+
+    private animate = (): void => {
+        if (!this.isPlaying) return;
+
+        const now = Date.now();
+        const elapsed = now - this.lastStepTime;
+
+        if (elapsed >= this.stepDuration) {
+            this.lastStepTime = now;
+            const nextStep = this.currentStep + 1;
+
+            if (nextStep > this.maxStep) {
+                this.pause();
+                this.setCurrentStep(this.maxStep);
+                return;
+            } else {
+                this.setCurrentStep(nextStep);
+            }
+        }
+
+        this.animationFrameId = requestAnimationFrame(this.animate);
+    }
+}
+```
+
+---
+
+### 5.10 StuffingVisualizer Orchestrator
+
+Sekarang kita menyatukan semua managers dalam satu class orchestrator—`StuffingVisualizer`. Class ini adalah **public API** yang digunakan oleh React component. React tidak perlu tahu tentang SceneManager, RendererManager, dll—cukup memanggil `visualizer.loadData()` dan `visualizer.play()`.
+
+#### Class Structure dan Constructor
+
+Buat file `lib/StuffingVisualizer/stuffing-visualizer.ts`. Kita mulai dengan imports dan class definition:
+
+```typescript
+import { OrthographicCamera, Scene } from "three";
+import { ContainerMesh } from "./components/container-mesh";
+import { ItemMesh } from "./components/item-mesh";
+import { CameraManager } from "./core/camera-manager";
+import { LightManager } from "./core/light-manager";
+import { SceneManager } from "./core/scene-manager";
+import { RendererManager } from "./core/renderer-manager";
+import { ControlsManager } from "./core/controls-manager";
+import { AnimationManager } from "./core/animation-manager";
+import type { SceneConfig, StuffingPlanData, ItemData } from "./types";
+
+export class StuffingVisualizer {
+    private sceneManager: SceneManager;
+    private cameraManager: CameraManager;
+    private lightManager: LightManager;
+    private rendererManager: RendererManager;
+    private controlsManager: ControlsManager;
+    private animationManager: AnimationManager;
+    
+    private containerMesh: ContainerMesh | null = null;
+    private itemMeshes: ItemMesh[] = [];
+    private data: StuffingPlanData | null = null;
+    private camera: OrthographicCamera;
+
+    constructor(config: SceneConfig = {}) {
+        // Initialize all managers
+        this.sceneManager = new SceneManager(config.backgroundColor);
+        this.cameraManager = new CameraManager(1, 0.1, 2000);
+        this.lightManager = new LightManager();
+        this.rendererManager = new RendererManager();
+        this.controlsManager = new ControlsManager();
+        this.animationManager = new AnimationManager(config.stepDuration ?? 500);
+        this.camera = this.cameraManager.getCamera();
+
+        // Setup lights
+        const lights = this.lightManager.createDefaultLights();
+        lights.forEach((light) => this.sceneManager.add(light));
+
+        // Connect animation to visibility updates
+        this.animationManager.onStepChange((step) => {
+            this.updateVisibleItems(step);
+        });
+    }
+}
+```
+
+Mari bahas design decisions:
+
+**Private managers** — Semua managers disimpan private. Ini encapsulation—React component tidak perlu (dan tidak boleh) mengakses `sceneManager` langsung. Semua interaksi melalui public methods.
+
+**Config object** — Constructor menerima `SceneConfig` untuk customization (background color, step duration). Ini lebih extensible daripada positional parameters—menambah option baru tidak break existing code.
+
+**Wiring internal** — Perhatikan `this.animationManager.onStepChange(() => this.updateVisibleItems(step))`. Ini menghubungkan AnimationManager ke visibility logic. Setiap kali step berubah (dari play, drag slider, atau setStep), items di-update otomatis.
+
+#### attach() - Connect to DOM
+
+Method ini menghubungkan visualizer ke DOM element:
+
+```typescript
+public attach(container: HTMLElement): void {
+    // 1. Attach renderer ke DOM, dengan resize callback
+    this.rendererManager.attach(container, (_width, _height, aspect) => {
+        this.cameraManager.updateAspect(aspect);
+    });
+    
+    // 2. Initialize controls dengan camera dan renderer
+    const renderer = this.rendererManager.getRenderer();
+    this.controlsManager.init(this.camera, renderer);
+    
+    // 3. Start render loop dengan controls update
+    this.rendererManager.startLoop(
+        this.sceneManager.getScene(), 
+        this.camera,
+        () => this.controlsManager.update()
+    );
+}
+```
+
+Urutan penting:
+1. **Attach renderer dulu** — Karena controls perlu `renderer.domElement` untuk event listeners
+2. **Initialize controls** — Setelah renderer attached
+3. **Start loop** — Loop akan terus berjalan sampai `dispose()`
+
+Resize callback diteruskan ke camera manager agar aspect ratio selalu correct. `onResize` callback menerima width, height, dan aspect—kita destructure dengan underscore `_` karena hanya perlu aspect.
+
+#### loadData() dan build()
+
+`loadData()` adalah entry point untuk menampilkan data baru:
+
+```typescript
+public loadData(data: StuffingPlanData): void {
+    this.data = data;
+    this.clear();   // Hapus meshes lama
+    this.build();   // Buat meshes baru
+}
+
+private build(): void {
+    if (!this.data) return;
+
+    // 1. Create container wireframe
+    this.containerMesh = new ContainerMesh(this.data.container);
+    this.sceneManager.add(this.containerMesh.getGroup());
+
+    // 2. Build item lookup map untuk O(1) access
+    const itemMap = new Map<string, ItemData>(
+        this.data.items.map((item) => [item.item_id, item])
+    );
+    let maxStep = 0;
+
+    // 3. Create item meshes dari placements
+    this.data.placements.forEach((placement) => {
+        const itemData = itemMap.get(placement.item_id);
+        if (itemData) {
+            const itemMesh = new ItemMesh(
+                itemData,
+                placement,
+                this.data!.container.length_mm,
+                this.data!.container.width_mm,
+                this.data!.container.height_mm
+            );
+            this.itemMeshes.push(itemMesh);
+            this.sceneManager.add(itemMesh.getGroup());
+            maxStep = Math.max(maxStep, itemMesh.getStepNumber());
+        }
+    });
+
+    // 4. Setup animation state
+    this.animationManager.setMaxStep(maxStep);
+    this.animationManager.setCurrentStep(maxStep);  // Start with all visible
+    this.updateVisibleItems(maxStep);
+}
+```
+
+Beberapa design decisions:
+
+**Map untuk item lookup** — `placements` referensi `item_id`, kita perlu cari item data-nya. Tanpa Map, O(n²): untuk setiap placement, loop semua items. Dengan Map, O(n): single pass build map, lalu O(1) lookup.
+
+**Track maxStep** — Kita perlu tahu step tertinggi untuk slider max value dan untuk detect "sudah di akhir".
+
+**Start dengan semua visible** — `setCurrentStep(maxStep)` menampilkan semua items. User bisa play untuk reset dan lihat step-by-step, atau langsung lihat hasil akhir.
+
+#### Visibility Control
+
+Core animation logic sangat sederhana:
+
+```typescript
+private updateVisibleItems(targetStep: number): void {
+    this.itemMeshes.forEach((itemMesh) => {
+        const stepNumber = itemMesh.getStepNumber();
+        itemMesh.getGroup().visible = stepNumber <= targetStep;
+    });
+}
+```
+
+Setiap item mesh menyimpan `step_number` di placement. Item visible jika `step_number <= targetStep`. Three.js skip invisible objects di render pass, jadi ini juga efficient.
+
+Mengapa tidak remove/add ke scene? Karena `visible = false` lebih efficient—tidak perlu update scene graph. Dan kita tetap bisa access mesh properties (untuk tooltips, highlighting, dll) meski invisible.
+
+#### Public API Delegation
+
+Public methods mendelegasikan ke managers internal:
+
+```typescript
+public setStep(step: number): void {
+    this.animationManager.setCurrentStep(step);
+}
+
+public getMaxStep(): number {
+    return this.animationManager.getMaxStep();
+}
+
+public getCurrentStep(): number {
+    return this.animationManager.getCurrentStep();
+}
+
+public play(): void {
+    this.animationManager.play();
+}
+
+public pause(): void {
+    this.animationManager.pause();
+}
+
+public reset(): void {
+    this.animationManager.reset();
+}
+
+public onStepChange(callback: (step: number) => void): () => void {
+    return this.animationManager.onStepChange(callback);
+}
+
+public onPlayStateChange(callback: (isPlaying: boolean) => void): () => void {
+    return this.animationManager.onPlayStateChange(callback);
+}
+```
+
+Ini **Facade pattern**—StuffingVisualizer menyembunyikan kompleksitas internal (6 managers, 2 mesh types) dibalik simple API. React component cukup tahu: `play()`, `pause()`, `setStep()`, `onStepChange()`.
+
+#### Cleanup
+
+```typescript
+public dispose(): void {
+    this.clear();
+    this.lightManager.dispose();
+    this.animationManager.dispose();
+    this.controlsManager.dispose();
+    this.rendererManager.dispose();
+}
+```
+
+`dispose()` cleanup semua resources. Urutan tidak terlalu penting karena tidak ada dependencies antar managers.
+
+Terakhir, buat file `lib/StuffingVisualizer/index.ts` untuk exports:
+
+```typescript
+export { StuffingVisualizer } from "./stuffing-visualizer";
+export type { StuffingPlanData, SceneConfig, ContainerData, ItemData, PlacementData } from "./types";
+```
+
+#### Kode Lengkap stuffing-visualizer.ts
+
+Berikut kode lengkap `lib/StuffingVisualizer/stuffing-visualizer.ts`:
+
+```typescript
+import { OrthographicCamera, Scene } from "three";
+import { ContainerMesh } from "./components/container-mesh";
+import { ItemMesh } from "./components/item-mesh";
+import { CameraManager } from "./core/camera-manager";
+import { LightManager } from "./core/light-manager";
+import { SceneManager } from "./core/scene-manager";
+import { RendererManager } from "./core/renderer-manager";
+import { ControlsManager } from "./core/controls-manager";
+import { AnimationManager } from "./core/animation-manager";
+import type { SceneConfig, StuffingPlanData, ItemData } from "./types";
+
+export class StuffingVisualizer {
+    private sceneManager: SceneManager;
+    private cameraManager: CameraManager;
+    private lightManager: LightManager;
+    private rendererManager: RendererManager;
+    private controlsManager: ControlsManager;
+    private animationManager: AnimationManager;
+    
+    private containerMesh: ContainerMesh | null = null;
+    private itemMeshes: ItemMesh[] = [];
+    private data: StuffingPlanData | null = null;
+    private camera: OrthographicCamera;
+
+    constructor(config: SceneConfig = {}) {
+        this.sceneManager = new SceneManager(config.backgroundColor);
+        this.cameraManager = new CameraManager(1, 0.1, 2000);
+        this.lightManager = new LightManager();
+        this.rendererManager = new RendererManager();
+        this.controlsManager = new ControlsManager();
+        this.animationManager = new AnimationManager(config.stepDuration ?? 500);
+        this.camera = this.cameraManager.getCamera();
+
+        const lights = this.lightManager.createDefaultLights();
+        lights.forEach((light) => this.sceneManager.add(light));
+
+        this.animationManager.onStepChange((step) => {
+            this.updateVisibleItems(step);
+        });
+    }
+
+    public attach(container: HTMLElement): void {
+        this.rendererManager.attach(container, (_width, _height, aspect) => {
+            this.cameraManager.updateAspect(aspect);
+        });
+        
+        const renderer = this.rendererManager.getRenderer();
+        this.controlsManager.init(this.camera, renderer);
+        
+        this.rendererManager.startLoop(
+            this.sceneManager.getScene(), 
+            this.camera,
+            () => this.controlsManager.update()
+        );
+    }
+
+    public loadData(data: StuffingPlanData): void {
+        this.data = data;
+        this.clear();
+        this.build();
+    }
+
+    private build(): void {
+        if (!this.data) return;
+
+        this.containerMesh = new ContainerMesh(this.data.container);
+        this.sceneManager.add(this.containerMesh.getGroup());
+
+        const itemMap = new Map<string, ItemData>(
+            this.data.items.map((item) => [item.item_id, item])
+        );
+        let maxStep = 0;
+
+        this.data.placements.forEach((placement) => {
+            const itemData = itemMap.get(placement.item_id);
+            if (itemData) {
+                const itemMesh = new ItemMesh(
+                    itemData,
+                    placement,
+                    this.data!.container.length_mm,
+                    this.data!.container.width_mm,
+                    this.data!.container.height_mm
+                );
+                this.itemMeshes.push(itemMesh);
+                this.sceneManager.add(itemMesh.getGroup());
+                maxStep = Math.max(maxStep, itemMesh.getStepNumber());
+            }
+        });
+
+        this.animationManager.setMaxStep(maxStep);
+        this.animationManager.setCurrentStep(maxStep);
+        this.updateVisibleItems(maxStep);
+    }
+
+    private updateVisibleItems(targetStep: number): void {
+        this.itemMeshes.forEach((itemMesh) => {
+            const stepNumber = itemMesh.getStepNumber();
+            itemMesh.getGroup().visible = stepNumber <= targetStep;
+        });
+    }
+
+    public setStep(step: number): void {
+        this.animationManager.setCurrentStep(step);
+    }
+
+    public getMaxStep(): number {
+        return this.animationManager.getMaxStep();
+    }
+
+    public getCurrentStep(): number {
+        return this.animationManager.getCurrentStep();
+    }
+
+    public play(): void {
+        this.animationManager.play();
+    }
+
+    public pause(): void {
+        this.animationManager.pause();
+    }
+
+    public reset(): void {
+        this.animationManager.reset();
+    }
+
+    public onStepChange(callback: (step: number) => void): () => void {
+        return this.animationManager.onStepChange(callback);
+    }
+
+    public onPlayStateChange(callback: (isPlaying: boolean) => void): () => void {
+        return this.animationManager.onPlayStateChange(callback);
+    }
+
+    public clear(): void {
+        if (this.containerMesh) {
+            this.containerMesh.dispose();
+            this.containerMesh = null;
+        }
+
+        this.itemMeshes.forEach((item) => item.dispose());
+        this.itemMeshes = [];
+
+        const lights = this.lightManager.getLights();
+        this.sceneManager.clear();
+        lights.forEach((light) => this.sceneManager.add(light));
+    }
+
+    public getScene(): Scene {
+        return this.sceneManager.getScene();
+    }
+
+    public getCamera(): OrthographicCamera {
+        return this.cameraManager.getCamera();
+    }
+
+    public dispose(): void {
+        this.clear();
+        this.lightManager.dispose();
+        this.animationManager.dispose();
+        this.controlsManager.dispose();
+        this.rendererManager.dispose();
+    }
+}
+```
+
+---
+
+### 5.11 React Integration
+
+Kita punya Three.js visualizer yang berdiri sendiri. Sekarang kita perlu React wrapper untuk menggunakannya di Next.js application. Challenge utama: React functional components re-render, tapi Three.js instance harus persistent.
+
+#### StuffingViewer Component
+
+`StuffingViewer` adalah "smart component"—ia menghubungkan StuffingVisualizer ke React lifecycle dan state management.
+
+Pattern yang kita gunakan:
+1. **useRef** untuk menyimpan visualizer instance agar persist across renders
+2. **useState** untuk React state yang perlu trigger re-render (currentStep, isPlaying, dll)
+3. **useEffect** untuk setup/cleanup dengan dependency array `[data]`
+4. **Subscription callbacks** untuk sync visualizer state ke React state
+
+Buat file `components/stuffing-viewer.tsx`:
+
+```tsx
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { StuffingVisualizer } from "@/lib/StuffingVisualizer";
+import type { StuffingPlanData } from "@/lib/StuffingVisualizer";
+import { AnimationControls } from "./animation-controls";
+
+interface StuffingViewerProps {
+    data: StuffingPlanData;
+}
+
+export function StuffingViewer({ data }: StuffingViewerProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const visualizerRef = useRef<StuffingVisualizer | null>(null);
+    
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [maxStep, setMaxStep] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        // Create visualizer only once
+        if (!visualizerRef.current) {
+            visualizerRef.current = new StuffingVisualizer({
+                backgroundColor: "#fff",
+            });
+        }
+
+        const visualizer = visualizerRef.current;
+
+        // Subscribe to state changes
+        const unsubStep = visualizer.onStepChange(setCurrentStep);
+        const unsubPlay = visualizer.onPlayStateChange(setIsPlaying);
+
+        // Load data and attach
+        visualizer.loadData(data);
+        setMaxStep(visualizer.getMaxStep());
+        setCurrentStep(visualizer.getMaxStep());
+        visualizer.attach(containerRef.current);
+        setIsLoaded(true);
+
+        // Cleanup on unmount
+        return () => {
+            unsubStep();
+            unsubPlay();
+            visualizer.dispose();
+            visualizerRef.current = null;
+        };
+    }, [data]);
+
+    const handleStepChange = (step: number) => {
+        setCurrentStep(step);
+        visualizerRef.current?.setStep(step);
+    };
+
+    return (
+        <div className="w-full h-full relative">
+            <div ref={containerRef} className="w-full h-full" />
+            
+            {!isLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white">
+                    <p className="text-zinc-600">Loading visualization...</p>
+                </div>
+            )}
+
+            <AnimationControls
+                currentStep={currentStep}
+                maxStep={maxStep}
+                isPlaying={isPlaying}
+                onStepChange={handleStepChange}
+                onPlay={() => visualizerRef.current?.play()}
+                onPause={() => visualizerRef.current?.pause()}
+                onReset={() => visualizerRef.current?.reset()}
+            />
+        </div>
+    );
+}
+```
+
+Mari bahas pattern penting:
+
+**useRef untuk instance persistence** — `visualizerRef` menyimpan instance `StuffingVisualizer` yang persist across renders. Tanpa ref, setiap render akan membuat visualizer baru.
+
+**Subscription pattern** — `onStepChange` dan `onPlayStateChange` mengembalikan unsubscribe functions yang kita panggil di cleanup. Ini memastikan tidak ada lingering listeners.
+
+**Bidirectional sync** — React state dan visualizer state di-sync dua arah:
+- Visualizer → React: via subscription callbacks (`onStepChange`)
+- React → Visualizer: via method calls (`handleStepChange`)
+
+**Conditional rendering** — Loading indicator ditampilkan sampai `isLoaded` true.
+
+#### AnimationControls Component
+
+`AnimationControls` adalah "dumb component" (atau presentational component)—ia tidak punya internal state, hanya menerima props dan memanggil callbacks. Semua logic ada di parent `StuffingViewer`.
+
+Mengapa separation ini? **Single source of truth**. State (`currentStep`, `isPlaying`) di-manage di satu tempat. AnimationControls hanya menampilkan dan memanggil callbacks—membuatnya mudah di-test dan di-reuse.
+
+Buat file `components/animation-controls.tsx`:
+
+```tsx
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Pause, Play, RotateCcw } from "lucide-react";
+
+interface AnimationControlsProps {
+    currentStep: number;
+    maxStep: number;
+    isPlaying: boolean;
+    onStepChange: (step: number) => void;
+    onPlay: () => void;
+    onPause: () => void;
+    onReset: () => void;
+}
+
+export function AnimationControls({
+    currentStep,
+    maxStep,
+    isPlaying,
+    onStepChange,
+    onPlay,
+    onPause,
+    onReset,
+}: AnimationControlsProps) {
+    return (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg border border-zinc-200 p-4 flex items-center gap-4 min-w-[400px]">
+            <div className="flex gap-2">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={isPlaying ? onPause : onPlay}
+                >
+                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={onReset}
+                >
+                    <RotateCcw className="h-4 w-4" />
+                </Button>
+            </div>
+
+            <div className="flex-1 flex items-center gap-3">
+                <Slider
+                    value={[currentStep]}
+                    min={0}
+                    max={maxStep}
+                    step={1}
+                    onValueChange={(value) => onStepChange(value[0])}
+                    className="flex-1"
+                />
+                <span className="text-sm font-medium text-zinc-700 min-w-[60px] text-right">
+                    {currentStep} / {maxStep}
+                </span>
+            </div>
+        </div>
+    );
+}
+```
+
+Component ini "dumb"—ia menerima semua state via props dan memanggil callbacks untuk actions. Logic ada di parent (`StuffingViewer`).
+
+Kita menggunakan shadcn/ui `Button` dan `Slider`, serta Lucide icons. Component di-style dengan position absolute agar overlay di atas canvas.
+
+---
+
+### 5.12 Demo Page
+
+Terakhir, kita buat demo page yang menggabungkan semuanya. Page ini menyediakan form untuk input container dan items, lalu menampilkan visualisasi 3D dari hasil packing.
+
+#### Kode Lengkap page.tsx
+
+Buat file `app/page.tsx` dengan kode lengkap berikut:
+
+```tsx
+"use client";
+
+import { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
+import { Trash2 } from "lucide-react";
+import type { StuffingPlanData } from "@/lib/StuffingVisualizer";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+// Dynamic import untuk SSR compatibility
+const StuffingViewer = dynamic(
+    () => import("@/components/stuffing-viewer").then((mod) => mod.StuffingViewer),
+    { ssr: false, loading: () => <div className="flex items-center justify-center h-full">Loading 3D...</div> }
+);
+
+interface ItemInput {
+    label: string;
+    quantity: number;
+    length_mm: number;
+    width_mm: number;
+    height_mm: number;
+    weight_kg: number;
+    color_hex: string;
+}
+
+// Generate random color from preset palette
+function randomColor(): string {
+    const colors = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"];
+    return colors[Math.floor(Math.random() * colors.length)];
+}
+
+// Simple greedy packing algorithm untuk demo
+function buildPlanData(
+    items: ItemInput[], 
+    container: { length_mm: number; width_mm: number; height_mm: number; max_weight_kg: number }
+): StuffingPlanData {
+    const allPlacements: StuffingPlanData["placements"] = [];
+    const allItems: StuffingPlanData["items"] = [];
+    
+    let stepNumber = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let currentZ = 0;
+    let rowMaxWidth = 0;
+    let layerMaxHeight = 0;
+
+    items.forEach((item, itemIndex) => {
+        const itemId = `item-${itemIndex}`;
+        allItems.push({
+            item_id: itemId,
+            label: item.label,
+            length_mm: item.length_mm,
+            width_mm: item.width_mm,
+            height_mm: item.height_mm,
+            weight_kg: item.weight_kg,
+            quantity: item.quantity,
+            color_hex: item.color_hex,
+        });
+
+        for (let q = 0; q < item.quantity; q++) {
+            // Simple left-to-right, front-to-back, bottom-to-top packing
+            if (currentX + item.length_mm > container.length_mm) {
+                currentX = 0;
+                currentY += rowMaxWidth;
+                rowMaxWidth = 0;
+            }
+            if (currentY + item.width_mm > container.width_mm) {
+                currentY = 0;
+                currentZ += layerMaxHeight;
+                layerMaxHeight = 0;
+            }
+
+            stepNumber++;
+            allPlacements.push({
+                placement_id: `p-${stepNumber}`,
+                item_id: itemId,
+                pos_x: currentX,
+                pos_y: currentY,
+                pos_z: currentZ,
+                rotation: 0,
+                step_number: stepNumber,
+            });
+
+            currentX += item.length_mm;
+            rowMaxWidth = Math.max(rowMaxWidth, item.width_mm);
+            layerMaxHeight = Math.max(layerMaxHeight, item.height_mm);
+        }
+    });
+
+    return {
+        plan_id: "demo-plan",
+        plan_code: "DEMO-001",
+        container: {
+            name: "Custom Container",
+            length_mm: container.length_mm,
+            width_mm: container.width_mm,
+            height_mm: container.height_mm,
+            max_weight_kg: container.max_weight_kg,
+        },
+        items: allItems,
+        placements: allPlacements,
+        stats: {
+            total_items: allPlacements.length,
+            fitted_count: allPlacements.length,
+            unfitted_count: 0,
+            volume_utilization_pct: 0,
+        },
+    };
+}
+
+export default function HomePage() {
+    const [container, setContainer] = useState({
+        length_mm: 12000,
+        width_mm: 2400,
+        height_mm: 2600,
+        max_weight_kg: 28000,
+    });
+
+    const [items, setItems] = useState<ItemInput[]>([]);
+    const [form, setForm] = useState<ItemInput>({
+        label: "",
+        quantity: 1,
+        length_mm: 0,
+        width_mm: 0,
+        height_mm: 0,
+        weight_kg: 0,
+        color_hex: randomColor(),
+    });
+
+    const [planData, setPlanData] = useState<StuffingPlanData | null>(null);
+
+    const totalVolume = useMemo(
+        () => items.reduce((sum, item) => sum + (item.length_mm * item.width_mm * item.height_mm * item.quantity) / 1_000_000_000, 0),
+        [items]
+    );
+
+    const totalWeight = useMemo(
+        () => items.reduce((sum, item) => sum + item.weight_kg * item.quantity, 0),
+        [items]
+    );
+
+    const canAdd = form.label.trim() && form.quantity > 0 && form.length_mm > 0 && form.width_mm > 0 && form.height_mm > 0;
+
+    const handleAdd = () => {
+        if (!canAdd) return;
+        setItems([...items, { ...form }]);
+        setForm({ ...form, label: "", quantity: 1, length_mm: 0, width_mm: 0, height_mm: 0, weight_kg: 0, color_hex: randomColor() });
+    };
+
+    const handleRemove = (index: number) => {
+        setItems(items.filter((_, i) => i !== index));
+    };
+
+    const handleCalculate = () => {
+        if (items.length === 0) return;
+        const data = buildPlanData(items, container);
+        setPlanData(data);
+    };
+
+    return (
+        <main className="min-h-screen bg-zinc-50">
+            <header className="border-b bg-white">
+                <div className="container mx-auto px-4 py-4">
+                    <h1 className="text-2xl font-bold">Load & Stuffing Calculator</h1>
+                    <p className="text-sm text-zinc-600">3D Container Packing Visualization</p>
+                </div>
+            </header>
+
+            <div className="container mx-auto px-4 py-6">
+                <div className="grid gap-6 lg:grid-cols-12">
+                    {/* Left Panel: Inputs */}
+                    <div className="lg:col-span-5 space-y-6">
+                        {/* Container Settings */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Container</CardTitle>
+                                <CardDescription>Enter container dimensions (mm)</CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs font-medium text-zinc-500">Length</label>
+                                    <Input
+                                        type="number"
+                                        value={container.length_mm}
+                                        onChange={(e) => setContainer({ ...container, length_mm: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-zinc-500">Width</label>
+                                    <Input
+                                        type="number"
+                                        value={container.width_mm}
+                                        onChange={(e) => setContainer({ ...container, width_mm: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-zinc-500">Height</label>
+                                    <Input
+                                        type="number"
+                                        value={container.height_mm}
+                                        onChange={(e) => setContainer({ ...container, height_mm: Number(e.target.value) })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-medium text-zinc-500">Max Weight (kg)</label>
+                                    <Input
+                                        type="number"
+                                        value={container.max_weight_kg}
+                                        onChange={(e) => setContainer({ ...container, max_weight_kg: Number(e.target.value) })}
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Add Item Form */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Add Item</CardTitle>
+                                <CardDescription>Enter item dimensions (mm) and weight (kg)</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-medium text-zinc-500">Label</label>
+                                        <Input
+                                            placeholder="e.g. Carton Box"
+                                            value={form.label}
+                                            onChange={(e) => setForm({ ...form, label: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-500">Quantity</label>
+                                        <Input
+                                            type="number"
+                                            value={form.quantity}
+                                            onChange={(e) => setForm({ ...form, quantity: Math.max(1, Number(e.target.value)) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-500">Weight (kg)</label>
+                                        <Input
+                                            type="number"
+                                            value={form.weight_kg || ""}
+                                            onChange={(e) => setForm({ ...form, weight_kg: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-500">Length (mm)</label>
+                                        <Input
+                                            type="number"
+                                            value={form.length_mm || ""}
+                                            onChange={(e) => setForm({ ...form, length_mm: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-500">Width (mm)</label>
+                                        <Input
+                                            type="number"
+                                            value={form.width_mm || ""}
+                                            onChange={(e) => setForm({ ...form, width_mm: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-500">Height (mm)</label>
+                                        <Input
+                                            type="number"
+                                            value={form.height_mm || ""}
+                                            onChange={(e) => setForm({ ...form, height_mm: Number(e.target.value) })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-zinc-500">Color</label>
+                                        <Input
+                                            type="color"
+                                            value={form.color_hex}
+                                            onChange={(e) => setForm({ ...form, color_hex: e.target.value })}
+                                            className="h-10 p-1"
+                                        />
+                                    </div>
+                                </div>
+                                <Button onClick={handleAdd} disabled={!canAdd} className="w-full">
+                                    Add Item
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        {/* Item List */}
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle className="text-base">Items</CardTitle>
+                                    <CardDescription>{items.length} items added</CardDescription>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Badge variant="outline">{totalVolume.toFixed(2)} m³</Badge>
+                                    <Badge variant="outline">{totalWeight.toFixed(1)} kg</Badge>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {items.length === 0 ? (
+                                    <p className="text-sm text-zinc-500">No items added yet.</p>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Item</TableHead>
+                                                <TableHead>Qty</TableHead>
+                                                <TableHead>Size</TableHead>
+                                                <TableHead></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {items.map((item, idx) => (
+                                                <TableRow key={idx}>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-3 h-3 rounded" style={{ backgroundColor: item.color_hex }} />
+                                                            {item.label}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>{item.quantity}</TableCell>
+                                                    <TableCell className="text-xs">{item.length_mm}×{item.width_mm}×{item.height_mm}</TableCell>
+                                                    <TableCell>
+                                                        <Button variant="ghost" size="sm" onClick={() => handleRemove(idx)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Button onClick={handleCalculate} disabled={items.length === 0} size="lg" className="w-full">
+                            Calculate Packing
+                        </Button>
+                    </div>
+
+                    {/* Right Panel: 3D Visualization */}
+                    <div className="lg:col-span-7">
+                        <Card className="h-[700px]">
+                            <CardHeader>
+                                <CardTitle className="text-base">3D Visualization</CardTitle>
+                                <CardDescription>
+                                    {planData ? `${planData.placements.length} placements` : "Add items and click Calculate"}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="h-[600px]">
+                                {planData ? (
+                                    <div className="h-full w-full rounded-lg border bg-white overflow-hidden">
+                                        <StuffingViewer data={planData} />
+                                    </div>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center border border-dashed rounded-lg bg-zinc-100">
+                                        <p className="text-zinc-500">No calculation result yet</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        </main>
+    );
+}
+```
+
+Demo page ini menyediakan:
+
+- **Container Settings** — Form untuk dimensi container (default 12m container)
+- **Add Item Form** — Input label, quantity, dimensi, berat, dan warna
+- **Item List** — Table dengan summary volume dan berat
+- **Calculate Button** — Trigger packing dan visualisasi
+- **3D Visualization** — StuffingViewer dengan animation controls
+
+Perhatikan `buildPlanData()` hanya simple greedy placement untuk demo—item ditempatkan left-to-right, front-to-back, tanpa optimisasi. Untuk production, gunakan py3dbp di backend seperti di Bab 4.
+
+---
+
+### Ringkasan
+
+Di Bab 5, kita telah membangun **sistem visualisasi 3D interaktif** untuk menampilkan hasil bin packing. Key accomplishments:
+
+1. **Project Setup** — Next.js dengan shadcn/ui dan Three.js
+2. **Manager Pattern** — Separation of concerns: Scene, Camera, Renderer, Light, Controls, Animation
+3. **Type Definitions** — Contract data antara backend dan visualizer
+4. **Container Mesh** — Wireframe rendering dengan floor platform
+5. **Item Mesh** — Solid boxes dengan rotation handling dan coordinate conversion
+6. **Animation System** — Step-by-step visibility dengan observer pattern
+7. **React Integration** — Wrapper component dengan bidirectional state sync
+8. **Demo Page** — Working example dengan dynamic import
+
+Arsitektur yang kita bangun scalable—menambahkan fitur seperti tooltips, export gambar, atau multiple containers bisa dilakukan tanpa refactoring besar.
+
+#### Struktur File Final
+
+```
+web/
+├── app/
+│   └── page.tsx
+├── components/
+│   ├── ui/           # shadcn components
+│   ├── stuffing-viewer.tsx
+│   └── animation-controls.tsx
+└── lib/
+    └── StuffingVisualizer/
+        ├── index.ts
+        ├── stuffing-visualizer.ts
+        ├── types.ts
+        ├── utils/
+        │   └── conversions.ts
+        ├── core/
+        │   ├── scene-manager.ts
+        │   ├── camera-manager.ts
+        │   ├── renderer-manager.ts
+        │   ├── light-manager.ts
+        │   ├── controls-manager.ts
+        │   └── animation-manager.ts
+        └── components/
+            ├── container-mesh.ts
+            └── item-mesh.ts
+```
+
+#### Further Reading
+
+- [Three.js Documentation](https://threejs.org/docs/) — Official documentation
+- [Discover Three.js](https://discoverthreejs.com/) — Comprehensive book
+- [Bruno Simon's Three.js Journey](https://threejs-journey.com/) — Video course
+- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/) — Declarative Three.js untuk React (alternative approach)
+
+<!-- BAB 6 STARTS HERE -->
+
+<!-- BAB 8 STARTS HERE -->
