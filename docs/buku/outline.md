@@ -37,30 +37,47 @@
 #### **Bab 5: Visualisasi 3D Interaktif dengan Three.js**
 
 * **The Goal:** Mentransformasi hasil kalkulasi menjadi panduan operasional visual yang interaktif.
-* **Technical Challenges:** *Rendering* objek 3D secara *real-time* di *browser* dan implementasi urutan pemuatan kronologis.
-* **Addressing Challenges:** Penggunaan *WebGL* via Three.js, representasi *BoxGeometry*, dan mekanisme *Step Playback* berbasis `step_number`.
-* **Technical Requirements:** Node.js, Three.js library.
+* **Technical Challenges:** *Rendering* objek 3D secara *real-time* di *browser*, transformasi koordinat antara API dan Three.js, dan implementasi urutan pemuatan kronologis.
+* **Addressing Challenges:** 
+  - Penggunaan *WebGL* via Three.js dengan *Manager Pattern* untuk separation of concerns
+  - Representasi *BoxGeometry* untuk container (wireframe) dan items (solid)
+  - Double transformation koordinat (API → Three.js coordinate system)
+  - Mekanisme *Step Playback* berbasis `step_number` dengan *Observer Pattern*
+  - React integration dengan bidirectional state sync
+* **Technical Requirements:** Node.js, Next.js, shadcn/ui, Three.js library, TypeScript.
 
-#### **Bab 6: Tantangan Sinkronisasi dan Transformasi Geometris**
+#### **Bab 6: Integrasi Full Stack**
 
-* **The Goal:** Menyelaraskan sistem koordinat yang berbeda antara mesin kalkulasi dan *rendering* visual.
-* **Technical Challenges:** Ketidaksamaan konvensi sumbu (Y-up vs Z-up) antar *library* dan pencegahan anomali barang melayang (*floating items*).
-* **Addressing Challenges:** Implementasi *double transformation* koordinat  dari *Packing Service* ke API, lalu ke format Three.js.
-* **Technical Requirements:** Pemahaman dasar aljabar linier dan sistem koordinat Kartesius.
+* **The Goal:** Menghubungkan frontend Next.js dengan backend Go API untuk membuat aplikasi yang berfungsi penuh.
+* **Technical Challenges:** Konfigurasi CORS, pengelolaan environment variables, error handling, dan state management untuk data fetching.
+* **Addressing Challenges:** 
+  - Konfigurasi API client dengan environment variables
+  - Implementasi CRUD operations (containers, items, plans) dari frontend
+  - Integrasi dengan Packing Service melalui backend API
+  - Error handling dan loading states
+  - (Optional) React Query / SWR untuk data fetching dan caching
+* **Technical Requirements:** Pemahaman REST API, fetch API, React hooks.
 
-#### **Bab 7: Evaluasi Performa dan Skalabilitas Sistem**
+#### **Bab 7: Deployment dan Produksi**
 
-* **The Goal:** Memvalidasi reliabilitas sistem melalui berbagai skenario beban kerja.
-* **Technical Challenges:** Analisis kompleksitas waktu  dan efektivitas penggunaan ruang kontainer.
-* **Addressing Challenges:** Benchmarking skenario S1-S5 (50 hingga 300 unit), analisis korelasi volume vs berat, dan pembuktian efisiensi strategi *Bigger First*.
-* **Technical Requirements:** *Testing tools*, Microsoft Excel atau Python Matplotlib untuk grafik.
+* **The Goal:** Menyiapkan sistem untuk deployment ke lingkungan produksi.
+* **Technical Challenges:** Orkestrasi multi-service, konfigurasi environment, dan build optimization.
+* **Addressing Challenges:** 
+  - Docker Compose untuk menjalankan semua services (Go API, Python Packing, PostgreSQL, Next.js)
+  - Production build configurations untuk setiap service
+  - Environment management (development vs production)
+  - Health checks dan logging
+* **Technical Requirements:** Docker, Docker Compose, dasar-dasar networking.
 
-#### **Bab 8: Integrasi IoT dan Masa Depan Pemuatan**
+#### **Bab 8: Evaluasi dan Pengembangan Lanjutan**
 
-* **The Goal:** Mengeksplorasi konektivitas sistem dengan perangkat keras untuk validasi *real-time*.
-* **Technical Challenges:** Sinkronisasi data sensor berat dengan *Load Plan* digital.
-* **Addressing Challenges:** Arsitektur integrasi sensor IoT dan rencana pengembangan optimasi dinamis.
-* **Technical Requirements:** Dasar-dasar protokol MQTT atau HTTP *request* dari perangkat IoT.
+* **The Goal:** Memvalidasi reliabilitas sistem dan mengeksplorasi pengembangan masa depan.
+* **Technical Challenges:** Analisis performa sistem dan identifikasi area pengembangan.
+* **Addressing Challenges:** 
+  - Benchmarking dengan berbagai skenario beban kerja
+  - Analisis volume utilization dan fit rate
+  - Roadmap pengembangan: multiple containers, weight distribution, IoT integration
+* **Technical Requirements:** Testing tools, analisis data dasar.
 
 ---
 
