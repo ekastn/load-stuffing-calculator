@@ -35,3 +35,31 @@ ORDER BY pl.step_number ASC;
 
 -- name: DeletePlanPlacements :exec
 DELETE FROM placements WHERE plan_id = $1;
+
+-- name: ListPlans :many
+SELECT p.*, c.name as container_name
+FROM plans p
+JOIN containers c ON p.container_id = c.id
+ORDER BY p.created_at DESC;
+
+-- name: UpdatePlan :one
+UPDATE plans SET container_id = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: DeletePlan :exec
+DELETE FROM plans WHERE id = $1;
+
+-- name: GetPlanItem :one
+SELECT pi.*, p.label, p.length_mm, p.width_mm, p.height_mm, p.weight_kg
+FROM plan_items pi
+JOIN products p ON pi.product_id = p.id
+WHERE pi.id = $1;
+
+-- name: UpdatePlanItem :one
+UPDATE plan_items SET quantity = $2
+WHERE id = $1
+RETURNING *;
+
+-- name: DeletePlanItem :exec
+DELETE FROM plan_items WHERE id = $1;

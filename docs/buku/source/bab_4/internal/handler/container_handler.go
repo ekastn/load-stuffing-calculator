@@ -105,3 +105,70 @@ func (h *ContainerHandler) List(c *gin.Context) {
 
 	response.Success(c, http.StatusOK, resp)
 }
+
+func (h *ContainerHandler) Update(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Container ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid container ID format")
+		return
+	}
+
+	var req dto.UpdateContainerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	container, err := h.svc.Update(
+		c.Request.Context(),
+		id,
+		req.Name,
+		req.LengthMm,
+		req.WidthMm,
+		req.HeightMm,
+		req.MaxWeightKg,
+	)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	resp := dto.ContainerResponse{
+		ID:          container.ID.String(),
+		Name:        container.Name,
+		LengthMm:    container.LengthMm,
+		WidthMm:     container.WidthMm,
+		HeightMm:    container.HeightMm,
+		MaxWeightKg: container.MaxWeightKg,
+	}
+
+	response.Success(c, http.StatusOK, resp)
+}
+
+func (h *ContainerHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	if idStr == "" {
+		response.Error(c, http.StatusBadRequest, "Container ID is required")
+		return
+	}
+
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid container ID format")
+		return
+	}
+
+	err = h.svc.Delete(c.Request.Context(), id)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusOK, nil)
+}

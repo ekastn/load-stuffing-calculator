@@ -28,6 +28,7 @@ type App struct {
 	router           *gin.Engine
 	db               *pgxpool.Pool
 	containerHandler *handler.ContainerHandler
+	productHandler   *handler.ProductHandler
 	planHandler      *handler.PlanHandler
 }
 
@@ -39,6 +40,11 @@ func NewApp(cfg *config.Config, db *pgxpool.Pool) *App {
 	querier := store.New(db)
 
 	// Initialize gateway untuk Packing Service
+	// Gunakan MockPackingGateway untuk demo tanpa Packing Service,
+	// atau HTTPPackingGateway untuk koneksi ke service yang sebenarnya
+	// packingGW := gateway.NewMockPackingGateway()
+
+	// Untuk production, gunakan:
 	packingGW := gateway.NewHTTPPackingGateway(
 		cfg.PackingServiceURL,
 		60*time.Second,
@@ -46,16 +52,19 @@ func NewApp(cfg *config.Config, db *pgxpool.Pool) *App {
 
 	// Service layer: business logic
 	containerSvc := service.NewContainerService(querier)
+	productSvc := service.NewProductService(querier)
 	planSvc := service.NewPlanService(querier, packingGW)
 
 	// Handler layer: HTTP request/response handling
 	containerHandler := handler.NewContainerHandler(containerSvc)
+	productHandler := handler.NewProductHandler(productSvc)
 	planHandler := handler.NewPlanHandler(planSvc)
 
 	app := &App{
 		config:           cfg,
 		db:               db,
 		containerHandler: containerHandler,
+		productHandler:   productHandler,
 		planHandler:      planHandler,
 	}
 
