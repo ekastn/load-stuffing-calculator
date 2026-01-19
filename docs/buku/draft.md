@@ -11110,6 +11110,568 @@ Untuk memperdalam pemahaman tentang teknologi yang kita gunakan di bab ini, beri
 -   **[Zustand](https://github.com/pmndrs/zustand)** — Solusi state management global yang minimalis, jika aplikasi Anda membutuhkan sharing state yang kompleks antar komponen.
 -   **[Next.js App Router Documentation](https://nextjs.org/docs/app)** — Dokumentasi resmi untuk memahami lebih dalam tentang Server Components, Layouts, dan Streaming.
 
+## Bab 7: Deployment dan Produksi
+
+Setelah menyelesaikan pengembangan aplikasi secara fungsional di bab sebelumnya, kita kini menghadapi tantangan terakhir dan mungkin yang paling krusial: bagaimana memindahkan aplikasi dari "laptop developer" ke dunia nyata (production). Realitas pengembangan perangkat lunak sering kali dihantui oleh frasa klise *"It works on my machine"*. Kode yang berjalan sempurna di lingkungan lokal bisa tiba-tiba gagal saat dijalankan di server produksi karena perbedaan versi OS, library yang hilang, atau konfigurasi network yang berbeda.
+
+Di bab ini, kita akan mentransformasi aplikasi Load Stuffing Calculator menjadi sebuah artefak yang **portable**, **reproducible**, dan **scalable**. Kita akan menggunakan pendekatan **Containerization** dengan Docker untuk membungkus setiap layanan (Go Backend, Python Packing Service, dan Next.js Frontend) menjadi unit isolasi yang mandiri.
+
+**Dalam bab ini, kita akan membahas:**
+
+-   Prinsip **12-Factor App** dan manajemen konfigurasi
+-   Pengenalan Docker dan arsitektur kontainer
+-   Optimasi Dockerfile untuk Go, Python, dan Next.js
+-   Orkestrasi multi-container dengan Docker Compose
+-   Implementasi Healthchecks dan best practices logging
+-   Pengantar strategi Deployment (CI/CD, Canary)
+
+Tujuan akhirnya adalah kemampuan untuk menjalankan seluruh ekosistem aplikasi kita—termasuk database dan migrasinya—di mesin mana pun (cloud server, laptop rekan kerja, atau CI runner) hanya dengan satu perintah: `docker-compose up`.
+
+
+
+### 7.1 Persiapan Deployment & Konfigurasi Eksternal
+
+Sebelum membungkus aplikasi ke dalam container, kita harus memastikan aplikasi kita mematuhi prinsip **The Twelve-Factor App**, khususnya terkait konfigurasi. Aplikasi tidak boleh menyimpan konfigurasi rahasia (seperti password database) di dalam kode (*hardcoded*), melainkan harus membacanya dari lingkungan (*environment variables*).
+
+#### Audit Konfigurasi Backend
+
+Pada `internal/config/config.go` di Bab 4, kita telah menyiapkan mekanisme pembacaan environment variable. Mari kita review kembali untuk memastikan semua variabel kritis sudah tercover:
+
+-   `PORT`: Port HTTP server.
+-   `DATABASE_URL`: Connection string ke PostgreSQL.
+-   `PACKING_SERVICE_URL`: Alamat layanan Python.
+-   `JWT_SECRET`: Kunci rahasia untuk signing token.
+
+
+
+Pastikan kode kita memprioritaskan environment variable dibanding nilai default.
+
+Selain variabel aplikasi, ada satu variabel lingkungan krusial untuk framework itu sendiri: **Mode Produksi**.
+-   **Go (Gin)**: Set `GIN_MODE=release`. Dalam mode debug (default), Gin akan mencatat setiap request dengan sangat detail dan melakukan pengecekan berlebihan yang memperlambat performa.
+-   **Next.js**: Secara otomatis mendeteksi `NODE_ENV=production`.
+
+Jangan lupa menyertakan variable ini di konfigurasi deployment Anda nanti.
+
+#### Konfigurasi Frontend (Next.js)
+
+Next.js memiliki perlakuan khusus untuk variabel lingkungan. Variabel yang diawali dengan `NEXT_PUBLIC_` akan di-*embed* ke dalam bundle JavaScript browser saat waktu build (*build time*), sedangkan variabel tanpa prefix tersebut hanya tersedia di server-side Node.js (*runtime*).
+
+Di `web/lib/api/client.ts`, kita menggunakan `NEXT_PUBLIC_API_BASE_URL`.
+
+```typescript
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+```
+
+Ini krusial: saat kita membangun Docker image untuk frontend, kita mungkin perlu melakukan bake-in URL API atau memastikan aplikasi bisa membacanya saat runtime. Untuk tutorial ini, kita akan menggunakan pendekatan **standalone output** Next.js yang lebih efisien untuk Docker.
+
+Pastikan `web/next.config.ts` Anda memiliki konfigurasi `output: "standalone"`:
+
+```typescript
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  output: "standalone",
+};
+
+export default nextConfig;
+```
+
+Mode `standalone` ini akan memberitahu Next.js untuk hanya menyalin file-file yang benar-benar diperlukan untuk produksi ke folder `.next/standalone`.
+
+**Mengapa ini penting?**
+Secara default, aplikasi Node.js membutuhkan seluruh folder `node_modules` untuk berjalan. Folder ini bisa berisi ribuan file development (seperti TypeScript compiler, ESLint) yang tidak berguna di production, membengkakkan ukuran image hingga 1GB+. Dengan mode standalone, Next.js melakukan "tracing" pada kode kita: ia mendeteksi file mana saja yang sebenarnya di-import dan hanya menyalin file-file tersebut. Hasilnya? Image Docker yang tadinya 1GB bisa turun drastis menjadi ~100MB.
+
+
+
+### 7.2 Pengenalan Docker & Containerization
+
+Sebelum kita terjun ke kode, mari kita samakan pemahaman tentang apa itu Docker dan mengapa ia menjadi standar industri.
+
+Dalam pengembangan tradisional, kita sering menginstal runtime (Python, Node.js, Go) langsung di OS laptop kita. Versi di laptop mungkin `Python 3.11.0`, sementara di server `Python 3.11.9`. Perbedaan minor ini sering menyebabkan bug yang sulit dilacak—fenomena yang dikenal sebagai *"It works on my machine"*.
+
+Docker menyelesaikan masalah inkonsistensi ini dengan **Standarisasi**. Sama seperti kontainer pengiriman (shipping container) yang memungkinkan barang apa saja diangkut oleh moda apa saja karena ukurannya standar, Docker Container memungkinkan software apa saja dijalankan di server mana saja dengan jaminan perilaku yang sama persis.
+
+Efisiensi arsitektur inilah yang menjadi pembeda utama Docker. Jika Virtual Machine (VM) bekerja dengan memvirtualisasi *hardware*, maka Container bekerja dengan memvirtualisasi *Sistem Operasi*.
+
+```mermaid
+flowchart TD
+    subgraph VM [Virtual Machine]
+        App1[App A] --- Libs1[Libs/Bin] --- OS1[Guest OS]
+        App2[App B] --- Libs2[Libs/Bin] --- OS2[Guest OS]
+        OS1 --- Hypervisor
+        OS2 --- Hypervisor
+        Hypervisor --- HostOS[Host OS] --- Server
+    end
+
+    subgraph Docker [Docker Container]
+        C1[App A] --- L1[Libs/Bin]
+        C2[App B] --- L2[Libs/Bin]
+        L1 --- Engine[Docker Engine]
+        L2 --- Engine
+        Engine --- HostOS2[Host OS] --- Server2[Server]
+    end
+```
+
+Aplikasi dalam container hanya membawa library yang diperlukannya saja dan berbagi Kernel OS yang sama dengan host. Pendekatan ini membuat container sangat ringan (MBs) dan cepat untuk dinyalakan (detik), berbeda jauh dengan VM yang berat (GBs) karena harus memuat satu OS penuh untuk setiap aplikasi.
+
+#### Konsep Kunci Docker
+
+Agar bisa menggunakan Docker dengan efektif, kita perlu memahami tiga komponen utamanya:
+
+1.  **Dockerfile (Resep)**: File teks berisi instruksi langkah-demi-langkah untuk membangun image. Contoh: "Ambil Python, copy file saya, install dependencies, buka port 5000".
+2.  **Image (Cetakan/Blueprint)**: Hasil build dari Dockerfile. Image bersifat *Immutable* (tidak bisa diubah). Jika Anda ingin mengubah kode, Anda mem-build image baru. Pikirkan ini sebagai "Snapshot" aplikasi Anda.
+3.  **Container (Rumah)**: Instance hidup dari Image. Container adalah lingkungan yang bisa ditulisi (*writable*), berjalan, dan sementara (*ephemeral*). Anda bisa menjalankan 100 container dari 1 image yang sama.
+
+#### Alur Kerja (Workflow)
+
+Siklus hidup pengembangan dengan Docker biasanya mengikuti pola ini:
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Dockerfile as Dockerfile
+    participant Engine as Docker Engine
+    participant Reg as Registry (Hub)
+    participant Server as Production Server
+
+    Dev->>Dockerfile: 1. Write Code & Instructions
+    Dev->>Engine: 2. docker build
+    Engine-->>Dev: Creates "Image"
+    Dev->>Reg: 3. docker push
+    Note over Reg: Image stored safely
+    Server->>Reg: 4. docker pull
+    Server->>Engine: 5. docker run
+    Engine-->>Server: Starts "Container"
+```
+
+#### Mengapa untuk Project Ini?
+
+Dalam konteks aplikasi Load Stuffing Calculator, Docker adalah penyelamat:
+
+-   **Polyglot Freedom**: Kita tidak perlu pusing memikirkan cara menginstall Go, Python, dan Node.js di satu server yang sama. Setiap service hidup di "dunia"-nya sendiri (Containernya sendiri) dengan versi runtime yang tepat.
+-   **Isolation**: Jika Python service crash atau memakan memori berlebih, ia tidak akan mematikan Backend Go atau Database.
+-   **Consistent Environment**: Apa yang Anda jalankan di laptop `docker-compose up` dijamin sama persis bit-by-bit dengan yang berjalan di server Google Cloud atau AWS nantinya.
+
+
+
+
+### 7.3 Dockerizing Aplikasi
+
+Langkah pertama dalam proses kontainerisasi adalah membuat "resep" pembuatan image untuk setiap layanan, yang ditulis dalam file bernama `Dockerfile`. Kita akan menyimpan file-file ini di folder `build/` agar struktur project tetap rapi.
+
+Mari kita mulai dari jantung aplikasi kita: **Backend API (Go)**. Untuk layanan ini, kita akan menggunakan teknik **Multi-stage Build** yang brilian. Idenya sederhana namun powerful: kita menggunakan image raksasa (`golang:alpine` ~300MB) hanya untuk mengkompilasi kode, lalu membuang image tersebut dan hanya mengambil hasil kompilasi binernya untuk dimasukkan ke image akhir yang super kecil (`alpine` ~5MB).
+
+Buat file `build/backend.Dockerfile`:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+
+# Stage 1: Build
+FROM golang:1.25-alpine AS build
+
+WORKDIR /src
+
+# Download dependencies first (caching layer)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code and build
+COPY . .
+# -buildvcs=false sering dibutuhkan di CI/Docker jika .git folder tidak ikut dicopy
+RUN CGO_ENABLED=0 GOOS=linux go build -buildvcs=false -o /out/api ./cmd/api
+
+# Stage 2: Runtime
+FROM alpine:3.20
+
+# Install CA certificates (penting untuk HTTPS request dan connect ke DB secure)
+RUN apk add --no-cache ca-certificates \
+    && adduser -D -h /app app
+
+# Copy binary dari stage build
+COPY --from=build /out/api /usr/local/bin/api
+
+# Security: Jalankan sebagai non-root user
+USER app
+WORKDIR /app
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/api"]
+```
+
+**Bedah Anatomi Dockerfile:**
+Keputusan desain di atas didasari alasan kuat: `CGO_ENABLED=0` menghasilkan binary statis yang tidak bergantung library OS apapun, memungkinkan kita menggunakan image `alpine` yang minimalis. Penggunaan `USER app` juga krusial untuk keamanan; jika container diretas, penyerang tidak langsung mendapatkan akses root. Dengan teknik ini, ukuran image akhir kita hanya akan sekitar **10-15 MB**, sangat efisien untuk distribusi.
+
+Selanjutnya, kita beralih ke **Packing Service (Python)**. Berbeda dengan Go yang menghasilkan binary statis, Python membutuhkan runtime interpreter. Di sini kita memilih base image `python:3.11-slim` alih-alih Alpine. Mengapa? Karena library sains data seperti NumPy atau Pandas sering bermasalah dengan `musl-libc` milik Alpine, yang bisa memaksa kita melakukan kompilasi dari source code yang lambat. Debian Slim memberikan keseimbangan terbaik antara ukuran dan kompatibilitas.
+
+Buat file `build/packing.Dockerfile`:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Optimasi Python untuk Docker
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+# Security: Buat user non-root
+RUN useradd -m -r app
+
+# Install dependencies
+COPY cmd/packing/requirements.txt /app/cmd/packing/requirements.txt
+RUN pip install --no-cache-dir -r /app/cmd/packing/requirements.txt
+
+# Copy source code
+COPY cmd/ /app/cmd/
+
+# Berikan ownership file ke user app
+RUN chown -R app:app /app
+
+# Switch ke user app
+USER app
+
+EXPOSE 5051
+
+# Jalankan menggunakan Gunicorn (Production WSGI Server), bukan Flask dev server
+CMD ["gunicorn", "--workers", "2", "--threads", "4", "--timeout", "60", "--worker-class", "gthread", "--bind", "0.0.0.0:5051", "cmd.packing.app:create_app()"]
+```
+
+Terakhir, untuk **Frontend (Next.js)**, tantangan utamanya adalah ukuran `node_modules` yang masif. Kita mengatasinya dengan strategi **3-Stage Build** yang agresif.
+
+Buat file `build/frontend.Dockerfile`:
+
+```dockerfile
+# Stage 1: Install dependencies
+FROM node:20-alpine AS deps
+WORKDIR /app
+RUN corepack enable
+COPY web/package.json web/pnpm-lock.yaml ./web/
+RUN pnpm -C web install --frozen-lockfile
+
+# Stage 2: Build the application
+FROM node:20-alpine AS build
+WORKDIR /app
+RUN corepack enable
+COPY --from=deps /app/web/node_modules ./web/node_modules
+COPY web ./web
+
+# Build arguments untuk Environment Variabel (Next.js butuh ini saat build time)
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+
+RUN pnpm -C web build
+
+# Stage 3: Production Server (Standalone)
+FROM node:20-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+# Security: Buat user khusus nextjs
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy hasil build standalone
+# Folder .next/standalone ini berisi server minimal Node.js
+COPY --from=build --chown=nextjs:nodejs /app/web/.next/standalone ./
+# Copy static assets (gambar, css, js chunks)
+COPY --from=build --chown=nextjs:nodejs /app/web/.next/static ./web/.next/static
+COPY --from=build --chown=nextjs:nodejs /app/web/public ./web/public
+
+USER nextjs
+
+EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "web/server.js"]
+```
+
+Dockerfile frontend ini memiliki alur yang unik:
+1.  **Stage `deps`**: Fokus meng-cache `node_modules`. Jika `package.json` tidak berubah, Docker akan melewati installasi ini.
+2.  **Stage `build`**: Mengkompilasi TypeScript dan menyuntikkan `NEXT_PUBLIC_API_BASE_URL`.
+3.  **Stage `runner`**: Hanya mengambil folder `.next/standalone` results. Hasilnya adalah image yang bersih dari tool development (seperti ESLint atau TS Compiler), mereduksi ukuran dari ~1GB menjadi ~100MB.
+
+Satu hal kecil namun vital yang sering terlupakan: **`.dockerignore`**.
+
+File ini bekerja persis seperti `.gitignore`. Kita tidak ingin menyalin folder `.git`, file log lokal, atau `node_modules` lokal ke dalam Docker context. Mengirim file sampah ini ke Docker Daemon akan memperlambat build dan berpotensi membocorkan rahasia.
+
+Buat file `.dockerignore` di root project:
+
+```text
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose.yml
+Dockerfile*
+build/
+
+# Node
+node_modules
+npm-debug.log
+.next
+
+# Python
+__pycache__
+*.pyc
+venv
+.env
+```
+
+
+
+### 7.4 Orkestrasi dengan Docker Compose
+
+Membangun container satu per satu adalah langkah awal yang baik, tetapi dalam arsitektur microservices, tantangan sebenarnya adalah **Koordinasi**.
+
+Kita memiliki 4 komponen bergerak: Backend (Go), Packing Service (Python), Frontend (Next.js), dan Database (Postgres). Bayangkan kerumitan jika harus menyalakannya secara manual:
+1.  Start Database... tunggu sampai ready.
+2.  Start Backend... pastikan connect ke IP Database yang benar.
+3.  Start Frontend... pastikan connect ke API.
+4.  Dan jangan lupa mengaitkan mereka dalam satu network virtual agar bisa saling bicara.
+
+Inilah mengapa kita membutuhkan **Orkestrator**.
+
+#### Filosofi Docker Compose
+Docker Compose adalah tool untuk mendefinisikan dan menjalankan aplikasi multi-container Docker. Jika `Dockerfile` adalah resep untuk membuat satu kue, maka `docker-compose.yml` adalah menu lengkap untuk satu pesta makan malam. Ia menerapkan prinsip **Infrastructure as Code**: seluruh konfigurasi infrastruktur aplikasi Anda tertulis dalam satu file teks yang bisa dipahami manusia dan dilacak oleh Git.
+
+Ada 3 pilar utama dalam Compose yang perlu Anda pahami:
+1.  **Services**: Komponen aplikasi Anda (web, api, db).
+2.  **Networks**: Jalur komunikasi antar service. Compose secara default membuat satu jaringan terisolasi untuk aplikasi Anda.
+3.  **Volumes**: Mekanisme penyimpanan data persisten, terpisah dari container yang fana (ephemeral).
+
+Mari kita terjemahkan arsitektur sistem kita ke dalam dokumen `docker-compose.yml` di root project:
+
+
+
+```yaml
+services:
+  # 1. Database Service
+  db:
+    image: postgres:14-alpine
+    container_name: stuffing-db
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-stuffing}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
+    ports:
+      - "${POSTGRES_EXPOSE_PORT:-5432}:5432"
+    volumes:
+      # Data Persistence: Agar data tidak hilang saat container mati
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Memastikan DB benar-benar siap menerima koneksi
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stuffing-net
+
+  # 2. Database Migration Job
+  migrate:
+    image: ghcr.io/pressly/goose:latest
+    container_name: stuffing-migrate
+    environment:
+      GOOSE_DRIVER: "${GOOSE_DRIVER:-postgres}"
+      GOOSE_DBSTRING: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-stuffing}?sslmode=disable"
+    volumes:
+      - ./cmd/db/migrations:/migrations:ro
+    command: ["-dir=/migrations", "up"]
+    depends_on:
+      # Tunggu sampai DB sehat (healthy), bukan sekadar running
+      db:
+        condition: service_healthy
+    networks:
+      - stuffing-net
+    restart: "no" # Container ini akan mati setelah migrasi selesai
+
+  # 3. Python Packing Service
+  packing:
+    build:
+      context: .
+      dockerfile: build/packing.Dockerfile
+    container_name: stuffing-packing
+    networks:
+      - stuffing-net
+
+  # 4. Go Backend API
+  api:
+    build:
+      context: .
+      dockerfile: build/backend.Dockerfile
+    container_name: stuffing-api
+    environment:
+      SRV_ADDR: ":8080"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-stuffing}?sslmode=disable"
+      # Menggunakan nama service 'packing' sebagai hostname
+      PACKING_SERVICE_URL: "http://packing:5051"
+    ports:
+      - "${API_EXPOSE_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      packing:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - stuffing-net
+
+  # 5. Next.js Frontend
+  web:
+    build:
+      context: .
+      dockerfile: build/frontend.Dockerfile
+      args:
+        # Perhatikan: In browser call akan tetap akses localhost host machine
+        NEXT_PUBLIC_API_BASE_URL: "http://localhost:${API_EXPOSE_PORT:-8080}/api/v1"
+    container_name: stuffing-web
+    ports:
+      - "${WEB_EXPOSE_PORT:-3000}:3000"
+    depends_on:
+      - api
+    networks:
+      - stuffing-net
+
+volumes:
+  pgdata:
+
+networks:
+  stuffing-net:
+    driver: bridge
+```
+
+
+File `docker-compose.yml` ini bertindak sebagai "konduktor" bagi orkestra aplikasi kita. Di dalamnya, kita mendefinisikan empat layanan utama (`db`, `api`, `packing`, `web`) yang bekerja secara harmonis.
+
+Kunci dari orkestrasi ini terletak pada pengaturan ketergantungan dan komunikasi. Dengan direktif `depends_on`, kita mengatur urutan start yang disiplin: container `api` akan sabar menunggu hingga database benar-benar sehat (*service_healthy*) sebelum mencoba memulai prosesnya sendiri. Hal ini mencegah error "connection refused" yang sering terjadi saat aplikasi start lebih cepat daripada databasenya.
+
+Seluruh container ini hidup dalam satu jaringan virtual bernama `stuffing-net`. Di dalam dunia privat ini, mereka bisa saling memanggil menggunakan nama service sebagai hostname—API cukup memanggil `http://packing:5051` tanpa perlu tahu IP address dinamis yang diberikan Docker. Terakhir, agar data bisnis kita tidak lenyap saat container dimatikan, kita mengikat "hard drive" virtual melalui `volumes` (`pgdata`), memastikan persistensi data database tetap aman di host machine kita.
+
+Namun, perlu diingat bahwa untuk **Frontend (web)**, konfigurasi `NEXT_PUBLIC_API_BASE_URL` tetap harus mengarah ke `localhost` (atau domain public nantinya). Ini karena kode frontend pada akhirnya berjalan di **browser pengguna**, bukan di dalam jaringan Docker. Browser tidak memiliki akses ke jaringan internal `stuffing-net`, sehingga ia harus mengakses API melalui pintu depan (port yang di-expose ke host).
+
+#### Konfigurasi Resource Limits
+
+Di lingkungan produksi yang berbagi resource (seperti Kubernetes atau VPS kecil), kita wajib membatasi "nafsu makan" container. Tanpa batasan, satu container yang bocor memory (memory leak) bisa memakan 100% RAM server dan membunuh container lain.
+
+Tambahkan konfigurasi `deploy` pada `docker-compose.yml`:
+
+```yaml
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+```
+
+Ini memastikan container API kita tidak akan pernah menggunakan lebih dari setengah core CPU dan 512MB RAM.
+
+**Apa yang terjadi jika limit ditembus?**
+-   **Memory**: Jika aplikasi Go mencoba mengalokasikan RAM > 512MB, Kernel Linux akan melakukan **OOM Kill** (Out of Memory Kill), mematikan container secara paksa. Ini lebih baik daripada aplikasi memakan seluruh RAM server dan membuat OS hang.
+-   **CPU**: Jika penggunaan CPU > 50%, container tidak akan dimatikan, melainkan mengalami **Throttling** (diperlambat) oleh CPU Scheduler. Aplikasi tetap jalan, tapi lebih lambat.
+
+Dengan konfigurasi Docker Compose di atas, Anda kini bisa menyalakan seluruh stack aplikasi Load Stuffing Calculator dengan satu perintah sakti:
+
+```bash
+docker-compose up --build
+```
+
+Aplikasi Anda kini siap melayani traffic, terisolasi dengan aman, dan mudah direplikasi di mana saja.
+
+### 7.5 Deployment Best Practices: CI/CD & Strategi Rilis
+
+Setelah aplikasi kita terbungkus rapi dalam Docker, tantangan berikutnya adalah bagaimana mengirimkan perubahan kode ke server produksi dengan aman, cepat, dan otomatis.
+
+#### 1. Continuous Integration / Continuous Deployment (CI/CD)
+
+CI/CD adalah jantung dari modern software engineering. Ini mengubah proses deployment manual yang *error-prone* menjadi pipeline otomatis yang terstandarisasi.
+
+**Continuous Integration (CI): "Integrasi sesering mungkin"**
+
+Setiap kali developer melakukan `git push`, server CI (GitHub Actions, GitLab CI) bertindak sebagai penjaga gerbang otomatis. Mengapa kita butuh penjaga ini? Karena manusia sering lalai. Server CI bertugas memvalidasi kode sebelum kode itu sempat menyentuh server produksi yang suci.
+
+Proses validasi ini bukanlah satu langkah tunggal, melainkan sebuah perjalanan melalui serangkaian pos pemeriksaan ketat yang dirancang untuk menangkap berbagai jenis kesalahan. Perjalanan dimulai dari **Linter Check**, sebuah proses disiplin untuk memastikan gaya penulisan kode seragam dan rapi, mencegah perdebatan sepele tentang format saat code review. Selanjutnya, kode harus melewati ujian **Unit Testing**, di mana ribuan skenario tes dijalankan dalam hitungan detik untuk memastikan logika bisnis tidak rusak. Tak berhenti di situ, pipeline akan melanjutkan ke **Security Audit** untuk memindai penggunaan library pihak ketiga yang mungkin memiliki celah keamanan (CVE), melindungi kita dari serangan supply chain. Puncaknya adalah tahap **Docker Build**, simulasi pembungkusan aplikasi menjadi image; jika tahap ini gagal, itu adalah sinyal merah bahwa aplikasi tidak siap rilis. Jika satu saja dari pos ini gagal, seluruh pipeline akan dibatalkan, mencegah kode "busuk" mencemari repositori utama.
+
+Berikut contoh pipeline GitHub Actions untuk aplikasi Go kita:
+
+```yaml
+name: Production Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Unit Test
+        run: go test -v ./...
+        
+      - name: Build Docker Image
+        run: docker build -t myapp:latest .
+        
+      - name: Vulnerability Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'myapp:latest'
+```
+
+**Continuous Deployment (CD): "Rilis otomatis"**
+
+Jika (dan hanya jika) seluruh pos pemeriksaan CI berhasil dilewati ("lampu hijau"), CD mengambil alih tongkat estafet. Tujuannya adalah menghilangkan intervensi manual yang lambat dan berisiko. CD secara otomatis mengirimkan Docker Image yang telah tervalidasi ke Registry privat, membuat koneksi aman via SSH ke server produksi, dan memerintahkan orkestrator untuk menarik image baru tersebut. Dengan ini, developer bisa merilis fitur baru ke user dalam hitungan menit, bukan hari.
+
+#### 2. Strategi Rolling Update (Mencegah Downtime)
+
+Salah satu dosa besar dalam deployment modern adalah **Downtime**. Di era digital, user tidak menoleransi halaman "Under Maintenance" hanya karena kita sedang mengupdate fitur di belakang layar. Untuk itulah kita menggunakan strategi **Rolling Update**.
+
+Apa itu Rolling Update? Bayangkan Anda harus mengganti ban mobil yang sedang melaju di jalan tol. Anda tidak mungkin menghentikan mobilnya. Solusinya adalah mengganti ban satu per satu secara bertahap. Dalam konteks server, alih-alih mematikan semua container versi lama (`v1`) sekaligus—yang pasti akan memutus koneksi semua user—sistem akan menyalakan satu container versi baru (`v2`) di samping yang lama. Sistem akan menunggu dengan sabar hingga `v2` mengirim sinyal "Healthy". Setelah terkonfirmasi sehat, Load Balancer mulai mengarahkan sebagian traffic ke `v2`, dan barulah satu container lama (`v1`) dipensiunkan dengan aman. Proses ini berulang secara siklis hingga seluruh armada tergantikan oleh versi baru. Hasil akhirnya adalah transisi yang mulus: user tidak pernah menyadari bahwa di balik layar, mesin aplikasi telah berganti sepenuhnya.
+
+**Implikasi Teknis:**
+Namun, kenyamanan ini datang dengan harga. Selama proses update berlangsung (yang bisa memakan waktu beberapa menit), sistem berada dalam kondisi **Hybrid State** atau "kepribadian ganda". User A mungkin dilayani versi lama, sementara User B dilayani versi baru. Oleh karena itu, aturan emasnya adalah: skema database dan API contract harus selalu **Backward Compatible**. Anda tidak boleh menghapus kolom database yang masih dipakai oleh kode versi lama yang sedang berjalan, atau aplikasi Anda akan crash di tengah jalan.
+
+#### 3. Canary Deployment (Manajemen Risiko)
+
+Untuk sistem yang sangat kritis, sukses testing di CI tidak menjamin sukses di produksi. Data user yang aneh atau lonjakan trafik nyata bisa memicu bug tersembunyi yang tidak terdeteksi di lab testing. Bagaimana kita memitigasi risiko "ledakan" ini?
+
+Jawabannya adalah **Canary Deployment**, sebuah strategi yang mengadopsi taktik penambang batubara masa lalu. Dulu, penambang membawa burung kenari ke dalam terowongan untuk mendeteksi gas beracun yang tak kasat mata; jika burung itu pingsan, penambang tahu mereka harus segera keluar. Dalam software engineering, kita merilis versi baru (`v2`) hanya kepada sebagian kecil pengguna "pemberani"—misalnya 5% traffic saja. Sisa 95% pengguna masih tetap aman bekerja di versi stabil (`v1`).
+
+Kita kemudian memonitor "kesehatan" dari kelompok 5% tersebut dengan mikroskopis. Apakah error rate naik? Apakah latency melambat? Jika ada anomali, sistem akan otomatis melakukan **Rollback** instan (menghapus `v2`) sebelum dampak kerusakan meluas ke seluruh user. Sebaliknya, jika "burung kenari" tetap hidup dan sehat selama periode pemantauan (misal 1 jam), barulah kita dengan percaya diri mempromosikan update tersebut ke 100% pengguna. Ini adalah bentuk asuransi tertinggi dalam deployment: mengubah rilis software dari perjudian besar menjadi eksperimen terkontrol yang aman.
+
+
+
+
+
+
+### 7.6 Rangkuman
+
+Bab ini telah membawa kita dari sekadar "menulis kode" menuju "menjalankan sistem". Kita telah memetakan perjalanan aplikasi dari laptop developer hingga siap melayani trafik dunia nyata.
+
+Poin-poin kunci yang telah kita pelajari:
+1.  **Kontainerisasi adalah Kunci Konsistensi**: Dengan Dockerfile, kita membekukan *environment* aplikasi (Go, Python, Node.js) sehingga ia kebal terhadap masalah "Works on My Machine".
+2.  **Orkestrasi Sederhana**: Docker Compose memungkinkan kita mendefinisikan arsitektur sistem yang kompleks (4 service + database + network + volume) dalam satu file YAML yang mudah dibaca.
+3.  **Kesiapan Produksi**: Aplikasi yang berjalan tidak cukup; ia harus bertahan hidup. Kita menambahkan Resource Limits untuk mencegah crash server, Healthchecks untuk *self-healing*, dan manajemen konfigurasi aman via `.env`.
+4.  **Otomatisasi & Strategi Rilis**: Kita menolak cara manual. CI/CD pipeline memastikan setiap baris kode teruji otomatis, sementara strategi Rolling Update menjamin pengguna tidak pernah merasakan gangguan layanan saat upgrade terjadi.
+
+### 7.7 Bacaan Lanjutan
+
+Untuk memperdalam pemahaman Anda tentang topik DevOps dan Deployment, berikut referensi yang sangat disarankan:
+
+*   **The Twelve-Factor App** ([12factor.net](https://12factor.net/)): Kitab suci pengembangan aplikasi modern (SaaS). Bab ini banyak mengadopsi prinsip ini (terutama tentang Config, Backing Services, dan Disposability).
+*   **Docker Production Best Practices** ([docs.docker.com](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)): Panduan resmi untuk menulis Dockerfile yang efisien dan aman.
+*   **GitHub Actions Documentation** ([docs.github.com](https://docs.github.com/en/actions)): Pelajari lebih lanjut tentang syntax workflow untuk membuat pipeline CI/CD yang lebih canggih.
+*   **Kubernetes Basics** ([kubernetes.io](https://kubernetes.io/docs/tutorials/kubernetes-basics/)): Langkah logis berikutnya setelah Docker Compose. Jika aplikasi Anda tumbuh dari 1 server menjadi 100 server, Kubernetes adalah jawabannya.
+
+
 
 
 
