@@ -242,12 +242,12 @@ ORDER BY p.created_at DESC
 `
 
 type ListPlansRow struct {
-	ID            uuid.UUID `json:"id"`
-	ContainerID   uuid.UUID `json:"container_id"`
-	Status        string    `json:"status"`
-	CreatedAt     time.Time `json:"created_at"`
-	CalculatedAt  time.Time `json:"calculated_at"`
-	ContainerName string    `json:"container_name"`
+	ID            uuid.UUID  `json:"id"`
+	ContainerID   uuid.UUID  `json:"container_id"`
+	Status        string     `json:"status"`
+	CreatedAt     *time.Time `json:"created_at"`
+	CalculatedAt  *time.Time `json:"calculated_at"`
+	ContainerName string     `json:"container_name"`
 }
 
 func (q *Queries) ListPlans(ctx context.Context) ([]ListPlansRow, error) {
