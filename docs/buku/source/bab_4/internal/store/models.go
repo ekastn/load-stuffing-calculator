@@ -11,13 +11,13 @@ import (
 )
 
 type Container struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	LengthMm    float64   `json:"length_mm"`
-	WidthMm     float64   `json:"width_mm"`
-	HeightMm    float64   `json:"height_mm"`
-	MaxWeightKg float64   `json:"max_weight_kg"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name"`
+	LengthMm    float64    `json:"length_mm"`
+	WidthMm     float64    `json:"width_mm"`
+	HeightMm    float64    `json:"height_mm"`
+	MaxWeightKg float64    `json:"max_weight_kg"`
+	CreatedAt   *time.Time `json:"created_at"`
 }
 
 type Placement struct {
@@ -32,11 +32,11 @@ type Placement struct {
 }
 
 type Plan struct {
-	ID           uuid.UUID `json:"id"`
-	ContainerID  uuid.UUID `json:"container_id"`
-	Status       string    `json:"status"`
-	CreatedAt    time.Time `json:"created_at"`
-	CalculatedAt time.Time `json:"calculated_at"`
+	ID           uuid.UUID  `json:"id"`
+	ContainerID  uuid.UUID  `json:"container_id"`
+	Status       string     `json:"status"`
+	CreatedAt    *time.Time `json:"created_at"`
+	CalculatedAt *time.Time `json:"calculated_at"`
 }
 
 type PlanItem struct {
@@ -47,12 +47,12 @@ type PlanItem struct {
 }
 
 type Product struct {
-	ID        uuid.UUID `json:"id"`
-	Label     string    `json:"label"`
-	Sku       string    `json:"sku"`
-	LengthMm  float64   `json:"length_mm"`
-	WidthMm   float64   `json:"width_mm"`
-	HeightMm  float64   `json:"height_mm"`
-	WeightKg  float64   `json:"weight_kg"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID  `json:"id"`
+	Label     string     `json:"label"`
+	Sku       string     `json:"sku"`
+	LengthMm  float64    `json:"length_mm"`
+	WidthMm   float64    `json:"width_mm"`
+	HeightMm  float64    `json:"height_mm"`
+	WeightKg  float64    `json:"weight_kg"`
+	CreatedAt *time.Time `json:"created_at"`
 }

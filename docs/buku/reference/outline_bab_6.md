@@ -24,9 +24,11 @@ Menghubungkan frontend Next.js dengan backend Go API untuk membuat aplikasi yang
 - Preview hasil akhir: Full working application
 
 **Technical Requirements:**
-- Backend API running di localhost:8080
-- Packing Service running di localhost:5000
-- PostgreSQL database dengan data
+- Go 1.21+
+- Node.js 18+ & pnpm
+- Python 3.10+
+- PostgreSQL 15+
+- Web Browser (Chrome/Edge/Firefox)
 
 ---
 
@@ -39,7 +41,8 @@ Menghubungkan frontend Next.js dengan backend Go API untuk membuat aplikasi yang
   - Allowed methods (GET, POST, PUT, DELETE, OPTIONS)
   - Allowed headers (Content-Type, Authorization)
 - Preflight requests (OPTIONS)
-- Environment-based configuration (dev vs production)
+- Environment-based configuration using `CORS_ALLOWED_ORIGINS` (comma separated)
+
 
 **Files:**
 - `backend/internal/api/cors.go` (baru)
@@ -91,10 +94,13 @@ Menghubungkan frontend Next.js dengan backend Go API untuk membuat aplikasi yang
   - `DELETE /api/containers/:id` - delete
 - React hooks atau functions untuk data fetching
 - Loading dan error states
-- Form untuk create/edit container
+- Form untuk create/edit container (Client Component with `"use client"`)
+- List untuk menampilkan containers (Client Component)
+- **Note**: Next.js App Router uses Server Components by default; interactive components require `"use client"`.
 
 **Files:**
 - `web/lib/api/containers.ts` (baru)
+
 - `web/components/container-form.tsx` (baru)
 - `web/components/container-list.tsx` (baru)
 
@@ -192,12 +198,13 @@ Menghubungkan frontend Next.js dengan backend Go API untuk membuat aplikasi yang
 
 - Multi-page application structure
 - Navigation:
-  - Dashboard / Home
-  - Containers management
-  - Products/Items management
-  - Plans list dan detail
-- Shared layout dengan sidebar atau navbar
-- shadcn/ui: NavigationMenu, Breadcrumb
+  - Header Title navigates to Dashboard
+  - Top Tabs: Containers, Products, Plans
+- Centered Layout Design:
+  - Top Navigation with centered Title and clean Tabs
+  - Centered Page Headers and Content
+- shadcn/ui: Card, Button, Input
+
 
 **Files:**
 - `web/app/layout.tsx` (update)
