@@ -1,0 +1,5 @@
+# Packing Service Dependencies
+flask>=3.0.0
+gunicorn>=21.0.0
+numpy==2.4.0
+matplotlib==3.10.8
