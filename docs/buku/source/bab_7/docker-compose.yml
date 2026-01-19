@@ -1,0 +1,112 @@
+services:
+  # 1. Database Service
+  db:
+    image: postgres:14-alpine
+    container_name: stuffing-db
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-stuffing}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-password}"
+    ports:
+      - "${POSTGRES_EXPOSE_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - stuffing-net
+
+  # 2. Database Migration Job
+  migrate:
+    image: ghcr.io/pressly/goose:latest
+    container_name: stuffing-migrate
+    environment:
+      GOOSE_DRIVER: "${GOOSE_DRIVER:-postgres}"
+      GOOSE_DBSTRING: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-stuffing}?sslmode=disable"
+    volumes:
+      - ./cmd/db/migrations:/migrations:ro
+    command: ["-dir=/migrations", "up"]
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - stuffing-net
+    restart: "no"
+
+  # 3. Python Packing Service
+  packing:
+    build:
+      context: .
+      dockerfile: build/packing.Dockerfile
+    container_name: stuffing-packing
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:5051/health').read()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    environment:
+      PACKING_PORT: 5051
+    expose:
+      - "5051"
+    networks:
+      - stuffing-net
+
+  # 4. Go Backend API
+  api:
+    build:
+      context: .
+      dockerfile: build/backend.Dockerfile
+    container_name: stuffing-api
+    environment:
+      SRV_ADDR: ":8080"
+      SRV_ENV: "prod"
+      DATABASE_URL: "postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@db:5432/${POSTGRES_DB:-stuffing}?sslmode=disable"
+      PACKING_SERVICE_URL: "http://packing:5051"
+      # Founder Credentials (for initial setup)
+      FOUNDER_USERNAME: "${FOUNDER_USERNAME:-admin}"
+      FOUNDER_EMAIL: "${FOUNDER_EMAIL:-admin@example.com}"
+      FOUNDER_PASSWORD: "${FOUNDER_PASSWORD:-admin123}"
+    ports:
+      - "${API_EXPOSE_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/api/v1/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      db:
+        condition: service_healthy
+      packing:
+        condition: service_healthy # Wait for packing to be healthy now!
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - stuffing-net
+
+  # 5. Next.js Frontend
+  web:
+    build:
+      context: .
+      dockerfile: build/frontend.Dockerfile
+      args:
+        # For browser-side calls, we need the public URL of the API.
+        # In this self-hosted compose setup, the browser accesses API via localhost:8080.
+        NEXT_PUBLIC_API_BASE_URL: "http://localhost:${API_EXPOSE_PORT:-8080}/api/v1"
+    container_name: stuffing-web
+    ports:
+      - "${WEB_EXPOSE_PORT:-3000}:3000"
+    depends_on:
+      - api
+    networks:
+      - stuffing-net
+
+volumes:
+  pgdata:
+
+networks:
+  stuffing-net:
+    driver: bridge
