@@ -11678,3 +11678,359 @@ Untuk memperdalam pemahaman Anda tentang topik DevOps dan Deployment, berikut re
 
 
 
+
+
+## Bab 8: Fitur Lanjutan & Finalisasi
+
+Selamat! Anda telah sampai di bab terakhir dari buku ini. Sampai tahap ini, kita sudah memiliki aplikasi yang berfungsi secara teknis: Backend Go yang solid, Python Service yang cerdas, dan Frontend Next.js yang interaktif. Namun, sebuah sistem perangkat lunak belum bisa dikatakan siap produksi tanpa mempertimbangkan aspek keamanan, visibilitas operasional, dan kemampuan pelaporan.
+
+Di bab ini, kita akan melengkapi aplikasi dengan tiga fitur esensial:
+1.  **Sistem Autentikasi**: Mengamankan aplikasi agar setiap pengguna memiliki ruang kerjanya sendiri.
+2.  **Dashboard Bisnis**: Mengubah data mentah menjadi wawasan statistik.
+3.  **Laporan Operasional (PDF)**: Menjembatani dunia digital dengan operasional fisik di lapangan.
+
+Kita akan membahas alasan di balik setiap keputusan teknis dan bagaimana implementasinya secara detail.
+
+### 8.1 Implementasi Autentikasi (JWT)
+
+Dalam pengembangan aplikasi modern yang memisahkan Backend dan Frontend, kita perlu memilih strategi autentikasi yang tepat. Menggunakan session berbasis cookies (stateful) seringkali membebani server karena harus menyimpan status login setiap pengguna.
+
+Sebagai solusi yang lebih efisien, kita memilih pendekatan **Stateless** menggunakan **JSON Web Token (JWT)**. Token ini berisi informasi identitas pengguna yang ditandatangani secara digital. Server tidak perlu menyimpan status login; cukup memverifikasi tanda tangan pada token yang dikirim client. Ini membuat arsitektur kita lebih ringan dan mudah dikembangkan.
+
+Selain itu, keamanan data sangat penting. Kita menerapkan prinsip **Multi-tenancy**, yang memastikan setiap pengguna hanya bisa mengakses data mereka sendiri.
+
+#### 1. Persiapan Database (`users`)
+
+Langkah pertama adalah menyiapkan penyimpanan data pengguna. Hal terpenting di sini adalah keamanan password. Kita tidak boleh menyimpan password dalam bentuk teks asli (*plain-text*) karena risiko kebocoran data.
+
+Kita akan menyimpan **Hash** dari password tersebut menggunakan algoritma `bcrypt`. Algoritma ini dirancang khusus untuk memperlambat proses komputasi, sehingga mempersulit upaya peretasan password.
+
+Buat file migrasi `cmd/db/migrations/00004_create_users.sql`:
+
+```sql
+-- +goose Up
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Hubungkan Plans dengan Users (Ownership)
+-- "ON DELETE CASCADE" berarti jika User dihapus, semua Plan miliknya ikut terhapus otomatis.
+ALTER TABLE plans ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_plans_user_id ON plans(user_id);
+
+-- +goose Down
+DROP INDEX IF EXISTS idx_plans_user_id;
+ALTER TABLE plans DROP COLUMN IF NOT EXISTS user_id;
+DROP TABLE IF EXISTS users;
+```
+
+Pada skema di atas, perhatikan penggunaan `ON DELETE CASCADE` pada foreign key `plans`. Keputusan desain ini penting untuk menjaga integritas data (Referential Integrity). Jika suatu hari akun pengguna dihapus, kita tidak ingin meninggalkan "data yatim piatu" (orphan data)—yaitu rencana pengiriman yang masih ada di database tapi tidak memiliki pemilik. Dengan `CASCADE`, database akan secara otomatis membersihkan semua data terkait pengguna tersebut.
+
+Terapkan perubahan ini ke database:
+
+```bash
+goose postgres "user=postgres dbname=stuffing_db sslmode=disable" up
+```
+
+Selanjutnya, definisikan query SQL dasar untuk operasi pengguna di `cmd/db/queries/users.sql`:
+
+```sql
+-- name: CreateUser :one
+INSERT INTO users (email, password_hash)
+VALUES ($1, $2)
+RETURNING *;
+
+-- name: GetUserByEmail :one
+SELECT * FROM users
+WHERE email = $1 LIMIT 1;
+
+-- name: GetUserByID :one
+SELECT * FROM users
+WHERE id = $1 LIMIT 1;
+```
+
+Query yang kita tulis cukup minimalis karena kita hanya membutuhkan operasi dasar: membuat user saat registrasi dan mencari user saat login. `RETURNING *` pada `CreateUser` sangat berguna agar setelah insert, aplikasi langsung mendapatkan ID user yang baru dibuat tanpa perlu melakukan query select ulang.
+
+Jalankan `sqlc generate` untuk menghasilkan kode Go.
+
+#### 2. Logika Bisnis (AuthService)
+
+Di layer Service, kita menangani dua proses utama:
+1.  **Registrasi**: Menerima password, melakukan hashing dengan `bcrypt`, lalu menyimpan user baru.
+2.  **Login**: Memverifikasi password dengan membandingkan hash, dan jika valid, menerbitkan JWT.
+
+Buat file `internal/service/auth_service.go`:
+
+```go
+package service
+
+import (
+    "context"
+    "errors"
+    "time"
+    "github.com/golang-jwt/jwt/v5"
+    "github.com/jackc/pgx/v5/pgtype"
+    "golang.org/x/crypto/bcrypt"
+    "load-stuffing-calculator/internal/store"
+)
+
+type AuthService struct {
+    store     store.Querier
+    jwtSecret []byte
+}
+
+func NewAuthService(store store.Querier, jwtSecret string) *AuthService {
+    return &AuthService{
+        store:     store,
+        jwtSecret: []byte(jwtSecret),
+    }
+}
+
+// Register menangani pembuatan akun baru dengan keamanan password hashing.
+func (s *AuthService) Register(ctx context.Context, email, password string) (*store.User, error) {
+    hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return nil, err
+    }
+
+    return s.store.CreateUser(ctx, store.CreateUserParams{
+        Email:        email,
+        PasswordHash: string(hashedBytes),
+    })
+}
+
+// Login memvalidasi kredensial dan mengembalikan Token jika sukses.
+func (s *AuthService) Login(ctx context.Context, email, password string) (string, error) {
+    user, err := s.store.GetUserByEmail(ctx, email)
+    if err != nil {
+        return "", errors.New("invalid credentials")
+    }
+
+    err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+    if err != nil {
+        return "", errors.New("invalid credentials")
+    }
+
+    return s.generateToken(user.ID)
+}
+
+func (s *AuthService) generateToken(userID pgtype.UUID) (string, error) {
+    // Convert UUID bytes to proper string format for the Subject claim
+    var uuidStr string
+    userID.AssignTo(&uuidStr) // pgtype helper handling
+
+    claims := jwt.MapClaims{
+        "sub": uuidStr,                              // Subject: Identitas pemilik token (String UUID)
+        "exp": time.Now().Add(24 * time.Hour).Unix(), // Expiration: Token berlaku 24 jam
+        "iss": "load-stuffing-calculator",
+    }
+    
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    return token.SignedString(s.jwtSecret)
+}
+
+// VerifyToken memvalidasi token string dan mengembalikan UserID.
+func (s *AuthService) VerifyToken(tokenString string) (pgtype.UUID, error) {
+    // Parse token dengan memvalidasi signing method dan secret key
+    token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+        // Pastikan alogirtma signing adalah HMAC (HS256)
+        if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+            return nil, errors.New("unexpected signing method")
+        }
+        return s.jwtSecret, nil
+    })
+
+    if err != nil {
+        return pgtype.UUID{}, err
+    }
+
+    if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+        sub, _ := claims.GetSubject()
+        
+        var userID pgtype.UUID
+        if err := userID.Scan(sub); err != nil {
+            return pgtype.UUID{}, errors.New("invalid user id in token")
+        }
+        
+        return userID, nil
+    }
+
+    return pgtype.UUID{}, errors.New("invalid token")
+}
+```
+
+Ada dua hal krusial di sini. Pertama, `bcrypt.GenerateFromPassword` secara otomatis menangani pembuatan "salt" (data acak tambahan). Salt ini mencegah serangan "Rainbow Table", di mana peretas menggunakan tabel hash yang sudah dihitung sebelumnya. Kedua, pada pembuatan token JWT, kita menyertakan klaim `exp` (expiration). Membatasi umur token (misalnya 24 jam) adalah praktik keamanan wajib agar jika token dicuri, jendela waktu penyalahgunaannya terbatas.
+
+#### 3. Middleware Autentikasi
+
+Middleware berfungsi sebagai lapisan keamanan yang memvalidasi setiap request sebelum mencapai handler utama. Middleware ini akan memeriksa keberadaan dan validitas token JWT pada header `Authorization`.
+
+Buat file `internal/middleware/auth_middleware.go`:
+
+```go
+package middleware
+
+import (
+    "net/http"
+    "strings"
+    "github.com/gin-gonic/gin"
+    "load-stuffing-calculator/internal/service"
+)
+
+func AuthMiddleware(authService *service.AuthService) gin.HandlerFunc {
+    return func(c *gin.Context) {
+        authHeader := c.GetHeader("Authorization")
+        
+        if authHeader == "" {
+            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+            return
+        }
+
+        tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+        if tokenString == authHeader {
+             c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token format"})
+             return
+        }
+
+        // Validasi token dan dapatkan User ID
+        userID, err := authService.VerifyToken(tokenString) 
+        if err != nil {
+            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+            return
+        }
+
+        // Simpan User ID ke context agar bisa digunakan oleh Handler
+        c.Set("userID", userID)
+        c.Next()
+    }
+}
+```
+
+Perhatikan baris `c.Set("userID", userID)`. Ini adalah jembatan vital yang menghubungkan autentikasi dengan logika bisnis selanjutnya. Middleware "menitipkan" identitas pengguna ke dalam context request. Tanpa langkah ini, Handler (misalnya `CreatePlanHandler`) tidak akan tahu siapa yang sedang mengirim data, dan kita tidak bisa menerapkan kepemilikan data (ownership).
+
+#### 4. Proteksi di Sisi Frontend (AuthGuard)
+
+Untuk kenyamanan pengguna, kita juga perlu menangani status login di sisi browser. Komponen **Auth Guard** di Next.js akan memantau keberadaan token dan mengarahkan pengguna secara otomatis. Jika pengguna belum login mencoba mengakses halaman dashboard, mereka akan dialihkan ke halaman login, dan sebaliknya.
+
+Implementasikan logika ini di `web/components/auth-guard.tsx`:
+
+```tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+
+export function AuthGuard({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
+    const pathname = usePathname();
+    const [authorized, setAuthorized] = useState(false);
+
+    useEffect(() => {
+        const token = localStorage.getItem("auth_token");
+        
+        const publicPaths = ["/login", "/register"];
+        const isPublic = publicPaths.some(path => pathname.startsWith(path));
+
+        if (isPublic) {
+            if (token) router.push("/");
+            else setAuthorized(true);
+        } else {
+            if (!token) router.push("/login");
+            else setAuthorized(true);
+        }
+    }, [pathname, router]);
+
+    if (!authorized) return null;
+
+    return <>{children}</>;
+}
+```
+
+Kita menggunakan `useEffect` untuk pemeriksaan sisi klien karena akses `localStorage` hanya tersedia di browser (bukan saat server-side rendering). Perhatikan bahwa kita me-return `null` jika `authorized` masih false. Ini mencegah "flash of unstyled content" atau tampilan sekilas halaman terproteksi sebelum user dialihkan ke halaman login.
+
+### 8.2 Dashboard Statistik
+
+Dashboard memberikan gambaran umum kinerja operasional kepada pengguna. Untuk menampilkan data seperti "Total Rencana" atau "Total Item Terkirim", kita perlu strategi pengambilan data yang efisien.
+
+#### Optimasi dengan Agregasi SQL
+
+Mengambil seluruh data dari tabel ke aplikasi lalu menghitungnya secara manual (looping) adalah cara yang tidak efisien. Sebaiknya, kita memanfaatkan kemampuan database untuk melakukan **Agregasi**. Fungsi seperti `COUNT()` dan `SUM()` berjalan sangat cepat di level database.
+
+Berikut adalah query yang kita gunakan di `cmd/db/queries/stats.sql`:
+
+```sql
+-- name: GetDashboardStats :one
+SELECT
+    -- Menghitung jumlah rencana pengiriman milik user
+    (SELECT COUNT(*) FROM plans WHERE user_id = $1) AS total_plans,
+
+    -- Menghitung total varian kontainer yang tersedia
+    (SELECT COUNT(*) FROM containers) AS total_containers,
+    
+    -- Menghitung total SKU produk terdaftar
+    (SELECT COUNT(*) FROM products) AS total_products,
+
+    -- Menghitung total volume barang terkirim (handle NULL dengan COALESCE)
+    (SELECT COALESCE(SUM(quantity), 0) FROM plan_items pi
+     JOIN plans p ON pi.plan_id = p.id
+     WHERE p.user_id = $1) AS total_items_shipped;
+```
+
+Penggunaan `COALESCE(..., 0)` di sini sangat penting. Secara default, fungsi `SUM()` akan mengembalikan `NULL` jika tidak ada baris yang dijumlahkan (misal user baru belum punya pengiriman). Frontend biasanya mengarapkan angka, bukan null. `COALESCE` menangani kasus edge case ini dengan elegan, mengubah `NULL` menjadi `0`, sehingga kita tidak perlu menulis logika penanganan null tambahan di layer aplikasi.
+
+### 8.3 PDF Export: Laporan Operasional
+
+Fitur terakhir adalah pembuatan dokumen "Surat Jalan". Dokumen ini penting untuk tim lapangan yang membutuhkan instruksi fisik saat melakukan pemuatan barang ke kontainer.
+
+#### Transformasi Koordinat 3D ke 2D
+
+Tantangan utama di sini adalah menampilkan data posisi 3D ke dalam format dokumen 2D (PDF). Kita perlu memperhatikan perbedaan sistem koordinat:
+1.  **Layar Komputer**: Titik (0,0) di kiri-atas, Y positif ke bawah.
+2.  **Dunia 3D**: Seringkali Y adalah sumbu vertikal (tinggi).
+3.  **PDF**: Satuannya milimeter, titik (0,0) di kiri-atas.
+
+Kita menggunakan rumus transformasi berikut di `web/lib/pdf-report.ts`:
+
+1.  **Scaling**: Menyesuaikan ukuran kontainer (meter) agar muat di kertas A4.
+    $$ Scale = \frac{LebarAreaGambar}{PanjangKontainer} $$
+
+2.  **Mapping X**:
+    $$ X_{pdf} = OriginX + (PosisiX_{barang} \times Scale) $$
+
+3.  **Mapping Y (Inversi)**: Membalik sumbu Y agar gambar tidak terbalik di PDF.
+    $$ Y_{pdf} = OriginY + (LebarKontainer - PosisiY_{barang} - LebarBarang) \times Scale $$
+
+Contoh implementasi kode:
+
+```typescript
+function drawPlacement(doc: jsPDF, placement: any, scale: number) {
+    const isCurrentStep = placement.step === currentStep;
+    doc.setFillColor(isCurrentStep ? "blue" : "grey");
+    
+    // Hitung koordinat final dengan scaling dan inversi Y
+    const x = originX + (placement.pos_x * scale);
+    const y = originY + ((containerWidth - placement.pos_y - itemWidth) * scale); 
+    
+    doc.rect(x, y, itemLength * scale, itemWidth * scale, "FD");
+}
+```
+
+Kunci dari visualisasi yang benar ada pada baris perhitungan variabel `y`. Kita tidak hanya mengalikan posisi dengan scale, tetapi juga melakukan pengurangan dari `containerWidth`. Inilah "Inversi Y". Tanpa ini, gambar akan ter-mirror secara vertikal (barang yang seharusnya di "kiri-bawah" kontainer akan tergambar di "kiri-atas" kertas). Pemahaman geometri ini krusial saat bekerja dengan library grafis PDF.
+
+### 8.4 Penutup
+
+Selamat! Anda telah menyelesaikan pembangunan aplikasi **Load Stuffing Calculator**.
+
+Kita telah melalui perjalanan panjang membangun sistem terdistribusi modern yang mencakup:
+1.  **Backend Go**: API berkinerja tinggi dengan arsitektur yang rapi.
+2.  **Service Python**: Logika komputasi intensif yang terisolasi.
+3.  **Frontend Next.js**: Antarmuka pengguna yang interaktif.
+4.  **Keamanan & Efisiensi**: Implementasi JWT dan optimasi query database.
+
+Aplikasi ini sekarang memiliki fondasi yang kuat untuk dikembangkan lebih lanjut. Anda bisa mengembangkannya dengan menambah fitur kolaborasi real-time, optimasi algoritma yang lebih canggih, atau integrasi dengan sistem logistik lainnya.
+
+Terima kasih telah mengikuti panduan ini. Teruslah berkarya dan eksplorasi teknologi baru!
