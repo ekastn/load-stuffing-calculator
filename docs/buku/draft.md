@@ -65,12 +65,11 @@ aliases:
    - [7.3 Dockerizing Aplikasi](#73-dockerizing-aplikasi)
    - [7.4 Orkestrasi dengan Docker Compose](#74-orkestrasi-dengan-docker-compose)
    - [7.5 Deployment Best Practices: CI/CD & Strategi Rilis](#75-deployment-best-practices-cicd--strategi-rilis)
-   - [7.7 Bacaan Lanjutan](#77-bacaan-lanjutan)
 8. [Bab 8: Fitur Lanjutan & Finalisasi](#bab-8-fitur-lanjutan--finalisasi)
    - [8.1 Implementasi Autentikasi (JWT)](#81-implementasi-autentikasi-jwt)
    - [8.2 Dashboard Statistik](#82-dashboard-statistik)
    - [8.3 PDF Export: Laporan Operasional](#83-pdf-export-laporan-operasional)
-   - [8.4 Penutup](#84-penutup)
+   - [8.4 Penutup: Arsitektur Final dan Refleksi](#84-penutup-arsitektur-final-dan-refleksi)
 
 ---
 
@@ -2883,7 +2882,7 @@ func (s *ProductService) Update(ctx context.Context, id uuid.UUID, label, sku st
 func (s *ProductService) Delete(ctx context.Context, id uuid.UUID) error {
     err := s.store.DeleteProduct(ctx, id)
     if err != nil {
-        return nil, fmt.Errorf("delete product %s: %w", id, err)
+        return fmt.Errorf("delete product %s: %w", id, err)
     }
     return nil
 }
@@ -9298,7 +9297,7 @@ web/
             └── item-mesh.ts
 ```
 
-#### Further Reading
+### Bacaan Lanjutan
 
 - [Three.js Documentation](https://threejs.org/docs/) — Official documentation
 - [Discover Three.js](https://discoverthreejs.com/) — Comprehensive book
@@ -11730,7 +11729,7 @@ Poin-poin kunci yang telah kita pelajari:
 3.  **Kesiapan Produksi**: Aplikasi yang berjalan tidak cukup; ia harus bertahan hidup. Kita menambahkan Resource Limits untuk mencegah crash server, Healthchecks untuk *self-healing*, dan manajemen konfigurasi aman via `.env`.
 4.  **Otomatisasi & Strategi Rilis**: Kita menolak cara manual. CI/CD pipeline memastikan setiap baris kode teruji otomatis, sementara strategi Rolling Update menjamin pengguna tidak pernah merasakan gangguan layanan saat upgrade terjadi.
 
-### 7.7 Bacaan Lanjutan
+### Bacaan Lanjutan
 
 Untuk memperdalam pemahaman Anda tentang topik DevOps dan Deployment, berikut referensi yang sangat disarankan:
 
@@ -11768,6 +11767,58 @@ Dalam pengembangan aplikasi modern yang memisahkan Backend dan Frontend, kita pe
 Sebagai solusi yang lebih efisien, kita memilih pendekatan **Stateless** menggunakan **JSON Web Token (JWT)**. Token ini berisi informasi identitas pengguna yang ditandatangani secara digital. Server tidak perlu menyimpan status login; cukup memverifikasi tanda tangan pada token yang dikirim client. Ini membuat arsitektur kita lebih ringan dan mudah dikembangkan.
 
 Selain itu, keamanan data sangat penting. Kita menerapkan prinsip **Multi-tenancy**, yang memastikan setiap pengguna hanya bisa mengakses data mereka sendiri.
+
+#### Alur Autentikasi JWT
+
+Sebelum masuk ke implementasi, mari kita pahami alur kerja sistem autentikasi yang akan kita bangun:
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Frontend as Next.js Frontend
+    participant Backend as Go Backend
+    participant DB as PostgreSQL
+
+    Note over Browser,DB: 1. Registrasi Pengguna Baru
+    Browser->>Frontend: Isi form register
+    Frontend->>Backend: POST /api/v1/auth/register
+    Backend->>Backend: Hash password (bcrypt)
+    Backend->>DB: INSERT INTO users
+    DB-->>Backend: User created
+    Backend-->>Frontend: 201 Created
+    Frontend-->>Browser: Redirect ke /login
+
+    Note over Browser,DB: 2. Login & Mendapatkan Token
+    Browser->>Frontend: Isi form login
+    Frontend->>Backend: POST /api/v1/auth/login
+    Backend->>DB: SELECT user by email
+    DB-->>Backend: User data + hash
+    Backend->>Backend: Verify password (bcrypt)
+    Backend->>Backend: Generate JWT (24h expiry)
+    Backend-->>Frontend: { "token": "eyJhbG..." }
+    Frontend->>Frontend: localStorage.setItem("auth_token", token)
+    Frontend-->>Browser: Redirect ke Dashboard
+
+    Note over Browser,DB: 3. Akses Resource Terproteksi
+    Browser->>Frontend: Buka halaman /plans
+    Frontend->>Backend: GET /api/v1/plans<br/>Authorization: Bearer eyJhbG...
+    Backend->>Backend: Validate JWT signature
+    Backend->>Backend: Extract userID from claims
+    Backend->>DB: SELECT plans WHERE user_id = ?
+    DB-->>Backend: User's plans
+    Backend-->>Frontend: 200 OK + data
+    Frontend-->>Browser: Render plans
+```
+
+Diagram di atas menunjukkan tiga fase utama:
+
+1. **Registrasi** — Password di-hash dengan bcrypt sebelum disimpan. Kita tidak pernah menyimpan password asli.
+
+2. **Login** — Setelah verifikasi berhasil, server mengeluarkan JWT yang berlaku 24 jam. Token ini disimpan di browser (localStorage).
+
+3. **Akses Terproteksi** — Setiap request ke endpoint terproteksi harus menyertakan token di header `Authorization`. Middleware memvalidasi token dan mengekstrak `userID` untuk filtering data.
+
+Sekarang mari kita implementasikan setiap komponen.
 
 #### 1. Persiapan Database (`users`)
 
@@ -12022,6 +12073,439 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
 Kita menggunakan `useEffect` untuk pemeriksaan sisi klien karena akses `localStorage` hanya tersedia di browser (bukan saat server-side rendering). Perhatikan bahwa kita me-return `null` jika `authorized` masih false. Ini mencegah "flash of unstyled content" atau tampilan sekilas halaman terproteksi sebelum user dialihkan ke halaman login.
 
+#### 5. Handler Layer (HTTP Endpoints)
+
+Handler adalah titik masuk HTTP request. Ia bertanggung jawab untuk:
+1. Membaca dan memvalidasi input dari request body
+2. Memanggil service layer
+3. Mengembalikan response yang sesuai
+
+Buat file `internal/handler/auth_handler.go`:
+
+```go
+package handler
+
+import (
+	"net/http"
+
+	"load-stuffing-calculator/internal/response"
+	"load-stuffing-calculator/internal/service"
+
+	"github.com/gin-gonic/gin"
+)
+
+type AuthHandler struct {
+	service *service.AuthService
+}
+
+func NewAuthHandler(service *service.AuthService) *AuthHandler {
+	return &AuthHandler{service: service}
+}
+
+// authRequest mendefinisikan struktur request untuk register dan login.
+// Tag `binding` digunakan oleh Gin untuk validasi otomatis.
+type authRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+// Register menangani pembuatan akun baru.
+func (h *AuthHandler) Register(c *gin.Context) {
+	var req authRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	user, err := h.service.Register(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		// Error bisa berupa "email already exists" dari constraint UNIQUE
+		response.Error(c, http.StatusConflict, err.Error())
+		return
+	}
+
+	response.Success(c, http.StatusCreated, gin.H{
+		"message": "User registered successfully",
+		"user": gin.H{
+			"id":    user.ID,
+			"email": user.Email,
+		},
+	})
+}
+
+// Login memvalidasi kredensial dan mengembalikan JWT.
+func (h *AuthHandler) Login(c *gin.Context) {
+	var req authRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	token, err := h.service.Login(c.Request.Context(), req.Email, req.Password)
+	if err != nil {
+		// Pesan error generik untuk keamanan (jangan bocorkan "email tidak ditemukan")
+		response.Error(c, http.StatusUnauthorized, "Invalid email or password")
+		return
+	}
+
+	response.Success(c, http.StatusOK, gin.H{
+		"token": token,
+	})
+}
+```
+
+Perhatikan beberapa keputusan keamanan penting:
+
+1. **Validasi dengan Binding Tags** — `binding:"required,email"` memastikan email valid, `binding:"min=6"` memastikan password minimal 6 karakter. Gin akan otomatis menolak request yang tidak memenuhi kriteria.
+
+2. **Pesan Error Generik** — Pada login, kita selalu mengembalikan "Invalid email or password" baik jika email tidak ditemukan maupun password salah. Ini mencegah *enumeration attack* di mana penyerang bisa menebak email mana yang terdaftar.
+
+3. **Status Code yang Tepat** — `201 Created` untuk registrasi sukses, `409 Conflict` untuk email duplikat, `401 Unauthorized` untuk login gagal.
+
+#### 6. Registrasi Route
+
+Terakhir di sisi backend, kita perlu mendaftarkan endpoint-endpoint baru ke router. Update file `internal/api/routes.go`:
+
+```go
+package api
+
+import (
+	"time"
+
+	"load-stuffing-calculator/internal/middleware"
+
+	"github.com/gin-gonic/gin"
+)
+
+func (a *App) setupRoutes(r *gin.Engine) {
+	// Semua routes diawali dengan /api/v1 untuk versioning
+	v1 := r.Group("/api/v1")
+	{
+		v1.GET("/health", a.HealthCheck)
+
+		// Auth routes (Public) — tidak memerlukan token
+		auth := v1.Group("/auth")
+		{
+			auth.POST("/register", a.authHandler.Register)
+			auth.POST("/login", a.authHandler.Login)
+		}
+
+		// Protected Routes — memerlukan token JWT valid
+		// Middleware akan memvalidasi token sebelum request diproses
+		protected := v1.Group("/")
+		protected.Use(middleware.AuthMiddleware(a.authService))
+		{
+			// Container routes: CRUD operasi untuk container
+			containers := protected.Group("/containers")
+			{
+				containers.GET("", a.containerHandler.List)
+				containers.GET("/:id", a.containerHandler.GetByID)
+				containers.POST("", a.containerHandler.Create)
+				containers.PUT("/:id", a.containerHandler.Update)
+				containers.DELETE("/:id", a.containerHandler.Delete)
+			}
+
+			// Product routes: CRUD operasi untuk product
+			products := protected.Group("/products")
+			{
+				products.GET("", a.productHandler.List)
+				products.GET("/:id", a.productHandler.GetByID)
+				products.POST("", a.productHandler.Create)
+				products.PUT("/:id", a.productHandler.Update)
+				products.DELETE("/:id", a.productHandler.Delete)
+			}
+
+			// Plan routes: CRUD dan kalkulasi
+			plans := protected.Group("/plans")
+			{
+				plans.GET("", a.planHandler.List)
+				plans.GET("/:id", a.planHandler.GetByID)
+				plans.POST("", a.planHandler.Create)
+				plans.PUT("/:id", a.planHandler.Update)
+				plans.DELETE("/:id", a.planHandler.Delete)
+
+				// Plan items management
+				plans.POST("/:id/items", a.planHandler.AddItem)
+				plans.PUT("/:id/items/:itemId", a.planHandler.UpdateItem)
+				plans.DELETE("/:id/items/:itemId", a.planHandler.DeleteItem)
+
+				// Calculation
+				plans.POST("/:id/calculate", a.planHandler.Calculate)
+			}
+
+			// Dashboard stats
+			protected.GET("/dashboard/stats", a.dashboardHandler.GetStats)
+		}
+	}
+}
+
+func (a *App) HealthCheck(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status":  "ok",
+		"time":    time.Now().Format(time.RFC3339),
+		"version": "1.0.0",
+	})
+}
+```
+
+Perhatikan struktur route yang jelas:
+- `/auth/*` — Public endpoints untuk registrasi dan login
+- Semua route lain menggunakan `AuthMiddleware` sehingga hanya user terautentikasi yang bisa mengakses
+
+#### 7. Frontend: API Client untuk Auth
+
+Sebelum membuat halaman login, kita perlu API client untuk berkomunikasi dengan backend.
+
+Buat file `web/lib/api/auth.ts`:
+
+```typescript
+import { apiClient } from "./client";
+
+export interface LoginRequest {
+    email: string;
+    password: string;
+}
+
+export interface LoginResponse {
+    token: string;
+}
+
+export interface RegisterRequest {
+    email: string;
+    password: string;
+}
+
+export interface RegisterResponse {
+    message: string;
+    user: {
+        id: string;
+        email: string;
+    };
+}
+
+export const authApi = {
+    login: (data: LoginRequest) => apiClient.post<LoginResponse>("/auth/login", data),
+    register: (data: RegisterRequest) => apiClient.post<RegisterResponse>("/auth/register", data),
+};
+```
+
+API client ini menggunakan `apiClient` yang sudah kita buat di Bab 6. Interface TypeScript memastikan type safety saat berkomunikasi dengan backend.
+
+#### 8. Frontend: Halaman Login
+
+Sekarang kita buat halaman login yang akan digunakan pengguna untuk masuk ke aplikasi.
+
+Buat file `web/app/login/page.tsx`:
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { authApi } from "@/lib/api/auth";
+
+export default function LoginPage() {
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            // Panggil API login
+            const { token } = await authApi.login({ email, password });
+            
+            // Simpan token ke localStorage
+            localStorage.setItem("auth_token", token);
+            
+            // Redirect ke dashboard
+            router.push("/");
+        } catch (err: any) {
+            setError(err.message || "Login failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <main className="container flex items-center justify-center min-h-screen py-12">
+            <Card className="w-full max-w-md">
+                <CardHeader className="space-y-1">
+                    <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+                </CardHeader>
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="space-y-4">
+                        {error && (
+                            <Alert variant="destructive">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="name@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col space-y-4">
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? "Signing in..." : "Sign in"}
+                        </Button>
+                        <div className="text-sm text-center text-muted-foreground">
+                            Don't have an account?{" "}
+                            <Link href="/register" className="text-primary hover:underline">
+                                Register
+                            </Link>
+                        </div>
+                    </CardFooter>
+                </form>
+            </Card>
+        </main>
+    );
+}
+```
+
+Komponen ini mendemonstrasikan pola umum untuk form autentikasi:
+
+1. **State Management** — `useState` untuk email, password, error, dan loading state
+2. **Form Handling** — `onSubmit` mencegah reload halaman dan memanggil API
+3. **Token Storage** — Setelah login sukses, token disimpan di `localStorage`
+4. **Error Display** — Komponen `Alert` menampilkan pesan error dengan style yang konsisten
+5. **Loading State** — Button disabled saat request sedang berjalan
+
+#### 9. Frontend: Halaman Register
+
+Halaman registrasi mirip dengan login, dengan beberapa perbedaan kecil.
+
+Buat file `web/app/register/page.tsx`:
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { authApi } from "@/lib/api/auth";
+
+export default function RegisterPage() {
+    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            await authApi.register({ email, password });
+            // Redirect ke halaman login setelah registrasi sukses
+            router.push("/login");
+        } catch (err: any) {
+            setError(err.message || "Registration failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <main className="container flex items-center justify-center min-h-screen py-12">
+            <Card className="w-full max-w-md">
+                <CardHeader className="space-y-1">
+                    <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+                </CardHeader>
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="space-y-4">
+                        {error && (
+                            <Alert variant="destructive">
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="name@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                minLength={6}
+                                required
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Must be at least 6 characters
+                            </p>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col space-y-4">
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? "Creating account..." : "Register"}
+                        </Button>
+                        <div className="text-sm text-center text-muted-foreground">
+                            Already have an account?{" "}
+                            <Link href="/login" className="text-primary hover:underline">
+                                Sign in
+                            </Link>
+                        </div>
+                    </CardFooter>
+                </form>
+            </Card>
+        </main>
+    );
+}
+```
+
+Perbedaan utama dengan halaman login:
+
+1. **Redirect Target** — Setelah registrasi sukses, user diarahkan ke `/login` (bukan langsung login)
+2. **Password Hint** — Menampilkan petunjuk "Must be at least 6 characters"
+3. **Attribute `minLength`** — Validasi HTML5 untuk panjang minimum password
+
+Dengan implementasi lengkap di atas, sistem autentikasi kita sudah berfungsi end-to-end: dari registrasi user baru hingga login dan akses ke halaman terproteksi.
+
 ### 8.2 Dashboard Statistik
 
 Dashboard memberikan gambaran umum kinerja operasional kepada pengguna. Untuk menampilkan data seperti "Total Rencana" atau "Total Item Terkirim", kita perlu strategi pengambilan data yang efisien.
@@ -12051,6 +12535,286 @@ SELECT
 ```
 
 Penggunaan `COALESCE(..., 0)` di sini sangat penting. Secara default, fungsi `SUM()` akan mengembalikan `NULL` jika tidak ada baris yang dijumlahkan (misal user baru belum punya pengiriman). Frontend biasanya mengarapkan angka, bukan null. `COALESCE` menangani kasus edge case ini dengan elegan, mengubah `NULL` menjadi `0`, sehingga kita tidak perlu menulis logika penanganan null tambahan di layer aplikasi.
+
+#### Service Layer untuk Dashboard
+
+Setelah query SQL siap, kita buat service layer untuk memanggil query tersebut.
+
+Buat file `internal/service/dashboard_service.go`:
+
+```go
+package service
+
+import (
+	"context"
+	"fmt"
+
+	"load-stuffing-calculator/internal/store"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type DashboardService struct {
+	store store.Querier
+}
+
+func NewDashboardService(store store.Querier) *DashboardService {
+	return &DashboardService{store: store}
+}
+
+// GetStats mengambil statistik dashboard untuk user tertentu.
+// userID digunakan untuk filtering data yang bersifat per-user (plans).
+func (s *DashboardService) GetStats(ctx context.Context, userID uuid.UUID) (*store.GetDashboardStatsRow, error) {
+	stats, err := s.store.GetDashboardStats(ctx, pgtype.UUID{
+		Bytes: userID,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get dashboard stats: %w", err)
+	}
+
+	return &stats, nil
+}
+```
+
+Service ini sederhana karena logika bisnis utama ada di SQL query. Service hanya bertanggung jawab untuk:
+1. Konversi tipe `uuid.UUID` ke `pgtype.UUID` yang digunakan oleh SQLC
+2. Error wrapping untuk debugging yang lebih mudah
+
+#### Handler Layer untuk Dashboard
+
+Handler menerima request HTTP dan memanggil service.
+
+Buat file `internal/handler/dashboard_handler.go`:
+
+```go
+package handler
+
+import (
+	"net/http"
+
+	"load-stuffing-calculator/internal/response"
+	"load-stuffing-calculator/internal/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type DashboardHandler struct {
+	svc *service.DashboardService
+}
+
+func NewDashboardHandler(svc *service.DashboardService) *DashboardHandler {
+	return &DashboardHandler{svc: svc}
+}
+
+// GetStats mengembalikan statistik dashboard untuk user yang login.
+func (h *DashboardHandler) GetStats(c *gin.Context) {
+	// Ambil userID dari context (di-set oleh AuthMiddleware)
+	userIDVal, exists := c.Get("userID")
+	if !exists {
+		response.Error(c, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	// Type assertion untuk mendapatkan UUID
+	userID, ok := userIDVal.(uuid.UUID)
+	if !ok {
+		response.Error(c, http.StatusInternalServerError, "Invalid user ID format in context")
+		return
+	}
+
+	stats, err := h.svc.GetStats(c.Request.Context(), userID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to fetch dashboard stats")
+		return
+	}
+
+	// Kembalikan response dengan field yang clear
+	response.Success(c, http.StatusOK, gin.H{
+		"total_plans":         stats.TotalPlans,
+		"total_containers":    stats.TotalContainers,
+		"total_products":      stats.TotalProducts,
+		"total_items_shipped": stats.TotalItemsShipped,
+	})
+}
+```
+
+Perhatikan bagaimana handler mengambil `userID` dari context. Ini adalah hasil kerja `AuthMiddleware` yang kita buat sebelumnya—middleware mengekstrak user ID dari JWT dan menyimpannya di context agar bisa diakses oleh handler.
+
+#### Frontend: API Client untuk Dashboard
+
+Buat file `web/lib/api/dashboard.ts`:
+
+```typescript
+import { apiClient } from "./client";
+
+export interface DashboardStats {
+    total_plans: number;
+    total_containers: number;
+    total_products: number;
+    total_items_shipped: number;
+}
+
+export const dashboardApi = {
+    getStats: () => apiClient.get<DashboardStats>("/dashboard/stats"),
+};
+```
+
+#### Frontend: Halaman Dashboard
+
+Halaman dashboard menampilkan statistik dalam bentuk kartu-kartu yang informatif.
+
+Buat file `web/app/page.tsx`:
+
+```tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Box, Truck, Map, Package } from "lucide-react";
+import { dashboardApi, DashboardStats } from "@/lib/api/dashboard";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
+export default function DashboardPage() {
+    const [stats, setStats] = useState<DashboardStats | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await dashboardApi.getStats();
+                setStats(data);
+            } catch (err: any) {
+                console.error("Failed to fetch dashboard stats", err);
+                setError("Failed to load dashboard data. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, []);
+
+    if (loading) {
+        return (
+            <main className="container mx-auto px-4 py-8">
+                <div className="flex items-center justify-center p-12">
+                     <p className="text-zinc-500 animate-pulse">Loading dashboard...</p>
+                </div>
+            </main>
+        );
+    }
+
+    return (
+        <main className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold tracking-tight mb-8">Dashboard Overview</h1>
+            
+            {error && (
+                <Alert variant="destructive" className="mb-6">
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+
+            {/* Stats Overview */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Plans</CardTitle>
+                        <Map className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats?.total_plans || 0}</div>
+                        <p className="text-xs text-muted-foreground">Projects created</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Items Shipped</CardTitle>
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats?.total_items_shipped || 0}</div>
+                        <p className="text-xs text-muted-foreground">Total items in plans</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Product Catalog</CardTitle>
+                        <Box className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats?.total_products || 0}</div>
+                        <p className="text-xs text-muted-foreground">Active SKUs</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Container Types</CardTitle>
+                        <Truck className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats?.total_containers || 0}</div>
+                        <p className="text-xs text-muted-foreground">Available sizes</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+            <div className="grid gap-6 md:grid-cols-3">
+                <Link href="/containers">
+                    <Card className="hover:bg-zinc-50 hover:shadow-md transition-all cursor-pointer h-full border-zinc-200">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-zinc-600">Containers</CardTitle>
+                            <Truck className="h-4 w-4 text-zinc-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-lg font-bold">Manage Fleet</div>
+                            <p className="text-xs text-zinc-500 mt-1">Configure container sizes</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/products">
+                    <Card className="hover:bg-zinc-50 hover:shadow-md transition-all cursor-pointer h-full border-zinc-200">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-zinc-600">Products</CardTitle>
+                            <Box className="h-4 w-4 text-zinc-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-lg font-bold">Update Catalog</div>
+                            <p className="text-xs text-zinc-500 mt-1">Manage cargo items</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+
+                <Link href="/plans">
+                    <Card className="hover:bg-zinc-50 hover:shadow-md transition-all cursor-pointer h-full border-zinc-200">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-zinc-600">Planning</CardTitle>
+                            <Map className="h-4 w-4 text-zinc-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-lg font-bold">New Plan</div>
+                            <p className="text-xs text-zinc-500 mt-1">Start calculation</p>
+                        </CardContent>
+                    </Card>
+                </Link>
+            </div>
+        </main>
+    );
+}
+```
+
+Halaman dashboard ini menampilkan dua bagian utama:
+
+1. **Stats Cards** — Empat kartu menampilkan metrik utama: jumlah plan, items terkirim, produk, dan kontainer. Setiap kartu memiliki ikon dari Lucide untuk visual yang menarik.
+
+2. **Quick Actions** — Tiga tombol shortcut untuk navigasi cepat ke halaman management. Kartu ini memiliki efek hover untuk feedback visual.
 
 ### 8.3 PDF Export: Laporan Operasional
 
@@ -12091,16 +12855,528 @@ function drawPlacement(doc: jsPDF, placement: any, scale: number) {
 
 Kunci dari visualisasi yang benar ada pada baris perhitungan variabel `y`. Kita tidak hanya mengalikan posisi dengan scale, tetapi juga melakukan pengurangan dari `containerWidth`. Inilah "Inversi Y". Tanpa ini, gambar akan ter-mirror secara vertikal (barang yang seharusnya di "kiri-bawah" kontainer akan tergambar di "kiri-atas" kertas). Pemahaman geometri ini krusial saat bekerja dengan library grafis PDF.
 
+#### Setup Library PDF
+
+Pertama, install library yang diperlukan:
+
+```bash
+pnpm add jspdf jspdf-autotable
+```
+
+- **jsPDF** — Library utama untuk membuat dokumen PDF di browser
+- **jspdf-autotable** — Plugin untuk membuat tabel dengan layout otomatis
+
+#### Implementasi Lengkap: pdf-report.ts
+
+Buat file `web/lib/pdf-report.ts`. File ini cukup panjang karena menangani multiple halaman dengan diagram visual.
+
+```typescript
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Container, PlanDetail, PlanItem, Placement } from "@/lib/api/types";
+
+// Helper: Generate warna konsisten dari string (product ID)
+function stringToColor(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const c = (hash & 0x00ffffff).toString(16).toUpperCase();
+    return "#" + "00000".substring(0, 6 - c.length) + c;
+}
+
+// Helper: Convert hex color ke RGB untuk jsPDF
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+    const normalized = hex.trim();
+    const match = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(normalized);
+    if (!match) return null;
+    return {
+        r: parseInt(match[1], 16),
+        g: parseInt(match[2], 16),
+        b: parseInt(match[3], 16),
+    };
+}
+
+// Fungsi utama untuk generate PDF
+export async function generateStuffingReport(plan: PlanDetail, container: Container) {
+    const doc = new jsPDF({
+        orientation: "landscape",  // Landscape lebih cocok untuk diagram kontainer
+        unit: "mm",
+        format: "a4",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+
+    // --- Page 1: Summary ---
+    createSummaryPage(doc, plan, container, pageWidth, pageHeight, margin);
+
+    // --- Page 2+: Step-by-step loading ---
+    if (plan.placements && plan.placements.length > 0) {
+        createStepPages(doc, plan, container, pageWidth, pageHeight, margin);
+    }
+
+    // Trigger download
+    doc.save(`manifest-${plan.id.substring(0, 8)}.pdf`);
+}
+
+// Halaman pertama: Ringkasan plan dan daftar barang
+function createSummaryPage(
+    doc: jsPDF,
+    plan: PlanDetail,
+    container: Container,
+    pageWidth: number,
+    pageHeight: number,
+    margin: number
+) {
+    let yPosition = margin;
+
+    // Title
+    doc.setTextColor(0, 64, 255);
+    doc.setFontSize(28);
+    doc.setFont("helvetica", "bold");
+    doc.text("LOADING PLAN", margin, yPosition);
+    yPosition += 15;
+
+    // Container Info
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.text(`Container: ${container.name}`, margin, yPosition);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Dims: ${container.length_mm}x${container.width_mm}x${container.height_mm} mm`, margin, yPosition + 6);
+    doc.text(`Plan ID: ${plan.id}`, margin, yPosition + 12);
+    
+    yPosition += 25;
+
+    // Items Table menggunakan autoTable
+    const tableBody = plan.items.map(item => [
+        item.label,
+        `${item.length_mm} x ${item.width_mm} x ${item.height_mm}`,
+        item.weight_kg.toString(),
+        item.quantity.toString()
+    ]);
+
+    autoTable(doc, {
+        startY: yPosition,
+        head: [['Product Name', 'Dimensions (mm)', 'Weight (kg)', 'Quantity']],
+        body: tableBody,
+        headStyles: { fillColor: [66, 66, 66] },
+    });
+}
+
+// Halaman step-by-step: Satu halaman per langkah pemuatan
+function createStepPages(
+    doc: jsPDF,
+    plan: PlanDetail,
+    container: Container,
+    pageWidth: number,
+    pageHeight: number,
+    margin: number
+) {
+    const placements = plan.placements || [];
+    // Sort by step number
+    const sortedPlacements = [...placements].sort((a, b) => a.step_number - b.step_number);
+
+    // Map product details untuk lookup cepat
+    const productMap = new Map<string, PlanItem>();
+    plan.items.forEach(item => productMap.set(item.product_id, item));
+
+    for (let i = 0; i < sortedPlacements.length; i++) {
+        doc.addPage();
+        renderStepLandscape(doc, sortedPlacements[i], sortedPlacements, productMap, container, pageWidth, pageHeight, margin);
+        
+        // Footer
+        doc.setTextColor(120, 120, 120);
+        doc.setFontSize(8);
+        doc.setFont("helvetica", "italic");
+        doc.text(`Page ${i + 2} - Step ${sortedPlacements[i].step_number}`, margin, pageHeight - 10);
+    }
+}
+
+// Render satu halaman step dengan dual-view diagram
+function renderStepLandscape(
+    doc: jsPDF,
+    currentPlacement: Placement,
+    allPlacements: Placement[],
+    productMap: Map<string, PlanItem>,
+    container: Container,
+    pageWidth: number,
+    pageHeight: number,
+    margin: number
+) {
+    let yPosition = margin + 5;
+
+    // Title
+    doc.setTextColor(0, 64, 255);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    const stepText = `Step ${currentPlacement.step_number}: Load ${currentPlacement.label}`;
+    const textWidth = doc.getTextWidth(stepText);
+    doc.text(stepText, (pageWidth - textWidth) / 2, yPosition);
+    yPosition += 10;
+
+    // Layout Calculation untuk dual-view
+    const gap = 10;
+    const legendHeight = 30;
+    const diagramTop = yPosition;
+    const diagramHeight = pageHeight - margin - legendHeight - diagramTop;
+    const diagramWidth = pageWidth - 2 * margin;
+    const diagramBoxWidth = (diagramWidth - gap) / 2;
+
+    const topViewBox = { x: margin, y: diagramTop, w: diagramBoxWidth, h: diagramHeight };
+    const sideViewBox = { x: margin + diagramBoxWidth + gap, y: diagramTop, w: diagramBoxWidth, h: diagramHeight };
+
+    // Function untuk menghitung scale agar kontainer muat di box
+    const fitScale = (boxW: number, boxH: number, contL: number, contD: number) => {
+        const padding = 20;
+        const usefulW = boxW - padding;
+        const usefulH = boxH - padding;
+        const scale = Math.min(usefulW / contL, usefulH / contD);
+        return {
+            scale,
+            offsetX: (boxW - (contL * scale)) / 2,
+            offsetY: (boxH - (contD * scale)) / 2
+        };
+    };
+
+    const topFit = fitScale(topViewBox.w, topViewBox.h, container.length_mm, container.width_mm);
+    const sideFit = fitScale(sideViewBox.w, sideViewBox.h, container.length_mm, container.height_mm);
+
+    const topOriginX = topViewBox.x + topFit.offsetX;
+    const topOriginY = topViewBox.y + topFit.offsetY;
+    const sideOriginX = sideViewBox.x + sideFit.offsetX;
+    const sideOriginY = sideViewBox.y + sideFit.offsetY;
+
+    // Draw Container Outlines
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.5);
+    
+    // Top View Container (XY plane)
+    doc.rect(topOriginX, topOriginY, container.length_mm * topFit.scale, container.width_mm * topFit.scale);
+    doc.setFontSize(10);
+    doc.text("Top View (XY)", topOriginX, topOriginY - 5);
+
+    // Side View Container (XZ plane)
+    doc.rect(sideOriginX, sideOriginY, container.length_mm * sideFit.scale, container.height_mm * sideFit.scale);
+    doc.text("Side View (XZ)", sideOriginX, sideOriginY - 5);
+
+    // Draw all placements up to current step
+    const visiblePlacements = allPlacements
+        .filter(p => p.step_number <= currentPlacement.step_number)
+        .sort((a, b) => a.step_number - b.step_number);
+
+    for (const p of visiblePlacements) {
+        const isCurrent = p.step_number === currentPlacement.step_number;
+        const item = productMap.get(p.product_id);
+        if (!item) continue;
+
+        // Handle rotation untuk dimensi
+        const getDims = (rot: number) => {
+             const l = item.length_mm, w = item.width_mm, h = item.height_mm;
+             switch(rot) {
+                case 1: return { l: w, w: l, h: h };
+                case 2: return { l: w, w: h, h: l };
+                default: return { l, w, h };
+             }
+        };
+        const dim = getDims(p.rotation);
+
+        const colorHex = stringToColor(p.product_id);
+        const rgb = hexToRgb(colorHex);
+
+        // Current step = colored, past steps = grey
+        if (isCurrent && rgb) {
+            doc.setFillColor(rgb.r, rgb.g, rgb.b);
+            doc.setDrawColor(20, 20, 20);
+        } else {
+            doc.setFillColor(240, 240, 240);
+            doc.setDrawColor(180, 180, 180);
+        }
+        
+        // Top View (XY plane) - Inversi Y
+        const topX = topOriginX + (p.pos_x * topFit.scale);
+        const topY = topOriginY + ((container.width_mm - (p.pos_y + dim.w)) * topFit.scale);
+        doc.rect(topX, topY, dim.l * topFit.scale, dim.w * topFit.scale, isCurrent ? "FD" : "DF");
+
+        // Side View (XZ plane) - Inversi Z
+        const sideX = sideOriginX + (p.pos_x * sideFit.scale);
+        const sideY = sideOriginY + ((container.height_mm - (p.pos_z + dim.h)) * sideFit.scale);
+        doc.rect(sideX, sideY, dim.l * sideFit.scale, dim.h * sideFit.scale, isCurrent ? "FD" : "DF");
+    }
+
+    // Legend untuk current step
+    const currentItem = productMap.get(currentPlacement.product_id);
+    if (currentItem) {
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.text(`Item: ${currentItem.label} (ID: ${currentItem.product_id.substring(0,6)})`, margin, pageHeight - margin - 20);
+        doc.text(`Position: (${currentPlacement.pos_x}, ${currentPlacement.pos_y}, ${currentPlacement.pos_z})`, margin, pageHeight - margin - 15);
+    }
+}
+```
+
+Mari kita bahas komponen-komponen penting dari implementasi ini:
+
+**1. Orientasi Landscape**
+Kita menggunakan landscape karena kontainer pengiriman biasanya memiliki rasio panjang:lebar yang ekstrem (12000mm x 2400mm). Landscape memberikan ruang lebih untuk diagram.
+
+**2. Dual-View Diagram**
+Setiap halaman step menampilkan dua sudut pandang:
+- **Top View (XY)** — Melihat kontainer dari atas. Menunjukkan posisi horizontal barang.
+- **Side View (XZ)** — Melihat kontainer dari samping. Menunjukkan ketinggian penumpukan.
+
+**3. Color Coding**
+- Barang yang sedang diload (current step) ditampilkan berwarna
+- Barang yang sudah diload (past steps) ditampilkan abu-abu
+
+**4. AutoTable untuk Manifest**
+Plugin `jspdf-autotable` menghasilkan tabel dengan layout otomatis, column widths yang proporsional, dan pagination jika data terlalu panjang.
+
+#### Komponen Tombol Export
+
+Buat file `web/components/pdf-export-button.tsx`:
+
+```tsx
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { FileDown, Loader2 } from "lucide-react";
+import { PlanDetail, Container } from "@/lib/api/types";
+import { generateStuffingReport } from "@/lib/pdf-report";
+
+interface PDFExportButtonProps {
+    plan: PlanDetail;
+    container: Container;
+    className?: string;
+}
+
+export function PDFExportButton({ plan, container, className }: PDFExportButtonProps) {
+    const [generating, setGenerating] = useState(false);
+
+    const handleExport = async () => {
+        setGenerating(true);
+        try {
+            await generateStuffingReport(plan, container);
+        } catch (error) {
+            console.error("Failed to generate PDF", error);
+            alert("Failed to generate PDF. See console for details.");
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    return (
+        <Button onClick={handleExport} variant="outline" className={className} disabled={generating}>
+            {generating ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <FileDown className="mr-2 h-4 w-4" />
+            )}
+            {generating ? "Exporting..." : "Export PDF"}
+        </Button>
+    )
+}
+```
+
+Komponen ini menangani:
+1. **Loading State** — Spinner ditampilkan saat PDF sedang di-generate
+2. **Error Handling** — Alert sederhana jika terjadi error
+3. **Disabled State** — Button disabled saat proses berlangsung untuk mencegah double-click
+
+#### Integrasi di Halaman Plan Detail
+
+Untuk menggunakan tombol export, tambahkan di halaman detail plan:
+
+```tsx
+// di web/app/plans/[id]/page.tsx
+
+import { PDFExportButton } from "@/components/pdf-export-button";
+
+// ... dalam JSX ...
+<div className="flex gap-2">
+    <PDFExportButton plan={planData} container={container} />
+    {/* tombol lain... */}
+</div>
+```
+
+Dengan implementasi ini, tim operasional di lapangan bisa mencetak "Surat Jalan" yang berisi:
+1. Ringkasan plan dengan daftar barang
+2. Instruksi pemuatan step-by-step dengan diagram visual
+3. Informasi posisi untuk setiap barang
+
+### 8.4 Penutup: Arsitektur Final dan Refleksi
+
+Kita telah menyelesaikan perjalanan panjang membangun sistem Load & Stuffing Calculator dari nol. Sebelum mengakhiri buku ini, mari kita lihat kembali *big picture* dari apa yang telah kita bangun.
+
+#### Arsitektur Sistem Final
+
+```mermaid
+flowchart TB
+    subgraph Client["Browser (Client)"]
+        direction TB
+        UI[Next.js Pages]
+        Viz[Three.js Visualizer]
+        PDF[PDF Generator]
+    end
+
+    subgraph Frontend["Frontend Layer (Next.js)"]
+        direction TB
+        API_Client[API Client]
+        Auth_Guard[Auth Guard]
+        Hooks[React Hooks]
+    end
+
+    subgraph Backend["Backend Layer (Go)"]
+        direction TB
+        Router[Gin Router]
+        Middleware[JWT Middleware]
+        Handlers[HTTP Handlers]
+        Services[Business Services]
+        Store[SQLC Store]
+        Gateway[Packing Gateway]
+    end
+
+    subgraph Packing["Packing Service (Python)"]
+        Flask[Flask API]
+        Algo[py3dbp Algorithm]
+    end
+
+    subgraph Data["Data Layer"]
+        DB[(PostgreSQL)]
+    end
+
+    UI --> API_Client
+    Viz --> API_Client
+    PDF --> API_Client
+    API_Client --> Router
+    Router --> Middleware
+    Middleware --> Handlers
+    Handlers --> Services
+    Services --> Store
+    Services --> Gateway
+    Store --> DB
+    Gateway --> Flask
+    Flask --> Algo
+```
+
+Diagram ini menunjukkan aliran data dari browser pengguna hingga ke database dan kembali:
+
+1. **Client Layer** — Browser menjalankan React components, Three.js untuk visualisasi 3D, dan jsPDF untuk generate dokumen.
+
+2. **Frontend Layer** — Next.js menyediakan API client untuk komunikasi dengan backend, Auth Guard untuk proteksi halaman, dan React Hooks untuk state management.
+
+3. **Backend Layer** — Go dengan Gin framework menangani HTTP routing, JWT authentication via middleware, business logic di services, dan akses database via SQLC.
+
+4. **Packing Service** — Python Flask service yang menjalankan algoritma 3D bin packing menggunakan py3dbp.
+
+5. **Data Layer** — PostgreSQL menyimpan semua data persisten.
+
+#### Komponen yang Dibangun
+
+Berikut ringkasan semua komponen yang telah kita implementasikan:
+
+| Layer | Teknologi | Jumlah File | Fungsi Utama |
+|-------|-----------|-------------|--------------|
+| Database | PostgreSQL + Goose | 4 migrasi | Schema management |
+| Backend API | Go + Gin + SQLC | ~25 files | REST API, Auth, Business Logic |
+| Packing Service | Python + Flask + py3dbp | ~8 files | 3D Bin Packing Algorithm |
+| Frontend | Next.js + React + Three.js | ~35 files | UI, Visualization, PDF Export |
+| Deployment | Docker + Compose | 4 Dockerfiles | Containerization |
+
+#### Lessons Learned: Refleksi Arsitektur
+
+Selama membangun sistem ini, kita telah membuat beberapa keputusan arsitektur penting. Mari kita refleksikan mengapa keputusan tersebut diambil.
+
+**1. Mengapa Go untuk Backend?**
+
+Go dipilih karena beberapa alasan:
+- **Performa tinggi** — Compiled language dengan goroutines untuk concurrency
+- **Static typing** — Mengurangi bug runtime, IDE support yang baik
+- **Deployment sederhana** — Single binary tanpa runtime dependencies
+- **Ecosystem mature** — Gin, SQLC, dan library standar yang kaya
+
+Alternatif seperti Node.js atau Python juga valid, tetapi Go memberikan keseimbangan terbaik antara developer experience dan performa produksi untuk API server.
+
+**2. Mengapa Client-Side PDF Generation?**
+
+Kita memilih generate PDF di browser (jsPDF) daripada di server karena:
+- **Responsiveness** — User bisa preview dan modify sebelum export
+- **Reduced server load** — PDF generation bisa CPU-intensive
+- **Offline capability** — Bisa generate PDF meski koneksi terputus (jika data sudah di-cache)
+
+Trade-off: File PDF yang dihasilkan mungkin berbeda antar browser. Untuk konsistensi pixel-perfect, server-side rendering dengan puppeteer atau wkhtmltopdf lebih cocok.
+
+**3. Mengapa Memisahkan Packing Service (Python)?**
+
+Keputusan memisahkan algoritma packing ke microservice terpisah memiliki alasan:
+- **Language fit** — Python memiliki ecosystem algoritma dan scientific computing yang lebih kaya
+- **Independent scaling** — Packing computation bisa di-scale terpisah dari API
+- **Replaceability** — Bisa swap algoritma tanpa mengubah backend utama
+
+Trade-off: Menambah complexity (network call, error handling antar service). Untuk aplikasi kecil, monolith mungkin lebih sederhana.
+
+**4. Mengapa JWT Stateless vs Session?**
+
+JWT dipilih karena:
+- **Scalability** — Tidak perlu shared session store antar server
+- **Microservices friendly** — Token bisa diverifikasi oleh service manapun
+- **Mobile ready** — Lebih mudah diintegrasikan dengan mobile apps
+
+Trade-off: Tidak bisa "logout" token yang sudah diterbitkan (harus tunggu expired). Untuk keamanan tinggi, kombinasikan dengan refresh token dan blacklist.
+
+#### Langkah Selanjutnya untuk Pembaca
+
+Setelah menguasai fondasi yang dibangun di buku ini, berikut beberapa arah pengembangan yang bisa Anda eksplorasi:
+
+**1. Real-time Collaboration**
+Tambahkan WebSocket untuk memungkinkan multiple user mengedit plan secara bersamaan. Teknologi: Socket.io atau native WebSocket dengan Go.
+
+**2. Advanced Packing Algorithms**
+Ganti atau kombinasikan py3dbp dengan algoritma lain:
+- Genetic Algorithm untuk optimization
+- Simulated Annealing untuk hasil lebih optimal
+- Machine Learning untuk prediksi packing patterns
+
+**3. Mobile Application**
+Buat companion app dengan React Native yang menggunakan API yang sama. Tim lapangan bisa mengakses loading plan dari smartphone.
+
+**4. Analytics Dashboard**
+Tambahkan historical analytics:
+- Trend utilisasi kontainer per bulan
+- Produk yang paling sering dikirim
+- Perbandingan efisiensi antar jenis kontainer
+
+**5. Integration dengan External Systems**
+Hubungkan dengan:
+- **ERP** — SAP, Oracle untuk sync inventory
+- **WMS** — Warehouse Management untuk koordinasi picking
+- **TMS** — Transportation Management untuk optimasi rute
+
+**6. Multi-tenant SaaS**
+Transform aplikasi menjadi SaaS yang bisa melayani multiple perusahaan dengan tenant isolation dan billing system.
+
 ### Ringkasan
 
-Selamat! Kita telah sampai di bab terakhir dari buku ini. Sampai tahap ini, kita sudah memiliki aplikasi yang berfungsi secara teknis: Backend Go yang solid, Python Service yang cerdas, dan Frontend Next.js yang interaktif. Namun, sebuah sistem perangkat lunak belum bisa dikatakan siap produksi tanpa mempertimbangkan aspek keamanan, visibilitas operasional, dan kemampuan pelaporan.
+Di bab terakhir ini, kita telah menyelesaikan aplikasi Load & Stuffing Calculator dengan tiga fitur produksi-ready:
 
-Aplikasi ini sekarang memiliki fondasi yang kuat untuk dikembangkan lebih lanjut. Kita bisa mengembangkannya dengan menambah fitur kolaborasi real-time, optimasi algoritma yang lebih canggih, atau integrasi dengan sistem logistik lainnya.
+1. **Sistem Autentikasi JWT** — Mengamankan aplikasi dengan login/register, JWT tokens, dan route protection. Setiap user memiliki data yang terisolasi (multi-tenancy).
 
-Terima kasih telah mengikuti panduan ini. Teruslah berkarya dan eksplorasi teknologi baru!
+2. **Dashboard Statistik** — Memberikan visibilitas operasional dengan agregasi SQL yang efisien. User dapat melihat ringkasan aktivitas di satu tempat.
+
+3. **PDF Export** — Menjembatani gap antara sistem digital dan operasional fisik. Tim lapangan mendapat "Surat Jalan" dengan instruksi visual step-by-step.
+
+Kita juga telah merefleksikan keputusan arsitektur yang dibuat sepanjang buku ini—dari pemilihan bahasa pemrograman hingga strategi deployment. Setiap keputusan memiliki trade-off, dan pemahaman ini akan membantu Anda membuat keputusan serupa di proyek masa depan.
+
+Selamat! Anda telah menyelesaikan perjalanan membangun sistem container stuffing dari nol. Aplikasi ini bukan hanya demo—ia adalah fondasi yang bisa dikembangkan menjadi produk nyata. Teruslah bereksperimen, belajar, dan membangun!
 
 ### Bacaan Lanjutan
 
-- **JWT Best Practices**: [IETF RFC 7519](https://tools.ietf.org/html/rfc7519)
-- **Goose Migration**: [Pressly Goose Documentation](https://github.com/pressly/goose)
-- **PDF Generation in JS**: [jsPDF Documentation](https://artskydj.github.io/jsPDF/docs/)
+- **JWT Best Practices**: [IETF RFC 7519](https://tools.ietf.org/html/rfc7519) — Spesifikasi resmi JSON Web Token
+- **Goose Migration**: [Pressly Goose Documentation](https://github.com/pressly/goose) — Database migration tool untuk Go
+- **jsPDF Documentation**: [jsPDF Docs](https://artskydj.github.io/jsPDF/docs/) — Library PDF generation di browser
+- **Three.js Fundamentals**: [Three.js Journey](https://threejs-journey.com/) — Course komprehensif untuk 3D web graphics
+- **Docker Best Practices**: [Docker Docs](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/) — Panduan menulis Dockerfile yang efisien
+- **System Design Primer**: [GitHub Repository](https://github.com/donnemartin/system-design-primer) — Referensi untuk scaling aplikasi
