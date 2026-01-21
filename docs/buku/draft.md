@@ -70,6 +70,7 @@ aliases:
    - [8.2 Dashboard Statistik](#82-dashboard-statistik)
    - [8.3 PDF Export: Laporan Operasional](#83-pdf-export-laporan-operasional)
    - [8.4 Penutup: Arsitektur Final dan Refleksi](#84-penutup-arsitektur-final-dan-refleksi)
+9. [Daftar Pustaka](#daftar-pustaka)
 
 ---
 
@@ -81,7 +82,7 @@ Pada bab ini, kita akan menyelami jantung permasalahan yang menjadi alasan buku 
  
 Pendekatan manual ini memiliki biaya tersembunyi yang sangat besar. Ruang kosong (*void space*) dalam kontainer berarti kita membayar untuk mengangkut udara, bukan barang. Dalam skala industri, inefisiensi 10% saja bisa berarti kerugian miliaran rupiah per tahun. Belum lagi risiko kerusakan barang akibat penataan yang tidak stabil.
  
-Di sinilah algoritma dan komputasi modern berperan. *Container Loading Problem* (CLP) adalah masalah matematika klasik yang terkenal sulit (*NP-hard*), namun solusinya menjanjikan efisiensi yang nyata. Kita tidak lagi bisa mengandalkan tebakan; kita membutuhkan kalkulasi presisi.
+Di sinilah algoritma dan komputasi modern berperan. *Container Loading Problem* (CLP) adalah masalah matematika klasik yang terkenal sulit (*NP-hard*) (Garey & Johnson, 1979), namun solusinya menjanjikan efisiensi yang nyata. Kita tidak lagi bisa mengandalkan tebakan; kita membutuhkan kalkulasi presisi.
  
 Untuk itu, kita akan membongkar landasan teoritis dari CLP, memahami mengapa solusi eksak nyaris mustahil dicapai dalam waktu wajar, dan mengapa pendekatan heuristik adalah jalan tengah terbaik. Pemahaman ini krusial sebagai fondasi sebelum kita menulis satu baris kode pun.
 
@@ -96,7 +97,7 @@ Untuk itu, kita akan membongkar landasan teoritis dari CLP, memahami mengapa sol
 
 ### 1.1 Tantangan Logistik dalam Era Perdagangan Global
 
-Pada tahun 1956, seorang pengusaha truk bernama Malcolm McLean melakukan eksperimen sederhana yang mengubah wajah perdagangan dunia: ia memuat 58 trailer truk ke dalam kapal tanker bekas di pelabuhan Newark, New Jersey. Eksperimen ini melahirkan kontainerisasi modern—sebuah inovasi yang mengurangi biaya pengiriman barang hingga 90% dan memungkinkan globalisasi ekonomi seperti yang kita kenal hari ini.
+Pada tahun 1956, seorang pengusaha truk bernama Malcolm McLean melakukan eksperimen sederhana yang mengubah wajah perdagangan dunia: ia memuat 58 trailer truk ke dalam kapal tanker bekas di pelabuhan Newark, New Jersey. Eksperimen ini melahirkan kontainerisasi modern—sebuah inovasi yang mengurangi biaya pengiriman barang hingga 90% dan memungkinkan globalisasi ekonomi seperti yang kita kenal hari ini (Levinson, 2006).
 
 Namun, enam dekade kemudian, sebuah ironi masih terjadi di hampir setiap pelabuhan dunia. Meskipun proses pengangkutan kontainer telah sepenuhnya terotomasi dengan crane raksasa dan sistem pelacakan digital, proses *stuffing*—memuat barang ke dalam kontainer—masih dilakukan dengan cara yang nyaris tidak berubah sejak era McLean. Seorang operator berdiri di depan kontainer kosong, memegang clipboard atau tablet, lalu mengarahkan forklift berdasarkan intuisi dan pengalaman.
 
@@ -118,7 +119,7 @@ Industri logistik membutuhkan solusi yang dapat memproses kompleksitas ini secar
 
 ### 1.2 Container Loading Problem dan Kompleksitas NP-hard
 
-Masalah yang tampak sederhana—menempatkan kotak-kotak ke dalam wadah lebih besar—ternyata telah menarik perhatian matematikawan dan ilmuwan komputer selama lebih dari setengah abad. Dalam literatur akademis, permasalahan ini dikenal sebagai *Container Loading Problem* (CLP), dan ia memiliki sejarah panjang yang terkait dengan perkembangan teori kompleksitas komputasi.
+Masalah yang tampak sederhana—menempatkan kotak-kotak ke dalam wadah lebih besar—ternyata telah menarik perhatian matematikawan dan ilmuwan komputer selama lebih dari setengah abad. Dalam literatur akademis, permasalahan ini dikenal sebagai *Container Loading Problem* (CLP) (Bischoff & Ratcliff, 1995; Wäscher et al., 2007), dan ia memiliki sejarah panjang yang terkait dengan perkembangan teori kompleksitas komputasi.
 
 Definisi formal CLP dapat dirumuskan sebagai berikut:
 
@@ -126,7 +127,7 @@ Definisi formal CLP dapat dirumuskan sebagai berikut:
 
 Rumusan ini terdengar straightforward. Namun, di balik kesederhanaan definisinya tersembunyi kompleksitas matematis yang luar biasa.
 
-Pada tahun 1972, Richard Karp mempublikasikan makalah seminal yang mengidentifikasi 21 masalah komputasi yang ia buktikan sebagai "NP-complete"—sebuah kelas masalah yang, hingga hari ini, tidak ada algoritma efisien yang diketahui dapat menyelesaikannya. *Bin Packing Problem*, versi satu dimensi dari CLP, termasuk dalam daftar Karp. Versi tiga dimensi—yang kita hadapi dalam pemuatan kontainer—bahkan lebih kompleks.
+Pada tahun 1972, Richard Karp mempublikasikan makalah seminal yang mengidentifikasi 21 masalah komputasi yang ia buktikan sebagai "NP-complete"—sebuah kelas masalah yang, hingga hari ini, tidak ada algoritma efisien yang diketahui dapat menyelesaikannya (Karp, 1972). *Bin Packing Problem*, versi satu dimensi dari CLP, termasuk dalam daftar Karp. Versi tiga dimensi—yang kita hadapi dalam pemuatan kontainer—bahkan lebih kompleks (Martello et al., 2000).
 
 Apa artinya sebuah masalah bersifat **NP-hard** bagi praktisi? Mari kita telusuri implikasi praktisnya.
 
@@ -152,9 +153,9 @@ Lebih jauh lagi, CLP dunia nyata jarang sesederhana definisi akademis. Batasan p
 
 **Orientasi dan arah "atas"**: Tidak semua barang boleh diputar secara bebas. Sebuah komputer harus tetap tegak. Sebuah mesin mungkin memiliki titik pengangkatan yang menentukan orientasinya. Constraint ini mengurangi ruang solusi, tetapi juga mengurangi fleksibilitas algoritma.
 
-**Stabilitas tumpukan**: Barang yang ditumpuk harus memiliki penopang yang memadai di bawahnya. Algoritma tidak dapat seenaknya "menggantung" barang di udara. Biasanya, minimal 75% permukaan bawah barang harus didukung oleh barang lain atau lantai kontainer.
+**Stabilitas tumpukan**: Barang yang ditumpuk harus memiliki penopang yang memadai di bawahnya. Algoritma tidak dapat seenaknya "menggantung" barang di udara. Biasanya, minimal 75% permukaan bawah barang harus didukung oleh barang lain atau lantai kontainer (Bortfeldt & Wäscher, 2013).
 
-**Batasan berat**: Setiap kontainer memiliki *payload maksimum*—berat total yang boleh dimuat. Kontainer standar 40 feet, misalnya, memiliki batas sekitar 28 ton. Algoritma harus melacak akumulasi berat dan menolak penempatan yang melanggar batas ini.
+**Batasan berat**: Setiap kontainer memiliki *payload maksimum*—berat total yang boleh dimuat. Kontainer standar 40 feet, misalnya, memiliki batas sekitar 28 ton (ISO, 2020). Algoritma harus melacak akumulasi berat dan menolak penempatan yang melanggar batas ini.
 
 **Distribusi berat**: Selain total berat, distribusi berat juga penting. Kontainer yang terlalu berat di satu sisi dapat menyebabkan masalah stabilitas saat pengangkutan. Beberapa algoritma advanced memperhitungkan *center of gravity*.
 
@@ -166,7 +167,7 @@ Dengan semua constraint ini, ruang solusi yang "valid" menjadi jauh lebih sempit
 
 ### 1.3 Pendekatan Algoritmik: Dari Optimal ke Heuristik
 
-Mengingat kompleksitas NP-hard, pendekatan matematis murni (*exact algorithms*) seperti *Integer Linear Programming* atau *Branch and Bound* menjadi tidak praktis untuk data dengan skala industri. Oleh karena itu, industri dan akademisi beralih ke **algoritma heuristik**.
+Mengingat kompleksitas NP-hard, pendekatan matematis murni (*exact algorithms*) seperti *Integer Linear Programming* atau *Branch and Bound* menjadi tidak praktis untuk data dengan skala industri (Martello et al., 2000). Oleh karena itu, industri dan akademisi beralih ke **algoritma heuristik** (Coffman et al., 1996).
 
 Algoritma heuristik adalah metode yang:
 
@@ -222,9 +223,9 @@ Mari kita telusuri alur ini:
 
 **Best Fit Decreasing (BFD)**: Mirip dengan *Bigger First*, tetapi saat mencari posisi, algoritma memilih posisi yang menyisakan ruang kosong paling sedikit. Ini mengurangi fragmentasi ruang, tetapi membutuhkan komputasi lebih berat karena harus mengevaluasi lebih banyak opsi.
 
-**First Fit Decreasing (FFD)**: Barang diurutkan dari besar ke kecil, lalu ditempatkan di posisi valid pertama yang ditemukan. Lebih cepat dari BFD karena tidak mencari posisi "terbaik", tetapi hasilnya cenderung kurang optimal.
+**First Fit Decreasing (FFD)**: Barang diurutkan dari besar ke kecil, lalu ditempatkan di posisi valid pertama yang ditemukan (Johnson, 1974). Lebih cepat dari BFD karena tidak mencari posisi "terbaik", tetapi hasilnya cenderung kurang optimal.
 
-Untuk implementasi kita, *Bigger First* dengan pencarian posisi standar dipilih karena menyeimbangkan **kualitas solusi** dan **kecepatan komputasi**. Dalam pengujian dengan data industri, strategi ini mencapai utilisasi volume 50-60% untuk kargo heterogen—angka yang kompetitif dengan algoritma yang lebih kompleks, tetapi dengan waktu eksekusi yang jauh lebih singkat.
+Untuk implementasi kita, *Bigger First* dengan pencarian posisi standar dipilih karena menyeimbangkan **kualitas solusi** dan **kecepatan komputasi**. Dalam pengujian dengan data industri, strategi ini mencapai utilisasi volume 50-60% untuk kargo heterogen (Ananno & Ribeiro, 2024; Silva et al., 2016)—angka yang kompetitif dengan algoritma yang lebih kompleks, tetapi dengan waktu eksekusi yang jauh lebih singkat.
 
 **Trade-off: Kualitas vs Waktu**
 
@@ -351,7 +352,7 @@ Setelah menyelesaikan buku ini, pembaca akan memiliki pengetahuan dan *source co
 
 ### Ringkasan
 
-Pada bab ini, kita telah memahami mengapa optimasi pemuatan kontainer merupakan masalah yang signifikan bagi industri logistik. *Container Loading Problem* adalah masalah NP-hard yang tidak dapat diselesaikan secara optimal dalam waktu yang wajar untuk skala industri. Pendekatan heuristik, khususnya algoritma *3D Bin Packing* dengan strategi *Bigger First*, menjadi solusi praktis yang akan kita implementasikan.
+Pada bab ini, kita telah memahami mengapa optimasi pemuatan kontainer merupakan masalah yang signifikan bagi industri logistik. *Container Loading Problem* adalah masalah NP-hard yang tidak dapat diselesaikan secara optimal dalam waktu yang wajar untuk skala industri (Garey & Johnson, 1979). Pendekatan heuristik, khususnya algoritma *3D Bin Packing* dengan strategi *Bigger First*, menjadi solusi praktis yang akan kita implementasikan. Penelitian terbaru juga menunjukkan potensi *deep reinforcement learning* dan algoritma genetika untuk meningkatkan kualitas solusi (Zhang et al., 2024; Zhao et al., 2022; Wong et al., 2024).
 
 Kita juga telah mendefinisikan visi dan tujuan operasional sistem *Load & Stuffing Calculator* yang akan dibangun sepanjang buku ini. Pada bab berikutnya, kita akan merancang arsitektur layanan mikro yang memisahkan tanggung jawab antara manajemen data, komputasi algoritma, dan visualisasi.
 
@@ -372,11 +373,11 @@ Berikut adalah referensi untuk memperdalam pemahaman konsep-konsep yang dibahas 
 
 ## Bab 2: Perancangan Arsitektur Layanan Mikro
 
-Pada bab ini, kita akan meletakkan batu pertama dari sistem kita: perancangan arsitektur. Dalam pengembangan perangkat lunak modern, godaan untuk langsung melompat ke penulisan kode sangatlah besar. Namun, tanpa desain arsitektur yang matang, aplikasi yang kita bangun berisiko menjadi "bola lumpur besar" (*Big Ball of Mud*)—sebuah sistem monolitik yang sulit dipelihara, sulit dikembangkan, dan rentan terhadap kegagalan kaskade.
+Pada bab ini, kita akan meletakkan batu pertama dari sistem kita: perancangan arsitektur. Dalam pengembangan perangkat lunak modern, godaan untuk langsung melompat ke penulisan kode sangatlah besar. Namun, tanpa desain arsitektur yang matang, aplikasi yang kita bangun berisiko menjadi "bola lumpur besar" (*Big Ball of Mud*)—sebuah sistem monolitik yang sulit dipelihara, sulit dikembangkan, dan rentan terhadap kegagalan kaskade (Foote & Yoder, 1997).
  
 Kasus penggunaan kita—kalkulasi 3D bin packing—memiliki karakteristik yang unik. Ia adalah operasi yang sangat *CPU-intensive* (berat di komputasi), berbeda dengan operasi web standar yang biasanya *I/O-bound* (berat di database/network). Jika kita menggabungkan logika kalkulasi berat ini dengan logika manajemen data dalam satu proses, performa seluruh aplikasi bisa terganggu hanya karena satu user melakukan kalkulasi kompleks.
 
-Solusinya adalah **Pemisahan Tanggung Jawab** (*Separation of Concerns*). Kita akan mengadopsi gaya arsitektur **Microservices**, di mana kita memecah sistem menjadi layanan-layanan kecil yang otonom. Kita akan menggunakan **Go** untuk Backend API yang membutuhkan konkurensi tinggi dan latensi rendah, serta **Python** untuk Packing Service yang membutuhkan ekosistem algoritma yang kaya.
+Solusinya adalah **Pemisahan Tanggung Jawab** (*Separation of Concerns*) (Parnas, 1972). Kita akan mengadopsi gaya arsitektur **Microservices** (Lewis & Fowler, 2014; Newman, 2021), di mana kita memecah sistem menjadi layanan-layanan kecil yang otonom. Kita akan menggunakan **Go** untuk Backend API yang membutuhkan konkurensi tinggi dan latensi rendah, serta **Python** untuk Packing Service yang membutuhkan ekosistem algoritma yang kaya.
 
 Arsitektur ini tidak hanya menyelesaikan masalah performa, tetapi juga memberikan fleksibilitas. Tim Backend bisa fokus pada keandalan API, sementara Data Scientist bisa mengoptimalkan algoritma packing tanpa saling menunggu. Jembatan penghubung keduanya adalah protokol standar industri: REST API dengan format JSON.
 
@@ -394,7 +395,7 @@ Secara spesifik, kita akan merancang rincian kontrak komunikasi tersebut, mengga
 
 ### 2.1 Mengapa Arsitektur Microservices
 
-Sebelum Amazon, Netflix, dan perusahaan teknologi raksasa lainnya mempopulerkan istilah "microservices" pada awal 2010-an, arsitektur dominan untuk aplikasi enterprise adalah *monolith*. Sebuah aplikasi monolith adalah sistem di mana seluruh kode—dari antarmuka pengguna, logika bisnis, hingga akses database—dikemas dan di-deploy sebagai satu unit tunggal. Pendekatan ini memiliki keunggulan yang tidak bisa diabaikan: sederhana untuk dimulai, mudah di-debug karena semua kode berada di satu tempat, dan tidak memerlukan kompleksitas komunikasi jaringan internal.
+Sebelum Amazon, Netflix, dan perusahaan teknologi raksasa lainnya mempopulerkan istilah "microservices" pada awal 2010-an (Lewis & Fowler, 2014), arsitektur dominan untuk aplikasi enterprise adalah *monolith*. Sebuah aplikasi monolith adalah sistem di mana seluruh kode—dari antarmuka pengguna, logika bisnis, hingga akses database—dikemas dan di-deploy sebagai satu unit tunggal. Pendekatan ini memiliki keunggulan yang tidak bisa diabaikan: sederhana untuk dimulai, mudah di-debug karena semua kode berada di satu tempat, dan tidak memerlukan kompleksitas komunikasi jaringan internal.
 
 Banyak aplikasi sukses dibangun dengan arsitektur monolith, dan bagi banyak kasus sederhana, monolith tetap merupakan pilihan yang valid. Namun, ketika kita menganalisis karakteristik unik dari sistem *Load & Stuffing Calculator*, beberapa pertanyaan arsitektural muncul yang membuat monolith menjadi kurang ideal.
 
@@ -404,7 +405,7 @@ Pertanyaan kedua menyangkut **karakteristik beban kerja**. Perhatikan perbedaan 
 
 Pertanyaan ketiga berkaitan dengan **siklus pengembangan dan deployment**. Tim yang mengerjakan antarmuka pengguna biasanya memiliki ritme yang berbeda dengan tim yang mengembangkan algoritma. UI mungkin di-update harian dengan perbaikan kecil, sementara algoritma direvisi bulanan dengan perubahan signifikan. Dalam monolith, setiap perubahan—sekecil apapun—memerlukan deployment ulang seluruh sistem. Ini menciptakan coupling yang tidak perlu antara komponen yang seharusnya independen.
 
-Arsitektur *microservices* menjawab ketiga pertanyaan di atas dengan prinsip sederhana: **pisahkan komponen berdasarkan tanggung jawab, lalu biarkan masing-masing berkomunikasi melalui antarmuka yang terdefinisi dengan jelas**. Untuk sistem kita, ini berarti dua layanan utama:
+Arsitektur *microservices* menjawab ketiga pertanyaan di atas dengan prinsip sederhana: **pisahkan komponen berdasarkan tanggung jawab, lalu biarkan masing-masing berkomunikasi melalui antarmuka yang terdefinisi dengan jelas** (Newman, 2021). Untuk sistem kita, ini berarti dua layanan utama:
 
 ```mermaid
 graph TB
@@ -424,7 +425,7 @@ graph TB
 
 Diagram di atas mungkin terlihat sederhana—dan memang itulah intinya. Kompleksitas bukanlah tujuan; pemisahan tanggung jawab adalah tujuannya. **Backend API** menggunakan Go untuk menangani semua interaksi dengan dunia luar: menerima request dari frontend, memvalidasi input, mengelola autentikasi, dan menyimpan data ke PostgreSQL. Ia adalah "pintu gerbang" tunggal—tidak ada yang berbicara langsung ke Packing Service selain Backend API. **Packing Service** menggunakan Python untuk satu tugas spesifik: menerima data geometris dan mengembalikan koordinat penempatan. Ia tidak perlu tahu tentang autentikasi, tidak perlu tahu tentang database, tidak perlu tahu tentang konteks bisnis—ia hanya menghitung.
 
-Pemilihan bahasa untuk masing-masing layanan bukanlah keputusan sewenang-wenang, melainkan berdasarkan kesesuaian dengan karakteristik tugas. Backend API harus menangani banyak request simultan dengan latensi rendah—karakteristik yang menjadi kekuatan utama Go. Model *goroutines* dalam Go memungkinkan ribuan koneksi concurrent dikelola dengan memory footprint yang sangat kecil, sesuatu yang sulit dicapai dengan bahasa interpretasi tradisional.
+Pemilihan bahasa untuk masing-masing layanan bukanlah keputusan sewenang-wenang, melainkan berdasarkan kesesuaian dengan karakteristik tugas. Backend API harus menangani banyak request simultan dengan latensi rendah—karakteristik yang menjadi kekuatan utama Go (Donovan & Kernighan, 2015). Model *goroutines* dalam Go memungkinkan ribuan koneksi concurrent dikelola dengan memory footprint yang sangat kecil, sesuatu yang sulit dicapai dengan bahasa interpretasi tradisional.
 
 Di sisi lain, Packing Service memiliki karakteristik berbeda: kalkulasi intensif tetapi jarang dipanggil. Untuk tugas semacam ini, ekspresi sintaksis lebih penting daripada performa raw. Python dengan library py3dbp yang sudah teruji menjadi pilihan natural—kode algoritma dapat ditulis dengan jelas dan mudah di-maintain, sementara overhead interpretasi tidak signifikan dibandingkan kompleksitas kalkulasi geometris itu sendiri.
 
@@ -643,7 +644,7 @@ Komunikasi antara *Backend API* (Go) dan *Packing Service* (Python) memerlukan p
 
 **REST (Representational State Transfer)**
 
-REST bukanlah protokol dalam arti teknis, melainkan *architectural style* yang didefinisikan oleh Roy Fielding dalam disertasi doktoralnya pada tahun 2000. Fielding adalah salah satu arsitek utama protokol HTTP/1.1, dan REST lahir dari pemahamannya tentang bagaimana web bekerja dengan sukses.
+REST bukanlah protokol dalam arti teknis, melainkan *architectural style* yang didefinisikan oleh Roy Fielding dalam disertasi doktoralnya pada tahun 2000 (Fielding, 2000). Fielding adalah salah satu arsitek utama protokol HTTP/1.1, dan REST lahir dari pemahamannya tentang bagaimana web bekerja dengan sukses.
 
 Inti dari REST adalah memodelkan dunia sebagai *resources*—entitas yang dapat diidentifikasi dengan URL. Sebuah kontainer adalah resource (`/containers/123`), sebuah produk adalah resource (`/products/456`), dan operasi CRUD dilakukan menggunakan HTTP verbs: GET untuk membaca, POST untuk membuat, PUT/PATCH untuk memperbarui, DELETE untuk menghapus. Pendekatan ini intuitif karena mengikuti cara kita memikirkan data.
 
@@ -1067,7 +1068,7 @@ Untuk menyelesaikan bab ini, Anda memerlukan alat dan perangkat lunak berikut:
 
 ### 3.1 Fondasi Bahasa Go
 
-Go—atau sering disebut Golang—diciptakan di Google pada tahun 2007 oleh Robert Griesemer, Rob Pike, dan Ken Thompson. Ketiga insinyur ini memiliki latar belakang yang mengesankan: Thompson adalah salah satu pencipta Unix dan bahasa C, Pike adalah co-creator UTF-8 dan Plan 9, sementara Griesemer pernah bekerja pada JavaScript V8 engine dan Java HotSpot VM. Pengalaman puluhan tahun mereka dengan sistem berskala besar di Google membentuk filosofi Go yang sangat pragmatis.
+Go—atau sering disebut Golang—diciptakan di Google pada tahun 2007 oleh Robert Griesemer, Rob Pike, dan Ken Thompson (Pike, 2012). Ketiga insinyur ini memiliki latar belakang yang mengesankan: Thompson adalah salah satu pencipta Unix dan bahasa C, Pike adalah co-creator UTF-8 dan Plan 9, sementara Griesemer pernah bekerja pada JavaScript V8 engine dan Java HotSpot VM. Pengalaman puluhan tahun mereka dengan sistem berskala besar di Google membentuk filosofi Go yang sangat pragmatis.
 
 Go dirilis ke publik pada 2009 dan dengan cepat diadopsi oleh perusahaan-perusahaan yang membutuhkan *performance* tinggi dengan *developer experience* yang sederhana. Docker, Kubernetes, Terraform—infrastruktur modern yang mungkin sudah Anda gunakan—semuanya ditulis dalam Go.
 
@@ -1091,7 +1092,7 @@ Go menghindari "magic". Tidak ada *dependency injection framework* yang misteriu
 
 **Composition over Inheritance**
 
-Go tidak memiliki *class* atau *inheritance* dalam arti tradisional. Sebagai gantinya, Go menggunakan *struct embedding* dan *interfaces* untuk mencapai *code reuse*. Pendekatan ini mendorong komposisi objek-objek kecil daripada hierarki kelas yang dalam.
+Go tidak memiliki *class* atau *inheritance* dalam arti tradisional (Donovan & Kernighan, 2015). Sebagai gantinya, Go menggunakan *struct embedding* dan *interfaces* untuk mencapai *code reuse*. Pendekatan ini mendorong komposisi objek-objek kecil daripada hierarki kelas yang dalam—sebuah prinsip yang juga dianjurkan dalam *design patterns* klasik (Gamma et al., 1994).
 
 Untuk memperdalam pemahaman tentang prinsip-prinsip ini, ada tiga dokumen fundamental yang wajib dibaca:
 
@@ -1121,7 +1122,7 @@ HTTP server bawaan Go secara otomatis menjalankan setiap *request handler* dalam
 
 **Channels**
 
-*Goroutines* berkomunikasi melalui *channels*—sebuah mekanisme untuk mengirim dan menerima nilai antar *goroutines* secara *thread-safe*. Filosofi Go tentang *concurrency* terangkum dalam proverb:
+*Goroutines* berkomunikasi melalui *channels*—sebuah mekanisme untuk mengirim dan menerima nilai antar *goroutines* secara *thread-safe*. Filosofi Go tentang *concurrency* terangkum dalam proverb yang terinspirasi dari teori *Communicating Sequential Processes* (Hoare, 1978):
 
 > "Don't communicate by sharing memory; share memory by communicating."
 
@@ -3298,7 +3299,7 @@ type ContainerResponse struct {
 }
 ```
 
-Tag `binding` digunakan oleh Gin validator. `required` berarti field harus ada, `gt=0` berarti nilai harus lebih besar dari 0. Ini memberikan validasi input dasar secara otomatis.
+Tag `binding` digunakan oleh Gin validator. `required` berarti field harus ada, `gt=0` berarti nilai harus lebih besar dari 0. Ini memberikan validasi input dasar secara otomatis. Perhatikan bahwa `ContainerResponse` menggunakan `string` untuk ID, bukan `uuid.UUID`. Ini karena JSON tidak memiliki tipe UUID—konversi dilakukan di handler atau service layer. DTO juga memungkinkan kita untuk tidak mengekspos field internal seperti `created_at` jika tidak diperlukan oleh frontend.
 
 Selanjutnya, buat `product_dto.go` di folder yang sama untuk definisi produk:
 
@@ -3396,31 +3397,6 @@ type PlanDetailResponse struct {
 ```
 
 Dengan DTO yang lengkap, kita siap mengimplementasikan HTTP handler yang memanfaatkan model-model ini.
-
-```
-
-Perhatikan bahwa `ContainerResponse` menggunakan `string` untuk ID, bukan `uuid.UUID`. Ini karena JSON tidak memiliki tipe UUID—konversi dilakukan di handler atau service layer. DTO juga memungkinkan kita untuk tidak mengekspos field internal seperti `created_at` jika tidak diperlukan oleh frontend.
-
-Buat juga file `plan_dto.go` di dalam direktori `internal/dto/`:
-
-```go
-package dto
-
-type CreatePlanRequest struct {
-    ContainerID string `json:"container_id" binding:"required,uuid"`
-}
-
-type AddPlanItemRequest struct {
-    ProductID string `json:"product_id" binding:"required,uuid"`
-    Quantity  int    `json:"quantity" binding:"required,gt=0"`
-}
-
-type PlanResponse struct {
-    ID          string `json:"id"`
-    ContainerID string `json:"container_id"`
-    Status      string `json:"status"`
-}
-```
 
 #### Implementasi Handler
 
@@ -5026,7 +5002,7 @@ Untuk memperdalam pemahaman tentang topik yang dibahas di bab ini:
 
 Di bab sebelumnya, kita membangun Backend API dengan Go yang menangani semua interaksi dengan dunia luar—menerima request HTTP, memvalidasi input, dan menyimpan data ke database. Namun, ada satu komponen krusial yang sengaja kita tunda: *kalkulasi penempatan barang*. Saat endpoint `/calculate` dipanggil, Backend API kita hanya berkomunikasi dengan MockGateway yang mengembalikan data simulasi. Sekarang saatnya membangun "otak" yang sesungguhnya.
 
-Mengapa kita memisahkan kalkulasi ke service terpisah, dan mengapa menggunakan Python? Jawaban singkatnya: *the right tool for the right job*. Kalkulasi 3D bin packing adalah operasi CPU-intensive yang jarang dipanggil—berbeda karakteristiknya dengan operasi CRUD yang sering terjadi. Memisahkan keduanya memungkinkan scaling independen: Backend API bisa di-scale horizontal untuk menangani banyak request ringan, sementara Packing Service di-optimize untuk komputasi berat.
+Mengapa kita memisahkan kalkulasi ke service terpisah, dan mengapa menggunakan Python? Jawaban singkatnya: *the right tool for the right job*. Kalkulasi 3D bin packing adalah operasi CPU-intensive yang jarang dipanggil (Martello et al., 2000)—berbeda karakteristiknya dengan operasi CRUD yang sering terjadi. Memisahkan keduanya memungkinkan scaling independen: Backend API bisa di-scale horizontal untuk menangani banyak request ringan, sementara Packing Service di-optimize untuk komputasi berat.
 
 Python dipilih bukan karena performanya (Go jelas lebih cepat), melainkan karena *ekosistem*. Library py3dbp yang akan kita gunakan sudah teruji, well-documented, dan mengimplementasikan algoritma 3D bin packing yang kita bahas di Bab 1. Menulis ulang algoritma dari nol di Go tidak memberikan nilai tambah yang sepadan dengan effort-nya. Dalam dunia nyata, pragmatisme sering mengalahkan purisme teknologi.
 
@@ -5956,7 +5932,7 @@ def cm_int(value: float) -> int:
     return int(round(value))
 ```
 
-Floating-point arithmetic memiliki masalah presisi. Contoh klasik:
+Floating-point arithmetic memiliki masalah presisi yang sudah lama diketahui dalam ilmu komputer (Goldberg, 1991). Contoh klasik:
 
 ```python
 >>> 0.1 + 0.2
@@ -6885,7 +6861,7 @@ Buka `http://localhost:3000` di browser. Jika muncul halaman default Next.js, se
 
 Three.js memerlukan koordinasi banyak komponen: scene untuk menampung objects, camera untuk viewpoint, renderer untuk menggambar ke canvas, lights untuk pencahayaan, dan controls untuk interaktivitas. Menggabungkan semua ini dalam satu file akan menghasilkan kode yang sulit di-maintain dan sulit di-test.
 
-Kita menggunakan **Manager pattern**—setiap aspek rendering dikelola oleh class terpisah yang diorkestrasi oleh `StuffingVisualizer` utama. Pattern ini terinspirasi dari bagaimana game engines menyusun subsystems: rendering engine, physics engine, input handler, dan audio manager masing-masing berdiri sendiri tetapi bekerja sama melalui orchestrator.
+Kita menggunakan **Manager pattern**—setiap aspek rendering dikelola oleh class terpisah yang diorkestrasi oleh `StuffingVisualizer` utama. Pattern ini terinspirasi dari bagaimana game engines menyusun subsystems (Gregory, 2018): rendering engine, physics engine, input handler, dan audio manager masing-masing berdiri sendiri tetapi bekerja sama melalui orchestrator.
 
 Berikut class diagram yang menunjukkan hubungan antar komponen:
 
@@ -7330,7 +7306,7 @@ Camera menentukan dari sudut mana kita melihat scene, sementara controls memungk
 
 #### Memilih Jenis Camera
 
-Three.js menyediakan dua jenis camera utama:
+Three.js menyediakan dua jenis camera utama (Foley et al., 1995; Shirley & Marschner, 2021):
 
 - **PerspectiveCamera** — Objects jauh terlihat lebih kecil (seperti mata manusia). Natural untuk games dan simulasi.
 - **OrthographicCamera** — Objects sama besar terlepas dari jarak. Cocok untuk technical drawings dan CAD.
@@ -9340,7 +9316,7 @@ Untuk mengikuti bab ini, pastikan lingkungan pengembangan Anda siap:
 
 ### 6.1 Konfigurasi CORS di Backend
 
-Tantangan pertama saat menghubungkan Frontend (localhost:3000) dengan Backend (localhost:8080) adalah **Same-Origin Policy**. Browser secara keamanan memblokir request AJAX/Fetch dari domain/port yang berbeda kecuali server mengizinkannya secara eksplisit melalui header CORS (*Cross-Origin Resource Sharing*).
+Tantangan pertama saat menghubungkan Frontend (localhost:3000) dengan Backend (localhost:8080) adalah **Same-Origin Policy**. Browser secara keamanan memblokir request AJAX/Fetch dari domain/port yang berbeda kecuali server mengizinkannya secara eksplisit melalui header CORS (*Cross-Origin Resource Sharing*) (W3C, 2014).
 
 Jika kita mencoba memanggil API tanpa konfigurasi CORS, browser akan menampilkan error:
 `Access to fetch at 'http://localhost:8080/api/v1/containers' from origin 'http://localhost:3000' has been blocked by CORS policy`
@@ -9768,7 +9744,7 @@ export const productApi = {
 };
 ```
 
-Pola ini dikenal sebagai **Repository Pattern**. Manfaat utamanya adalah isolasi perubahan. Jika suatu saat Backend memutuskan untuk mengubah struktur URL (misalnya dari `/containers` menjadi `/api/v2/cargo-containers`), perubahan tersebut hanya perlu dilakukan di satu titik dalam file ini. Puluhan komponen yang menggunakan fungsi `containerApi.list()` akan tetap berjalan normal tanpa perlu disentuh sedikitpun.
+Pola ini dikenal sebagai **Repository Pattern** (Fowler, 2002). Manfaat utamanya adalah isolasi perubahan. Jika suatu saat Backend memutuskan untuk mengubah struktur URL (misalnya dari `/containers` menjadi `/api/v2/cargo-containers`), perubahan tersebut hanya perlu dilakukan di satu titik dalam file ini. Puluhan komponen yang menggunakan fungsi `containerApi.list()` akan tetap berjalan normal tanpa perlu disentuh sedikitpun.
 
 Terakhir, buat `web/lib/api/plans.ts`. Ini sedikit lebih kompleks karena ada sub-resource (Items) dan action khusus (Calculate).
 
@@ -11198,7 +11174,7 @@ Tujuan akhirnya adalah kemampuan untuk menjalankan seluruh ekosistem aplikasi ki
 
 ### 7.1 Persiapan Deployment & Konfigurasi Eksternal
 
-Sebelum membungkus aplikasi ke dalam container, kita harus memastikan aplikasi kita mematuhi prinsip **The Twelve-Factor App**, khususnya terkait konfigurasi. Aplikasi tidak boleh menyimpan konfigurasi rahasia (seperti password database) di dalam kode (*hardcoded*), melainkan harus membacanya dari lingkungan (*environment variables*).
+Sebelum membungkus aplikasi ke dalam container, kita harus memastikan aplikasi kita mematuhi prinsip **The Twelve-Factor App** (Wiggins, 2017), khususnya terkait konfigurasi. Aplikasi tidak boleh menyimpan konfigurasi rahasia (seperti password database) di dalam kode (*hardcoded*), melainkan harus membacanya dari lingkungan (*environment variables*).
 
 #### Audit Konfigurasi Backend
 
@@ -11254,11 +11230,11 @@ Secara default, aplikasi Node.js membutuhkan seluruh folder `node_modules` untuk
 
 Sebelum kita terjun ke kode, mari kita samakan pemahaman tentang apa itu Docker dan mengapa ia menjadi standar industri.
 
-Dalam pengembangan tradisional, kita sering menginstal runtime (Python, Node.js, Go) langsung di OS laptop kita. Versi di laptop mungkin `Python 3.11.0`, sementara di server `Python 3.11.9`. Perbedaan minor ini sering menyebabkan bug yang sulit dilacak—fenomena yang dikenal sebagai *"It works on my machine"*.
+Dalam pengembangan tradisional, kita sering menginstal runtime (Python, Node.js, Go) langsung di OS laptop kita. Versi di laptop mungkin `Python 3.11.0`, sementara di server `Python 3.11.9`. Perbedaan minor ini sering menyebabkan bug yang sulit dilacak—fenomena yang dikenal sebagai *"It works on my machine"* (Humble & Farley, 2010).
 
 Docker menyelesaikan masalah inkonsistensi ini dengan **Standarisasi**. Sama seperti kontainer pengiriman (shipping container) yang memungkinkan barang apa saja diangkut oleh moda apa saja karena ukurannya standar, Docker Container memungkinkan software apa saja dijalankan di server mana saja dengan jaminan perilaku yang sama persis.
 
-Efisiensi arsitektur inilah yang menjadi pembeda utama Docker. Jika Virtual Machine (VM) bekerja dengan memvirtualisasi *hardware*, maka Container bekerja dengan memvirtualisasi *Sistem Operasi*.
+Efisiensi arsitektur inilah yang menjadi pembeda utama Docker. Jika Virtual Machine (VM) bekerja dengan memvirtualisasi *hardware*, maka Container bekerja dengan memvirtualisasi *Sistem Operasi* (Felter et al., 2015).
 
 ```mermaid
 flowchart TD
@@ -11658,7 +11634,7 @@ Setelah aplikasi kita terbungkus rapi dalam Docker, tantangan berikutnya adalah 
 
 #### 1. Continuous Integration / Continuous Deployment (CI/CD)
 
-CI/CD adalah jantung dari modern software engineering. Ini mengubah proses deployment manual yang *error-prone* menjadi pipeline otomatis yang terstandarisasi.
+CI/CD adalah jantung dari modern software engineering (Humble & Farley, 2010; Kim et al., 2016). Ini mengubah proses deployment manual yang *error-prone* menjadi pipeline otomatis yang terstandarisasi.
 
 **Continuous Integration (CI): "Integrasi sesering mungkin"**
 
@@ -11764,7 +11740,7 @@ Di bab ini, kita akan melengkapi aplikasi dengan tiga fitur esensial:
 
 Dalam pengembangan aplikasi modern yang memisahkan Backend dan Frontend, kita perlu memilih strategi autentikasi yang tepat. Menggunakan session berbasis cookies (stateful) seringkali membebani server karena harus menyimpan status login setiap pengguna.
 
-Sebagai solusi yang lebih efisien, kita memilih pendekatan **Stateless** menggunakan **JSON Web Token (JWT)**. Token ini berisi informasi identitas pengguna yang ditandatangani secara digital. Server tidak perlu menyimpan status login; cukup memverifikasi tanda tangan pada token yang dikirim client. Ini membuat arsitektur kita lebih ringan dan mudah dikembangkan.
+Sebagai solusi yang lebih efisien, kita memilih pendekatan **Stateless** menggunakan **JSON Web Token (JWT)** (Jones et al., 2015). Token ini berisi informasi identitas pengguna yang ditandatangani secara digital. Server tidak perlu menyimpan status login; cukup memverifikasi tanda tangan pada token yang dikirim client. Ini membuat arsitektur kita lebih ringan dan mudah dikembangkan.
 
 Selain itu, keamanan data sangat penting. Kita menerapkan prinsip **Multi-tenancy**, yang memastikan setiap pengguna hanya bisa mengakses data mereka sendiri.
 
@@ -11824,7 +11800,7 @@ Sekarang mari kita implementasikan setiap komponen.
 
 Langkah pertama adalah menyiapkan penyimpanan data pengguna. Hal terpenting di sini adalah keamanan password. Kita tidak boleh menyimpan password dalam bentuk teks asli (*plain-text*) karena risiko kebocoran data.
 
-Kita akan menyimpan **Hash** dari password tersebut menggunakan algoritma `bcrypt`. Algoritma ini dirancang khusus untuk memperlambat proses komputasi, sehingga mempersulit upaya peretasan password.
+Kita akan menyimpan **Hash** dari password tersebut menggunakan algoritma `bcrypt` (Provos & Mazières, 1999). Algoritma ini dirancang khusus untuk memperlambat proses komputasi, sehingga mempersulit upaya peretasan password.
 
 Buat file migrasi `cmd/db/migrations/00004_create_users.sql`:
 
@@ -11849,7 +11825,7 @@ ALTER TABLE plans DROP COLUMN IF NOT EXISTS user_id;
 DROP TABLE IF EXISTS users;
 ```
 
-Pada skema di atas, perhatikan penggunaan `ON DELETE CASCADE` pada foreign key `plans`. Keputusan desain ini penting untuk menjaga integritas data (Referential Integrity). Jika suatu hari akun pengguna dihapus, kita tidak ingin meninggalkan "data yatim piatu" (orphan data)—yaitu rencana pengiriman yang masih ada di database tapi tidak memiliki pemilik. Dengan `CASCADE`, database akan secara otomatis membersihkan semua data terkait pengguna tersebut.
+Pada skema di atas, perhatikan penggunaan `ON DELETE CASCADE` pada foreign key `plans`. Keputusan desain ini penting untuk menjaga integritas data (Referential Integrity) (Silberschatz et al., 2019). Jika suatu hari akun pengguna dihapus, kita tidak ingin meninggalkan "data yatim piatu" (orphan data)—yaitu rencana pengiriman yang masih ada di database tapi tidak memiliki pemilik. Dengan `CASCADE`, database akan secara otomatis membersihkan semua data terkait pengguna tersebut.
 
 Terapkan perubahan ini ke database:
 
@@ -13380,3 +13356,129 @@ Selamat! Anda telah menyelesaikan perjalanan membangun sistem container stuffing
 - **Three.js Fundamentals**: [Three.js Journey](https://threejs-journey.com/) — Course komprehensif untuk 3D web graphics
 - **Docker Best Practices**: [Docker Docs](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/) — Panduan menulis Dockerfile yang efisien
 - **System Design Primer**: [GitHub Repository](https://github.com/donnemartin/system-design-primer) — Referensi untuk scaling aplikasi
+
+---
+
+## Daftar Pustaka
+
+### Jurnal dan Prosiding Ilmiah
+
+Ananno, A. A., & Ribeiro, L. (2024). A multi-heuristic algorithm for multi-container 3-D bin packing problem optimization using real world constraints. *IEEE Access*, 12, 42105–42130. https://doi.org/10.1109/ACCESS.2024.3378063
+
+Bischoff, E. E., & Ratcliff, M. S. W. (1995). Issues in the development of approaches to container loading. *Omega*, 23(4), 377–390.
+
+Bortfeldt, A., & Wäscher, G. (2013). Constraints in container loading—A state-of-the-art review. *European Journal of Operational Research*, 229(1), 1–20. https://doi.org/10.1016/j.ejor.2012.12.039
+
+Coffman, E. G., Garey, M. R., & Johnson, D. S. (1996). Approximation algorithms for bin packing: A survey. Dalam D. Hochbaum (Ed.), *Approximation Algorithms for NP-hard Problems* (hal. 46–93). PWS Publishing.
+
+Felter, W., Ferreira, A., Rajamony, R., & Rubio, J. (2015). An updated performance comparison of virtual machines and Linux containers. *IEEE International Symposium on Performance Analysis of Systems and Software (ISPASS)*, 171–172. https://doi.org/10.1109/ISPASS.2015.7095802
+
+Goldberg, D. (1991). What every computer scientist should know about floating-point arithmetic. *ACM Computing Surveys*, 23(1), 5–48. https://doi.org/10.1145/103162.103163
+
+Hoare, C. A. R. (1978). Communicating sequential processes. *Communications of the ACM*, 21(8), 666–677. https://doi.org/10.1145/359576.359585
+
+Johnson, D. S. (1974). Fast algorithms for bin packing. *Journal of Computer and System Sciences*, 8(3), 272–314. https://doi.org/10.1016/S0022-0000(74)80026-7
+
+Jomthong, P., Wongrakthai, T., Thanarungcharoenkit, P., Inthawongse, C., & Sangkhiew, N. (2024). Combining vehicle routing and bin packing problem for vehicle routing planning: A case study of a chemical factory. *Journal of Applied Research on Science and Technology (JARST)*. https://doi.org/10.60101/jarst.2023.254605
+
+Karp, R. M. (1972). Reducibility among combinatorial problems. Dalam R. E. Miller & J. W. Thatcher (Eds.), *Complexity of Computer Computations* (hal. 85–103). Plenum Press.
+
+Khairuddin, U., Razi, N. A. Z. M., Abidin, M. S. Z., & Yusof, R. (2020). Smart packing simulator for 3D packing problem using genetic algorithm. *Journal of Physics: Conference Series*, 1447(1), 012041. https://doi.org/10.1088/1742-6596/1447/1/012041
+
+Krebs, C., & Ehmke, J. F. (2023). Solution validator and visualizer for (combined) vehicle routing and container loading problems. *Annals of Operations Research*, 326(1), 561–579. https://doi.org/10.1007/s10479-023-05238-0
+
+Ma, Y., Zhou, Y., Fang, Q., Xia, S., & Chen, W. (2025). A three-dimensional container loading algorithm for solving logistics packing problem. *EURO Journal on Transportation and Logistics*, 14, 100167. https://doi.org/10.1016/j.ejtl.2025.100167
+
+Martello, S., Pisinger, D., & Vigo, D. (2000). The three-dimensional bin packing problem. *Operations Research*, 48(2), 256–267. https://doi.org/10.1287/opre.48.2.256.12386
+
+Murdivien, S. A., & Um, J. (2023). BoxStacker: Deep reinforcement learning for 3D bin packing problem in virtual environment of logistics systems. *Sensors*, 23(15), 6928. https://doi.org/10.3390/s23156928
+
+Parnas, D. L. (1972). On the criteria to be used in decomposing systems into modules. *Communications of the ACM*, 15(12), 1053–1058. https://doi.org/10.1145/361598.361623
+
+Pike, R. (2012). Go at Google: Language design in the service of software engineering. *Proceedings of the 3rd Annual Conference on Systems, Programming, and Applications: Software for Humanity (SPLASH '12)*, 5–6.
+
+Provos, N., & Mazières, D. (1999). A future-adaptable password scheme. *Proceedings of the USENIX Annual Technical Conference*, 81–91.
+
+Ribeiro, L., & Ananno, A. A. (2023). A software toolbox for realistic dataset generation for testing online and offline 3D bin packing algorithms. *Processes*, 11(7), 1909. https://doi.org/10.3390/pr11071909
+
+Shuai, W., Gao, Y., Wu, P., Cui, G., Zhuang, Q., Chen, R., & Chen, X. (2023). Compliant-based robotic 3D bin packing with unavoidable uncertainties. *IET Control Theory and Applications*, 17(17), 2241–2258. https://doi.org/10.1049/cth2.12432
+
+Silva, E., Oliveira, J. F., & Wäscher, G. (2016). The pallet loading problem: A review of solution methods and computational experiments. *International Transactions in Operational Research*, 23(1-2), 147–172. https://doi.org/10.1111/itor.12099
+
+Tresca, G., Cavone, G., Carli, R., Cerviotti, A., & Dotoli, M. (2022). Automating bin packing: A layer building matheuristics for cost effective logistics. *IEEE Transactions on Automation Science and Engineering*, 19(3), 1599–1613. https://doi.org/10.1109/TASE.2022.3177422
+
+Wäscher, G., Haußner, H., & Schumann, H. (2007). An improved typology of cutting and packing problems. *European Journal of Operational Research*, 183(3), 1109–1130. https://doi.org/10.1016/j.ejor.2005.12.047
+
+Wong, C. C., Tsai, T. T., & Ou, C. K. (2024). Integrating heuristic methods with deep reinforcement learning for online 3D bin-packing optimization. *Sensors*, 24(16), 5370. https://doi.org/10.3390/s24165370
+
+Zhang, B., Yao, Y., Kan, H. K., & Luo, W. (2024). A GAN-based genetic algorithm for solving the 3D bin packing problem. *Scientific Reports*, 14(1), 6107. https://doi.org/10.1038/s41598-024-56699-7
+
+Zhao, H., Zhu, C., Xu, X., Huang, H., & Xu, K. (2022). Learning practically feasible policies for online 3D bin packing. *Science China Information Sciences*, 65(1), 112101. https://doi.org/10.1007/s11432-021-3348-6
+
+### Buku dan Monograf
+
+Donovan, A. A., & Kernighan, B. W. (2015). *The Go programming language*. Addison-Wesley.
+
+Fielding, R. T. (2000). *Architectural styles and the design of network-based software architectures* [Disertasi doktoral, University of California, Irvine]. https://www.ics.uci.edu/~fielding/pubs/dissertation/top.htm
+
+Foley, J. D., van Dam, A., Feiner, S. K., & Hughes, J. F. (1995). *Computer graphics: Principles and practice* (Edisi ke-2). Addison-Wesley.
+
+Fowler, M. (2002). *Patterns of enterprise application architecture*. Addison-Wesley.
+
+Gamma, E., Helm, R., Johnson, R., & Vlissides, J. (1994). *Design patterns: Elements of reusable object-oriented software*. Addison-Wesley.
+
+Garey, M. R., & Johnson, D. S. (1979). *Computers and intractability: A guide to the theory of NP-completeness*. W. H. Freeman.
+
+Gregory, J. (2018). *Game engine architecture* (Edisi ke-3). CRC Press.
+
+Humble, J., & Farley, D. (2010). *Continuous delivery: Reliable software releases through build, test, and deployment automation*. Addison-Wesley.
+
+Kim, G., Humble, J., Debois, P., & Willis, J. (2016). *The DevOps handbook: How to create world-class agility, reliability, and security in technology organizations*. IT Revolution Press.
+
+Kleppmann, M. (2017). *Designing data-intensive applications: The big ideas behind reliable, scalable, and maintainable systems*. O'Reilly Media.
+
+Levinson, M. (2006). *The box: How the shipping container made the world smaller and the world economy bigger*. Princeton University Press.
+
+Martin, R. C. (2003). *Agile software development, principles, patterns, and practices*. Prentice Hall.
+
+Morris, K. (2016). *Infrastructure as code: Managing servers in the cloud*. O'Reilly Media.
+
+Newman, S. (2021). *Building microservices: Designing fine-grained systems* (Edisi ke-2). O'Reilly Media.
+
+Richardson, C. (2018). *Microservices patterns: With examples in Java*. Manning Publications.
+
+Shirley, P., & Marschner, S. (2021). *Fundamentals of computer graphics* (Edisi ke-5). CRC Press.
+
+Silberschatz, A., Korth, H. F., & Sudarshan, S. (2019). *Database system concepts* (Edisi ke-7). McGraw-Hill.
+
+Ware, C. (2012). *Information visualization: Perception for design* (Edisi ke-3). Morgan Kaufmann.
+
+### Standar dan Spesifikasi
+
+IEEE. (2019). *IEEE Standard for Floating-Point Arithmetic* (IEEE Std 754-2019). Institute of Electrical and Electronics Engineers.
+
+ISO. (2020). *Series 1 freight containers—Classification, dimensions and ratings* (ISO 668:2020). International Organization for Standardization.
+
+Jones, M., Bradley, J., & Sakimura, N. (2015). *JSON Web Token (JWT)* (RFC 7519). Internet Engineering Task Force. https://tools.ietf.org/html/rfc7519
+
+W3C. (2014). *Cross-Origin Resource Sharing* (W3C Recommendation). World Wide Web Consortium. https://www.w3.org/TR/cors/
+
+### Dokumentasi Teknis dan Sumber Daring
+
+Docker Inc. (2023). *Docker documentation*. https://docs.docker.com/
+
+Foote, B., & Yoder, J. (1997). Big ball of mud. Dalam *Pattern Languages of Program Design 4*. Addison-Wesley. http://www.laputan.org/mud/
+
+Go Authors. (2023). *Effective Go*. https://go.dev/doc/effective_go
+
+Lewis, J., & Fowler, M. (2014, 25 Maret). Microservices: A definition of this new architectural term. *martinfowler.com*. https://martinfowler.com/articles/microservices.html
+
+OWASP. (2023). *Authentication cheat sheet*. OWASP Cheat Sheet Series. https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
+
+Sato, D. (2014, 25 Juni). Canary release. *martinfowler.com*. https://martinfowler.com/bliki/CanaryRelease.html
+
+Three.js Authors. (2023). *Three.js documentation*. https://threejs.org/docs/
+
+Vercel. (2023). *Next.js documentation*. https://nextjs.org/docs
+
+Wiggins, A. (2017). *The twelve-factor app*. https://12factor.net/
