@@ -3,76 +3,262 @@
 *Implementasi Arsitektur dan Visualisasi 3D untuk Sistem Optimasi Kargo*
 
 
-## Daftar Isi
+# Daftar Isi
 
-1. [Bab 1: Digitalisasi Logistik dan Tantangan Pemuatan](#bab-1-digitalisasi-logistik-dan-tantangan-pemuatan)
+1. [#Bab 1: Digitalisasi Logistik dan Tantangan Pemuatan](#bab-1-digitalisasi-logistik-dan-tantangan-pemuatan)
    - [1.1 Tantangan Logistik dalam Era Perdagangan Global](#11-tantangan-logistik-dalam-era-perdagangan-global)
    - [1.2 *Container Loading Problem* dan Kompleksitas *NP-hard*](#12-container-loading-problem-dan-kompleksitas-np-hard)
    - [1.3 Pendekatan Algoritmik: Dari Optimal ke Heuristik](#13-pendekatan-algoritmik-dari-optimal-ke-heuristik)
-   - [1.4 Visi Sistem *Load & Stuffing Calculator*](#14-visi-sistem-load--stuffing-calculator)
-2. [Bab 2: Perancangan Arsitektur Layanan Mikro](#bab-2-perancangan-arsitektur-layanan-mikro)
-   - [2.1 Mengapa Arsitektur *Microservices*](#21-mengapa-arsitektur-microservices)
+   - [1.4 Visi Sistem *Load & Stuffing Calculator*](#14-visi-sistem-load-stuffing-calculator)
+1. [#Bab 2: Perancangan Arsitektur Layanan Mikro](#bab-2-perancangan-arsitektur-layanan-mikro)
+   - [2.1 Alasan Memilih Arsitektur *Microservices*](#21-alasan-memilih-arsitektur-microservices)
+      - [2.1.1 Pemisahan Manajemen Data dari Komputasi Berat](#211-pemisahan-manajemen-data-dari-komputasi-berat)
    - [2.2 Alur Transformasi Data](#22-alur-transformasi-data)
    - [2.3 Diagram Arsitektur Sistem](#23-diagram-arsitektur-sistem)
+      - [2.3.1 Alur Interaksi Antar Komponen](#231-alur-interaksi-antar-komponen)
    - [2.4 Kontrak Komunikasi Antar Layanan](#24-kontrak-komunikasi-antar-layanan)
+      - [2.4.1 Protokol Komunikasi Antar Layanan](#241-protokol-komunikasi-antar-layanan)
+      - [2.4.2 Pemilihan Protokol *REST*](#242-pemilihan-protokol-rest)
+      - [2.4.3 Definisi Kontrak Data](#243-definisi-kontrak-data)
    - [2.5 Struktur Direktori Proyek](#25-struktur-direktori-proyek)
-3. [Bab 3: Pengembangan *Backend API* dengan Bahasa *Go*](#bab-3-pengembangan-backend-api-dengan-bahasa-go)
+1. [#Bab 3: Pengembangan *Backend API* dengan Bahasa *Go*](#bab-3-pengembangan-backend-api-dengan-bahasa-go)
    - [3.1 Fondasi Bahasa *Go*](#31-fondasi-bahasa-go)
+      - [3.1.1 Prinsip Desain *Go*](#311-prinsip-desain-go)
+      - [3.1.2 *Concurrency* Model](#312-concurrency-model)
+      - [3.1.3 Filosofi *Error Handling*](#313-filosofi-error-handling)
+      - [3.1.4 *Packages* dan *Modules*](#314-packages-dan-modules)
    - [3.2 Idiom dan Konvensi *Go*](#32-idiom-dan-konvensi-go)
-   - [3.3 *Setup* Proyek dan *Tooling*](#33-setup-proyek-dan-tooling)
-   - [3.4 *API Interface Design* (*API-First Strategy*)](#34-api-interface-design-api-first-strategy)
-   - [3.5 *Database Schema Design*](#35-database-schema-design)
-   - [3.6 *Type-safe Repository Layer* dengan *SQLC*](#36-type-safe-repository-layer-dengan-sqlc)
-   - [3.7 *Business Logic Layer* (*Service*)](#37-business-logic-layer-service)
-   - [3.8 *HTTP Router* dan *Handler*](#38-http-router-dan-handler)
+      - [3.2.1 Konvensi Penamaan](#321-konvensi-penamaan)
+      - [3.2.2 Desain *Interface*](#322-desain-interface)
+      - [3.2.3 Desain *Struct*](#323-desain-struct)
+      - [3.2.4 Pola *Error Handling*](#324-pola-error-handling)
+      - [3.2.5 Pola Pengujian](#325-pola-pengujian)
+   - [3.3 Penyiapan Proyek dan *Tooling*](#33-penyiapan-proyek-dan-tooling)
+      - [3.3.1 Inisialisasi *Module*](#331-inisialisasi-module)
+      - [3.3.2 Struktur Direktori](#332-struktur-direktori)
+      - [3.3.3 Perangkat *Development*](#333-perangkat-development)
+      - [3.3.4 Implementasi *Entry Point* Awal](#334-implementasi-entry-point-awal)
+      - [3.3.5 *Environment Variables*](#335-environment-variables)
+   - [3.4 Desain *API* dengan Strategi *API-First*](#34-desain-api-dengan-strategi-api-first)
+      - [3.4.1 Identifikasi *Resource*](#341-identifikasi-resource)
+      - [3.4.2 Standarisasi *Response Envelope*](#342-standarisasi-response-envelope)
+      - [3.4.3 Daftar *Endpoint API*](#343-daftar-endpoint-api)
+   - [3.5 Desain *Database Schema*](#35-desain-database-schema)
+      - [3.5.1 Diagram *Entity-Relationship*](#351-diagram-entity-relationship)
+      - [3.5.2 Migrasi Database dengan *Goose*](#352-migrasi-database-dengan-goose)
+      - [3.5.3 Koneksi Database dengan pgx](#353-koneksi-database-dengan-pgx)
+   - [3.6 Type-safe *Repository Layer* dengan *SQLC*](#36-type-safe-repository-layer-dengan-sqlc)
+      - [3.6.1 Keunggulan *SQLC*](#361-keunggulan-sqlc)
+      - [3.6.2 Penyiapan *SQLC*](#362-penyiapan-sqlc)
+      - [3.6.3 Penulisan *Query* Files](#363-penulisan-query-files)
+      - [3.6.4 Generasi Kode](#364-generasi-kode)
+      - [3.6.5 Menggunakan *Generated Code*](#365-menggunakan-generated-code)
+   - [3.7 *Business Logic Layer*](#37-business-logic-layer)
+      - [3.7.1 Kebutuhan *Layer* Terpisah](#371-kebutuhan-layer-terpisah)
+      - [3.7.2 *Dependency Injection*](#372-dependency-injection)
+      - [3.7.3 Menggunakan *Interface* dari *SQLC*](#373-menggunakan-interface-dari-sqlc)
+      - [3.7.4 Implementasi ContainerService](#374-implementasi-containerservice)
+      - [3.7.5 Pelengkapan Operasi *CRUD*](#375-pelengkapan-operasi-crud)
+      - [3.7.6 Implementasi ProductService](#376-implementasi-productservice)
+      - [3.7.7 Implementasi PlanService](#377-implementasi-planservice)
+      - [3.7.8 Pelengkapan PlanService dengan *CRUD*](#378-pelengkapan-planservice-dengan-crud)
+      - [3.7.9 Manajemen Plan Items](#379-manajemen-plan-items)
+      - [3.7.10 *Method* Calculate](#3710-method-calculate)
+   - [3.8 *HTTP* Router dan Handler](#38-http-router-dan-handler)
+      - [3.8.1 Pemilihan Web *Framework*](#381-pemilihan-web-framework)
+      - [3.8.2 Standarisasi *Response* dengan *Package Response*](#382-standarisasi-response-dengan-package-response)
+      - [3.8.3 *Data Transfer Objects*](#383-data-transfer-objects)
+      - [3.8.4 Implementasi Handler](#384-implementasi-handler)
+      - [3.8.5 Implementasi ProductHandler](#385-implementasi-producthandler)
+      - [3.8.6 *Package API* dan Penyiapan *Router*](#386-package-api-dan-penyiapan-router)
+      - [3.8.7 *Entry Point*](#387-entry-point)
    - [3.9 Integrasi dengan *Packing Service*](#39-integrasi-dengan-packing-service)
-4. [Bab 4: *Packing Service* dengan *Python*](#bab-4-packing-service-dengan-python)
-   - [4.1 *Setup Project* *Python*](#41-setup-project-python)
-   - [4.2 *Flask Application Entry Point*](#42-flask-application-entry-point)
+      - [3.9.1 Pola *Gateway*](#391-pola-gateway)
+      - [3.9.2 Definisi *Interface*](#392-definisi-interface)
+      - [3.9.3 *Request* dan *Response* Types](#393-request-dan-response-types)
+      - [3.9.4 Implementasi *HTTP Gateway*](#394-implementasi-http-gateway)
+      - [3.9.5 *Mock Gateway* untuk *Development*](#395-mock-gateway-untuk-development)
+      - [3.9.6 Integrasi *Gateway* ke *Service*](#396-integrasi-gateway-ke-service)
+      - [3.9.7 Pembaruan PlanService untuk Menggunakan *Gateway*](#397-pembaruan-planservice-untuk-menggunakan-gateway)
+      - [3.9.8 Eksekusi dan Pengujian Aplikasi](#398-eksekusi-dan-pengujian-aplikasi)
+1. [#Bab 4: *Packing Service* dengan *Python*](#bab-4-packing-service-dengan-python)
+   - [4.1 Penyiapan *Project Python*](#41-penyiapan-project-python)
+      - [4.1.1 Struktur Direktori](#411-struktur-direktori)
+      - [4.1.2 *Virtual Environment*](#412-virtual-environment)
+      - [4.1.3 *Dependencies*](#413-dependencies)
+      - [4.1.4 Inisialisasi *Package* *Python*](#414-inisialisasi-package-python)
+   - [4.2 *Entry Point* Aplikasi *Flask*](#42-entry-point-aplikasi-flask)
+      - [4.2.1 *Helper Error Response*](#421-helper-error-response)
+      - [4.2.2 Pola *Application Factory*](#422-pola-application-factory)
+      - [4.2.3 *Entry Point*](#423-entry-point)
    - [4.3 *Schema* dan Validasi *Request*](#43-schema-dan-validasi-request)
-   - [4.4 *Unit Conversion*](#44-unit-conversion)
+      - [4.3.1 Struktur *Request*](#431-struktur-request)
+      - [4.3.2 Struktur *Response*](#432-struktur-response)
+      - [4.3.3 *NormalizedItem*](#433-normalizeditem)
+      - [4.3.4 Validasi *Request*](#434-validasi-request)
+   - [4.4 Konversi Unit](#44-konversi-unit)
+      - [4.4.1 Konversi ke Centimeter](#441-konversi-ke-centimeter)
+      - [4.4.2 Konversi Balik ke Unit Client](#442-konversi-balik-ke-unit-client)
+      - [4.4.3 Centimeter *Integer*](#443-centimeter-integer)
    - [4.5 Integrasi *py3dbp*](#45-integrasi-py3dbp)
-   - [4.6 Integrasi dengan *Go Backend*](#46-integrasi-dengan-go-backend)
-   - [4.7 *Testing* dan Verifikasi](#47-testing-dan-verifikasi)
-5. [Bab 5: Visualisasi *3D* Interaktif dengan *Three.js*](#bab-5-visualisasi-3d-interaktif-dengan-threejs)
-   - [5.1 *Setup Project Frontend*](#51-setup-project-frontend)
-   - [5.2 Arsitektur *StuffingVisualizer*](#52-arsitektur-stuffingvisualizer)
-   - [5.3 *Type Definitions*](#53-type-definitions)
-   - [5.4 *Scene* dan *Renderer Setup*](#54-scene-dan-renderer-setup)
-   - [5.5 *Camera* dan *Controls*](#55-camera-dan-controls)
-   - [5.6 *Lighting Setup*](#56-lighting-setup)
-   - [5.7 *Container Wireframe Rendering*](#57-container-wireframe-rendering)
-   - [5.8 *Item Box Rendering*](#58-item-box-rendering)
+      - [4.5.1 *Vendored Dependency*](#451-vendored-dependency)
+      - [4.5.2 *Coordinate System*](#452-coordinate-system)
+      - [4.5.3 Inisialisasi Packer](#453-inisialisasi-packer)
+      - [4.5.4 Ekspansi *Items* berdasarkan *Quantity*](#454-ekspansi-items-berdasarkan-quantity)
+      - [4.5.5 Eksekusi Algoritma](#455-eksekusi-algoritma)
+      - [4.5.6 *Rotation Codes*](#456-rotation-codes)
+      - [4.5.7 Pemrosesan Hasil](#457-pemrosesan-hasil)
+   - [4.6 Integrasi dengan *Go* *Backend*](#46-integrasi-dengan-go-backend)
+      - [4.6.1 Pembaruan config.go](#461-pembaruan-configgo)
+      - [4.6.2 Pembaruan api.go](#462-pembaruan-apigo)
+      - [4.6.3 Eksekusi Kedua Service](#463-eksekusi-kedua-service)
+      - [4.6.4 Alur *End-to-End*](#464-alur-end-to-end)
+   - [4.7 Pengujian dan Verifikasi](#47-pengujian-dan-verifikasi)
+      - [4.7.1 Pengujian *Health Endpoint*](#471-pengujian-health-endpoint)
+      - [4.7.2 Pengujian *Pack Endpoint*](#472-pengujian-pack-endpoint)
+      - [4.7.3 Pengujian dengan *Items* Tidak Muat](#473-pengujian-dengan-items-tidak-muat)
+      - [4.7.4 Pengujian *End-to-End*](#474-pengujian-end-to-end)
+1. [#Bab 5: Visualisasi 3D Interaktif dengan *Three.js*](#bab-5-visualisasi-3d-interaktif-dengan-threejs)
+   - [5.1 Penyiapan *Project Frontend*](#51-penyiapan-project-frontend)
+      - [5.1.1 Inisialisasi *Next.js*](#511-inisialisasi-nextjs)
+      - [5.1.2 Penyiapan shadcn/ui](#512-penyiapan-shadcnui)
+      - [5.1.3 Instalasi *Three.js*](#513-instalasi-threejs)
+      - [5.1.4 Struktur Direktori *Visualizer*](#514-struktur-direktori-visualizer)
+      - [5.1.5 Verifikasi Penyiapan](#515-verifikasi-penyiapan)
+   - [5.2 Arsitektur StuffingVisualizer](#52-arsitektur-stuffingvisualizer)
+      - [5.2.1 *Lifecycle*](#521-lifecycle)
+      - [5.2.2 Sistem *Event*](#522-sistem-event)
+      - [5.2.3 Keunggulan Pendekatan *Class-Based*](#523-keunggulan-pendekatan-class-based)
+   - [5.3 Definisi *Type*](#53-definisi-type)
+   - [5.4 Penyiapan *Scene* dan *Renderer*](#54-penyiapan-scene-dan-renderer)
+      - [5.4.1 Implementasi SceneManager](#541-implementasi-scenemanager)
+      - [5.4.2 Implementasi RendererManager](#542-implementasi-renderermanager)
+      - [5.4.3 Penanganan Resize](#543-penanganan-resize)
+      - [5.4.4 *Animation Loop*](#544-animation-loop)
+      - [5.4.5 *Cleanup Resources*](#545-cleanup-resources)
+   - [5.5 Camera dan Controls](#55-camera-dan-controls)
+      - [5.5.1 Pemilihan Jenis Camera](#551-pemilihan-jenis-camera)
+      - [5.5.2 Implementasi CameraManager](#552-implementasi-cameramanager)
+      - [5.5.3 Implementasi ControlsManager](#553-implementasi-controlsmanager)
+   - [5.6 Penyiapan *Lighting*](#56-penyiapan-lighting)
+      - [5.6.1 Jenis-jenis *Light*](#561-jenis-jenis-light)
+      - [5.6.2 Implementasi LightManager](#562-implementasi-lightmanager)
+   - [5.7 *Rendering Wireframe* Kontainer](#57-rendering-wireframe-kontainer)
+      - [5.7.1 Konversi Unit](#571-konversi-unit)
+      - [5.7.2 Implementasi ContainerMesh](#572-implementasi-containermesh)
+      - [5.7.3 Wireframe dengan *EdgesGeometry*](#573-wireframe-dengan-edgesgeometry)
+      - [5.7.4 Platform Lantai](#574-platform-lantai)
+      - [5.7.5 *Group* untuk Organisasi](#575-group-untuk-organisasi)
+      - [5.7.6 *Dispose* untuk Manajemen Memori](#576-dispose-untuk-manajemen-memori)
+   - [5.8 *Rendering Item Box*](#58-rendering-item-box)
+      - [5.8.1 *Coordinate System Mismatch*](#581-coordinate-system-mismatch)
+      - [5.8.2 *Center Offset*](#582-center-offset)
+      - [5.8.3 *Rotation Handling*](#583-rotation-handling)
+      - [5.8.4 Implementasi ItemMesh](#584-implementasi-itemmesh)
+      - [5.8.5 *MeshStandardMaterial*](#585-meshstandardmaterial)
+      - [5.8.6 *Outline Wireframe*](#586-outline-wireframe)
+      - [5.8.7 *UserData* untuk *Metadata*](#587-userdata-untuk-metadata)
    - [5.9 *Animation System*](#59-animation-system)
-   - [5.10 *StuffingVisualizer Orchestrator*](#510-stuffingvisualizer-orchestrator)
-   - [5.11 *React Integration*](#511-react-integration)
-   - [5.12 *Demo Page*](#512-demo-page)
-6. [Bab 6: Integrasi *Full Stack*](#bab-6-integrasi-full-stack)
+      - [5.9.1 Konsep Animasi](#591-konsep-animasi)
+      - [5.9.2 Implementasi AnimationManager](#592-implementasi-animationmanager)
+      - [5.9.3 *Method* Kontrol *Step*](#593-method-kontrol-step)
+      - [5.9.4 Pola *Observer* untuk Sinkronisasi *React*](#594-pola-observer-untuk-sinkronisasi-react)
+      - [5.9.5 Logika *Play/Pause*](#595-logika-playpause)
+      - [5.9.6 *Animation Loop*](#596-animation-loop)
+      - [5.9.7 *Method Utility*](#597-method-utility)
+   - [5.10 StuffingVisualizer *Orchestrator*](#510-stuffingvisualizer-orchestrator)
+      - [5.10.1 Struktur *Class* dan *Constructor*](#5101-struktur-class-dan-constructor)
+      - [5.10.2 *Method* attach - Koneksi ke *DOM*](#5102-method-attach-koneksi-ke-dom)
+      - [5.10.3 *Method* loadData dan build](#5103-method-loaddata-dan-build)
+      - [5.10.4 Kontrol *Visibility*](#5104-kontrol-visibility)
+      - [5.10.5 Delegasi *Public API*](#5105-delegasi-public-api)
+      - [5.10.6 *Cleanup*](#5106-cleanup)
+   - [5.11 Integrasi *React*](#511-integrasi-react)
+      - [5.11.1 Komponen StuffingViewer](#5111-komponen-stuffingviewer)
+      - [5.11.2 Komponen AnimationControls](#5112-komponen-animationcontrols)
+   - [5.12 Halaman Demo](#512-halaman-demo)
+      - [5.12.1 Struktur *File* Final](#5121-struktur-file-final)
+1. [#Bab 6: Integrasi *Full Stack*](#bab-6-integrasi-full-stack)
    - [6.1 Konfigurasi *CORS* di *Backend*](#61-konfigurasi-cors-di-backend)
+      - [6.1.1 Dukungan Konfigurasi untuk *CORS*](#611-dukungan-konfigurasi-untuk-cors)
+      - [6.1.2 Implementasi Middleware](#612-implementasi-middleware)
+      - [6.1.3 Registrasi Middleware ke Router](#613-registrasi-middleware-ke-router)
    - [6.2 *Environment Variables* di *Frontend*](#62-environment-variables-di-frontend)
+      - [6.2.1 Aturan "No Hardcoding"](#621-aturan-no-hardcoding)
+      - [6.2.2 File .env.local](#622-file-envlocal)
+      - [6.2.3 Modul Konfigurasi](#623-modul-konfigurasi)
    - [6.3 Komunikasi Data](#63-komunikasi-data)
-   - [6.4 Implementasi *UI* Data Master](#64-implementasi-ui-data-master)
-   - [6.5 Logika Bisnis Inti: *Stuffing Plan & Calculation*](#65-logika-bisnis-inti-stuffing-plan--calculation)
-   - [6.6 *Logic*: Visualisasi Hasil (*Integration*)](#66-logic-visualisasi-hasil-integration)
-   - [6.7 *Finishing*: *Loading*, *Error*, *Navigation*](#67-finishing-loading-error-navigation)
-7. [Bab 7: *Deployment* dan Produksi](#bab-7-deployment-dan-produksi)
-   - [7.1 Persiapan *Deployment* & Konfigurasi Eksternal](#71-persiapan-deployment--konfigurasi-eksternal)
-   - [7.2 Pengenalan *Docker* & *Containerization*](#72-pengenalan-docker--containerization)
-   - [7.3 *Dockerizing* Aplikasi](#73-dockerizing-aplikasi)
-   - [7.4 Orkestrasi dengan *Docker Compose*](#74-orkestrasi-dengan-docker-compose)
-   - [7.5 *Deployment Best Practices*: *CI/CD* & Strategi Rilis](#75-deployment-best-practices-cicd--strategi-rilis)
-8. [Bab 8: Fitur Lanjutan & Finalisasi](#bab-8-fitur-lanjutan--finalisasi)
-   - [8.1 Implementasi Autentikasi (*JWT*)](#81-implementasi-autentikasi-jwt)
+      - [6.3.1 Arsitektur Komunikasi](#631-arsitektur-komunikasi)
+      - [6.3.2 Definisi Kontrak Data](#632-definisi-kontrak-data)
+      - [6.3.3 Implementasi *Wrapper* Fetch](#633-implementasi-wrapper-fetch)
+      - [6.3.4 Modul Operasi dengan Pola *Repository*](#634-modul-operasi-dengan-pola-repository)
+      - [6.3.5 Penggunaan di Komponen UI](#635-penggunaan-di-komponen-ui)
+   - [6.4 Implementasi UI Data Master](#64-implementasi-ui-data-master)
+      - [6.4.1 Persiapan Komponen UI](#641-persiapan-komponen-ui)
+      - [6.4.2 Strategi Komponen](#642-strategi-komponen)
+      - [6.4.3 Implementasi Container UI](#643-implementasi-container-ui)
+      - [6.4.4 Implementasi Product UI](#644-implementasi-product-ui)
+      - [6.4.5 Halaman Manajemen Data Master](#645-halaman-manajemen-data-master)
+   - [6.5 Logika Bisnis Inti *Stuffing Plan* dan Kalkulasi](#65-logika-bisnis-inti-stuffing-plan-dan-kalkulasi)
+      - [6.5.1 Implementasi Dashboard Rencana](#651-implementasi-dashboard-rencana)
+      - [6.5.2 Formulir Pembuatan Rencana](#652-formulir-pembuatan-rencana)
+      - [6.5.3 Halaman Detail dan Kalkulasi](#653-halaman-detail-dan-kalkulasi)
+   - [6.6 Integrasi Visualisasi Hasil](#66-integrasi-visualisasi-hasil)
+      - [6.6.1 Transformasi Data Visualisasi](#661-transformasi-data-visualisasi)
+      - [6.6.2 Komponen *Wrapper React*](#662-komponen-wrapper-react)
+   - [6.7 Finishing](#67-finishing)
+      - [6.7.1 Implementasi Navigasi Global](#671-implementasi-navigasi-global)
+      - [6.7.2 Indikator Loading Aplikasi](#672-indikator-loading-aplikasi)
+      - [6.7.3 Mekanisme Penanganan Error](#673-mekanisme-penanganan-error)
+1. [#Bab 7: *Deployment* dan Produksi](#bab-7-deployment-dan-produksi)
+   - [7.1 Persiapan *Deployment* & Konfigurasi Eksternal](#71-persiapan-deployment-konfigurasi-eksternal)
+      - [7.1.1 Audit Konfigurasi *Backend*](#711-audit-konfigurasi-backend)
+      - [7.1.2 Konfigurasi *Frontend Next.js*](#712-konfigurasi-frontend-nextjs)
+   - [7.2 Pengenalan *Docker* dan *Containerization*](#72-pengenalan-docker-dan-containerization)
+      - [7.2.1 Konsep Kunci *Docker*](#721-konsep-kunci-docker)
+      - [7.2.2 Alur Kerja](#722-alur-kerja)
+      - [7.2.3 Keunggulan untuk *Project* Ini](#723-keunggulan-untuk-project-ini)
+   - [7.3 Implementasi *Docker*](#73-implementasi-docker)
+   - [7.4 Orkestrasi dengan *Docker* Compose](#74-orkestrasi-dengan-docker-compose)
+      - [7.4.1 Filosofi *Docker* Compose](#741-filosofi-docker-compose)
+      - [7.4.2 Konfigurasi *Resource Limits*](#742-konfigurasi-resource-limits)
+   - [7.5 *Deployment Best Practices*](#75-deployment-best-practices)
+      - [7.5.1 *Continuous Integration* / *Continuous Deployment*](#751-continuous-integration-continuous-deployment)
+      - [7.5.2 Strategi *Rolling Update*](#752-strategi-rolling-update)
+      - [7.5.3 *Canary Deployment*](#753-canary-deployment)
+1. [#Bab 8: Fitur Lanjutan & Finalisasi](#bab-8-fitur-lanjutan-finalisasi)
+   - [8.1 Implementasi Autentikasi *JWT*](#81-implementasi-autentikasi-jwt)
+      - [8.1.1 Alur Autentikasi *JWT*](#811-alur-autentikasi-jwt)
+      - [8.1.2 Persiapan *Database*](#812-persiapan-database)
+      - [8.1.3 Logika Bisnis *AuthService*](#813-logika-bisnis-authservice)
+      - [8.1.4 *Middleware* Autentikasi](#814-middleware-autentikasi)
+      - [8.1.5 Proteksi *Frontend* dengan *AuthGuard*](#815-proteksi-frontend-dengan-authguard)
+      - [8.1.6 *Handler Layer*](#816-handler-layer)
+      - [8.1.7 Registrasi *Route*](#817-registrasi-route)
+      - [8.1.8 *API Client* untuk *Auth*](#818-api-client-untuk-auth)
+      - [8.1.9 Halaman *Login*](#819-halaman-login)
+      - [8.1.10 Halaman *Register*](#8110-halaman-register)
    - [8.2 *Dashboard* Statistik](#82-dashboard-statistik)
-   - [8.3 *PDF Export*: Laporan Operasional](#83-pdf-export-laporan-operasional)
-   - [8.4 Penutup: Arsitektur Final dan Refleksi](#84-penutup-arsitektur-final-dan-refleksi)
-9. [Daftar Pustaka](#daftar-pustaka)
+      - [8.2.1 Optimasi dengan Agregasi *SQL*](#821-optimasi-dengan-agregasi-sql)
+      - [8.2.2 *Service Layer* untuk *Dashboard*](#822-service-layer-untuk-dashboard)
+      - [8.2.3 *Handler Layer* untuk *Dashboard*](#823-handler-layer-untuk-dashboard)
+      - [8.2.4 *API Client* untuk *Dashboard*](#824-api-client-untuk-dashboard)
+      - [8.2.5 Halaman *Dashboard*](#825-halaman-dashboard)
+   - [8.3 *PDF Export* Laporan Operasional](#83-pdf-export-laporan-operasional)
+      - [8.3.1 Transformasi Koordinat *3D* ke *2D*](#831-transformasi-koordinat-3d-ke-2d)
+      - [8.3.2 Penyiapan *Library PDF*](#832-penyiapan-library-pdf)
+      - [8.3.3 Implementasi `pdf-report.ts`](#833-implementasi-pdf-reportts)
+      - [8.3.4 Komponen Tombol *Export*](#834-komponen-tombol-export)
+      - [8.3.5 Integrasi di Halaman *Plan Detail*](#835-integrasi-di-halaman-plan-detail)
+   - [8.4 Arsitektur Final dan Refleksi](#84-arsitektur-final-dan-refleksi)
+      - [8.4.1 Arsitektur Sistem Final](#841-arsitektur-sistem-final)
+      - [8.4.2 Komponen yang Dibangun](#842-komponen-yang-dibangun)
+      - [8.4.3 Refleksi Arsitektur](#843-refleksi-arsitektur)
+      - [8.4.4 Langkah Selanjutnya untuk Pembaca](#844-langkah-selanjutnya-untuk-pembaca)
 
 
 
-<!-- BAB 1 STARTS HERE -->
-
-## Bab 1: Digitalisasi Logistik dan Tantangan Pemuatan
+# Bab 1: Digitalisasi Logistik dan Tantangan Pemuatan
 
 Pada bab ini, kita akan menyelami jantung permasalahan yang menjadi alasan buku ini ditulis: inefisiensi dalam pemuatan kontainer. Sejak revolusi kontainerisasi pada tahun 1950-an, dunia logistik telah berubah drastis menjadi sangat terstandarisasi. Namun, ironisnya, keputusan tentang bagaimana menata ribuan kotak ke dalam kontainer seringkali masih diserahkan pada intuisi manusia atau "kira-kira".
  
@@ -91,7 +277,7 @@ Untuk itu, kita akan membongkar landasan teoritis dari CLP, memahami mengapa sol
 
 
 
-### 1.1 Tantangan Logistik dalam Era Perdagangan Global
+## 1.1 Tantangan Logistik dalam Era Perdagangan Global
 
 Pada tahun 1956, seorang pengusaha truk bernama Malcolm McLean melakukan eksperimen sederhana yang mengubah wajah perdagangan dunia: ia memuat 58 trailer truk ke dalam kapal tanker bekas di pelabuhan Newark, New Jersey. Eksperimen ini melahirkan kontainerisasi modern—sebuah inovasi yang mengurangi biaya pengiriman barang hingga 90% dan memungkinkan globalisasi ekonomi seperti yang kita kenal hari ini (Levinson, 2006).
 
@@ -113,7 +299,7 @@ Industri logistik membutuhkan solusi yang dapat memproses kompleksitas ini secar
 
 
 
-### 1.2 *Container Loading Problem* dan Kompleksitas *NP-hard*
+## 1.2 *Container Loading Problem* dan Kompleksitas *NP-hard*
 
 Masalah yang tampak sederhana—menempatkan kotak-kotak ke dalam wadah lebih besar—ternyata telah menarik perhatian matematikawan dan ilmuwan komputer selama lebih dari setengah abad. Dalam literatur akademis, permasalahan ini dikenal sebagai *Container Loading Problem* (*CLP*) (Bischoff & Ratcliff, 1995; Wäscher et al., 2007), dan ia memiliki sejarah panjang yang terkait dengan perkembangan teori kompleksitas komputasi.
 
@@ -161,7 +347,7 @@ Dengan semua *constraint* ini, ruang solusi yang "valid" menjadi jauh lebih semp
 
 
 
-### 1.3 Pendekatan Algoritmik: Dari Optimal ke Heuristik
+## 1.3 Pendekatan Algoritmik: Dari Optimal ke Heuristik
 
 Mengingat kompleksitas *NP-hard*, pendekatan matematis murni (*exact algorithms*) seperti *Integer Linear Programming* atau *Branch and Bound* menjadi tidak praktis untuk data dengan skala industri (Martello et al., 2000). Oleh karena itu, industri dan akademisi beralih ke **algoritma heuristik** (Coffman et al., 1996).
 
@@ -261,7 +447,7 @@ Proses Penempatan:
 Dengan urutan ini, barang besar mendapat prioritas posisi optimal, sementara barang kecil mengisi celah. Jika urutan dibalik (C dulu), barang C mungkin mengambil posisi yang seharusnya lebih baik untuk B.
 
 
-### 1.4 Visi Sistem *Load & Stuffing Calculator*
+## 1.4 Visi Sistem *Load & Stuffing Calculator*
 
 Berdasarkan pemahaman tantangan di atas, kita akan membangun sistem *Load & Stuffing Calculator*—sebuah platform yang mentransformasi proses perencanaan pemuatan dari intuisi manual menjadi komputasi algoritmik dengan visualisasi interaktif.
 
@@ -345,14 +531,14 @@ Setelah menyelesaikan buku ini, pembaca akan memiliki pengetahuan dan *source co
 
 
 
-### Ringkasan
+#### Ringkasan
 
 Pada bab ini, kita telah memahami mengapa optimasi pemuatan kontainer merupakan masalah yang signifikan bagi industri logistik. *Container Loading Problem* adalah masalah *NP-hard* yang tidak dapat diselesaikan secara optimal dalam waktu yang wajar untuk skala industri (Garey & Johnson, 1979). Pendekatan heuristik, khususnya algoritma *3D Bin Packing* dengan strategi *Bigger First*, menjadi solusi praktis yang akan kita implementasikan. Penelitian terbaru juga menunjukkan potensi *deep reinforcement learning* dan algoritma genetika untuk meningkatkan kualitas solusi (Zhang et al., 2024; Zhao et al., 2022; Wong et al., 2024).
 
 Kita juga telah mendefinisikan visi dan tujuan operasional sistem *Load & Stuffing Calculator* yang akan dibangun sepanjang buku ini. Pada bab berikutnya, kita akan merancang arsitektur layanan mikro yang memisahkan tanggung jawab antara manajemen data, komputasi algoritma, dan visualisasi.
 
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 Berikut adalah referensi untuk memperdalam pemahaman konsep-konsep yang dibahas dalam bab ini:
 
@@ -365,7 +551,7 @@ Berikut adalah referensi untuk memperdalam pemahaman konsep-konsep yang dibahas 
 
 <!-- BAB 2 STARTS HERE -->
 
-## Bab 2: Perancangan Arsitektur Layanan Mikro
+# Bab 2: Perancangan Arsitektur Layanan Mikro
 
 Pada bab ini, kita akan meletakkan batu pertama dari sistem kita: perancangan arsitektur. Dalam pengembangan perangkat lunak modern, godaan untuk langsung melompat ke penulisan kode sangatlah besar. Namun, tanpa desain arsitektur yang matang, aplikasi yang kita bangun berisiko menjadi "bola lumpur besar" (*Big Ball of Mud*)—sebuah sistem monolitik yang sulit dipelihara, sulit dikembangkan, dan rentan terhadap kegagalan kaskade (Foote & Yoder, 1997).
  
@@ -386,7 +572,7 @@ Secara spesifik, kita akan merancang rincian kontrak komunikasi tersebut, mengga
 - Struktur Direktori Proyek
 
 
-### 2.1 Alasan Memilih Arsitektur *Microservices*
+## 2.1 Alasan Memilih Arsitektur *Microservices*
 
 Sebelum *Amazon*, *Netflix*, dan perusahaan teknologi raksasa lainnya mempopulerkan istilah "*microservices*" pada awal 2010-an (Lewis & Fowler, 2014), arsitektur dominan untuk aplikasi *enterprise* adalah *monolith*. Sebuah aplikasi *monolith* adalah sistem di mana seluruh kode—dari antarmuka pengguna, logika bisnis, hingga akses *database*—dikemas dan di-*deploy* sebagai satu unit tunggal. Pendekatan ini memiliki keunggulan yang tidak bisa diabaikan: sederhana untuk dimulai, mudah di-*debug* karena semua kode berada di satu tempat, dan tidak memerlukan kompleksitas komunikasi jaringan internal.
 
@@ -424,7 +610,7 @@ Di sisi lain, *Packing Service* memiliki karakteristik berbeda: kalkulasi intens
 
 > Keputusan ini bukan tentang mengikuti tren teknologi terbaru. *Microservices* bukanlah solusi universal—bagi banyak aplikasi, mereka menambah kompleksitas yang tidak diperlukan. Namun, untuk kasus spesifik kita dengan kebutuhan *polyglot* dan karakteristik beban kerja yang sangat berbeda, pemisahan ini memberikan manfaat nyata.
 
-#### Pemisahan Manajemen Data dari Komputasi Berat
+### 2.1.1 Pemisahan Manajemen Data dari Komputasi Berat
 
 Mari kita dalami lebih jauh tentang mengapa pemisahan ini penting dari perspektif operasional. Dalam teori sistem terdistribusi, kita mengenal dua kategori beban kerja yang berbeda secara fundamental:
 
@@ -475,7 +661,7 @@ Dengan pemisahan ini, saat seorang *user* meminta kalkulasi 300 barang, *user* l
 
 
 
-### 2.2 Alur Transformasi Data
+## 2.2 Alur Transformasi Data
 
 Setelah memahami arsitektur tingkat tinggi, mari kita dalami bagaimana data berubah bentuk dari *input* pengguna hingga menjadi rencana pemuatan yang dapat divisualisasikan. Pemahaman ini akan membantu kita merancang kontrak data yang tepat antar layanan.
 
@@ -541,7 +727,7 @@ Setiap komponen dalam arsitektur kita bertanggung jawab atas satu jenis transfor
 
 
 
-### 2.3 Diagram Arsitektur Sistem
+## 2.3 Diagram Arsitektur Sistem
 
 Setelah memahami alur transformasi data, kita dapat melihat gambaran lengkap arsitektur sistem. Arsitektur ini dirancang dengan prinsip *separation of concerns*—setiap komponen memiliki tanggung jawab yang jelas dan terdefinisi.
 
@@ -594,7 +780,7 @@ Mari kita bahas masing-masing layanan:
 
 *Packing Service* adalah *worker* terspesialisasi. *Flask* menyediakan *HTTP endpoint* sederhana, sementara *py3dbp* melakukan pekerjaan berat: menghitung penempatan optimal ratusan barang dalam kontainer. Layanan ini tidak memiliki akses ke *database* dan tidak mengetahui konteks bisnis—ia hanya menerima dimensi dan mengembalikan koordinat. Isolasi ini memungkinkan kita mengganti algoritma di masa depan tanpa mempengaruhi komponen lain.
 
-#### Alur Interaksi Antar Komponen
+### 2.3.1 Alur Interaksi Antar Komponen
 
 Untuk memahami bagaimana komponen-komponen ini bekerja sama, mari kita lihat *sequence diagram* untuk operasi kalkulasi—inti dari fungsionalitas sistem ini:
 
@@ -628,11 +814,11 @@ Mengapa desain ini penting? Ada beberapa alasan:
 4. *Monitoring* **terpusat**: Semua *traffic* ke *Packing Service* melewati *Backend API*, memudahkan *logging* dan *observability*.
 
 
-### 2.4 Kontrak Komunikasi Antar Layanan
+## 2.4 Kontrak Komunikasi Antar Layanan
 
 Komunikasi antara *Backend API* (*Go*) dan *Packing Service* (*Python*) memerlukan protokol yang tepat. Sebelum mendefinisikan kontrak data dan menjelaskan pilihan kita, mari kita pahami terlebih dahulu lanskap protokol komunikasi yang tersedia dalam pengembangan sistem terdistribusi modern.
 
-#### Protokol Komunikasi Antar Layanan
+### 2.4.1 Protokol Komunikasi Antar Layanan
 
 *REST* (*Representational State Transfer*)
 
@@ -670,7 +856,7 @@ Konsep dasarnya sederhana: *producer* mengirim pesan ke *queue*, *consumer* meng
 
 *Message queues* ideal untuk operasi yang tidak memerlukan *respons* instan: mengirim email, memproses video, meng-*generate* laporan. Contoh penggunaan: *Uber* menggunakan *Kafka* untuk memproses jutaan *event* lokasi per detik; *Instagram* menggunakan *RabbitMQ* untuk *background job processing*.
 
-#### Pemilihan Protokol *REST*
+### 2.4.2 Pemilihan Protokol *REST*
 
 Dengan pemahaman di atas, kita dapat membuat keputusan yang *informed*. Untuk komunikasi *Backend API* ↔ *Packing Service*, kita memilih **REST *HTTP* dengan JSON**. Berikut alasannya:
 
@@ -723,7 +909,7 @@ Jika kita menggunakan *Message Queue* (seperti *RabbitMQ* atau *Kafka*), arsitek
 
 > Catatan: *gRPC* akan menjadi pilihan yang lebih baik jika kita memiliki ratusan layanan yang berkomunikasi dengan latensi *ultra-low*. Untuk sistem dengan dua layanan seperti ini, *overhead* *REST* (sekitar 1-5ms tambahan dibanding *gRPC*) tidak signifikan dibandingkan waktu kalkulasi algoritma (detik hingga puluhan detik).
 
-#### Definisi Kontrak Data
+### 2.4.3 Definisi Kontrak Data
 
 Dengan *REST* sebagai protokol, kita perlu mendefinisikan "kontrak"—struktur *JSON* yang harus dipatuhi kedua sisi agar komunikasi berhasil. Kontrak ini penting karena *Backend API* (*Go*) dan *Packing Service* (*Python*) dikembangkan secara terpisah. Tanpa kontrak yang jelas, perubahan di satu sisi dapat merusak komunikasi.
 
@@ -912,7 +1098,7 @@ if !packResponse.Success {
 Dengan kontrak error yang jelas, tim *frontend* dapat menampilkan pesan yang informatif kepada user, bukan hanya "terjadi kesalahan".
 
 
-### 2.5 Struktur Direktori Proyek
+## 2.5 Struktur Direktori Proyek
 
 Organisasi kode yang baik mempermudah navigasi, *maintenance*, dan kolaborasi tim. Dalam proyek multi-bahasa seperti ini, struktur direktori yang jelas menjadi semakin penting—kita perlu memisahkan kode *Go*, *Python*, dan *TypeScript* tanpa menciptakan kebingungan.
 
@@ -989,7 +1175,7 @@ Sepanjang buku ini, kita akan membangun kode secara bertahap. Dengan memahami st
 3. *Extensibility*: Jika pembaca ingin menambah fitur baru, struktur ini memberikan panduan di mana kode harus ditempatkan.
 
 
-### Ringkasan
+#### Ringkasan
 
 Pada bab ini, kita telah merancang arsitektur *Microservices* untuk sistem *Load & Stuffing Calculator*. Berikut ringkasan keputusan desain yang dibuat:
 
@@ -1008,7 +1194,7 @@ Pada bab ini, kita telah merancang arsitektur *Microservices* untuk sistem *Load
 Sistem kini memiliki *blueprint* arsitektur yang solid. Pada bab berikutnya, kita akan mulai mengimplementasikan *Backend API* dengan bahasa *Go*, dimulai dari struktur proyek dan *database schema*.
 
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 - *Microservices Pattern*: [Martin Fowler: *Microservices*](https://martinfowler.com/articles/microservices.html)
 - *REST *API* Design*: [Microsoft *REST API* Guidelines](https://github.com/microsoft/api-guidelines)
@@ -1019,7 +1205,7 @@ Sistem kini memiliki *blueprint* arsitektur yang solid. Pada bab berikutnya, kit
 
 <!-- BAB 3 STARTS HERE -->
 
-## Bab 3: Pengembangan *Backend API* dengan Bahasa *Go*
+# Bab 3: Pengembangan *Backend API* dengan Bahasa *Go*
 
 Pada bab sebelumnya, kita telah merancang arsitektur sistem dengan dua layanan terpisah: *Backend API* yang menangani orkestrasi dan persistensi data, serta *Packing Service* yang fokus pada algoritma. Kita juga telah mendefinisikan kontrak komunikasi *REST JSON* yang akan menghubungkan keduanya. Sekarang saatnya mengubah *blueprint* tersebut menjadi kode yang berjalan.
 
@@ -1051,13 +1237,13 @@ Untuk menyelesaikan bab ini, Anda memerlukan alat dan perangkat lunak berikut:
 - *VS Code* **dengan** *Go extension* — *IDE* yang direkomendasikan
 
 
-### 3.1 Fondasi Bahasa *Go*
+## 3.1 Fondasi Bahasa *Go*
 
 *Go*—atau sering disebut *Golang*—diciptakan di *Google* pada tahun 2007 oleh Robert Griesemer, Rob Pike, dan Ken Thompson (Pike, 2012). Ketiga insinyur ini memiliki latar belakang yang mengesankan: Thompson adalah salah satu pencipta *Unix* dan bahasa *C*, Pike adalah *co-creator* *UTF-8* dan *Plan 9*, sementara Griesemer pernah bekerja pada *JavaScript V8 engine* dan *Java HotSpot VM*. Pengalaman puluhan tahun mereka dengan sistem berskala besar di *Google* membentuk filosofi *Go* yang sangat pragmatis.
 
 *Go* dirilis ke publik pada 2009 dan dengan cepat diadopsi oleh perusahaan-perusahaan yang membutuhkan *performance* tinggi dengan *developer experience* yang sederhana. *Docker*, *Kubernetes*, *Terraform*—infrastruktur modern yang mungkin sudah Anda gunakan—semuanya ditulis dalam *Go*.
 
-#### Prinsip Desain *Go*
+### 3.1.1 Prinsip Desain *Go*
 
 Filosofi *Go* dapat diringkas dalam beberapa prinsip yang saling terkait. Memahami prinsip-prinsip ini penting karena mereka mempengaruhi cara kita menulis kode sepanjang buku ini.
 
@@ -1085,7 +1271,7 @@ Untuk memperdalam pemahaman tentang prinsip-prinsip ini, ada tiga dokumen fundam
 - [*Go Proverbs*](https://go-proverbs.github.io/): Kumpulan prinsip filosofis *Go* dari Rob Pike
 - [*Go Code Review Comments*](https://github.com/golang/go/wiki/CodeReviewComments): Panduan *code review* yang menjadi standar komunitas
 
-#### *Concurrency* Model
+### 3.1.2 *Concurrency* Model
 
 Salah satu kekuatan utama *Go* adalah model *concurrency*-nya yang sederhana namun powerful. Dalam konteks *Backend API* kita, ini berarti kemampuan menangani ribuan *request* *HTTP* secara bersamaan tanpa kompleksitas *thread management*.
 
@@ -1127,7 +1313,7 @@ go func() {
 value := <-results  // Blokir hingga nilai tersedia
 ```
 
-#### Filosofi *Error Handling*
+### 3.1.3 Filosofi *Error Handling*
 
 Jika Anda datang dari bahasa dengan *exceptions* (Java, *Python*, *JavaScript*), *error handling* *Go* mungkin terasa verbose. *Go* tidak memiliki *try-catch*. Sebagai gantinya, *functions* yang dapat gagal mengembalikan *error* sebagai nilai kembalian terakhir:
 
@@ -1157,7 +1343,7 @@ if err != nil {
 
 Ini memungkinkan kita membangun *chain of errors* yang menjelaskan konteks kegagalan dari titik terendah hingga tertinggi—sangat membantu untuk *debugging*.
 
-#### *Packages* dan *Modules*
+### 3.1.4 *Packages* dan *Modules*
 
 *Go* mengorganisir kode dalam *packages*—direktori yang berisi satu atau lebih file `.go`. Setiap file dalam direktori yang sama harus memiliki *package declaration* yang sama.
 
@@ -1209,13 +1395,13 @@ load-stuffing-calculator/
 Dengan pemahaman fondasi ini, kita siap mempelajari *idiom* dan konvensi yang membuat kode *Go* benar-benar idiomatis.
 
 
-### 3.2 Idiom dan Konvensi *Go*
+## 3.2 Idiom dan Konvensi *Go*
 
 Mengetahui *syntax* *Go* dan memahami cara menulis *Go* yang idiomatis adalah dua hal berbeda. Kode idiomatis mengikuti pola dan konvensi yang telah menjadi standar komunitas—kode yang ketika dibaca developer *Go* lain, terasa "natural" dan mudah dipahami.
 
 Bagian ini akan membahas idiom-idiom kunci yang akan kita gunakan sepanjang proyek. Tujuannya bukan hanya agar kode kita "benar", tetapi agar kode kita *maintainable* oleh siapa pun yang familiar dengan ekosistem *Go*.
 
-#### Konvensi Penamaan
+### 3.2.1 Konvensi Penamaan
 
 *Go* memiliki konvensi penamaan yang sangat spesifik, dan mengikutinya sangat penting untuk *readability*.
 
@@ -1276,7 +1462,7 @@ var httpClient *http.Client
 type UrlParser struct {}
 ```
 
-#### Desain *Interface*
+### 3.2.2 Desain *Interface*
 
 *Go* memiliki pendekatan unik terhadap *interfaces* yang berbeda dari bahasa OOP tradisional.
 
@@ -1346,7 +1532,7 @@ func (r *PostgresRepository) SavePlacements(ctx context.Context, planID string, 
 
 Ini memungkinkan *loose coupling*—repository tidak perlu tahu tentang *interface* yang didefinisikan service.
 
-#### Desain *Struct*
+### 3.2.3 Desain *Struct*
 
 **Constructor Functions: `NewXxx()`**
 
@@ -1379,7 +1565,7 @@ var buf bytes.Buffer
 buf.WriteString("hello")  // Bekerja!
 ```
 
-#### Pola *Error Handling*
+### 3.2.4 Pola *Error Handling*
 
 Kita sudah membahas *error handling* di section sebelumnya, tetapi berikut beberapa pola idiomatis tambahan.
 
@@ -1442,7 +1628,7 @@ if errors.Is(err, ErrNotFound) {
 }
 ```
 
-#### Pola Pengujian
+### 3.2.5 Pola Pengujian
 
 *Go* memiliki *testing framework* bawaan yang sederhana namun powerful.
 
@@ -1508,11 +1694,11 @@ func TestPackingService_Calculate(t *testing.T) {
 ```
 
 
-### 3.3 Penyiapan Proyek dan *Tooling*
+## 3.3 Penyiapan Proyek dan *Tooling*
 
 Sebelum menulis kode aplikasi, kita perlu menyiapkan fondasi proyek: inisialisasi *module*, struktur direktori, dan *tools* yang akan membantu *development workflow*.
 
-#### Inisialisasi *Module*
+### 3.3.1 Inisialisasi *Module*
 
 Setiap proyek *Go* modern dimulai dengan inisialisasi *module*. Buka terminal di direktori proyek dan jalankan:
 
@@ -1536,7 +1722,7 @@ Ketika kita menambahkan *dependencies* (seperti *Gin* atau pgx), *Go* akan secar
 go mod tidy
 ```
 
-#### Struktur Direktori
+### 3.3.2 Struktur Direktori
 
 Struktur direktori yang baik memudahkan navigasi dan pemahaman arsitektur. Kita akan mengikuti konvensi *Go* dengan adaptasi untuk proyek *multi-service*:
 
@@ -1577,7 +1763,7 @@ Di dalam `internal/`:
 - **`gateway/`**: Komunikasi dengan *external services* (*Packing Service*)
 - **`handler/`**: *HTTP handlers*—menerima *request*, memanggil *service*, mengembalikan *response*
 
-#### Perangkat *Development*
+### 3.3.3 Perangkat *Development*
 
 **Air: Hot Reload**
 
@@ -1618,7 +1804,7 @@ Flag berguna:
 - `-cover`: Menampilkan *test coverage*
 - `-run TestName`: Menjalankan *test* spesifik
 
-#### Membuat *Entry Point* Awal
+### 3.3.4 Implementasi *Entry Point* Awal
 
 Mari buat *entry point* minimal untuk memastikan setup berjalan. Pertama, buat struktur direktori:
 
@@ -1663,7 +1849,7 @@ air
 
 Akses `http://localhost:8080/health` untuk memverifikasi server berjalan.
 
-#### *Environment Variables*
+### 3.3.5 *Environment Variables*
 
 Sebelum melanjutkan, kita perlu membahas bagaimana aplikasi akan membaca konfigurasi. Di production, konfigurasi seperti *database URL* dan *port* disediakan melalui *environment variables*—ini adalah *best practice* yang direkomendasikan oleh [The *Twelve-Factor App*](https://12factor.net/config). Namun, mengetik `export DATABASE_URL=...` setiap kali membuka terminal sangat tidak nyaman saat development.
 
@@ -1728,7 +1914,7 @@ Perhatikan bahwa `godotenv.Load()` tidak meng-*error* jika file tidak ditemukan�
 Dengan *setup* ini, kita siap melanjutkan ke desain *database schema*.
 
 
-### 3.4 Desain *API* dengan Strategi *API-First*
+## 3.4 Desain *API* dengan Strategi *API-First*
 
 Sebelum kita mulai mendesain database atau menulis kode handler, kita harus berhenti sejenak dan menerapkan prinsip *API-First Development*.
 
@@ -1736,7 +1922,7 @@ Seringkali developer terburu-buru mendesain tabel database, lalu membuat *API* y
 
 Dengan *API-First*, kita mendefinisikan **kontrak** interaksi terlebih dahulu. Kita bertanya: "Apa *resource* yang dibutuhkan client?" dan "Bagaimana cara client berinteraksi dengan *resource* tersebut?"
 
-#### Identifikasi *Resource*
+### 3.4.1 Identifikasi *Resource*
 
 Untuk *Load & Stuffing Calculator*, kita mengidentifikasi 3 *resource* utama (*Noun*) dan 1 *action* (*Verb*):
 
@@ -1745,7 +1931,7 @@ Untuk *Load & Stuffing Calculator*, kita mengidentifikasi 3 *resource* utama (*N
 3.  **Plans**: *Document* yang merepresentasikan satu sesi perencanaan muatan.
 4.  **Calculate**: Aksi untuk menghitung posisi barang dalam container (terkait dengan Plan).
 
-#### Standarisasi *Response Envelope*
+### 3.4.2 Standarisasi *Response Envelope*
 
 Agar *frontend* mudah mengkonsumsi *API* kita, semua *endpoint* harus mengembalikan format *JSON* yang konsisten. Kita akan menggunakan pola **Envelope**:
 
@@ -1757,7 +1943,7 @@ Agar *frontend* mudah mengkonsumsi *API* kita, semua *endpoint* harus mengembali
 }
 ```
 
-#### Daftar *Endpoint API*
+### 3.4.3 Daftar *Endpoint API*
 
 Berikut adalah desain final *API* yang akan kita bangun di bab ini:
 
@@ -1799,11 +1985,11 @@ Berikut adalah desain final *API* yang akan kita bangun di bab ini:
 Dengan kontrak ini, *frontend* developer bisa mulai bekerja membuat UI menggunakan *mock* data, sementara kita (*backend* developer) fokus mengimplementasikan kontrak ini agar "hidup".
 
 
-### 3.5 Desain *Database Schema*
+## 3.5 Desain *Database Schema*
 
 Sebelum menulis *query* atau *business logic*, kita perlu merancang struktur database yang akan menyimpan data sistem. Desain yang baik di tahap ini akan memudahkan pengembangan selanjutnya dan mencegah refaktor yang mahal di kemudian hari. Seperti kata pepatah dalam dunia *software engineering*: kesalahan desain yang ditemukan di tahap awal biaya perbaikannya jauh lebih murah daripada yang ditemukan di production.
 
-#### Diagram *Entity-Relationship*
+### 3.5.1 Diagram *Entity-Relationship*
 
 Langkah pertama dalam mendesain database adalah mengidentifikasi *entitas*—objek-objek utama yang perlu kita simpan. Untuk sistem *Load & Stuffing Calculator*, kita perlu menjawab pertanyaan: "Data apa saja yang harus bertahan (*persist*) di antara sesi pengguna?"
 
@@ -1888,7 +2074,7 @@ Anda mungkin bertanya mengapa kita menggunakan *UUID* sebagai *primary key* dari
 
 *Trade-off*-nya adalah *UUID* memakan lebih banyak *storage* (16 bytes vs 4 bytes untuk integer) dan sedikit lebih lambat untuk *indexing*. Untuk skala aplikasi kita, *trade-off* ini sangat layak.
 
-#### Migrasi Database dengan *Goose*
+### 3.5.2 Migrasi Database dengan *Goose*
 
 Dalam pengembangan aplikasi, skema database tidak pernah statis. Kita akan menambah tabel baru, mengubah kolom, menambah *index*—perubahan ini harus dilakukan dengan cara yang terkontrol dan *reproducible*. Inilah mengapa kita membutuhkan *database migrations*.
 
@@ -2025,7 +2211,7 @@ goose -dir cmd/db/migrations postgres "$DATABASE_URL" up
 goose -dir cmd/db/migrations postgres "$DATABASE_URL" status
 ```
 
-#### Koneksi Database dengan pgx
+### 3.5.3 Koneksi Database dengan pgx
 
 *Go* *standard library* menyediakan *package* `database/sql` sebagai abstraksi universal untuk berbagai database. Anda bisa menggunakan *interface* yang sama untuk MySQL, *PostgreSQL*, SQLite, dan lainnya. Namun, abstraksi ini memiliki *trade-off*: fitur-fitur spesifik database tidak tersedia, dan ada *overhead* dari layer tambahan.
 
@@ -2154,7 +2340,7 @@ go get github.com/jackc/pgx/v5
 Dengan *database schema* yang sudah terdefinisi dan koneksi yang berjalan, kita siap membangun *repository layer* menggunakan *SQLC*.
 
 
-### 3.6 Type-safe *Repository Layer* dengan *SQLC*
+## 3.6 Type-safe *Repository Layer* dengan *SQLC*
 
 Setelah database *schema* siap, langkah berikutnya adalah membangun *repository layer*—komponen yang bertanggung jawab untuk semua interaksi dengan database. Di sinilah kita menulis *query* *SQL* dan memetakan hasilnya ke *struct* *Go*.
 
@@ -2167,7 +2353,7 @@ Ada beberapa pendekatan untuk membangun *data access layer* di *Go*:
 
 Masing-masing memiliki *trade-off*. *ORM* mempercepat development tetapi menyembunyikan *query* yang sebenarnya—saat performance issue muncul, Anda harus menebak *query* apa yang di-generate. Raw *SQL* memberikan kontrol penuh tetapi rentan typo dan perubahan *schema* yang tidak terdeteksi sampai *runtime*.
 
-#### Keunggulan *SQLC*
+### 3.6.1 Keunggulan *SQLC*
 
 *SQLC* mengambil pendekatan unik: Anda menulis *SQL* murni—*query* yang sebenarnya akan dieksekusi—lalu *SQLC* men-*generate* kode *Go* yang type-safe dari *query* tersebut.
 
@@ -2186,7 +2372,7 @@ Mengapa pendekatan ini powerful?
 
 4. **Query optimization**: Karena *SQL* tertulis eksplisit, DBA atau developer berpengalaman bisa langsung mereview dan mengoptimalkan *query*.
 
-#### Penyiapan *SQLC*
+### 3.6.2 Penyiapan *SQLC*
 
 Install *SQLC* *CLI*:
 
@@ -2251,7 +2437,7 @@ Mari kita bahas setiap konfigurasi:
 - **overrides**: Map tipe database ke tipe *Go*. Secara default, pgx menggunakan `pgtype.UUID` dan `pgtype.Timestamptz`. Kita override agar menggunakan `github.com/google/uuid` dan `time.Time` standar *Go* yang lebih ergonomis.
 
 
-#### Menulis *Query* Files
+### 3.6.3 Penulisan *Query* Files
 
 *Query* ditulis dalam file `.sql` dengan annotation khusus yang memberitahu *SQLC* nama function dan tipe return.
 
@@ -2387,7 +2573,7 @@ DELETE FROM plan_items WHERE id = $1;
 
 Perhatikan *query* `GetPlanItems` dan `GetPlacements`—keduanya menggunakan JOIN untuk mengambil data dari tabel terkait dalam satu *query*. *SQLC* cukup pintar untuk men-generate *struct* yang mencakup kolom dari kedua tabel.
 
-#### Generasi Kode
+### 3.6.4 Generasi Kode
 
 Setelah *query* ditulis, generate kode *Go*:
 
@@ -2461,7 +2647,7 @@ type CreateContainerParams struct {
 }
 ```
 
-#### Menggunakan *Generated Code*
+### 3.6.5 Menggunakan *Generated Code*
 
 Untuk menggunakan *query*, kita membuat *instance* `Queries` dengan *connection pool*:
 
@@ -2506,11 +2692,11 @@ Setiap function menerima `context.Context` sebagai parameter pertama—ini memun
 Dengan *repository layer* yang type-safe dan *queries* yang di-generate, kita siap membangun *service layer* yang mengorkestrasikan business logic.
 
 
-### 3.7 *Business Logic Layer*
+## 3.7 *Business Logic Layer*
 
 Dengan *repository layer* yang sudah siap, kita sekarang membangun **service layer**—lapisan yang berisi logika bisnis aplikasi. Ini adalah "otak" dari sistem, tempat keputusan dibuat dan berbagai komponen diorkestrasikan.
 
-#### Kebutuhan *Layer* Terpisah
+### 3.7.1 Kebutuhan *Layer* Terpisah
 
 Pertanyaan umum dari developer yang baru mengenal arsitektur berlapis: "Mengapa tidak langsung panggil repository dari *HTTP* handler? Bukankah itu menambah kompleksitas tanpa manfaat?"
 
@@ -2558,7 +2744,7 @@ flowchart TB
 
 Dengan pemisahan ini, kita bisa mengganti repository tanpa mengubah handler, menguji service tanpa *HTTP*, dan me-reuse logika di berbagai *endpoint*.
 
-#### *Dependency Injection*
+### 3.7.2 *Dependency Injection*
 
 Seperti yang disebutkan di Section 3.5, koneksi database diteruskan dari `main()` ke komponen yang membutuhkan. Pola ini disebut **Dependency Injection** (DI)—komponen menerima dependencies-nya melalui constructor, bukan membuat sendiri.
 
@@ -2601,7 +2787,7 @@ Pendekatan kedua memberikan tiga keuntungan utama:
 
 Dengan menerima *interface* (bukan concrete type), service tidak peduli apakah ia menerima real database atau *mock*—selama memenuhi kontrak *interface*. Di *Go*, ini bekerja karena *interface* dipenuhi secara implisit: jika sebuah type memiliki semua method yang didefinisikan *interface*, ia otomatis mengimplementasi *interface* tersebut.
 
-#### Menggunakan *Interface* dari *SQLC*
+### 3.7.3 Menggunakan *Interface* dari *SQLC*
 
 Kabar baiknya: kita tidak perlu mendefinisikan *interface* database sendiri. *SQLC* sudah men-generate *interface* `Querier` di *package* `store` yang berisi semua method *query* kita. Kita bisa langsung menggunakannya:
 
@@ -2628,7 +2814,7 @@ type PackingGateway interface {
 
 *Interface* ini memungkinkan *service layer* memanggil *Packing Service* tanpa tahu detail implementasinya. Untuk sekarang, service akan menerima *interface* ini sebagai dependency yang bisa `nil` selama development.
 
-#### Implementasi ContainerService
+### 3.7.4 Implementasi ContainerService
 
 Sekarang kita implementasi service pertama. Buat struktur direktori untuk *service layer*:
 
@@ -2731,7 +2917,7 @@ Setiap method public menerima `context.Context` sebagai parameter pertama. Ini a
 
 Perhatikan pattern `fmt.Errorf("create container: %w", err)`. Verb `%w` membungkus error original sehingga caller dapat menggunakan `errors.Is()` atau `errors.As()` untuk memeriksa error spesifik. String "create container:" menambah konteks tentang *di mana* error terjadi.
 
-#### Pelengkapan Operasi *CRUD*
+### 3.7.5 Pelengkapan Operasi *CRUD*
 
 Untuk menyelesaikan operasi *CRUD*, kita perlu menambahkan method `Update` dan `Delete`. Pattern yang sama diterapkan—validasi bisnis di service, operasi database di repository:
 
@@ -2772,7 +2958,7 @@ func (s *ContainerService) Delete(ctx context.Context, id uuid.UUID) error {
 
 Method `Update` memiliki validasi yang sama dengan `Create`—ini memastikan konsistensi aturan bisnis terlepas dari bagaimana data masuk ke sistem. Method `Delete` lebih sederhana karena tidak ada nilai kembalian yang perlu di-wrap.
 
-#### Implementasi ProductService
+### 3.7.6 Implementasi ProductService
 
 Dengan pemahaman yang solid tentang bagaimana `ContainerService` dibangun, kita bisa menerapkan pattern yang sama untuk `ProductService`. Kedua entitas ini memiliki karakteristik serupa—keduanya adalah *master data* dengan operasi *CRUD* standar.
 
@@ -2883,7 +3069,7 @@ Untuk *CRUD* sederhana, service mungkin terlihat seperti pass-through ke reposit
 
 Contoh berikutnya akan menunjukkan nilai sebenarnya dari *service layer*.
 
-#### Implementasi PlanService
+### 3.7.7 Implementasi PlanService
 
 Berbeda dengan `ContainerService` yang sederhana, `PlanService` adalah contoh nyata mengapa *service layer* diperlukan. Service ini mengorkestrasikan multiple operations: mengambil data dari berbagai tabel, memanggil external service, dan menyimpan hasil. Logika ini terlalu kompleks untuk diletakkan di handler.
 
@@ -2955,7 +3141,7 @@ func (s *PlanService) AddItem(ctx context.Context, planID, productID uuid.UUID, 
 
 Kode di atas menunjukkan dua method sederhana dari `PlanService`. Method `Create` pertama-tama memverifikasi bahwa container yang dipilih benar-benar ada di database—ini adalah contoh validasi yang tidak bisa dilakukan di level repository. Method `AddItem` memvalidasi *quantity* dan keberadaan product sebelum menyimpan ke database.
 
-#### Pelengkapan PlanService dengan *CRUD*
+### 3.7.8 Pelengkapan PlanService dengan *CRUD*
 
 Seperti halnya Container dan Product, Plan juga membutuhkan operasi *CRUD* lengkap. Berikut methods tambahan untuk `PlanService`:
 
@@ -3008,7 +3194,7 @@ func (s *PlanService) Delete(ctx context.Context, id uuid.UUID) error {
 
 Perhatikan bahwa *method* *List* mengembalikan `store.ListPlansRow`—tipe ini di-generate oleh *SQLC* berdasarkan *query* *JOIN* yang kita tulis. *Query* tersebut mengambil nama container bersama dengan data plan, sehingga *frontend* bisa menampilkan informasi yang lebih informatif.
 
-#### Manajemen Plan Items
+### 3.7.9 Manajemen Plan Items
 
 Plan items juga membutuhkan operasi *update* dan *delete*. Berikut *methods* untuk mengelola items dalam plan:
 
@@ -3059,7 +3245,7 @@ func (s *PlanService) GetPlacements(ctx context.Context, planID uuid.UUID) ([]st
 
 *Method* `GetPlacements` akan digunakan oleh *handler* untuk menyertakan hasil kalkulasi saat mengambil detail plan. Ini memungkinkan *frontend* menampilkan visualisasi 3D tanpa *request* tambahan.
 
-#### *Method* Calculate
+### 3.7.10 *Method* Calculate
 
 *Method* *Calculate* adalah *method* yang paling kompleks dalam sistem kita. Di sinilah nilai sebenarnya dari *service layer* terlihat—kita mengorkestrasikan tujuh langkah berbeda menjadi satu operasi atomis dari perspektif pengguna.
 
@@ -3174,17 +3360,17 @@ Method ini mengiterasi setiap item dalam plan dan mengkonversi dari *struct* dat
 Dengan *service layer* yang solid, kita siap membangun *HTTP handlers* yang akan mengekspos logika ini ke dunia luar.
 
 
-### 3.8 *HTTP* Router dan Handler
+## 3.8 *HTTP* Router dan Handler
 
 Setelah *service layer* siap, kita perlu cara untuk menerima *request* dari dunia luar dan mengembalikan *response*. Inilah tugas *HTTP handler*—menjadi "pintu masuk" ke aplikasi kita.
 
-#### Memilih Web *Framework*
+### 3.8.1 Pemilihan Web *Framework*
 
 *Go* standard *library* sudah menyediakan *package* `net/http` yang cukup *powerful* untuk membangun *HTTP server*. Namun untuk aplikasi dengan banyak *endpoint*, kita membutuhkan fitur tambahan seperti *routing* dengan parameter, *middleware*, dan *JSON* *binding*. Di sinilah web *framework* membantu.
 
 Kita memilih **Gin** karena beberapa alasan. Pertama, *Gin* memiliki *API* yang sederhana dan mudah dipelajari—tidak ada "magic" yang menyembunyikan cara kerja *HTTP*. Kedua, *Gin* adalah salah satu *framework* tercepat di *Go* berkat penggunaan *httprouter* yang efisien. Ketiga, ekosistemnya matang dengan banyak *middleware* siap pakai.
 
-#### Standarisasi *Response* dengan *Package Response*
+### 3.8.2 Standarisasi *Response* dengan *Package Response*
 
 Sebelum menulis *handlers*, mari buat *package* untuk standarisasi format *response* *API*. Dengan ini, semua *endpoint* akan mengembalikan struktur *JSON* yang konsisten—memudahkan *frontend* untuk *parsing* *response*.
 
@@ -3239,7 +3425,7 @@ func Error(c *gin.Context, status int, message string) {
 
 Dengan *helper functions* ini, semua *response* *API* akan memiliki struktur yang sama. *Response* sukses selalu berisi `"success": true` dan data di *field* `data`. *Response* error selalu berisi `"success": false` dan detail error di *field* `errors`. Konsistensi ini sangat membantu *frontend* dalam *handling* *response*.
 
-#### *Data Transfer Objects*
+### 3.8.3 *Data Transfer Objects*
 
 DTO adalah *struct* yang mendefinisikan format data untuk *request* dan *response*. Dengan memisahkan DTO dari model database, kita bisa mengontrol data apa yang diterima dari *client* dan apa yang dikirim ke *client*—tanpa mengekspos struktur internal database.
 
@@ -3376,7 +3562,7 @@ type PlanDetailResponse struct {
 
 Dengan DTO yang lengkap, kita siap mengimplementasikan *HTTP* handler yang memanfaatkan model-model ini.
 
-#### Implementasi Handler
+### 3.8.4 Implementasi Handler
 
 Sekarang kita bisa mengimplementasikan handler dengan menggunakan *response* *package* dan DTO. Buat struktur direktori untuk handler:
 
@@ -3564,7 +3750,7 @@ func (h *ContainerHandler) Delete(c *gin.Context) {
 
 *Handler* menggunakan `response.Success` dan `response.Error` untuk memastikan format *response* yang konsisten. Setiap *handler* juga mengkonversi dari model internal ke DTO *response*—ini memberikan kontrol penuh atas data yang dikirim ke *client*.
 
-#### Implementasi ProductHandler
+### 3.8.5 Implementasi ProductHandler
 
 ProductHandler mengikuti pola yang sama persis dengan ContainerHandler. Buat file `product_handler.go` di dalam direktori `internal/handler/`:
 
@@ -4044,7 +4230,7 @@ func (h *PlanHandler) Calculate(c *gin.Context) {
 }
 ```
 
-#### *Package API* dan Penyiapan *Router*
+### 3.8.6 *Package API* dan Penyiapan *Router*
 
 Untuk mengorganisir *initialization* dan *routing*, kita buat *package* `api` yang menampung struktur aplikasi. *Package* ini berfungsi sebagai "*composition root*"—satu tempat di mana semua komponen aplikasi dibuat dan dihubungkan.
 
@@ -4337,7 +4523,7 @@ Routes dipisahkan ke file sendiri untuk menjaga `api.go` tetap fokus pada initia
 
 Health check *endpoint* adalah *endpoint* sederhana yang mengembalikan status server. *Endpoint* ini berguna untuk monitoring dan *load balancer*—mereka bisa mengecek apakah server masih hidup tanpa membebani database.
 
-#### *Entry Point*
+### 3.8.7 *Entry Point*
 
 Terakhir, update `main.go` untuk menggunakan `App` *struct*. Buat atau update file `main.go` di dalam direktori `cmd/api/`:
 
@@ -4374,11 +4560,11 @@ func main() {
 Dengan *HTTP* layer yang lengkap dan terstruktur, *API* kita sudah bisa menerima *request*. Langkah terakhir adalah mengintegrasikan *Packing Service* untuk kalkulasi yang sebenarnya.
 
 
-### 3.9 Integrasi dengan *Packing Service*
+## 3.9 Integrasi dengan *Packing Service*
 
 Sampai titik ini, kita sudah membangun *API* yang lengkap—dari database hingga *HTTP* handlers. Namun method `Calculate` di `PlanService` masih menerima `nil` sebagai gateway. Saatnya mengimplementasikan komponen yang menghubungkan *backend* *Go* dengan *Packing Service* *Python*.
 
-#### Pola *Gateway*
+### 3.9.1 Pola *Gateway*
 
 *Gateway* adalah pattern yang mengenkapsulasi komunikasi dengan external service. Dengan gateway, *service layer* tidak perlu tahu detail bagaimana komunikasi dilakukan—apakah via *HTTP*, *gRPC*, atau message queue. Service hanya memanggil method *interface*, dan gateway menangani sisanya.
 
@@ -4390,7 +4576,7 @@ Buat direktori untuk gateway:
 mkdir -p internal/gateway
 ```
 
-#### Definisi *Interface*
+### 3.9.2 Definisi *Interface*
 
 Pertama, definisikan *interface* yang akan diimplementasi oleh gateway. Buat file `gateway.go` di dalam direktori `internal/gateway/`:
 
@@ -4411,7 +4597,7 @@ type PackingGateway interface {
 
 *Interface* hanya memiliki satu method: `Pack`. Ini menerima *request* dan mengembalikan *response* atau error. Kesederhanaan ini disengaja—gateway hanya bertanggung jawab untuk komunikasi, bukan business logic.
 
-#### *Request* dan *Response* Types
+### 3.9.3 *Request* dan *Response* Types
 
 Selanjutnya, definisikan *struct* untuk *request* dan *response*. *Struct* ini merepresentasikan format data yang diharapkan oleh *Packing Service*.
 
@@ -4504,7 +4690,7 @@ type PackError struct {
 
 Perhatikan bahwa *response* memiliki *field* `Success` untuk mengindikasikan apakah kalkulasi berhasil. Ini berbeda dengan *HTTP status code*—*Packing Service* mungkin mengembalikan 200 OK tapi dengan `Success: false` jika ada error pada *level* aplikasi.
 
-#### Implementasi *HTTP Gateway*
+### 3.9.4 Implementasi *HTTP Gateway*
 
 Sekarang implementasi gateway yang berkomunikasi via *HTTP*. Buat file `packing_gateway.go` di dalam direktori `internal/gateway/`:
 
@@ -4613,7 +4799,7 @@ func (g *HTTPPackingGateway) Pack(ctx context.Context, req PackRequest) (*PackRe
 
 Method ini mengikuti alur yang jelas. Pertama, *request* di-*serialize* ke *JSON*. Kedua, *HTTP* *request* dibuat dengan *context*—ini memungkinkan *cancellation* jika *client* memutus koneksi. Ketiga, *request* dikirim dan *response* dibaca. Keempat, *response* di-parse dan error di-handle baik di *level* *HTTP* maupun aplikasi.
 
-#### *Mock Gateway* untuk *Development*
+### 3.9.5 *Mock Gateway* untuk *Development*
 
 Untuk development dan demo, kita tidak selalu memiliki *Packing Service* *Python* berjalan. Untuk itu, kita buat *mock* gateway yang mensimulasikan *response*. Buat file `mock_gateway.go` di dalam direktori `internal/gateway/`:
 
@@ -4677,7 +4863,7 @@ func (g *MockPackingGateway) Pack(ctx context.Context, req PackRequest) (*PackRe
 - Demo aplikasi ke *stakeholder*
 - *Unit testing* tanpa *external dependencies*
 
-#### Integrasi *Gateway* ke *Service*
+### 3.9.6 Integrasi *Gateway* ke *Service*
 
 Sekarang kita perlu menghubungkan gateway ke `PlanService`. Update file `api.go` di dalam direktori `internal/api/` untuk membuat gateway:
 
@@ -4709,7 +4895,7 @@ func NewApp(cfg *config.Config, db *pgxpool.Pool) *App {
 
 Dengan *mock* gateway, *endpoint* `/calculate` bisa ditest tanpa *Packing Service* berjalan.
 
-#### Pembaruan PlanService untuk Menggunakan *Gateway*
+### 3.9.7 Pembaruan PlanService untuk Menggunakan *Gateway*
 
 Terakhir, update method `Calculate` di file `plan_service.go` di dalam direktori `internal/service/` untuk menggunakan gateway yang sebenarnya:
 
@@ -4762,7 +4948,7 @@ Dengan gateway yang sudah terhubung, *flow* kalkulasi lengkap menjadi:
 
 Dengan ini, *backend* *Go* kita sudah lengkap—dari menerima *request* *HTTP* hingga berkomunikasi dengan *Packing Service* untuk kalkulasi yang sebenarnya.
 
-#### Menjalankan dan Menguji Aplikasi
+### 3.9.8 Eksekusi dan Pengujian Aplikasi
 
 Sebelum melanjutkan ke bab berikutnya, mari pastikan semua komponen bekerja dengan benar. Pertama, pastikan *PostgreSQL* berjalan dan database sudah dibuat:
 
@@ -4905,7 +5091,7 @@ Dengan *mock* gateway yang sudah kita buat, *endpoint* `/calculate` bisa diuji t
 
 Dengan *API* yang berjalan dan teruji, kita telah menyelesaikan *backend* *Go* untuk Load *Stuffing* Calculator. Di bab berikutnya, kita akan membangun *Packing Service* dengan *Python* yang akan melakukan kalkulasi *3D bin packing*.
 
-### Ringkasan
+#### Ringkasan
 
 Dalam bab ini, kita telah membangun *Backend API* lengkap menggunakan *Go* dengan arsitektur berlapis yang clean dan maintainable. Fitur utama yang telah kita implementasikan:
 
@@ -4951,7 +5137,7 @@ load-stuffing-calculator/
 └── sqlc.yaml
 ```
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 Untuk memperdalam pemahaman tentang topik yang dibahas di bab ini:
 
@@ -4974,7 +5160,7 @@ Untuk memperdalam pemahaman tentang topik yang dibahas di bab ini:
 
 <!-- BAB 4 STARTS HERE -->
 
-## Bab 4: *Packing Service* dengan *Python*
+# Bab 4: *Packing Service* dengan *Python*
 
 Di bab sebelumnya, kita membangun *Backend API* dengan *Go* yang menangani semua interaksi dengan dunia luar—menerima *request* *HTTP*, memvalidasi *input*, dan menyimpan data ke database. Namun, ada satu komponen krusial yang sengaja kita tunda: *kalkulasi penempatan barang*. Saat *endpoint* `/calculate` dipanggil, *Backend API* kita hanya berkomunikasi dengan *MockGateway* yang mengembalikan data simulasi. Sekarang saatnya membangun "otak" yang sesungguhnya.
 
@@ -5006,13 +5192,13 @@ Untuk menyelesaikan bab ini, Anda memerlukan:
 - **VS Code dengan *Python* extension** — IDE yang direkomendasikan
 
 
-### 4.1 Penyiapan *Project Python*
+## 4.1 Penyiapan *Project Python*
 
 Berbeda dengan *Go* yang memiliki *tooling* *built-in* untuk *project management* (`go mod`), *Python* memerlukan sedikit setup tambahan. Ekosistem *Python* menawarkan berbagai pendekatan untuk *dependency management*—dari pip sederhana hingga Poetry yang lebih modern. Untuk *Packing Service* yang relatif sederhana, kita akan menggunakan pendekatan klasik: *virtual environment* dengan pip dan `requirements.txt`.
 
 Mengapa tidak Poetry atau pipenv? Alasan utamanya adalah **kesederhanaan**. *Packing Service* hanya memiliki dua *dependencies* (*Flask* dan Gunicorn), dan kita tidak memerlukan fitur *advanced* seperti *dependency locking* yang ketat atau *build system* terintegrasi. Prinsip yang sama dengan memilih *Flask* over Django—gunakan tool yang sesuai dengan skala masalah.
 
-#### Struktur Direktori
+### 4.1.1 Struktur Direktori
 
 Di Bab 2, kita membahas arsitektur *microservices* dengan *Backend API* dan *Packing Service* sebagai dua komponen terpisah. Pertanyaannya: di mana kita menempatkan kode *Packing Service*? Ada dua pendekatan umum:
 
@@ -5054,7 +5240,7 @@ mkdir -p cmd/packing
 cd cmd/packing
 ```
 
-#### *Virtual Environment*
+### 4.1.2 *Virtual Environment*
 
 Jika Anda familiar dengan *Go*, konsep virtual environment mungkin terasa aneh. *Go* memiliki `go.mod` yang mengisolasi dependencies per-project secara otomatis. *Python*, dengan sejarahnya yang lebih panjang, tidak memiliki ini secara built-in—virtual environment adalah solusi komunitas yang kemudian diadopsi ke standard *library*.
 
@@ -5094,7 +5280,7 @@ Python 3.11.x
 
 Untuk *best practice*, tambahkan `venv/` ke `.gitignore`—virtual environment tidak perlu di-commit karena bisa dibuat ulang dari `requirements.txt`.
 
-#### *Dependencies*
+### 4.1.3 *Dependencies*
 
 *Python* menggunakan `requirements.txt` sebagai cara paling sederhana untuk mendefinisikan dependencies. Format ini telah ada sejak awal pip dan didukung secara universal.
 
@@ -5128,7 +5314,7 @@ Untuk *Packing Service* yang hanya memiliki dua *endpoint* (`/health` dan `/pack
 
 *Flask* mengikuti filosofi yang sama dengan *Go*: **explicit over implicit**. Jika sesuatu terjadi, Anda bisa melihatnya langsung di kode.
 
-#### Inisialisasi *Package* *Python*
+### 4.1.4 Inisialisasi *Package* *Python*
 
 Terakhir, buat file `__init__.py` di dalam direktori `cmd/packing/` untuk menandai direktori sebagai *Python* *package*:
 
@@ -5140,7 +5326,7 @@ File ini memiliki dua fungsi: menandai direktori sebagai importable *package*, d
 
 Dengan setup selesai, kita siap membangun *Flask* application. Di section berikutnya, kita akan membuat *entry point* `app.py` yang mendefinisikan endpoints dan menangani *request*.
 
-### 4.2 *Entry Point* Aplikasi *Flask*
+## 4.2 *Entry Point* Aplikasi *Flask*
 
 Setiap aplikasi *Flask* dimulai dengan sebuah *application object*—instance dari class `Flask` yang menjadi pusat dari semua konfigurasi dan routing. Di Bab 3, kita menggunakan pattern *application factory* (`NewApp`) untuk *Go*. *Flask* memiliki pattern serupa yang disebut *application factory function*.
 
@@ -5163,7 +5349,7 @@ from .schema import ErrorResponse, HealthResponse, PackSuccessResponse
 
 Mari bahas imports ini satu per satu. `from __future__ import annotations` mengaktifkan *postponed evaluation of annotations*—ini memungkinkan kita menggunakan type hints tanpa import yang berlebihan dan menyelesaikan beberapa edge cases dengan forward references. `Flask`, `jsonify`, dan `request` adalah komponen inti *Flask* yang akan kita gunakan. Imports dari `.packing` dan `.schema` adalah relative imports ke *module* yang akan kita buat nanti.
 
-#### *Helper Error Response*
+### 4.2.1 *Helper Error Response*
 
 Sebelum mendefinisikan endpoints, kita buat helper function untuk standardized error responses:
 
@@ -5202,7 +5388,7 @@ Format error *response* kita konsisten dengan *Backend API* *Go*:
 }
 ```
 
-#### Pola *Application Factory*
+### 4.2.2 Pola *Application Factory*
 
 Sekarang kita definisikan *application factory*—sebuah function yang membuat dan mengkonfigurasi *Flask* app:
 
@@ -5262,7 +5448,7 @@ Mari bedah kedua endpoints:
 
 Perhatikan bahwa kita menangkap `ValueError` secara spesifik—ini adalah convention kita untuk validation errors. *Module* `schema.py` akan raise `ValueError` untuk *input* yang tidak valid, dan kita konversi menjadi *HTTP* 400.
 
-#### *Entry Point*
+### 4.2.3 *Entry Point*
 
 Terakhir, tambahkan *entry point* untuk menjalankan server:
 
@@ -5387,7 +5573,7 @@ if __name__ == "__main__":
     main()
 ```
 
-### 4.3 *Schema* dan Validasi *Request*
+## 4.3 *Schema* dan Validasi *Request*
 
 *Packing Service* menerima *request* berisi data container dan items, lalu mengembalikan koordinat penempatan. Untuk memastikan data yang masuk valid sebelum dikirim ke algoritma, kita perlu mendefinisikan struktur data dan melakukan validasi.
 
@@ -5404,7 +5590,7 @@ from typing import Any, Literal, NotRequired, TypedDict
 from .units import LengthUnit
 ```
 
-#### Struktur *Request*
+### 4.3.1 Struktur *Request*
 
 *Request* ke *Packing Service* terdiri dari empat bagian: units, container, items, dan options. Mari definisikan struktur untuk masing-masing.
 
@@ -5455,7 +5641,7 @@ class RequestIn(TypedDict):
 
 `RequestIn` adalah struktur lengkap setelah validasi. `units` menentukan satuan panjang yang digunakan—algoritma akan mengkonversi ke representasi internal untuk kalkulasi.
 
-#### Struktur *Response*
+### 4.3.2 Struktur *Response*
 
 *Response* berisi koordinat penempatan untuk setiap item, plus informasi tentang items yang tidak muat.
 
@@ -5510,7 +5696,7 @@ class ErrorResponse(TypedDict):
 
 *Response* mengikuti format yang sama dengan *Backend API* *Go*: `success` *boolean* plus `data` atau `error`.
 
-#### *NormalizedItem*
+### 4.3.3 *NormalizedItem*
 
 Selain types untuk *API*, kita mendefinisikan *internal type* untuk *processing*:
 
@@ -5529,7 +5715,7 @@ class NormalizedItem:
 
 `NormalizedItem` menyimpan dimensi dalam **integer centimeters**. Mengapa konversi ke integer? Algoritma packing melakukan banyak operasi perbandingan dan *intersection checking*. Floating-point arithmetic bisa menyebabkan *precision errors*—dua nilai yang "seharusnya" sama ternyata berbeda di digit ke-15. Dengan integer, perbandingan selalu deterministik. Centimeter dipilih sebagai *balance* antara presisi (cukup untuk most items) dan range (integer 32-bit bisa handle kontainer hingga 21 km).
 
-#### Validasi *Request*
+### 4.3.4 Validasi *Request*
 
 Validasi memastikan data yang masuk sesuai dengan apa yang diharapkan algoritma.
 
@@ -5842,7 +6028,7 @@ def parse_request(body: dict[str, Any]) -> RequestIn:
 
 
 
-### 4.4 Konversi Unit
+## 4.4 Konversi Unit
 
 *Client* bisa mengirim dimensi dalam milimeter, centimeter, atau meter—tergantung konteks. Gudang biasanya menggunakan centimeter, *manufacturer* mungkin menggunakan milimeter untuk presisi, dan spesifikasi kontainer pengiriman sering dalam meter. *Packing Service* harus menerima semua format ini dan mengkonversi ke representasi internal yang konsisten.
 
@@ -5861,7 +6047,7 @@ LengthUnit = Literal["mm", "cm", "m"]
 
 `LengthUnit` adalah *type alias* yang membatasi nilai ke tiga string: "mm", "cm", atau "m". *Type* ini digunakan di `schema.py` untuk *field* `units` dalam *request*.
 
-#### Konversi ke Centimeter
+### 4.4.1 Konversi ke Centimeter
 
 Algoritma py3dbp bekerja dengan angka tanpa unit—ia tidak peduli apakah dimensi dalam mm atau m. Kita perlu memilih satu unit internal untuk konsistensi. Centimeter dipilih karena menjadi *balance* yang baik: cukup presisi untuk kebanyakan items (1 cm = 10 mm), dan tidak terlalu besar sehingga angka menjadi tidak praktis.
 
@@ -5880,7 +6066,7 @@ def to_cm(value: float, unit: LengthUnit) -> float:
 
 `to_cm` mengkonversi nilai dari unit apapun ke centimeter. Konversi *straightforward*: 1 cm = 10 mm, 1 m = 100 cm.
 
-#### Konversi Balik ke Unit Client
+### 4.4.2 Konversi Balik ke Unit Client
 
 Setelah algoritma menghitung koordinat penempatan (dalam cm internal), kita perlu mengkonversi balik ke unit yang client kirimkan. Jika client mengirim dimensi dalam meter, *response* juga harus dalam meter.
 
@@ -5897,7 +6083,7 @@ def from_cm(value_cm: float, unit: LengthUnit) -> float:
         raise ValueError(f"unsupported unit: {unit}")
 ```
 
-#### Centimeter *Integer*
+### 4.4.3 Centimeter *Integer*
 
 Di section *Schema*, kita membahas bahwa `NormalizedItem` menyimpan dimensi dalam integer centimeter. Mengapa integer, bukan float?
 
@@ -5964,11 +6150,11 @@ def cm_int(value: float) -> int:
 
 
 
-### 4.5 Integrasi *py3dbp*
+## 4.5 Integrasi *py3dbp*
 
 py3dbp adalah *library* *Python* yang mengimplementasikan algoritma *3D bin packing*. *Library* ini sudah menangani kompleksitas utama: mencoba berbagai rotasi item, melakukan collision detection, dan menghitung apakah item bisa ditempatkan di posisi tertentu. Tugas kita adalah menjembatani antara format *API* kita dengan format yang py3dbp harapkan.
 
-#### *Vendored Dependency*
+### 4.5.1 *Vendored Dependency*
 
 Alih-alih menginstall py3dbp via pip, kita menyertakan *library* langsung di dalam project (vendoring). Alasannya: reproducibility. Kita bisa memastikan versi yang sama digunakan di development dan production, tanpa bergantung pada PyPI. Untuk proyek production, ini juga memungkinkan modifikasi jika diperlukan.
 
@@ -5984,7 +6170,7 @@ def _load_py3dbp() -> None:
 
 Function ini menambahkan path ke *vendored* *library* sebelum import. Dengan ini, `from py3dbp import Packer` akan menggunakan versi lokal kita.
 
-#### *Coordinate System*
+### 4.5.2 *Coordinate System*
 
 py3dbp menggunakan konvensi WHD (Width, Height, *Depth*) untuk dimensi, sementara *API* kita menggunakan LWH (Length, Width, Height). Ini adalah sumber kebingungan yang sering terjadi. Kita perlu mapping yang konsisten:
 
@@ -6003,7 +6189,7 @@ item_whd = (it.l_cm, it.h_cm, it.w_cm)
 
 Setelah packing selesai, *coordinate* posisi dari py3dbp juga perlu di-mapping balik ke konvensi *API* kita.
 
-#### Inisialisasi Packer
+### 4.5.3 Inisialisasi Packer
 
 Buat file `packing.py` di dalam direktori `cmd/packing/`. Function utama `pack_request` mengorkestrasi seluruh proses:
 
@@ -6061,7 +6247,7 @@ Setiap item dinormalisasi ke `NormalizedItem` dengan dimensi integer cm.
 
 py3dbp `Packer` adalah *orchestrator* utama. `Bin` merepresentasikan container dengan dimensi dan *weight limit*.
 
-#### Ekspansi *Items* berdasarkan *Quantity*
+### 4.5.4 Ekspansi *Items* berdasarkan *Quantity*
 
 *Request* mungkin berisi item dengan `quantity: 5`. py3dbp tidak memahami *quantity*—ia bekerja dengan individual items. Kita perlu expand:
 
@@ -6090,7 +6276,7 @@ py3dbp `Packer` adalah *orchestrator* utama. `Bin` merepresentasikan container d
 
 `partno` adalah *unique ID* per-instance (`BOX-001:1`, `BOX-001:2`, ...), `name` adalah item type ID yang sama untuk *aggregasi*. `updown=True` memungkinkan item dirotasi termasuk *vertikal*.
 
-#### Eksekusi Algoritma
+### 4.5.5 Eksekusi Algoritma
 
 ```python
     packer.pack(
@@ -6113,7 +6299,7 @@ Parameter ini mengontrol perilaku algoritma:
 - **support_surface_ratio** — Minimal 75% permukaan bawah harus ditopang
 - **number_of_decimals** — 0 karena kita gunakan integer
 
-#### *Rotation Codes*
+### 4.5.6 *Rotation Codes*
 
 py3dbp bisa merotasi item ke berbagai orientasi. Untuk visualisasi 3D di *frontend*, kita perlu tahu rotasi apa yang diterapkan. `rotation.py` menangani mapping ini:
 
@@ -6189,7 +6375,7 @@ def permuted_lwh_from_packing_dims(pack_dims: tuple[int, int, int]) -> tuple[int
 
 
 
-#### Pemrosesan Hasil
+### 4.5.7 Pemrosesan Hasil
 
 Setelah packing selesai, kita *extract* hasil:
 
@@ -6413,11 +6599,11 @@ def pack_request(body: dict[str, Any]) -> PackSuccessResponse:
     }
 ```
 
-### 4.6 Integrasi dengan *Go* *Backend*
+## 4.6 Integrasi dengan *Go* *Backend*
 
 *Packing Service* sekarang siap dijalankan sebagai *standalone service*. Langkah terakhir adalah menghubungkannya dengan *Backend API* *Go* yang kita bangun di Bab 3. Ingat bahwa di Bab 3, kita menggunakan `MockPackingGateway` untuk simulasi—sekarang kita ganti dengan koneksi *HTTP* yang sesungguhnya.
 
-#### Pembaruan config.go
+### 4.6.1 Pembaruan config.go
 
 Pertama, tambahkan *field* untuk *Packing Service* *URL* di config *package*. Buka `internal/config/config.go`:
 
@@ -6439,7 +6625,7 @@ func Load() *Config {
 
 Dengan ini, *URL* *Packing Service* dikonfigurasi via environment variable `PACKING_SERVICE_URL`, dengan default ke `http://localhost:5000` untuk development.
 
-#### Pembaruan api.go
+### 4.6.2 Pembaruan api.go
 
 Di file `internal/api/api.go`, gunakan config untuk inisialisasi gateway:
 
@@ -6461,7 +6647,7 @@ func NewApp(cfg *config.Config, db *pgxpool.Pool) *App {
 
 Dengan perubahan ini, gateway membaca *URL* dari config yang di-load saat startup. Jika environment variable `PACKING_SERVICE_URL` di-set, nilai tersebut digunakan. Jika tidak, default `http://localhost:5000` digunakan. Ini memudahkan *deployment* ke environment berbeda tanpa mengubah kode.
 
-#### Menjalankan Kedua Service
+### 4.6.3 Eksekusi Kedua Service
 
 Untuk development, kita perlu menjalankan dua service di terminal terpisah.
 
@@ -6493,7 +6679,7 @@ Server starting on :8080
 
 Sekarang kedua service berjalan dan terhubung. *Request* ke `/api/v1/plans/:id/calculate` di *Backend API* akan diteruskan ke *Packing Service*.
 
-#### Alur *End-to-End*
+### 4.6.4 Alur *End-to-End*
 
 Mari trace *request* dari client sampai packing result:
 
@@ -6519,11 +6705,11 @@ sequenceDiagram
     API-->>C: {placements, stats}
 ```
 
-### 4.7 Pengujian dan Verifikasi
+## 4.7 Pengujian dan Verifikasi
 
 Sebelum mengintegrasikan dengan *Go* *backend*, kita test *Packing Service* secara standalone. Ini memastikan service bekerja dengan benar sebelum menambahkan kompleksitas integrasi.
 
-#### Pengujian *Health Endpoint*
+### 4.7.1 Pengujian *Health Endpoint*
 
 Jalankan *Packing Service*:
 
@@ -6545,7 +6731,7 @@ curl http://localhost:5000/health
 {"success": true, "data": {"status": "ok"}}
 ```
 
-#### Pengujian *Pack Endpoint*
+### 4.7.2 Pengujian *Pack Endpoint*
 
 Kirim *request* packing sederhana:
 
@@ -6594,7 +6780,7 @@ curl -X POST http://localhost:5000/pack \
 
 Perhatikan bahwa `BOX-002` (lebih besar) ditempatkan terlebih dahulu karena `bigger_first` default ke `true`.
 
-#### Pengujian dengan *Items* Tidak Muat
+### 4.7.3 Pengujian dengan *Items* Tidak Muat
 
 Kirim *request* dengan items yang terlalu banyak:
 
@@ -6635,7 +6821,7 @@ curl -X POST http://localhost:5000/pack \
 
 Hanya 1 dari 3 item muat. *Frontend* bisa menggunakan informasi `unfitted` untuk memberitahu user bahwa diperlukan container tambahan.
 
-#### Pengujian *End-to-End*
+### 4.7.4 Pengujian *End-to-End*
 
 Dengan kedua service berjalan (*Go*:8080, *Python*:5000), test integrasi penuh:
 
@@ -6663,7 +6849,7 @@ curl -X POST http://localhost:8080/api/v1/plans/[PLAN_ID]/calculate
 }
 ```
 
-### Ringkasan
+#### Ringkasan
 
 Di bab ini kita membangun *Packing Service*—microservice *Python* yang menjalankan algoritma *3D bin packing* menggunakan *library* py3dbp.
 
@@ -6678,14 +6864,14 @@ Poin-poin utama:
 
 Arsitektur dua service ini memungkinkan *scaling* independen. Jika packing menjadi *bottleneck*, kita bisa menjalankan multiple instances *Packing Service* di belakang *load balancer* tanpa mengubah *Backend API*.
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 - py3dbp GitHub: https://github.com/enzoruiz/3dbinpacking
 - *Flask* Documentation: https://flask.palletsprojects.com/
 - *3D Bin Packing* Problem pada Wikipedia: https://en.wikipedia.org/wiki/Bin_packing_problem
 - TypedDict PEP 589: https://peps.python.org/pep-0589/
 
-## Bab 5: Visualisasi 3D Interaktif dengan *Three.js*
+# Bab 5: Visualisasi 3D Interaktif dengan *Three.js*
 
 Di bab sebelumnya, kita membangun *Packing Service* yang menghasilkan data placement—koordinat `pos_x`, `pos_y`, `pos_z` untuk setiap item di dalam container. Data ini cukup untuk diproses oleh sistem lain, tetapi tidak praktis sebagai panduan operasional. Operator gudang membutuhkan visualisasi—bukan spreadsheet koordinat—untuk memahami bagaimana barang harus dimuat ke dalam container.
 
@@ -6714,11 +6900,11 @@ Untuk menyelesaikan bab ini, Anda memerlukan:
 - **VS Code dengan *TypeScript* extension** — IDE yang direkomendasikan
 
 
-### 5.1 Penyiapan *Project Frontend*
+## 5.1 Penyiapan *Project Frontend*
 
 Kita akan menggunakan *Next.js* sebagai *framework* *frontend*. *Next.js* menyediakan fitur-fitur yang mempermudah development: file-based routing, *TypeScript* support out of the box, dan optimasi build yang sudah dikonfigurasi. Untuk UI components, kita menggunakan shadcn/ui—collection of reusable components yang dibangun di atas Radix UI primitives.
 
-#### Inisialisasi *Next.js*
+### 5.1.1 Inisialisasi *Next.js*
 
 Buat project *Next.js* di dalam direktori `web/`:
 
@@ -6741,7 +6927,7 @@ web/
 └── tsconfig.json
 ```
 
-#### Penyiapan shadcn/ui
+### 5.1.2 Penyiapan shadcn/ui
 
 shadcn/ui bukan *library* tradisional yang di-install sebagai dependency. Sebaliknya, components di-copy ke project kita, memberikan kontrol penuh untuk modifikasi. Inisialisasi shadcn:
 
@@ -6760,7 +6946,7 @@ pnpm dlx shadcn@latest add button slider card input table badge
 
 Components akan di-generate di `components/ui/`. Setiap component adalah file `.tsx` yang bisa kita modifikasi sesuai kebutuhan.
 
-#### Instalasi *Three.js*
+### 5.1.3 Instalasi *Three.js*
 
 Tambahkan *Three.js* dan type definitions:
 
@@ -6771,7 +6957,7 @@ pnpm add -D @types/three
 
 *Package* `three` adalah *library* utama, sedangkan `@types/three` menyediakan *TypeScript* type definitions untuk autocomplete dan type checking.
 
-#### Struktur Direktori *Visualizer*
+### 5.1.4 Struktur Direktori *Visualizer*
 
 Buat struktur direktori untuk StuffingVisualizer:
 
@@ -6819,7 +7005,7 @@ web/
 
 Direktori `lib/StuffingVisualizer/` berisi semua logic *Three.js*, terpisah dari *React* components. Pemisahan ini memudahkan testing dan reuse—logic visualisasi tidak tergantung pada *React*.
 
-#### Verifikasi Penyiapan
+### 5.1.5 Verifikasi Penyiapan
 
 Jalankan development server untuk memastikan setup berhasil:
 
@@ -6830,7 +7016,7 @@ pnpm dev
 Buka `http://localhost:3000` di browser. Jika muncul halaman default *Next.js*, setup berhasil. Di terminal, pastikan tidak ada error *TypeScript*.
 
 
-### 5.2 Arsitektur StuffingVisualizer
+## 5.2 Arsitektur StuffingVisualizer
 
 *Three.js* memerlukan koordinasi banyak komponen: scene untuk menampung objects, camera untuk viewpoint, renderer untuk menggambar ke canvas, lights untuk pencahayaan, dan controls untuk interaktivitas. Menggabungkan semua ini dalam satu file akan menghasilkan kode yang sulit di-maintain dan sulit di-test.
 
@@ -6929,7 +7115,7 @@ Di sisi lain, `StuffingVisualizer` meng-compose enam managers yang masing-masing
 
 Pemisahan ini memberikan keuntungan praktis. `AnimationManager` bisa di-test tanpa memerlukan *actual* WebGL context—cukup verifikasi bahwa `play()` mengubah *state* dan memanggil callback. Jika ada *bug* di *lighting*, *debugging* terfokus pada `LightManager` tanpa perlu menyentuh animation *logic*. Dan jika suatu saat kita ingin mengganti `OrthographicCamera` dengan `PerspectiveCamera`, perubahan hanya terjadi di `CameraManager`.
 
-#### *Lifecycle*
+### 5.2.1 *Lifecycle*
 
 Berbeda dengan *React component* yang memiliki *lifecycle hooks* (`useEffect`, `useLayoutEffect`), *Three.js* objects memerlukan lifecycle management manual. WebGL *resources* (geometries, materials, textures) tidak di-*garbage-collected* secara otomatis—kita harus *explicitly* memanggil `dispose()` untuk melepaskan memory.
 
@@ -6956,7 +7142,7 @@ Setiap stage memiliki tanggung jawab spesifik:
 
 5. **dispose()**: Semua *resources* di-*cleanup*. Geometries dan materials dari setiap mesh di-dispose. `ResizeObserver` di-*disconnect*. Animation frame di-cancel. *Event listeners* di-*remove*. Ini penting untuk mencegah *memory leaks* saat *React component* *unmount*.
 
-#### Sistem *Event*
+### 5.2.2 Sistem *Event*
 
 *Three.js* *logic* berjalan sepenuhnya di luar *React* *render cycle*. *Animation state* (`currentStep`, `isPlaying`) berubah karena *timer internal* di `AnimationManager`, bukan karena *React* `setState`. Tanpa mekanisme notifikasi, *React* tidak akan tahu bahwa *state* berubah.
 
@@ -6993,7 +7179,7 @@ useEffect(() => {
 
 *Return value* dari `onStepChange` adalah *unsubscribe function*. *Pattern* ini familiar di ekosistem *JavaScript*—Redux store `subscribe()`, RxJS *subscriptions*, dan *DOM* `addEventListener` semuanya mengembalikan *cleanup function*. Dengan mengembalikan *unsubscribe* dari `useEffect`, kita memastikan tidak ada *lingering listeners* saat component *unmount*.
 
-#### Keunggulan Pendekatan *Class-Based*
+### 5.2.3 Keunggulan Pendekatan *Class-Based*
 
 Pendekatan functional dengan *hooks* bisa digunakan untuk *Three.js*, tetapi ada *friction* yang signifikan. Pertimbangkan perbedaan *paradigm*:
 
@@ -7015,7 +7201,7 @@ Pendekatan functional dengan *hooks* bisa digunakan untuk *Three.js*, tetapi ada
 *React component* bertugas sebagai "*bridge*": *mounting*/*unmounting*, *passing data*, dan *syncing UI state*. *Three.js* *logic* tetap di *class* yang tidak tahu apa itu *React*. Pemisahan ini membuat kedua sisi lebih mudah di-maintain dan di-test.
 
 
-### 5.3 Definisi *Type*
+## 5.3 Definisi *Type*
 
 Sebelum menulis logic visualisasi, kita perlu mendefinisikan kontrak data. *Visualizer* akan menerima data dari *backend*—data yang sama dengan hasil kalkulasi *Packing Service* di Bab 4. Dengan mendefinisikan types terlebih dahulu, kita bisa menulis code dengan confidence bahwa autocomplete dan *compiler* akan menangkap kesalahan.
 
@@ -7100,11 +7286,11 @@ Optional fields dengan `?` memungkinkan caller untuk override hanya yang dibutuh
 > **Catatan:** Nama *field* menggunakan `snake_case` agar match dengan *JSON* *response* dari *backend*. Ini menghindari transformasi di *frontend*—data langsung bisa di-cast ke types kita.
 
 
-### 5.4 Penyiapan *Scene* dan *Renderer*
+## 5.4 Penyiapan *Scene* dan *Renderer*
 
 Dengan types sudah didefinisikan, sekarang kita mulai membangun *core* *Three.js*. Setiap aplikasi *Three.js* membutuhkan minimal tiga komponen: Scene (wadah objects), Camera (*viewpoint*), dan Renderer (yang menggambar). Kita mulai dengan dua yang pertama di section ini.
 
-#### Membangun SceneManager
+### 5.4.1 Implementasi SceneManager
 
 Buat file `lib/StuffingVisualizer/core/scene-manager.ts`. Scene adalah container untuk semua objects 3D—meshes, lights, helpers. Kita wrap *Three.js* Scene dalam class sendiri:
 
@@ -7145,7 +7331,7 @@ Mengapa *wrapper* dan bukan Scene langsung? Dua alasan. Pertama, **uniformity**�
 
 Default background `#1a1a1a` (dark gray) dipilih agar container dan items (yang berwarna lebih terang) terlihat jelas. User bisa override via `SceneConfig`.
 
-#### Membangun RendererManager
+### 5.4.2 Implementasi RendererManager
 
 Buat file `lib/StuffingVisualizer/core/renderer-manager.ts`. Renderer adalah yang paling kompleks—ia menangani WebGL context, animation loop, dan responsiveness:
 
@@ -7182,7 +7368,7 @@ Mari bahas constructor options:
 
 - **setPixelRatio** — Device dengan *retina display* memiliki *pixel ratio* 2x atau 3x. Kita render di resolusi tinggi agar tidak blur, tapi dibatasi ke 2 untuk mencegah *performance issues* pada device 3x.
 
-#### Menangani Resize
+### 5.4.3 Penanganan Resize
 
 Browser tidak otomatis *resize* canvas *Three.js*. Jika container berubah ukuran (misal window *resize* atau sidebar collapse), canvas tetap ukuran semula dan hasilnya *stretched* atau *cropped*. Kita perlu detect *resize* dan update renderer plus camera.
 
@@ -7224,7 +7410,7 @@ Mengapa `ResizeObserver` bukan `window.onresize`? `ResizeObserver` lebih precise
 
 *Callback* `onResize` memungkinkan `StuffingVisualizer` untuk update *camera aspect ratio*. Kita kirim `width`, `height`, dan `aspect` agar camera manager tidak perlu mengakses *DOM*.
 
-#### *Animation Loop*
+### 5.4.4 *Animation Loop*
 
 *Three.js* tidak render otomatis—kita perlu memanggil `renderer.render()` secara terus-menerus. Ini dilakukan dengan `requestAnimationFrame`:
 
@@ -7254,7 +7440,7 @@ public stopLoop(): void {
 
 *Guard* `if (this.animationId !== null) return` mencegah dua loop berjalan bersamaan—*bug* yang sering terjadi saat *React* *Strict Mode* memanggil `useEffect` dua kali.
 
-#### *Cleanup Resources*
+### 5.4.5 *Cleanup Resources*
 
 WebGL *resources* tidak otomatis di-garbage-collect. Jika user *navigate away* tanpa *cleanup*, WebGL *context* tetap hidup dan memory tidak di-*release*. Beberapa navigasi cukup untuk *crash* browser.
 
@@ -7270,11 +7456,11 @@ public dispose(): void {
 `dispose()` melakukan cleanup lengkap: stop render loop, disconnect observer, remove canvas dari *DOM*, dan release WebGL context. Method ini dipanggil di *React* useEffect cleanup.
 
 
-### 5.5 Camera dan Controls
+## 5.5 Camera dan Controls
 
 Camera menentukan dari sudut mana kita melihat scene, sementara controls memungkinkan user untuk rotate, zoom, dan pan. Keduanya bekerja sama untuk memberikan pengalaman interaktif.
 
-#### Memilih Jenis Camera
+### 5.5.1 Pemilihan Jenis Camera
 
 *Three.js* menyediakan dua jenis camera utama (Foley et al., 1995; Shirley & Marschner, 2021):
 
@@ -7283,7 +7469,7 @@ Camera menentukan dari sudut mana kita melihat scene, sementara controls memungk
 
 Untuk visualisasi packing, kita memilih *OrthographicCamera*. Mengapa? Container dan items adalah boxes dengan dimensi yang harus bisa dibandingkan secara visual. Dengan perspective, box di belakang terlihat lebih kecil—ini membingungkan ketika kita ingin membandingkan ukuran items. Orthographic memberikan representasi dimensi yang akurat.
 
-#### Membangun CameraManager
+### 5.5.2 Implementasi CameraManager
 
 Buat file `lib/StuffingVisualizer/core/camera-manager.ts`:
 
@@ -7337,7 +7523,7 @@ Position `(15, 8, -10)` menempatkan camera di sudut *isometric*—agak di atas d
 
 Method `updateAspect()` dipanggil saat resize. Penting untuk memanggil `updateProjectionMatrix()` setelah mengubah parameter camera—tanpa ini, perubahan tidak akan terlihat.
 
-#### Membangun ControlsManager
+### 5.5.3 Implementasi ControlsManager
 
 Buat file `lib/StuffingVisualizer/core/controls-manager.ts`. OrbitControls memungkinkan user untuk rotate, zoom, dan pan dengan mouse:
 
@@ -7392,11 +7578,11 @@ Method `update()` harus dipanggil setiap frame agar damping bekerja. Inilah meng
 > **Catatan import:** Path import `three/examples/jsm/controls/OrbitControls.js` mungkin berbeda tergantung bundler. Di *Next.js* dengan *TypeScript*, extension `.js` diperlukan meskipun file source adalah *TypeScript*.
 
 
-### 5.6 Penyiapan *Lighting*
+## 5.6 Penyiapan *Lighting*
 
 Tanpa lighting, scene *Three.js* dengan `MeshStandardMaterial` akan terlihat hitam. Materials *physically-based* seperti `MeshStandardMaterial` membutuhkan lights untuk menghitung bagaimana permukaan memantulkan cahaya.
 
-#### Jenis-jenis *Light*
+### 5.6.1 Jenis-jenis *Light*
 
 *Three.js* menyediakan beberapa tipe light:
 
@@ -7410,7 +7596,7 @@ Tanpa lighting, scene *Three.js* dengan `MeshStandardMaterial` akan terlihat hit
 
 Untuk visualisasi packing, kita menggunakan kombinasi **AmbientLight** dan **DirectionalLight**. Ambient memberikan base *visibility*, directional memberikan depth perception agar boxes terlihat 3D.
 
-#### Membangun LightManager
+### 5.6.2 Implementasi LightManager
 
 Buat file `lib/StuffingVisualizer/core/light-manager.ts`:
 
@@ -7466,11 +7652,11 @@ lights.forEach(light => this.sceneManager.add(light));
 > **Catatan Shadows:** Kita tidak mengaktifkan shadows karena menambah kompleksitas (shadow maps, shadow camera) dan *GPU* usage. Untuk visualisasi packing, depth perception dari shading sudah cukup. Shadows bisa ditambahkan nanti sebagai enhancement.
 
 
-### 5.7 *Rendering Wireframe* Kontainer
+## 5.7 *Rendering Wireframe* Kontainer
 
 Sekarang kita mulai membuat objects visual. Container adalah "batas" dimana items ditempatkan. Kita render sebagai *wireframe* agar items di dalamnya tetap terlihat—*solid box* akan menyembunyikan isinya.
 
-#### Konversi Unit
+### 5.7.1 Konversi Unit
 
 Sebelum membangun *meshes*, kita perlu fungsi konversi. Data dari *API* dalam millimeter, tapi *Three.js* bekerja dalam unit *arbitrary*. Kita gunakan 1 unit = 1 meter untuk *scale* yang masuk akal:
 
@@ -7484,7 +7670,7 @@ export function mmToMeters(mm: number): number {
 
 Mengapa konversi terpisah? Container 12 meter akan menjadi 12000 dalam mm—angka besar yang menyulitkan *debugging*. Dengan konversi ke meter, dimensi visualisasi match dengan dimensi *real-world* (container 12m = 12 unit *Three.js*).
 
-#### Membangun ContainerMesh
+### 5.7.2 Implementasi ContainerMesh
 
 Buat file `lib/StuffingVisualizer/components/container-mesh.ts`:
 
@@ -7558,7 +7744,7 @@ export class ContainerMesh {
 
 Mari bahas teknik yang digunakan:
 
-#### Wireframe dengan *EdgesGeometry*
+### 5.7.3 Wireframe dengan *EdgesGeometry*
 
 *Three.js* menyediakan `WireframeGeometry`, tapi ini menggambar semua triangles—hasilnya "segitiga-segitiga" yang terlihat ramai. `EdgesGeometry` lebih baik—ia hanya menggambar edges yang membentuk sudut tajam, menghasilkan wireframe box clean dengan 12 garis.
 
@@ -7568,7 +7754,7 @@ const edges = new EdgesGeometry(geometry);  // Extract edges only
 const wireframe = new LineSegments(edges, lineMaterial);
 ```
 
-#### Platform Lantai
+### 5.7.4 Platform Lantai
 
 Platform oranye tipis di bawah container berfungsi sebagai *visual ground reference*. Tanpa ini, container terlihat "*melayang*" dan sulit menentukan orientasi atas-bawah.
 
@@ -7579,11 +7765,11 @@ platform.position.y = -height / 2 - 0.01;  // Sedikit di bawah container
 
 Position `-height / 2` karena `BoxGeometry` *centered* di *origin*. Kita geser turun setengah tinggi untuk menempatkan di dasar, plus sedikit *offset* agar tidak *z-fighting* dengan container.
 
-#### *Group* untuk Organisasi
+### 5.7.5 *Group* untuk Organisasi
 
 `Group` adalah container kosong untuk mengorganisir *objects* terkait. Semua *sub-objects* (*wireframe*, platform) ditambahkan ke *group*, lalu *group* yang ditambahkan ke scene. Ini memudahkan manipulasi—*move* *group* = *move* semua *children*.
 
-#### *Dispose* untuk Manajemen Memori
+### 5.7.6 *Dispose* untuk Manajemen Memori
 
 ```typescript
 public dispose(): void {
@@ -7599,11 +7785,11 @@ public dispose(): void {
 `traverse()` berjalan ke semua *children* *recursively*. Setiap geometry dan material harus di-dispose agar WebGL *resources* di-*release*. Ini dipanggil saat container diganti atau component *unmount*.
 
 
-### 5.8 *Rendering Item Box*
+## 5.8 *Rendering Item Box*
 
 Item adalah bagian paling kompleks—setiap placement memiliki posisi dan rotasi yang harus ditransformasi dari *coordinate system* *API* ke *Three.js*.
 
-#### *Coordinate System Mismatch*
+### 5.8.1 *Coordinate System Mismatch*
 
 *API* dan *Three.js* menggunakan *coordinate system* berbeda:
 
@@ -7643,7 +7829,7 @@ export function containerToThreeCoords(
 
 Perhatikan *swapping*: *API* Z (height) menjadi *Three.js* Y (*vertical*), dan *API* Y (width) menjadi *Three.js* Z (*depth*) dengan *negasi* karena arah berlawanan.
 
-#### *Center Offset*
+### 5.8.2 *Center Offset*
 
 *API* *positions* items by *corner*, tapi *Three.js* *positions* *meshes* by *center*. Ini perbedaan penting yang sering menyebabkan *bug* visual.
 
@@ -7699,7 +7885,7 @@ mesh.position.set(baseX + offsetX, baseY + offsetY, baseZ + offsetZ);
 
 Dua langkah terpisah ini membuat *debugging* lebih mudah—jika item salah posisi,
 
-#### *Rotation Handling*
+### 5.8.3 *Rotation Handling*
 
 *Packing Service* menggunakan *rotation codes* 0-5 untuk merepresentasikan 6 orientasi item. Daripada merotasi *mesh* di *Three.js* (yang kompleks karena *euler angles*), kita *swap* dimensi:
 
@@ -7723,7 +7909,7 @@ private getRotatedDims(): { length_mm: number; width_mm: number; height_mm: numb
 
 Pendekatan ini lebih sederhana: buat BoxGeometry dengan dimensi yang sudah di-swap, tanpa perlu rotasi.
 
-#### Membangun ItemMesh
+### 5.8.4 Implementasi ItemMesh
 
 Buat file `lib/StuffingVisualizer/components/item-mesh.ts`:
 
@@ -7821,18 +8007,18 @@ export class ItemMesh {
 
 Mari bahas komponen penting:
 
-#### *MeshStandardMaterial*
+### 5.8.5 *MeshStandardMaterial*
 
 Kita menggunakan `MeshStandardMaterial` karena ia physically-based—hasilnya realistic dengan lighting. Properties:
 
 - **metalness: 0.1** — Sedikit metallic untuk subtle reflections
 - **roughness: 0.6** — Tidak terlalu glossy, tidak terlalu matte
 
-#### *Outline Wireframe*
+### 5.8.6 *Outline Wireframe*
 
 Setiap item mendapat white wireframe overlay agar edges terlihat jelas meski warna item gelap. Ini memudahkan distinguishing items yang bersebelahan.
 
-#### *UserData* untuk *Metadata*
+### 5.8.7 *UserData* untuk *Metadata*
 
 ```typescript
 mesh.userData = {
@@ -7844,11 +8030,11 @@ mesh.userData = {
 `userData` adalah property *Three.js* untuk menyimpan custom data di object. Nanti berguna untuk tooltip saat hover—raycaster hit mesh, kita baca `userData.label`.
 
 
-### 5.9 *Animation System*
+## 5.9 *Animation System*
 
 Animation system memungkinkan user melihat proses pemuatan step-by-step—item pertama muncul, lalu kedua, dan seterusnya. Ini lebih informatif daripada menampilkan semua item sekaligus.
 
-#### Konsep Animasi
+### 5.9.1 Konsep Animasi
 
 Animasi kita bukan "gerakan"—item tidak bergerak dari luar ke dalam container. Yang kita lakukan adalah mengontrol *visibility*: step 1 menampilkan item step_number ≤ 1, step 2 menampilkan item step_number ≤ 2, dan seterusnya.
 
@@ -7858,7 +8044,7 @@ Mengapa pendekatan ini? Dua alasan:
 
 2. **Clarity** — User langsung melihat dimana item ditempatkan, tanpa menunggu animasi selesai atau distraksi gerakan.
 
-#### Membangun AnimationManager
+### 5.9.2 Implementasi AnimationManager
 
 Buat file `lib/StuffingVisualizer/core/animation-manager.ts`. Kita mulai dengan type definitions dan class structure:
 
@@ -7896,7 +8082,7 @@ Mengapa dua Set untuk listeners? Karena kita perlu notify dua jenis event terpis
 - **stepListeners** — *React* perlu tahu currentStep untuk update slider
 - **playStateListeners** — *React* perlu tahu isPlaying untuk toggle play/pause icon
 
-#### *Method* Kontrol *Step*
+### 5.9.3 *Method* Kontrol *Step*
 
 Tambahkan methods untuk mengontrol step:
 
@@ -7927,7 +8113,7 @@ public getCurrentStep(): number {
 
 Early return `if (this.currentStep === newStep) return` mencegah unnecessary notifications saat value tidak berubah—misalnya saat drag slider ke posisi yang sama.
 
-#### Pola *Observer* untuk Sinkronisasi *React*
+### 5.9.4 Pola *Observer* untuk Sinkronisasi *React*
 
 Kita menggunakan observer pattern untuk menghubungkan AnimationManager ke *React* state:
 
@@ -7955,7 +8141,7 @@ Pattern ini familiar dari *React* hooks seperti `useEffect` cleanup. Caller mema
 
 `Set` dipilih daripada array karena `delete()` operation O(1) dan otomatis prevents duplicate subscriptions.
 
-#### Logika *Play/Pause*
+### 5.9.5 Logika *Play/Pause*
 
 Tambahkan methods untuk playback control:
 
@@ -7997,7 +8183,7 @@ public pause(): void {
 1. Update state dan notify
 2. Cancel pending animation frame agar loop berhenti
 
-#### *Animation Loop*
+### 5.9.6 *Animation Loop*
 
 Animation loop berjalan dengan `requestAnimationFrame`:
 
@@ -8034,7 +8220,7 @@ Logic:
 3. **Auto-stop di akhir** — Jika sudah `maxStep`, pause animasi
 4. **Schedule next frame** — `requestAnimationFrame` akan call `animate` lagi ~16ms kemudian (60fps)
 
-#### *Method Utility*
+### 5.9.7 *Method Utility*
 
 Tambahkan beberapa utility:
 
@@ -8198,11 +8384,11 @@ export class AnimationManager {
 ```
 
 
-### 5.10 StuffingVisualizer *Orchestrator*
+## 5.10 StuffingVisualizer *Orchestrator*
 
 Sekarang kita menyatukan semua managers dalam satu class orchestrator—`StuffingVisualizer`. Class ini adalah **public API** yang digunakan oleh *React* component. *React* tidak perlu tahu tentang SceneManager, RendererManager, dll—cukup memanggil `visualizer.loadData()` dan `visualizer.play()`.
 
-#### Struktur *Class* dan *Constructor*
+### 5.10.1 Struktur *Class* dan *Constructor*
 
 Buat file `lib/StuffingVisualizer/stuffing-visualizer.ts`. Kita mulai dengan imports dan class definition:
 
@@ -8261,7 +8447,7 @@ Mari bahas design decisions:
 
 **Wiring internal** — Perhatikan `this.animationManager.onStepChange(() => this.updateVisibleItems(step))`. Ini menghubungkan AnimationManager ke *visibility* logic. Setiap kali step berubah (dari play, drag slider, atau setStep), items di-update otomatis.
 
-#### *Method* attach - Koneksi ke *DOM*
+### 5.10.2 *Method* attach - Koneksi ke *DOM*
 
 Method ini menghubungkan visualizer ke *DOM* element:
 
@@ -8292,7 +8478,7 @@ Urutan penting:
 
 Resize callback diteruskan ke camera manager agar aspect ratio selalu correct. `onResize` callback menerima width, height, dan aspect—kita destructure dengan underscore `_` karena hanya perlu aspect.
 
-#### *Method* loadData dan build
+### 5.10.3 *Method* loadData dan build
 
 `loadData()` adalah *entry point* untuk menampilkan data baru:
 
@@ -8348,7 +8534,7 @@ Beberapa design decisions:
 
 **Start dengan semua visible** — `setCurrentStep(maxStep)` menampilkan semua items. User bisa play untuk reset dan lihat step-by-step, atau langsung lihat hasil akhir.
 
-#### Kontrol *Visibility*
+### 5.10.4 Kontrol *Visibility*
 
 Core animation logic sangat sederhana:
 
@@ -8365,7 +8551,7 @@ Setiap item mesh menyimpan `step_number` di placement. Item visible jika `step_n
 
 Mengapa tidak remove/add ke scene? Karena `visible = false` lebih efficient—tidak perlu update scene graph. Dan kita tetap bisa access mesh properties (untuk tooltips, highlighting, dll) meski invisible.
 
-#### Delegasi *Public API*
+### 5.10.5 Delegasi *Public API*
 
 Public methods mendelegasikan ke managers internal:
 
@@ -8405,7 +8591,7 @@ public onPlayStateChange(callback: (isPlaying: boolean) => void): () => void {
 
 Ini **Facade pattern**—StuffingVisualizer menyembunyikan kompleksitas internal (6 managers, 2 mesh types) dibalik simple *API*. *React* component cukup tahu: `play()`, `pause()`, `setStep()`, `onStepChange()`.
 
-#### *Cleanup*
+### 5.10.6 *Cleanup*
 
 ```typescript
 public dispose(): void {
@@ -8597,11 +8783,11 @@ export class StuffingVisualizer {
 ```
 
 
-### 5.11 Integrasi *React*
+## 5.11 Integrasi *React*
 
 Kita punya *Three.js* visualizer yang berdiri sendiri. Sekarang kita perlu *React* *wrapper* untuk menggunakannya di *Next.js* application. Challenge utama: *React* functional components re-render, tapi *Three.js* instance harus persistent.
 
-#### Komponen StuffingViewer
+### 5.11.1 Komponen StuffingViewer
 
 `StuffingViewer` adalah "smart component"—ia menghubungkan StuffingVisualizer ke *React* lifecycle dan state management.
 
@@ -8722,7 +8908,7 @@ Mari bahas pattern penting:
 
 **Conditional rendering** — Loading indicator ditampilkan sampai `isLoaded` true.
 
-#### Komponen AnimationControls
+### 5.11.2 Komponen AnimationControls
 
 `AnimationControls` adalah "dumb component" (atau presentational component)—ia tidak punya internal state, hanya menerima props dan memanggil callbacks. Semua logic ada di parent `StuffingViewer`.
 
@@ -8798,7 +8984,7 @@ Component ini "dumb"—ia menerima semua state via props dan memanggil callbacks
 Kita menggunakan shadcn/ui `Button` dan `Slider`, serta Lucide icons. Component di-style dengan position absolute agar overlay di atas canvas.
 
 
-### 5.12 Halaman Demo
+## 5.12 Halaman Demo
 
 Terakhir, kita buat demo page yang menggabungkan semuanya. Page ini menyediakan form untuk *input* container dan items, lalu menampilkan visualisasi 3D dari hasil packing.
 
@@ -9191,7 +9377,7 @@ Demo page ini menyediakan:
 Perhatikan `buildPlanData()` hanya simple greedy placement untuk demo—item ditempatkan left-to-right, front-to-back, tanpa optimisasi. Untuk production, gunakan py3dbp di *backend* seperti di Bab 4.
 
 
-### Ringkasan
+#### Ringkasan
 
 Di Bab 5, kita telah membangun **sistem visualisasi 3D interaktif** untuk menampilkan hasil bin packing. Key accomplishments:
 
@@ -9206,7 +9392,7 @@ Di Bab 5, kita telah membangun **sistem visualisasi 3D interaktif** untuk menamp
 
 Arsitektur yang kita bangun scalable—menambahkan fitur seperti tooltips, export gambar, atau multiple containers bisa dilakukan tanpa refactoring besar.
 
-#### Struktur *File* Final
+### 5.12.1 Struktur *File* Final
 
 ```
 web/
@@ -9235,7 +9421,7 @@ web/
             └── item-mesh.ts
 ```
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 - [*Three.js* Documentation](https://threejs.org/docs/) — Official documentation
 - [Discover *Three.js*](https://discoverthreejs.com/) — Comprehensive book
@@ -9244,7 +9430,7 @@ web/
 
 <!-- BAB 6 STARTS HERE -->
 
-## Bab 6: Integrasi *Full Stack*
+# Bab 6: Integrasi *Full Stack*
 
 Di bab-bab sebelumnya, kita telah membangun tiga pilar utama dari aplikasi **Load & Stuffing Calculator** secara terpisah: *Backend API* dengan *Go* (Bab 3), *Packing Service* dengan *Python* (Bab 4), dan *Frontend* Visualization dengan *Next.js* (Bab 5).
 
@@ -9275,7 +9461,7 @@ Untuk mengikuti bab ini, pastikan lingkungan pengembangan Anda siap:
 - **Web Browser Modern** (Chrome/Edge/Firefox)
 
 
-### 6.1 Konfigurasi *CORS* di *Backend*
+## 6.1 Konfigurasi *CORS* di *Backend*
 
 Tantangan pertama saat menghubungkan *Frontend* (localhost:3000) dengan *Backend* (localhost:8080) adalah **Same-Origin Policy**. Browser secara keamanan memblokir *request* AJAX/Fetch dari domain/port yang berbeda kecuali server mengizinkannya secara eksplisit melalui header *CORS* (*Cross-Origin *Resource* Sharing*) (W3C, 2014).
 
@@ -9284,7 +9470,7 @@ Jika kita mencoba memanggil *API* tanpa konfigurasi *CORS*, browser akan menampi
 
 Solusinya adalah menambahkan **Middleware** di *Gin* *framework* untuk menyuntikkan header `Access-Control-Allow-Origin` yang sesuai pada setiap *response*.
 
-#### Dukungan Konfigurasi untuk *CORS*
+### 6.1.1 Dukungan Konfigurasi untuk *CORS*
 
 Alih-alih meng-hardcode `localhost:3000` di dalam kode (yang akan bermasalah saat *deployment* ke domain produksi), kita sebaiknya menyimpannya di environment variable.
 
@@ -9326,7 +9512,7 @@ func getEnv(key, fallback string) string {
 Dengan konfigurasi ini, kita bisa menentukan origin di file `.env` atau environment server:
 `CORS_ALLOWED_ORIGINS=http://localhost:3000,https://app.example.com`
 
-#### Implementasi Middleware
+### 6.1.2 Implementasi Middleware
 
 Buat file baru `internal/api/cors.go`. Kita menggunakan *library* `github.com/gin-contrib/cors` yang sudah teruji:
 
@@ -9353,7 +9539,7 @@ func corsMiddleware(allowedOrigins []string) gin.HandlerFunc {
 }
 ```
 
-#### Registrasi Middleware ke Router
+### 6.1.3 Registrasi Middleware ke Router
 
 Terakhir, pasang middleware ini di `setupRouter` pada `internal/api/api.go` sebelum route didefinisikan:
 
@@ -9373,11 +9559,11 @@ func (a *App) setupRouter() {
 Sekarang *backend* kita sudah "ramah" terhadap *frontend* dan siap menerima *request* lintas domain yang sah.
 
 
-### 6.2 *Environment Variables* di *Frontend*
+## 6.2 *Environment Variables* di *Frontend*
 
 Setelah *Backend* siap menerima *request*, langkah berikutnya adalah mengkonfigurasi *Frontend* agar tahu *ke mana* harus mengirim *request* tersebut.
 
-#### Aturan "No Hardcoding"
+### 6.2.1 Aturan "No Hardcoding"
 
 Kesalahan pemula yang paling umum adalah menulis *URL* *API* langsung di kode `fetch`:
 `fetch("http://localhost:8080/api/v1/containers")`
@@ -9388,7 +9574,7 @@ Mengapa ini buruk?
 
 Solusinya adalah menggunakan **Environment Variables**. *Next.js* memiliki dukungan built-in untuk ini.
 
-#### File .env.local
+### 6.2.2 File .env.local
 
 Buat file baru `.env.local` di folder `web/`. File ini akan diabaikan oleh Git (karena ada rule di `.gitignore`).
 
@@ -9401,7 +9587,7 @@ Perhatikan prefix `NEXT_PUBLIC_`. Di *Next.js*, hanya variable yang diawali deng
 **Mengapa kita membutuhkannya?**
 Karena aplikasi kita melakukan *HTTP* *request* dari browser pengguna (melalui `fetch` di Client Components), kode *JavaScript* yang berjalan di browser perlu mengetahui *URL* *API*. Jika kita tidak menggunakan prefix ini, variable hanya akan tersedia di server-side (*Node.js*) dan bernilai `undefined` di browser, menyebabkan error koneksi.
 
-#### Modul Konfigurasi
+### 6.2.3 Modul Konfigurasi
 
 Meskipun kita bisa mengakses `process.env.NEXT_PUBLIC_API_URL` di mana saja, praktik yang lebih baik adalah memusatkannya dalam satu *module* konfigurasi. Ini memberikan kita satu tempat untuk memberikan nilai default atau melakukan validasi jika diperlukan.
 
@@ -9423,13 +9609,13 @@ export const config: EnvConfig = {
 Sekarang, komponen lain cukup mengimport `config.apiBaseUrl`. Jika *URL* berubah, kita hanya perlu update satu file (`.env` atau `config.ts`), dan seluruh aplikasi akan mengikutinya.
 
 
-### 6.3 Komunikasi Data
+## 6.3 Komunikasi Data
 
 Sekarang saatnya menghubungkan *Frontend* dengan *Backend*. Ini adalah momen krusial di mana dua subsistem yang terpisah mulai bertukar data.
 
 Secara fundamental, *Backend* *Go* dan *Frontend* *TypeScript* "berbicara bahasa yang berbeda". *Backend* mengirim *JSON*, sementara *Frontend* membutuhkan Object yang terstruktur. Tantangan kita adalah membuat penerjemah yang handal di antara keduanya.
 
-#### Arsitektur Komunikasi
+### 6.3.1 Arsitektur Komunikasi
 
 Ada dua pendekatan umum dalam menghubungkan *Frontend* ke *API*:
 
@@ -9470,7 +9656,7 @@ Kita akan menggunakan **Pendekatan 2**. Ini memberikan kita fleksibilitas: jika 
 
 Mari kita bangun layer ini langkah demi langkah.
 
-#### Definisi Kontrak Data
+### 6.3.2 Definisi Kontrak Data
 
 *Backend* *Go* mengirimkan data *JSON*. *Frontend* *TypeScript* harus tahu persis apa isi *JSON* tersebut agar validasi tipe (type-checking) bisa bekerja.
 
@@ -9588,7 +9774,7 @@ Langkah menduplikasi struktur *struct* *Go* ke dalam *interface* *TypeScript* in
 
 Tanpa kontrak yang jelas ini, data dari *API* akan dianggap bertipe `any`, yang mematikan fitur keamanan *TypeScript*. Dengan definisi tipe yang ketat, editor akan langsung memperingatkan (via garis merah) jika kita, misalnya, lupa menyertakan *field* wajib seperti `container_id` saat membuat Plan. Ini mencegah *bug* *runtime* yang seringkali sulit dideteksi.
 
-#### Membuat *Wrapper* Fetch
+### 6.3.3 Implementasi *Wrapper* Fetch
 
 Sekarang kita butuh "mesin" untuk melakukan *request*. Kita akan membuat *wrapper* function di atas `fetch`. *Wrapper* ini bertugas menangani hal-hal membosankan yang berulang:
 1.  Menempelkan Base *URL* (agar kita tidak tulis `http://localhost:8080` berulang-ulang).
@@ -9666,7 +9852,7 @@ export const apiClient = {
 
 Implementasi *wrapper* ini memberikan dua manfaat utama. Pertama, ia memperbaiki perilaku `fetch` bawaan yang tidak menganggap status 404 atau 500 sebagai error, memastikan aplikasi kita selalu masuk ke blok error handling saat terjadi masalah di server. Kedua, ia melakukan "Unwrapping" otomatis pada respon *API*. *Backend* selalu membungkus data dalam format `{ success: true, data: [...] }`, tapi komponen UI hanya membutuhkan isi datanya. Dengan mengupas lapisan amplop ini di level client, kode di komponen menjadi jauh lebih bersih dan fokus pada data bisnis.
 
-#### Modul Operasi dengan Pola *Repository*
+### 6.3.4 Modul Operasi dengan Pola *Repository*
 
 Level terakhir dari abstraksi adalah *API* Service. Alih-alih membiarkan UI component memanggil `apiClient.get("/containers")`, kita bungkus dalam fungsi bisnis yang jelas. Ini juga tempat kita mendefinisikan operasi *CRUD* lengkap: Create, Read, Update, Delete.
 
@@ -9725,7 +9911,7 @@ export const planApi = {
 
 Pada modul Plan ini, kita melihat dua pola tambahan. Pertama, penggunaan nested *resource* pada `addItem` (`/plans/:id/items`) yang mencerminkan relasi parent-child antara Plan dan Item. Kedua, method `calculate` yang merepresentasikan sebuah Action (bukan *CRUD* biasa), di mana kita memicu proses komputasi *backend* menggunakan POST ke *endpoint* spesifik `/calculate`.
 
-#### Penggunaan di Komponen UI
+### 6.3.5 Penggunaan di Komponen UI
 
 Hasil dari layer ini adalah kode UI yang **bersih**, **mudah dibaca**, dan **type-safe**.
 
@@ -9748,11 +9934,11 @@ const handleUpdate = async (id: string, newData: any) => {
 ```
 
 Dengan arsitektur ini, kita telah mengubah komunikasi data yang rentan kesalahan menjadi proses yang terstruktur dan aman.
-### 6.4 Implementasi UI Data Master
+## 6.4 Implementasi UI Data Master
 
 Setelah memiliki "otak" (*API* Client & Repository) dan "kontrak" (Types), saatnya kita membangun "wajah" aplikasi.
 
-#### Persiapan Komponen UI
+### 6.4.1 Persiapan Komponen UI
 
 Sepanjang bab ini, kita akan menggunakan banyak komponen dari *library* `shadcn/ui` agar tampilan konsisten dan estetik. Pastikan Anda sudah menginstall komponen-komponen berikut:
 
@@ -9766,14 +9952,14 @@ Di *Next.js* App Router (versi 13+), kita perlu membedakan dua jenis komponen:
 
 Untuk Data Master (Container & Product), kita membutuhkan interaktivitas tinggi (form *input*, delete button), jadi kita akan menggunakan **Client Components**.
 
-#### Strategi Komponen
+### 6.4.2 Strategi Komponen
 
 Kita akan menggunakan pola sederhana:
 *   **List Component**: Menampilkan tabel data, mengambil data saat mount (`useEffect`), dan mendengarkan event refresh.
 *   **Form Component**: Menampilkan *input*, mengirim data (`onSubmit`), dan memicu event refresh saat sukses.
 *   **Event Bus Sederhana**: Alih-alih menggunakan *library* state management kompleks (Redux/Zustand) yang berlebihan untuk kasus ini, kita akan menggunakan `window.dispatchEvent` untuk memberitahu List agar me-refresh data setelah Form sukses submit.
 
-#### Implementasi Container UI
+### 6.4.3 Implementasi Container UI
 
 Mari kita buat form untuk mendaftarkan Container baru.
 
@@ -9986,7 +10172,7 @@ Di sini kita melihat sisi lain dari komunikasi antar-komponen. Pada `useEffect`,
 
 Pola `useEffect` dengan cleanup function (`return () => ...`) sangat krusial untuk mencegah "memory leak". Tanpa cleanup, setiap kali komponen ini di-render ulang (misalnya saat navigasi halaman), listener lama akan tetap hidup dan menumpuk, menyebabkan fungsi refresh dipanggil berkali-kali secara tidak perlu.
 
-#### Implementasi Product UI
+### 6.4.4 Implementasi Product UI
 
 Sekarang kita beralih ke pengelolaan Produk. Polanya identik dengan Container, hanya *field* datanya yang berbeda.
 
@@ -10201,7 +10387,7 @@ export function ProductList() {
 
 Komponen ini melengkapi siklus manajemen produk. Ia menampilkan data dalam tabel yang rapi, dengan kolom *SKU* yang diberi styling khusus (`font-mono`) agar lebih mudah dibaca sebagai kode identifikasi. Tombol delete di sini langsung terhubung ke *API*, memberikan kontrol penuh kepada pengguna untuk mengelola inventori mereka.
 
-#### Halaman Manajemen Data Master
+### 6.4.5 Halaman Manajemen Data Master
 
 Terakhir, kita pasang komponen-komponen ini di halaman utama untuk Containers dan Products.
 
@@ -10261,7 +10447,7 @@ Halaman inilah yang menyatukan semuanya. Kita menggunakan Grid Layout (`grid-col
 
 Dengan selesainya implementasi ini, kita sekarang memiliki sistem Data Master yang solid. User bisa membuat, melihat, dan menghapus Container serta Product, yang nantinya akan menjadi bahan baku utama untuk proses kalkulasi muatan (*Stuffing* Plan) di section berikutnya.
 
-### 6.5 Logika Bisnis Inti *Stuffing Plan* dan Kalkulasi
+## 6.5 Logika Bisnis Inti *Stuffing Plan* dan Kalkulasi
 
 Bagian ini adalah "jantung" dari aplikasi kita. Di sinilah user akan melakukan pekerjaan utama mereka: membuat rencana muatan, memasukkan daftar barang, dan meminta sistem untuk menghitung susunan terbaik.
 
@@ -10270,7 +10456,7 @@ Kita akan menerapkan **Standard Flow**:
 2.  **Wizard Step 1 (Creation)**: User memilih Kontainer yang akan digunakan.
 3.  **Workspace (Detail Page)**: User menambahkan produk satu per satu dan memicu kalkulasi.
 
-#### Implementasi Dashboard Rencana
+### 6.5.1 Implementasi Dashboard Rencana
 
 Halaman ini mirip dengan halaman Data Master, namun fokus pada status pengerjaan (`draft` vs `completed`).
 
@@ -10390,7 +10576,7 @@ export default function PlansPage() {
 
 Yang unik di sini adalah **Row Click Interaction**. Kita meletakkan `onClick` pada `<TableRow>` agar user bisa mengklik di mana saja pada baris untuk membuka detail. Namun, karena di dalam baris ada tombol Delete, kita perlu menggunakan `e.stopPropagation()` pada tombol Delete agar klik tombol tersebut tidak memicu perpindahan halaman.
 
-#### Formulir Pembuatan Rencana
+### 6.5.2 Formulir Pembuatan Rencana
 
 Untuk membuat plan, langkah pertama adalah memilih kontainer. Kita memisahkan logika ini ke komponen tersendiri agar kode halaman utama tidak terlalu gemuk.
 
@@ -10472,7 +10658,7 @@ export function PlanForm() {
 
 Disinilah alur kerja dimulai. Setelah user sukses membuat plan, mereka langsung "dilempar" (`router.push`) ke halaman detail untuk mulai bekerja.
 
-#### Halaman Detail dan Kalkulasi
+### 6.5.3 Halaman Detail dan Kalkulasi
 
 Ini adalah halaman paling kompleks. Ia harus menangani:
 1.  Menampilkan info Plan dan Container.
@@ -10768,13 +10954,13 @@ Halaman ini mendemonstrasikan integrasi penuh proses bisnis:
 
 Kini aplikasi kita sudah bisa menerima *input*, memproses kalkulasi, dan menyimpan hasilnya. Langkah terakhir yang paling menarik adalah: bagaimana cara menampilkan hasil kalkulasi tersebut?
 
-### 6.6 Integrasi Visualisasi Hasil
+## 6.6 Integrasi Visualisasi Hasil
 
 Kita telah memiliki data hasil kalkulasi dari *backend* (koordinat x, y, z, rotasi). Tantangannya sekarang adalah: bagaimana menampilkan angka-angka abstrak ini menjadi visualisasi 3D yang bisa dipahami manusia?
 
 Ingat kembali di Bab 5 kita membangun `StuffingVisualizer` sebagai class *TypeScript* murni (Vanilla JS) yang agnostik terhadap *framework*. Di sini, kita akan mengintegrasikannya ke dalam *Next.js* *React* ecosystem.
 
-#### Transformasi Data Visualisasi
+### 6.6.1 Transformasi Data Visualisasi
 
 *API* *Backend* kita didesain untuk efisiensi transfer data (DTO), sedangkan *Visualizer* kita butuh struktur data yang dioptimalkan untuk rendering 3D. Kita butuh "penerjemah" atau Adapter.
 
@@ -10838,7 +11024,7 @@ Fungsi adapter ini melakukan dua hal krusial:
 1.  **Normalization**: Mengubah `snake_case` dari *API* menjadi format yang diharapkan *Visualizer* (meskipun kebetulan di sini mirip, tapi prinsipnya penting).
 2.  **Enrichment**: Menambahkan data visual yang tidak ada di *backend*, seperti `color_hex`. *Backend* peduli logika geometri, Front-end peduli estetika. Kita menggunakan fungsi hash sederhana agar Product ID yang sama selalu mendapatkan warna yang sama.
 
-#### Komponen *Wrapper React*
+### 6.6.2 Komponen *Wrapper React*
 
 Karena `StuffingVisualizer` memanipulasi *DOM* secara langsung (Canvas/WebGL), kita harus membungkusnya dalam komponen *React* agar bisa hidup berdampingan dengan lifecycle *React* (Mounting, Unmounting).
 
@@ -10952,11 +11138,11 @@ Yang menarik adalah komunikasi dua arah:
 
 Dengan adapter dan *wrapper* ini, halaman `PlanDetailPage` di Section 6.5 tadi kini bisa menampilkan visualisasi 3D yang indah hanya dengan baris kode `<StuffingViewer data={visualizerData} />`.
 
-### 6.7 Finishing
+## 6.7 Finishing
 
 Sistem kita sudah berjalan, tapi kita ingin membuatnya lebih profesional dan nyaman digunakan user. *Next.js* menyediakan fitur built-in untuk menangani state UI global tanpa perlu *library* external.
 
-#### Implementasi Navigasi Global
+### 6.7.1 Implementasi Navigasi Global
 
 Kita perlu menu navigasi yang sadar konteks (tahu halaman mana yang sedang aktif).
 
@@ -11031,7 +11217,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
-#### Indikator Loading Aplikasi
+### 6.7.2 Indikator Loading Aplikasi
 
 Ketika user berpindah halaman atau menunggu data awal, *Next.js* otomatis menampilkan `loading.tsx` jika tersedia. Ini membungkus konten di dalam *React* `Suspense`.
 
@@ -11049,7 +11235,7 @@ export default function Loading() {
 }
 ```
 
-#### Mekanisme Penanganan Error
+### 6.7.3 Mekanisme Penanganan Error
 
 Jika terjadi error unhandled pada render cycle (misalnya *API* down atau *bug* di komponen), kita tidak ingin halaman putih kosong.
 
@@ -11084,7 +11270,7 @@ export default function Error({
 }
 ```
 
-### Ringkasan
+#### Ringkasan
 
 Di Bab 6, kita telah berhasil melakukan **integrasi sistem full-stack** yang mengubah komponen-komponen terpisah menjadi satu aplikasi web yang utuh. Kita telah mencapai beberapa *milestone* penting:
 
@@ -11097,7 +11283,7 @@ Di Bab 6, kita telah berhasil melakukan **integrasi sistem full-stack** yang men
 
 Aplikasi kita kini bukan lagi sekadar prototype terpisah, melainkan sebuah software sistematis yang siap untuk diuji skalabilitasnya.
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 Untuk memperdalam pemahaman tentang teknologi yang kita gunakan di bab ini, berikut beberapa referensi yang disarankan:
 
@@ -11106,7 +11292,7 @@ Untuk memperdalam pemahaman tentang teknologi yang kita gunakan di bab ini, beri
 -   **[Zustand](https://github.com/pmndrs/zustand)** — Solusi state management global yang minimalis, jika aplikasi Anda membutuhkan sharing state yang kompleks antar komponen.
 -   **[*Next.js* App Router Documentation](https://nextjs.org/docs/app)** — Dokumentasi resmi untuk memahami lebih dalam tentang Server Components, Layouts, dan Streaming.
 
-## Bab 7: *Deployment* dan Produksi
+# Bab 7: *Deployment* dan Produksi
 
 Setelah menyelesaikan pengembangan aplikasi secara fungsional di bab sebelumnya, kita kini menghadapi tantangan terakhir dan mungkin yang paling krusial: bagaimana memindahkan aplikasi dari "laptop developer" ke dunia nyata (production). Realitas pengembangan perangkat lunak sering kali dihantui oleh frasa klise *"It works on my machine"*. Kode yang berjalan sempurna di lingkungan lokal bisa tiba-tiba gagal saat dijalankan di server produksi karena perbedaan versi OS, *library* yang hilang, atau konfigurasi network yang berbeda.
 
@@ -11125,11 +11311,11 @@ Tujuan akhirnya adalah kemampuan untuk menjalankan seluruh ekosistem aplikasi ki
 
 
 
-### 7.1 Persiapan *Deployment* & Konfigurasi Eksternal
+## 7.1 Persiapan *Deployment* & Konfigurasi Eksternal
 
 Sebelum membungkus aplikasi ke dalam container, kita harus memastikan aplikasi kita mematuhi prinsip **The Twelve-Factor App** (Wiggins, 2017), khususnya terkait konfigurasi. Aplikasi tidak boleh menyimpan konfigurasi rahasia (seperti password database) di dalam kode (*hardcoded*), melainkan harus membacanya dari lingkungan (*environment variables*).
 
-#### Audit Konfigurasi *Backend*
+### 7.1.1 Audit Konfigurasi *Backend*
 
 Pada `internal/config/config.go` di Bab 4, kita telah menyiapkan mekanisme pembacaan environment variable. Mari kita review kembali untuk memastikan semua variabel kritis sudah tercover:
 
@@ -11148,7 +11334,7 @@ Selain variabel aplikasi, ada satu Environment Variable krusial untuk *framework
 
 Jangan lupa menyertakan variable ini di konfigurasi *deployment* Anda nanti.
 
-#### Konfigurasi *Frontend Next.js*
+### 7.1.2 Konfigurasi *Frontend Next.js*
 
 *Next.js* memiliki perlakuan khusus untuk *Environment Variables*. Variabel yang diawali dengan `NEXT_PUBLIC_` akan di-*embed* ke dalam bundle *JavaScript* browser saat waktu build (*build time*), sedangkan variabel tanpa prefix tersebut hanya tersedia di server-side *Node.js* (*runtime*).
 
@@ -11179,7 +11365,7 @@ Secara default, aplikasi *Node.js* membutuhkan seluruh folder `node_modules` unt
 
 
 
-### 7.2 Pengenalan *Docker* dan *Containerization*
+## 7.2 Pengenalan *Docker* dan *Containerization*
 
 Sebelum kita terjun ke kode, mari kita samakan pemahaman tentang apa itu *Docker* dan mengapa ia menjadi standar industri.
 
@@ -11210,7 +11396,7 @@ flowchart TD
 
 Aplikasi dalam container hanya membawa *library* yang diperlukannya saja dan berbagi Kernel OS yang sama dengan host. Pendekatan ini membuat container sangat ringan (MBs) dan cepat untuk dinyalakan (detik), berbeda jauh dengan VM yang berat (GBs) karena harus memuat satu OS penuh untuk setiap aplikasi.
 
-#### Konsep Kunci *Docker*
+### 7.2.1 Konsep Kunci *Docker*
 
 Agar bisa menggunakan *Docker* dengan efektif, kita perlu memahami tiga komponen utamanya:
 
@@ -11218,7 +11404,7 @@ Agar bisa menggunakan *Docker* dengan efektif, kita perlu memahami tiga komponen
 2.  **Image (Cetakan/*Blueprint*)**: Hasil build dari *Dockerfile*. Image bersifat *Immutable* (tidak bisa diubah). Jika Anda ingin mengubah kode, Anda mem-build image baru. Pikirkan ini sebagai "Snapshot" aplikasi Anda.
 3.  **Container (Rumah)**: Instance hidup dari Image. Container adalah lingkungan yang bisa ditulisi (*writable*), berjalan, dan sementara (*ephemeral*). Anda bisa menjalankan 100 container dari 1 image yang sama.
 
-#### Alur Kerja
+### 7.2.2 Alur Kerja
 
 Siklus hidup pengembangan dengan *Docker* biasanya mengikuti pola ini:
 
@@ -11240,7 +11426,7 @@ sequenceDiagram
     Engine-->>Server: Starts "Container"
 ```
 
-#### Keunggulan untuk *Project* Ini
+### 7.2.3 Keunggulan untuk *Project* Ini
 
 Dalam konteks aplikasi Load *Stuffing* Calculator, *Docker* adalah penyelamat:
 
@@ -11251,7 +11437,7 @@ Dalam konteks aplikasi Load *Stuffing* Calculator, *Docker* adalah penyelamat:
 
 
 
-### 7.3 Implementasi *Docker*
+## 7.3 Implementasi *Docker*
 
 Langkah pertama dalam proses kontainerisasi adalah membuat "resep" pembuatan image untuk setiap layanan, yang ditulis dalam file bernama `Dockerfile`. Kita akan menyimpan file-file ini di folder `build/` agar struktur project tetap rapi.
 
@@ -11419,7 +11605,7 @@ venv
 
 
 
-### 7.4 Orkestrasi dengan *Docker* Compose
+## 7.4 Orkestrasi dengan *Docker* Compose
 
 Membangun container satu per satu adalah langkah awal yang baik, tetapi dalam arsitektur *microservices*, tantangan sebenarnya adalah **Koordinasi**.
 
@@ -11431,7 +11617,7 @@ Kita memiliki 4 komponen bergerak: *Backend* (*Go*), *Packing Service* (*Python*
 
 Inilah mengapa kita membutuhkan **Orkestrator**.
 
-#### Filosofi *Docker* Compose
+### 7.4.1 Filosofi *Docker* Compose
 *Docker* Compose adalah tool untuk mendefinisikan dan menjalankan aplikasi multi-container *Docker*. Jika `Dockerfile` adalah resep untuk membuat satu kue, maka `docker-compose.yml` adalah menu lengkap untuk satu pesta makan malam. Ia menerapkan prinsip **Infrastructure as Code**: seluruh konfigurasi infrastruktur aplikasi Anda tertulis dalam satu file teks yang bisa dipahami manusia dan dilacak oleh Git.
 
 Ada 3 pilar utama dalam Compose yang perlu Anda pahami:
@@ -11550,7 +11736,7 @@ Seluruh container ini hidup dalam satu jaringan virtual bernama `stuffing-net`. 
 
 Namun, perlu diingat bahwa untuk **Frontend (web)**, konfigurasi `NEXT_PUBLIC_API_BASE_URL` tetap harus mengarah ke `localhost` (atau domain public nantinya). Ini karena kode *frontend* pada akhirnya berjalan di **browser pengguna**, bukan di dalam jaringan *Docker*. Browser tidak memiliki akses ke jaringan internal `stuffing-net`, sehingga ia harus mengakses *API* melalui pintu depan (port yang di-expose ke host).
 
-#### Konfigurasi *Resource Limits*
+### 7.4.2 Konfigurasi *Resource Limits*
 
 Di lingkungan produksi yang berbagi *resource* (seperti *Kubernetes* atau VPS kecil), kita wajib membatasi "nafsu makan" container. Tanpa batasan, satu container yang bocor memory (memory leak) bisa memakan 100% *RAM* server dan membunuh container lain.
 
@@ -11581,11 +11767,11 @@ docker-compose up --build
 
 Aplikasi Anda kini siap melayani traffic, terisolasi dengan aman, dan mudah direplikasi di mana saja.
 
-### 7.5 *Deployment Best Practices*
+## 7.5 *Deployment Best Practices*
 
 Setelah aplikasi kita terbungkus rapi dalam *Docker*, tantangan berikutnya adalah bagaimana mengirimkan perubahan kode ke server produksi dengan aman, cepat, dan otomatis.
 
-#### *Continuous Integration* / *Continuous Deployment*
+### 7.5.1 *Continuous Integration* / *Continuous Deployment*
 
 *CI/CD* adalah jantung dari modern software engineering (Humble & Farley, 2010; Kim et al., 2016). Ini mengubah proses *deployment* manual yang *error-prone* menjadi pipeline otomatis yang terstandarisasi.
 
@@ -11626,7 +11812,7 @@ jobs:
 
 Jika (dan hanya jika) seluruh pos pemeriksaan CI berhasil dilewati ("lampu hijau"), CD mengambil alih tongkat estafet. Tujuannya adalah menghilangkan intervensi manual yang lambat dan berisiko. CD secara otomatis mengirimkan *Docker* Image yang telah tervalidasi ke Registry privat, membuat koneksi aman via *SSH* ke server produksi, dan memerintahkan orkestrator untuk menarik image baru tersebut. Dengan ini, developer bisa merilis fitur baru ke user dalam hitungan menit, bukan hari.
 
-#### Strategi *Rolling Update*
+### 7.5.2 Strategi *Rolling Update*
 
 Salah satu dosa besar dalam *deployment* modern adalah **Downtime**. Di era digital, user tidak menoleransi halaman "Under Maintenance" hanya karena kita sedang mengupdate fitur di belakang layar. Untuk itulah kita menggunakan strategi **Rolling Update**.
 
@@ -11635,7 +11821,7 @@ Apa itu Rolling Update? Bayangkan Anda harus mengganti ban mobil yang sedang mel
 **Implikasi Teknis:**
 Namun, kenyamanan ini datang dengan harga. Selama proses update berlangsung (yang bisa memakan waktu beberapa menit), sistem berada dalam kondisi **Hybrid State** atau "kepribadian ganda". User A mungkin dilayani versi lama, sementara User B dilayani versi baru. Oleh karena itu, aturan emasnya adalah: skema database dan *API* contract harus selalu **Backward Compatible**. Anda tidak boleh menghapus kolom database yang masih dipakai oleh kode versi lama yang sedang berjalan, atau aplikasi Anda akan *crash* di tengah jalan.
 
-#### *Canary Deployment*
+### 7.5.3 *Canary Deployment*
 
 Untuk sistem yang sangat kritis, sukses testing di CI tidak menjamin sukses di produksi. Data user yang aneh atau lonjakan trafik nyata bisa memicu *bug* tersembunyi yang tidak terdeteksi di lab testing. Bagaimana kita memitigasi risiko "ledakan" ini?
 
@@ -11648,7 +11834,7 @@ Kita kemudian memonitor "kesehatan" dari kelompok 5% tersebut dengan mikroskopis
 
 
 
-### Ringkasan
+#### Ringkasan
 
 Bab ini telah membawa kita dari sekadar "menulis kode" menuju "menjalankan sistem". Kita telah memetakan perjalanan aplikasi dari laptop developer hingga siap melayani trafik dunia nyata.
 
@@ -11658,7 +11844,7 @@ Poin-poin kunci yang telah kita pelajari:
 3.  **Kesiapan Produksi**: Aplikasi yang berjalan tidak cukup; ia harus bertahan hidup. Kita menambahkan *Resource* Limits untuk mencegah *crash* server, Healthchecks untuk *self-healing*, dan manajemen konfigurasi aman via `.env`.
 4.  **Otomatisasi & Strategi Rilis**: Kita menolak cara manual. *CI/CD* pipeline memastikan setiap baris kode teruji otomatis, sementara strategi Rolling Update menjamin pengguna tidak pernah merasakan gangguan layanan saat upgrade terjadi.
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 Untuk memperdalam pemahaman Anda tentang topik DevOps dan *Deployment*, berikut referensi yang sangat disarankan:
 
@@ -11676,7 +11862,7 @@ Untuk memperdalam pemahaman Anda tentang topik DevOps dan *Deployment*, berikut 
 
 
 
-## Bab 8: Fitur Lanjutan & Finalisasi
+# Bab 8: Fitur Lanjutan & Finalisasi
 
 Selamat! Kita telah sampai di bab terakhir dari buku ini. Sampai tahap ini, kita sudah memiliki aplikasi yang berfungsi secara teknis: *Backend* *Go* yang solid, *Python* Service yang cerdas, dan *Frontend* *Next.js* yang interaktif. Namun, sebuah sistem perangkat lunak belum bisa dikatakan siap produksi tanpa mempertimbangkan aspek keamanan, visibilitas operasional, dan kemampuan pelaporan.
 
@@ -11689,7 +11875,7 @@ Di bab ini, kita akan melengkapi aplikasi dengan tiga fitur esensial:
  
  **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
-### 8.1 Implementasi Autentikasi *JWT*
+## 8.1 Implementasi Autentikasi *JWT*
 
 Dalam pengembangan aplikasi modern yang memisahkan *Backend* dan *Frontend*, kita perlu memilih strategi autentikasi yang tepat. Menggunakan *session* berbasis *cookies* (*stateful*) seringkali membebani server karena harus menyimpan status *login* setiap pengguna.
 
@@ -11697,7 +11883,7 @@ Sebagai solusi yang lebih efisien, kita memilih pendekatan *stateless* menggunak
 
 Selain itu, keamanan data sangat penting. Kita menerapkan prinsip *multi-tenancy*, yang memastikan setiap pengguna hanya bisa mengakses data mereka sendiri.
 
-#### Alur Autentikasi *JWT*
+### 8.1.1 Alur Autentikasi *JWT*
 
 Sebelum masuk ke implementasi, mari kita pahami alur kerja sistem autentikasi yang akan kita bangun:
 
@@ -11749,7 +11935,7 @@ Diagram di atas menunjukkan tiga fase utama:
 
 Sekarang mari kita implementasikan setiap komponen.
 
-#### Persiapan *Database*
+### 8.1.2 Persiapan *Database*
 
 Langkah pertama adalah menyiapkan penyimpanan data pengguna. Hal terpenting di sini adalah keamanan *password*. Kita tidak boleh menyimpan *password* dalam bentuk teks asli (*plain-text*) karena risiko kebocoran data.
 
@@ -11807,7 +11993,7 @@ WHERE id = $1 LIMIT 1;
 
 Jalankan `sqlc generate` untuk menghasilkan kode *Go*.
 
-#### Logika Bisnis *AuthService*
+### 8.1.3 Logika Bisnis *AuthService*
 
 Di layer *Service*, kita menangani dua proses utama:
 1.  **Registrasi**: Menerima *password*, melakukan *hashing* dengan *bcrypt*, lalu menyimpan *user* baru.
@@ -11915,7 +12101,7 @@ func (s *AuthService) VerifyToken(tokenString string) (pgtype.UUID, error) {
 
 Ada dua hal krusial di sini. Pertama, `bcrypt.GenerateFromPassword` secara otomatis menangani pembuatan *salt* (data acak tambahan). *Salt* ini mencegah serangan *rainbow table*, di mana peretas menggunakan tabel *hash* yang sudah dihitung sebelumnya. Kedua, pada pembuatan token *JWT*, kita menyertakan klaim `exp` (*expiration*). Membatasi umur token (misalnya 24 jam) adalah praktik keamanan wajib agar jika token dicuri, jendela waktu penyalahgunaannya terbatas.
 
-#### *Middleware* Autentikasi
+### 8.1.4 *Middleware* Autentikasi
 
 *Middleware* berfungsi sebagai lapisan keamanan yang memvalidasi setiap *request* sebelum mencapai *handler* utama. *Middleware* ini akan memeriksa keberadaan dan validitas token *JWT* pada *header* `Authorization`.
 
@@ -11962,7 +12148,7 @@ func AuthMiddleware(authService *service.AuthService) gin.HandlerFunc {
 
 Perhatikan baris `c.Set("userID", userID)`. Ini adalah jembatan vital yang menghubungkan autentikasi dengan logika bisnis selanjutnya. *Middleware* "menitipkan" identitas pengguna ke dalam *context* *request*. Tanpa langkah ini, *handler* (misalnya `CreatePlanHandler`) tidak akan tahu siapa yang sedang mengirim data, dan kita tidak bisa menerapkan kepemilikan data (*ownership*).
 
-#### Proteksi *Frontend* dengan *AuthGuard*
+### 8.1.5 Proteksi *Frontend* dengan *AuthGuard*
 
 Untuk kenyamanan pengguna, kita juga perlu menangani status *login* di sisi browser. Komponen *auth guard* di *Next.js* akan memantau keberadaan token dan mengarahkan pengguna secara otomatis. Jika pengguna belum *login* mencoba mengakses halaman *dashboard*, mereka akan dialihkan ke halaman *login*, dan sebaliknya.
 
@@ -12002,7 +12188,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
 Kita menggunakan `useEffect` untuk pemeriksaan sisi klien karena akses `localStorage` hanya tersedia di browser (bukan saat *server-side rendering*). Perhatikan bahwa kita me-*return* `null` jika `authorized` masih *false*. Ini mencegah *flash of unstyled content* atau tampilan sekilas halaman terproteksi sebelum *user* dialihkan ke halaman *login*.
 
-#### *Handler Layer*
+### 8.1.6 *Handler Layer*
 
 *Handler* adalah titik masuk *HTTP* *request*. Ia bertanggung jawab untuk:
 1. Membaca dan memvalidasi *input* dari *request body*
@@ -12091,7 +12277,7 @@ Perhatikan beberapa keputusan keamanan penting:
 
 3. ***Status Code* yang Tepat** — `201 Created` untuk registrasi sukses, `409 Conflict` untuk email duplikat, `401 Unauthorized` untuk *login* gagal.
 
-#### Registrasi *Route*
+### 8.1.7 Registrasi *Route*
 
 Terakhir di sisi *backend*, kita perlu mendaftarkan *endpoint*-*endpoint* baru ke *router*. Update file `internal/api/routes.go`:
 
@@ -12181,7 +12367,7 @@ Perhatikan struktur *route* yang jelas:
 - `/auth/*` — *Public endpoints* untuk registrasi dan *login*
 - Semua *route* lain menggunakan `AuthMiddleware` sehingga hanya *user* terautentikasi yang bisa mengakses
 
-#### *API Client* untuk *Auth*
+### 8.1.8 *API Client* untuk *Auth*
 
 Sebelum membuat halaman *login*, kita perlu *API client* untuk berkomunikasi dengan *backend*.
 
@@ -12220,7 +12406,7 @@ export const authApi = {
 
 *API* *client* ini menggunakan `apiClient` yang sudah kita buat di Bab 6. *Interface* *TypeScript* memastikan *type safety* saat berkomunikasi dengan *backend*.
 
-#### Halaman *Login*
+### 8.1.9 Halaman *Login*
 
 Sekarang kita buat halaman *login* yang akan digunakan pengguna untuk masuk ke aplikasi.
 
@@ -12328,7 +12514,7 @@ Komponen ini mendemonstrasikan pola umum untuk form autentikasi:
 4. *Error Display* — Komponen `Alert` menampilkan pesan *error* dengan *style* yang konsisten
 5. *Loading State* — *Button* *disabled* saat *request* sedang berjalan
 
-#### Halaman *Register*
+### 8.1.10 Halaman *Register*
 
 Halaman registrasi mirip dengan *login*, dengan beberapa perbedaan kecil.
 
@@ -12436,11 +12622,11 @@ Perbedaan utama dengan halaman *login*:
 
 Dengan implementasi lengkap di atas, sistem autentikasi kita sudah berfungsi *end-to-end*: dari registrasi *user* baru hingga *login* dan akses ke halaman terproteksi.
 
-### 8.2 *Dashboard* Statistik
+## 8.2 *Dashboard* Statistik
 
 *Dashboard* memberikan gambaran umum kinerja operasional kepada pengguna. Untuk menampilkan data seperti "Total Rencana" atau "Total Item Terkirim", kita perlu strategi pengambilan data yang efisien.
 
-#### Optimasi dengan Agregasi *SQL*
+### 8.2.1 Optimasi dengan Agregasi *SQL*
 
 Mengambil seluruh data dari tabel ke aplikasi lalu menghitungnya secara manual (*looping*) adalah cara yang tidak efisien. Sebaiknya, kita memanfaatkan kemampuan *database* untuk melakukan **Agregasi**. Fungsi seperti `COUNT()` dan `SUM()` berjalan sangat cepat di level *database*.
 
@@ -12466,7 +12652,7 @@ SELECT
 
 Penggunaan `COALESCE(..., 0)` di sini sangat penting. Secara *default*, fungsi `SUM()` akan mengembalikan `NULL` jika tidak ada baris yang dijumlahkan (misal *user* baru belum punya pengiriman). *Frontend* biasanya mengarapkan angka, bukan *null*. `COALESCE` menangani kasus *edge case* ini dengan elegan, mengubah `NULL` menjadi `0`, sehingga kita tidak perlu menulis logika penanganan *null* tambahan di layer aplikasi.
 
-#### *Service Layer* untuk *Dashboard*
+### 8.2.2 *Service Layer* untuk *Dashboard*
 
 Setelah *query* *SQL* siap, kita buat *service layer* untuk memanggil *query* tersebut.
 
@@ -12512,7 +12698,7 @@ func (s *DashboardService) GetStats(ctx context.Context, userID uuid.UUID) (*sto
 1. Konversi tipe `uuid.UUID` ke `pgtype.UUID` yang digunakan oleh *SQLC*
 2. *Error wrapping* untuk *debugging* yang lebih mudah
 
-#### *Handler Layer* untuk *Dashboard*
+### 8.2.3 *Handler Layer* untuk *Dashboard*
 
 *Handler* menerima *request* *HTTP* and memanggil *service*.
 
@@ -12573,7 +12759,7 @@ func (h *DashboardHandler) GetStats(c *gin.Context) {
 
 Perhatikan bagaimana *handler* mengambil `userID` dari *context*. Ini adalah hasil kerja `AuthMiddleware` yang kita buat sebelumnya—*middleware* mengekstrak *user* *ID* dari *JWT* dan menyimpannya di *context* agar bisa diakses oleh *handler*.
 
-#### *API Client* untuk *Dashboard*
+### 8.2.4 *API Client* untuk *Dashboard*
 
 Buat file `web/lib/api/dashboard.ts`:
 
@@ -12592,7 +12778,7 @@ export const dashboardApi = {
 };
 ```
 
-#### Halaman *Dashboard*
+### 8.2.5 Halaman *Dashboard*
 
 Halaman *dashboard* menampilkan statistik dalam bentuk kartu-kartu yang informatif.
 
@@ -12746,11 +12932,11 @@ Halaman *dashboard* ini menampilkan dua bagian utama:
 
 2. *Quick Actions* — Tiga tombol *shortcut* untuk navigasi cepat ke halaman *management*. Kartu ini memiliki efek *hover* untuk *feedback* visual.
 
-### 8.3 *PDF Export* Laporan Operasional
+## 8.3 *PDF Export* Laporan Operasional
 
 Fitur terakhir adalah pembuatan dokumen "Surat Jalan". Dokumen ini penting untuk tim lapangan yang membutuhkan instruksi fisik saat melakukan pemuatan barang ke kontainer.
 
-#### Transformasi Koordinat *3D* ke *2D*
+### 8.3.1 Transformasi Koordinat *3D* ke *2D*
 
 Tantangan utama di sini adalah menampilkan data posisi *3D* ke dalam format dokumen *2D* (*PDF*). Kita perlu memperhatikan perbedaan sistem koordinat:
 1.  **Layar Komputer**: Titik (0,0) di kiri-atas, *Y* positif ke bawah.
@@ -12785,7 +12971,7 @@ function drawPlacement(doc: jsPDF, placement: any, scale: number) {
 
 Kunci dari visualisasi yang benar ada pada baris perhitungan variabel `y`. Kita tidak hanya mengalikan posisi dengan *scale*, tetapi juga melakukan pengurangan dari `containerWidth`. Inilah "**Inversi Y**". Tanpa ini, gambar akan ter-*mirror* secara vertikal (barang yang seharusnya di "kiri-bawah" kontainer akan tergambar di "kiri-atas" kertas). Pemahaman geometri ini krusial saat bekerja dengan *library* grafis *PDF*.
 
-#### Penyiapan *Library PDF*
+### 8.3.2 Penyiapan *Library PDF*
 
 Pertama, *install* *library* yang diperlukan:
 
@@ -12796,7 +12982,7 @@ pnpm add jspdf jspdf-autotable
 - *jsPDF* — *Library* utama untuk membuat dokumen *PDF* di browser
 - *jspdf-autotable* — *Plugin* untuk membuat tabel dengan *layout* otomatis
 
-#### Implementasi `pdf-report.ts`
+### 8.3.3 Implementasi `pdf-report.ts`
 
 File ini cukup panjang karena menangani *multiple* halaman dengan diagram visual.
 
@@ -13062,7 +13248,7 @@ Setiap halaman *step* menampilkan dua sudut pandang:
 **4. *AutoTable* untuk *Manifest***
 *Plugin* `jspdf-autotable` menghasilkan tabel dengan *layout* otomatis, *column widths* yang proporsional, dan *pagination* jika data terlalu panjang.
 
-#### Komponen Tombol *Export*
+### 8.3.4 Komponen Tombol *Export*
 
 
 Buat file `web/components/pdf-export-button.tsx`:
@@ -13115,7 +13301,7 @@ Komponen ini menangani:
 2. *Error Handling* — *Alert* sederhana jika terjadi *error*
 3. *Disabled State* — *Button* *disabled* saat proses berlangsung untuk mencegah *double-click*
 
-#### Integrasi di Halaman *Plan Detail*
+### 8.3.5 Integrasi di Halaman *Plan Detail*
 
 Untuk menggunakan tombol *export*, tambahkan di halaman detail *plan*:
 
@@ -13136,11 +13322,11 @@ Dengan implementasi ini, tim operasional di lapangan bisa mencetak "Surat Jalan"
 2. Instruksi pemuatan step-by-step dengan diagram visual
 3. Informasi posisi untuk setiap barang
 
-### 8.4 Arsitektur Final dan Refleksi
+## 8.4 Arsitektur Final dan Refleksi
 
 Kita telah menyelesaikan perjalanan panjang membangun sistem **Load & Stuffing Calculator** dari nol. Sebelum mengakhiri buku ini, mari kita lihat kembali *big picture* dari apa yang telah kita bangun.
 
-#### Arsitektur Sistem Final
+### 8.4.1 Arsitektur Sistem Final
 
 ```mermaid
 flowchart TB
@@ -13203,7 +13389,7 @@ Diagram ini menunjukkan aliran data dari browser pengguna hingga ke *database* d
 
 5. *Data Layer* — *PostgreSQL* menyimpan semua data persisten.
 
-#### Komponen yang Dibangun
+### 8.4.2 Komponen yang Dibangun
 
 Berikut ringkasan semua komponen yang telah kita implementasikan:
 
@@ -13215,7 +13401,7 @@ Berikut ringkasan semua komponen yang telah kita implementasikan:
 | *Frontend* | *Next.js* + *React* + *Three.js* | ~35 files | *UI*, *Visualization*, *PDF Export* |
 | *Deployment* | *Docker* + *Compose* | 4 *Dockerfiles* | *Containerization* |
 
-#### Refleksi Arsitektur
+### 8.4.3 Refleksi Arsitektur
 
 Selama membangun sistem ini, kita telah membuat beberapa keputusan arsitektur penting. Mari kita refleksikan mengapa keputusan tersebut diambil.
 
@@ -13256,7 +13442,7 @@ Keputusan memisahkan algoritma *packing* ke *microservice* terpisah memiliki ala
 
 *Trade-off*: Tidak bisa "*logout*" token yang sudah diterbitkan (harus tunggu *expired*). Untuk keamanan tinggi, kombinasikan dengan *refresh token* dan *blacklist*.
 
-#### Langkah Selanjutnya untuk Pembaca
+### 8.4.4 Langkah Selanjutnya untuk Pembaca
 
 Setelah menguasai fondasi yang dibangun di buku ini, berikut beberapa arah pengembangan yang bisa Anda eksplorasi:
 
@@ -13287,7 +13473,7 @@ Hubungkan dengan:
 6. ***Multi-tenant* *SaaS***
 Transform aplikasi menjadi *SaaS* yang bisa melayani *multiple* perusahaan dengan *tenant isolation* dan *billing system*.
 
-### Ringkasan
+#### Ringkasan
 
 Di bab terakhir ini, kita telah menyelesaikan aplikasi **Load & Stuffing Calculator** dengan tiga fitur produksi-*ready*:
 
@@ -13302,7 +13488,7 @@ Kita juga telah merefleksikan keputusan arsitektur yang dibuat sepanjang buku in
 Selamat! Anda telah menyelesaikan perjalanan membangun sistem kontainer *stuffing* dari nol. Aplikasi ini bukan hanya demo—ia adalah fondasi yang bisa dikembangkan menjadi produk nyata. Teruslah bereksperimen, belajar, dan membangun!
 
 
-### Bacaan Lanjutan
+#### Bacaan Lanjutan
 
 - *JWT Best Practices*: [IETF RFC 7519](https://tools.ietf.org/html/rfc7519) — Spesifikasi resmi *JSON* Web Token
 - *Goose Migration*: [Pressly *Goose* Documentation](https://github.com/pressly/goose) — *Database* *migration tool* untuk *Go*
@@ -13312,9 +13498,9 @@ Selamat! Anda telah menyelesaikan perjalanan membangun sistem kontainer *stuffin
 - *System Design Primer*: [GitHub Repository](https://github.com/donnemartin/system-design-primer) — Referensi untuk *scaling* aplikasi
 
 
-## Daftar Pustaka
+# Daftar Pustaka
 
-### Jurnal dan Prosiding Ilmiah
+## Jurnal dan Prosiding Ilmiah
 
 Ananno, A. A., & Ribeiro, L. (2024). A multi-heuristic algorithm for multi-container 3-D bin packing problem optimization using real world constraints. *IEEE Access*, 12, 42105–42130. https://doi.org/10.1109/ACCESS.2024.3378063
 
@@ -13368,7 +13554,7 @@ Zhang, B., Yao, Y., Kan, H. K., & Luo, W. (2024). A GAN-based genetic algorithm 
 
 Zhao, H., Zhu, C., Xu, X., Huang, H., & Xu, K. (2022). Learning practically feasible policies for online 3D bin packing. *Science China Information Sciences*, 65(1), 112101. https://doi.org/10.1007/s11432-021-3348-6
 
-### Buku dan Monograf
+## Buku dan Monograf
 
 Donovan, A. A., & Kernighan, B. W. (2015). *The Go programming language*. Addison-Wesley.
 
@@ -13406,7 +13592,7 @@ Silberschatz, A., Korth, H. F., & Sudarshan, S. (2019). *Database system concept
 
 Ware, C. (2012). *Information visualization: Perception for design* (Edisi ke-3). Morgan Kaufmann.
 
-### Standar dan Spesifikasi
+## Standar dan Spesifikasi
 
 IEEE. (2019). *IEEE Standard for Floating-Point Arithmetic* (IEEE Std 754-2019). Institute of Electrical and Electronics Engineers.
 
@@ -13416,7 +13602,7 @@ Jones, M., Bradley, J., & Sakimura, N. (2015). *JSON Web Token (JWT)* (RFC 7519)
 
 W3C. (2014). *Cross-Origin Resource Sharing (CORS)* (W3C Recommendation). World Wide Web Consortium. https://www.w3.org/TR/cors/
 
-### Dokumentasi Teknis dan Sumber Daring
+## Dokumentasi Teknis dan Sumber Daring
 
 *Docker* Inc. (2023). *Docker documentation*. https://docs.docker.com/
 
