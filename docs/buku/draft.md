@@ -10,13 +10,67 @@ aliases:
 ## Daftar Isi
 
 1. [Bab 1: Digitalisasi Logistik dan Tantangan Pemuatan](#bab-1-digitalisasi-logistik-dan-tantangan-pemuatan)
+   - [1.1 Tantangan Logistik dalam Era Perdagangan Global](#11-tantangan-logistik-dalam-era-perdagangan-global)
+   - [1.2 Container Loading Problem dan Kompleksitas NP-hard](#12-container-loading-problem-dan-kompleksitas-np-hard)
+   - [1.3 Pendekatan Algoritmik: Dari Optimal ke Heuristik](#13-pendekatan-algoritmik-dari-optimal-ke-heuristik)
+   - [1.4 Visi Sistem Load & Stuffing Calculator](#14-visi-sistem-load--stuffing-calculator)
 2. [Bab 2: Perancangan Arsitektur Layanan Mikro](#bab-2-perancangan-arsitektur-layanan-mikro)
+   - [2.1 Mengapa Arsitektur Microservices](#21-mengapa-arsitektur-microservices)
+   - [2.2 Alur Transformasi Data](#22-alur-transformasi-data)
+   - [2.3 Diagram Arsitektur Sistem](#23-diagram-arsitektur-sistem)
+   - [2.4 Kontrak Komunikasi Antar Layanan](#24-kontrak-komunikasi-antar-layanan)
+   - [2.5 Struktur Direktori Proyek](#25-struktur-direktori-proyek)
 3. [Bab 3: Pengembangan Backend API dengan Bahasa Go](#bab-3-pengembangan-backend-api-dengan-bahasa-go)
-4. [Bab 4: Membangun Mesin Kalkulasi (Packing Service) dengan Python](#bab-4-membangun-mesin-kalkulasi-packing-service-dengan-python)
+   - [3.1 Fondasi Bahasa Go](#31-fondasi-bahasa-go)
+   - [3.2 Idiom dan Konvensi Go](#32-idiom-dan-konvensi-go)
+   - [3.3 Setup Proyek dan Tooling](#33-setup-proyek-dan-tooling)
+   - [3.4 API Interface Design (API-First Strategy)](#34-api-interface-design-api-first-strategy)
+   - [3.5 Database Schema Design](#35-database-schema-design)
+   - [3.6 Type-safe Repository Layer dengan SQLC](#36-type-safe-repository-layer-dengan-sqlc)
+   - [3.7 Business Logic Layer (Service)](#37-business-logic-layer-service)
+   - [3.8 HTTP Router dan Handler](#38-http-router-dan-handler)
+   - [3.9 Integrasi dengan Packing Service](#39-integrasi-dengan-packing-service)
+4. [Bab 4: Packing Service dengan Python](#bab-4-packing-service-dengan-python)
+   - [4.1 Setup Project Python](#41-setup-project-python)
+   - [4.2 Flask Application Entry Point](#42-flask-application-entry-point)
+   - [4.3 Schema dan Validasi Request](#43-schema-dan-validasi-request)
+   - [4.4 Unit Conversion](#44-unit-conversion)
+   - [4.5 Integrasi py3dbp](#45-integrasi-py3dbp)
+   - [4.6 Integrasi dengan Go Backend](#46-integrasi-dengan-go-backend)
+   - [4.7 Testing dan Verifikasi](#47-testing-dan-verifikasi)
 5. [Bab 5: Visualisasi 3D Interaktif dengan Three.js](#bab-5-visualisasi-3d-interaktif-dengan-threejs)
-6. [Bab 6: Tantangan Sinkronisasi dan Transformasi Geometris](#bab-6-tantangan-sinkronisasi-dan-transformasi-geometris)
-7. [Bab 7: Evaluasi Performa dan Skalabilitas Sistem](#bab-7-evaluasi-performa-dan-skalabilitas-sistem)
-8. [Bab 8: Integrasi IoT dan Masa Depan Pemuatan](#bab-8-integrasi-iot-dan-masa-depan-pemuatan)
+   - [5.1 Setup Project Frontend](#51-setup-project-frontend)
+   - [5.2 Arsitektur StuffingVisualizer](#52-arsitektur-stuffingvisualizer)
+   - [5.3 Type Definitions](#53-type-definitions)
+   - [5.4 Scene dan Renderer Setup](#54-scene-dan-renderer-setup)
+   - [5.5 Camera dan Controls](#55-camera-dan-controls)
+   - [5.6 Lighting Setup](#56-lighting-setup)
+   - [5.7 Container Wireframe Rendering](#57-container-wireframe-rendering)
+   - [5.8 Item Box Rendering](#58-item-box-rendering)
+   - [5.9 Animation System](#59-animation-system)
+   - [5.10 StuffingVisualizer Orchestrator](#510-stuffingvisualizer-orchestrator)
+   - [5.11 React Integration](#511-react-integration)
+   - [5.12 Demo Page](#512-demo-page)
+6. [Bab 6: Integrasi Full Stack](#bab-6-integrasi-full-stack)
+   - [6.1 Konfigurasi CORS di Backend](#61-konfigurasi-cors-di-backend)
+   - [6.2 Environment Variables di Frontend](#62-environment-variables-di-frontend)
+   - [6.3 Komunikasi Data](#63-komunikasi-data)
+   - [6.4 Implementasi UI Data Master](#64-implementasi-ui-data-master)
+   - [6.5 Logika Bisnis Inti: Stuffing Plan & Calculation](#65-logika-bisnis-inti-stuffing-plan--calculation)
+   - [6.6 Logic: Visualisasi Hasil (Integration)](#66-logic-visualisasi-hasil-integration)
+   - [6.7 Finishing: Loading, Error, Navigation](#67-finishing-loading-error-navigation)
+7. [Bab 7: Deployment dan Produksi](#bab-7-deployment-dan-produksi)
+   - [7.1 Persiapan Deployment & Konfigurasi Eksternal](#71-persiapan-deployment--konfigurasi-eksternal)
+   - [7.2 Pengenalan Docker & Containerization](#72-pengenalan-docker--containerization)
+   - [7.3 Dockerizing Aplikasi](#73-dockerizing-aplikasi)
+   - [7.4 Orkestrasi dengan Docker Compose](#74-orkestrasi-dengan-docker-compose)
+   - [7.5 Deployment Best Practices: CI/CD & Strategi Rilis](#75-deployment-best-practices-cicd--strategi-rilis)
+   - [7.7 Bacaan Lanjutan](#77-bacaan-lanjutan)
+8. [Bab 8: Fitur Lanjutan & Finalisasi](#bab-8-fitur-lanjutan--finalisasi)
+   - [8.1 Implementasi Autentikasi (JWT)](#81-implementasi-autentikasi-jwt)
+   - [8.2 Dashboard Statistik](#82-dashboard-statistik)
+   - [8.3 PDF Export: Laporan Operasional](#83-pdf-export-laporan-operasional)
+   - [8.4 Penutup](#84-penutup)
 
 ---
 
@@ -24,15 +78,13 @@ aliases:
 
 ## Bab 1: Digitalisasi Logistik dan Tantangan Pemuatan
 
-Pada bab ini, kita akan memahami landasan teoritis dari permasalahan optimasi pemuatan kontainer dan mengapa sistem manual tidak lagi memadai untuk industri logistik modern. Tujuan utamanya adalah untuk memberikan fondasi pemahaman sebelum kita membangun sistem *Load & Stuffing Calculator*.
-
-Terdapat beberapa tantangan teknis yang akan kita bahas, meliputi:
-
-- Memahami kompleksitas matematis *NP-hard* pada *3D Bin Packing Problem* (3D-BPP).
-- Mengidentifikasi inefisiensi *manual planning* yang menyebabkan *void space* dan kerugian operasional.
-- Menentukan pendekatan algoritmik yang tepat untuk menghasilkan solusi dalam waktu komputasi yang wajar.
-
-Dalam bab ini, kita akan menjawab tantangan tersebut dengan mengeksplorasi teori dasar *Container Loading Problem*, memahami mengapa pendekatan heuristik menjadi solusi praktis, dan mendefinisikan visi sistem yang akan kita bangun.
+Pada bab ini, kita akan menyelami jantung permasalahan yang menjadi alasan buku ini ditulis: inefisiensi dalam pemuatan kontainer. Sejak revolusi kontainerisasi pada tahun 1950-an, dunia logistik telah berubah drastis menjadi sangat terstandarisasi. Namun, ironisnya, keputusan tentang bagaimana menata ribuan kotak ke dalam kontainer seringkali masih diserahkan pada intuisi manusia atau "kira-kira".
+ 
+Pendekatan manual ini memiliki biaya tersembunyi yang sangat besar. Ruang kosong (*void space*) dalam kontainer berarti kita membayar untuk mengangkut udara, bukan barang. Dalam skala industri, inefisiensi 10% saja bisa berarti kerugian miliaran rupiah per tahun. Belum lagi risiko kerusakan barang akibat penataan yang tidak stabil.
+ 
+Di sinilah algoritma dan komputasi modern berperan. *Container Loading Problem* (CLP) adalah masalah matematika klasik yang terkenal sulit (*NP-hard*), namun solusinya menjanjikan efisiensi yang nyata. Kita tidak lagi bisa mengandalkan tebakan; kita membutuhkan kalkulasi presisi.
+ 
+Untuk itu, kita akan membongkar landasan teoritis dari CLP, memahami mengapa solusi eksak nyaris mustahil dicapai dalam waktu wajar, dan mengapa pendekatan heuristik adalah jalan tengah terbaik. Pemahaman ini krusial sebagai fondasi sebelum kita menulis satu baris kode pun.
 
 **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
@@ -298,7 +350,7 @@ Setelah menyelesaikan buku ini, pembaca akan memiliki pengetahuan dan *source co
 
 ---
 
-### Summary
+### Ringkasan
 
 Pada bab ini, kita telah memahami mengapa optimasi pemuatan kontainer merupakan masalah yang signifikan bagi industri logistik. *Container Loading Problem* adalah masalah NP-hard yang tidak dapat diselesaikan secara optimal dalam waktu yang wajar untuk skala industri. Pendekatan heuristik, khususnya algoritma *3D Bin Packing* dengan strategi *Bigger First*, menjadi solusi praktis yang akan kita implementasikan.
 
@@ -306,7 +358,7 @@ Kita juga telah mendefinisikan visi dan tujuan operasional sistem *Load & Stuffi
 
 ---
 
-### Further Reading
+### Bacaan Lanjutan
 
 Berikut adalah referensi untuk memperdalam pemahaman konsep-konsep yang dibahas dalam bab ini:
 
@@ -321,16 +373,16 @@ Berikut adalah referensi untuk memperdalam pemahaman konsep-konsep yang dibahas 
 
 ## Bab 2: Perancangan Arsitektur Layanan Mikro
 
-Pada bab ini, kita akan merancang struktur sistem yang terdekopling (*decoupled*) untuk memisahkan manajemen data dari mesin kalkulasi. Tujuan utamanya adalah membangun arsitektur yang memungkinkan setiap komponen berkembang secara independen.
+Pada bab ini, kita akan meletakkan batu pertama dari sistem kita: perancangan arsitektur. Dalam pengembangan perangkat lunak modern, godaan untuk langsung melompat ke penulisan kode sangatlah besar. Namun, tanpa desain arsitektur yang matang, aplikasi yang kita bangun berisiko menjadi "bola lumpur besar" (*Big Ball of Mud*)—sebuah sistem monolitik yang sulit dipelihara, sulit dikembangkan, dan rentan terhadap kegagalan kaskade.
+ 
+Kasus penggunaan kita—kalkulasi 3D bin packing—memiliki karakteristik yang unik. Ia adalah operasi yang sangat *CPU-intensive* (berat di komputasi), berbeda dengan operasi web standar yang biasanya *I/O-bound* (berat di database/network). Jika kita menggabungkan logika kalkulasi berat ini dengan logika manajemen data dalam satu proses, performa seluruh aplikasi bisa terganggu hanya karena satu user melakukan kalkulasi kompleks.
 
-Terdapat beberapa tantangan teknis yang akan kita hadapi, meliputi:
+Solusinya adalah **Pemisahan Tanggung Jawab** (*Separation of Concerns*). Kita akan mengadopsi gaya arsitektur **Microservices**, di mana kita memecah sistem menjadi layanan-layanan kecil yang otonom. Kita akan menggunakan **Go** untuk Backend API yang membutuhkan konkurensi tinggi dan latensi rendah, serta **Python** untuk Packing Service yang membutuhkan ekosistem algoritma yang kaya.
 
-- Bagaimana menangani *scalability* saat memproses kalkulasi kargo dalam jumlah besar.
-- Bagaimana memilih *communication protocol* yang tepat antar layanan.
-- Bagaimana mendefinisikan kontrak data yang jelas agar kedua layanan dapat berkembang tanpa saling merusak.
+Arsitektur ini tidak hanya menyelesaikan masalah performa, tetapi juga memberikan fleksibilitas. Tim Backend bisa fokus pada keandalan API, sementara Data Scientist bisa mengoptimalkan algoritma packing tanpa saling menunggu. Jembatan penghubung keduanya adalah protokol standar industri: REST API dengan format JSON.
 
-Dalam bab ini, kita akan menjawab tantangan tersebut dengan menerapkan arsitektur *Microservices*, membagi tanggung jawab antara *Backend API* (Go) dan *Packing Service* (Python), serta menggunakan REST HTTP dengan JSON sebagai protokol komunikasi.
-
+Secara spesifik, kita akan merancang rincian kontrak komunikasi tersebut, menggambar diagram interaksi antar layanan, dan menyiapkan struktur direktori yang rapi agar proyek kita siap untuk dikembangkan (*scale*) di masa depan.
+ 
 **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
 - Mengapa Arsitektur *Microservices*
@@ -375,7 +427,7 @@ Diagram di atas mungkin terlihat sederhana—dan memang itulah intinya. Kompleks
 
 Pemilihan bahasa untuk masing-masing layanan bukanlah keputusan sewenang-wenang, melainkan berdasarkan kesesuaian dengan karakteristik tugas. Backend API harus menangani banyak request simultan dengan latensi rendah—karakteristik yang menjadi kekuatan utama Go. Model *goroutines* dalam Go memungkinkan ribuan koneksi concurrent dikelola dengan memory footprint yang sangat kecil, sesuatu yang sulit dicapai dengan bahasa interpretasi tradisional.
 
-Di sisi lain, Packing Service memiliki karakteristik berbeda: kalkulasi intensif tetapi jarang dipanggil. Untuk tugas semacam ini, ekspresi sintaksis lebih penting daripada performa raw. Python dengan pustaka py3dbp yang sudah teruji menjadi pilihan natural—kode algoritma dapat ditulis dengan jelas dan mudah di-maintain, sementara overhead interpretasi tidak signifikan dibandingkan kompleksitas kalkulasi geometris itu sendiri.
+Di sisi lain, Packing Service memiliki karakteristik berbeda: kalkulasi intensif tetapi jarang dipanggil. Untuk tugas semacam ini, ekspresi sintaksis lebih penting daripada performa raw. Python dengan library py3dbp yang sudah teruji menjadi pilihan natural—kode algoritma dapat ditulis dengan jelas dan mudah di-maintain, sementara overhead interpretasi tidak signifikan dibandingkan kompleksitas kalkulasi geometris itu sendiri.
 
 > Keputusan ini bukan tentang mengikuti tren teknologi terbaru. Microservices bukanlah solusi universal—bagi banyak aplikasi, mereka menambah kompleksitas yang tidak diperlukan. Namun, untuk kasus spesifik kita dengan kebutuhan polyglot dan karakteristik beban kerja yang sangat berbeda, pemisahan ini memberikan manfaat nyata.
 
@@ -804,7 +856,6 @@ Jika kalkulasi berhasil, Packing Service mengembalikan daftar penempatan beserta
       "pack_time_ms": 1250
     }
   }
-}
 ```
 
 Response ini memberikan informasi yang dibutuhkan untuk visualisasi dan pelaporan:
@@ -948,7 +999,7 @@ Sepanjang buku ini, kita akan membangun kode secara bertahap. Dengan memahami st
 
 ---
 
-### Summary
+### Ringkasan
 
 Pada bab ini, kita telah merancang arsitektur *Microservices* untuk sistem *Load & Stuffing Calculator*. Berikut ringkasan keputusan desain yang dibuat:
 
@@ -968,7 +1019,7 @@ Sistem kini memiliki *blueprint* arsitektur yang solid. Pada bab berikutnya, kit
 
 ---
 
-### Further Reading
+### Bacaan Lanjutan
 
 - **Microservices Pattern**: [Martin Fowler: Microservices](https://martinfowler.com/articles/microservices.html)
 - **REST API Design**: [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines)
@@ -989,13 +1040,6 @@ Pada bab ini, kita akan membangun Backend API dari nol menggunakan bahasa Go. Pe
 
 Namun, menguasai *syntax* Go saja tidak cukup. Setiap bahasa pemrograman memiliki *idiom*—cara penulisan yang dianggap natural dan efektif oleh komunitasnya. Kode Go yang "benar secara sintaksis" tetapi tidak idiomatis akan sulit dibaca oleh developer Go lain, sulit di-*maintain*, dan seringkali kurang efisien. Oleh karena itu, bagian awal bab ini akan membahas fondasi dan idiom Go sebelum kita menulis kode aplikasi.
 
-Terdapat beberapa tantangan teknis yang akan kita hadapi dalam bab ini:
-
-- Mendesain *database schema* yang merepresentasikan entitas logistik (kontainer, produk, rencana muat)
-- Membangun *repository layer* yang *type-safe* menggunakan SQLC
-- Mengimplementasikan *service layer* yang mengorkestrasikan logika bisnis
-- Menyediakan HTTP API menggunakan Gin framework
-- Mengintegrasikan Backend API dengan Packing Service melalui HTTP client
 
 **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
@@ -1009,7 +1053,7 @@ Terdapat beberapa tantangan teknis yang akan kita hadapi dalam bab ini:
 - HTTP Router dan Handler
 - Integrasi dengan Packing Service
 
-**Technical Requirements**
+**Persyaratan Teknis**
 
 Untuk menyelesaikan bab ini, Anda memerlukan alat dan perangkat lunak berikut:
 
@@ -1930,7 +1974,7 @@ DROP TABLE IF EXISTS containers;
 
 Perhatikan komentar `-- +goose Up` dan `-- +goose Down`—ini menandai SQL mana yang dijalankan saat *migrate* dan *rollback*.
 
-Isi file `00002_create_products.sql`:
+Buat file `00002_create_products.sql` dengan isi berikut:
 
 ```sql
 -- +goose Up
@@ -1949,7 +1993,7 @@ CREATE TABLE products (
 DROP TABLE IF EXISTS products;
 ```
 
-Isi file `00003_create_plans.sql`:
+Buat file `00003_create_plans.sql` dengan isi berikut:
 
 ```sql
 -- +goose Up
@@ -2839,7 +2883,7 @@ func (s *ProductService) Update(ctx context.Context, id uuid.UUID, label, sku st
 func (s *ProductService) Delete(ctx context.Context, id uuid.UUID) error {
     err := s.store.DeleteProduct(ctx, id)
     if err != nil {
-        return fmt.Errorf("delete product %s: %w", id, err)
+        return nil, fmt.Errorf("delete product %s: %w", id, err)
     }
     return nil
 }
@@ -3134,6 +3178,7 @@ func (s *PlanService) buildPackRequest(container store.Container, items []store.
     }
 
     return PackRequest{
+        Units: "mm",
         Container: PackContainer{
             Length:    container.LengthMm,
             Width:     container.WidthMm,
@@ -4796,7 +4841,7 @@ Jalankan aplikasi:
 go run cmd/api/main.go
 ```
 
-Jika berhasil, Anda akan melihat output seperti:
+Jika berhasil, kita akan melihat output seperti:
 
 ```
 [GIN-debug] Listening and serving HTTP on :8080
@@ -4908,7 +4953,7 @@ Dengan mock gateway yang sudah kita buat, endpoint `/calculate` bisa diuji tanpa
 
 Dengan API yang berjalan dan teruji, kita telah menyelesaikan backend Go untuk Load Stuffing Calculator. Di bab berikutnya, kita akan membangun Packing Service dengan Python yang akan melakukan kalkulasi 3D bin packing.
 
-### Summary
+### Ringkasan
 
 Dalam bab ini, kita telah membangun backend API lengkap menggunakan Go dengan arsitektur berlapis yang clean dan maintainable. Fitur utama yang telah kita implementasikan:
 
@@ -4954,7 +4999,7 @@ load-stuffing-calculator/
 └── sqlc.yaml
 ```
 
-### Further Reading
+### Bacaan Lanjutan
 
 Untuk memperdalam pemahaman tentang topik yang dibahas di bab ini:
 
@@ -4986,8 +5031,8 @@ Mengapa kita memisahkan kalkulasi ke service terpisah, dan mengapa menggunakan P
 
 Python dipilih bukan karena performanya (Go jelas lebih cepat), melainkan karena *ekosistem*. Library py3dbp yang akan kita gunakan sudah teruji, well-documented, dan mengimplementasikan algoritma 3D bin packing yang kita bahas di Bab 1. Menulis ulang algoritma dari nol di Go tidak memberikan nilai tambah yang sepadan dengan effort-nya. Dalam dunia nyata, pragmatisme sering mengalahkan purisme teknologi.
 
-Dalam bab ini, kita akan membangun Packing Service dari nol. Struktur pembahasannya mengikuti alur yang sama dengan bab sebelumnya—dimulai dari setup project, lalu bergerak ke dalam layer by layer. Di akhir bab, kita akan mengintegrasikan Packing Service dengan Backend API sehingga flow kalkulasi bekerja end-to-end.
-
+Kita akan membangun Packing Service dari nol, mengikuti alur yang sama dengan bab sebelumnya—dimulai dari setup project, lalu bergerak ke dalam layer by layer. Di akhir bab, kita akan mengintegrasikan Packing Service dengan Backend API sehingga flow kalkulasi bekerja end-to-end.
+ 
 **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
 - Setup Project Python dan Flask
@@ -4998,7 +5043,7 @@ Dalam bab ini, kita akan membangun Packing Service dari nol. Struktur pembahasan
 - Orkestrasi packing logic dari request sampai response
 - Integrasi dengan Backend API Go
 
-**Technical Requirements**
+**Persyaratan Teknis**
 
 Untuk menyelesaikan bab ini, Anda memerlukan:
 
@@ -5568,7 +5613,7 @@ def as_int(value: Any, field: str) -> int:
     return n
 ```
 
-Validasi kita check bahwa dimensi dan weight positif—nilai nol atau negatif tidak masuk akal secara fisik. Error message menyertakan field path (`items[2].weight`) untuk memudahkan debugging.
+Validasi kita memeriksa bahwa dimensi dan weight positif—nilai nol atau negatif tidak masuk akal secara fisik. Error message menyertakan field path (`items[2].weight`) untuk memudahkan debugging.
 
 ```python
 def parse_request(body: dict[str, Any]) -> RequestIn:
@@ -5627,7 +5672,7 @@ def parse_request(body: dict[str, Any]) -> RequestIn:
 
 `parse_request` memvalidasi seluruh request body. Untuk arrays, kita iterate dengan index untuk memberikan error message yang spesifik (contoh: `items[2].weight must be > 0`). Options bersifat optional—jika tidak dikirim, default values digunakan.
 
-Dengan schema selesai, kita punya contract yang jelas antara client dan Packing Service. Di section berikutnya, kita akan mengimplementasikan unit conversion.
+Dengan schema selesai, kita memiliki contract yang jelas antara client dan Packing Service. Di section berikutnya, kita akan mengimplementasikan unit conversion.
 
 Berikut kode lengkap `schema.py`:
 
@@ -6668,7 +6713,7 @@ Response berisi placements dari Packing Service yang sudah disimpan ke database:
 }
 ```
 
-### Summary
+### Ringkasan
 
 Di bab ini kita membangun Packing Service—microservice Python yang menjalankan algoritma 3D bin packing menggunakan library py3dbp.
 
@@ -6683,7 +6728,7 @@ Poin-poin utama:
 
 Arsitektur dua service ini memungkinkan scaling independen. Jika packing menjadi bottleneck, kita bisa menjalankan multiple instances Packing Service di belakang load balancer tanpa mengubah Backend API.
 
-### Further Reading
+### Bacaan Lanjutan
 
 - py3dbp GitHub: https://github.com/enzoruiz/3dbinpacking
 - Flask Documentation: https://flask.palletsprojects.com/
@@ -6696,8 +6741,8 @@ Di bab sebelumnya, kita membangun Packing Service yang menghasilkan data placeme
 
 Three.js dipilih sebagai library rendering karena menyediakan abstraksi tingkat tinggi di atas WebGL. Daripada menulis shader programs dan mengelola vertex buffers, kita cukup bekerja dengan konsep yang lebih intuitif: geometry, material, dan mesh. Three.js sudah mature, well-documented, dan menjadi standar de facto untuk 3D di browser.
 
-Dalam bab ini, kita akan membangun visualizer 3D menggunakan arsitektur modular dengan Manager pattern. Setiap komponen—scene, camera, renderer, lights, controls—dikelola oleh class terpisah yang diorkestrasi oleh `StuffingVisualizer` utama.
-
+Fokus utama kita adalah membangun visualizer 3D menggunakan arsitektur modular dengan Manager pattern. Setiap komponen—scene, camera, renderer, lights, controls—dikelola oleh class terpisah yang diorkestrasi oleh `StuffingVisualizer` utama.
+ 
 **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
 - Setup Project Next.js dengan Three.js dan shadcn/ui
@@ -6710,7 +6755,7 @@ Dalam bab ini, kita akan membangun visualizer 3D menggunakan arsitektur modular 
 - Step-by-Step Animation System
 - React Component Integration
 
-**Technical Requirements**
+**Persyaratan Teknis**
 
 Untuk menyelesaikan bab ini, Anda memerlukan:
 
@@ -8622,2239 +8667,12 @@ Kita punya Three.js visualizer yang berdiri sendiri. Sekarang kita perlu React w
 `StuffingViewer` adalah "smart component"—ia menghubungkan StuffingVisualizer ke React lifecycle dan state management.
 
 Pattern yang kita gunakan:
-1. **useRef** untuk menyimpan visualizer instance agar persist across renders
-2. **useState** untuk React state yang perlu trigger re-render (currentStep, isPlaying, dll)
-3. **useEffect** untuk setup/cleanup dengan dependency array `[data]`
-4. **Subscription callbacks** untuk sync visualizer state ke React state
+1.  **useRef** untuk menyimpan visualizer instance agar persist across renders
+2.  **useState** untuk React state yang perlu trigger re-render (currentStep, isPlaying, dll)
+3.  **useEffect** untuk setup/cleanup dengan dependency array `[data]`
+4.  **Subscription callbacks** untuk sync visualizer state ke React state
 
 Buat file `components/stuffing-viewer.tsx`:
-
-```tsx
-"use client";
-
-import { useEffect, useRef, useState } from "react";
-import { StuffingVisualizer } from "@/lib/StuffingVisualizer";
-import type { StuffingPlanData } from "@/lib/StuffingVisualizer";
-import { AnimationControls } from "./animation-controls";
-
-interface StuffingViewerProps {
-    data: StuffingPlanData;
-}
-
-export function StuffingViewer({ data }: StuffingViewerProps) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const visualizerRef = useRef<StuffingVisualizer | null>(null);
-    
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [currentStep, setCurrentStep] = useState(0);
-    const [maxStep, setMaxStep] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
-
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        // Create visualizer only once
-        if (!visualizerRef.current) {
-            visualizerRef.current = new StuffingVisualizer({
-                backgroundColor: "#fff",
-            });
-        }
-
-        const visualizer = visualizerRef.current;
-
-        // Subscribe to state changes
-        const unsubStep = visualizer.onStepChange(setCurrentStep);
-        const unsubPlay = visualizer.onPlayStateChange(setIsPlaying);
-
-        // Load data and attach
-        visualizer.loadData(data);
-        setMaxStep(visualizer.getMaxStep());
-        setCurrentStep(visualizer.getMaxStep());
-        visualizer.attach(containerRef.current);
-        setIsLoaded(true);
-
-        // Cleanup on unmount
-        return () => {
-            unsubStep();
-            unsubPlay();
-            visualizer.dispose();
-            visualizerRef.current = null;
-        };
-    }, [data]);
-
-    const handleStepChange = (step: number) => {
-        setCurrentStep(step);
-        visualizerRef.current?.setStep(step);
-    };
-
-    return (
-        <div className="w-full h-full relative">
-            <div ref={containerRef} className="w-full h-full" />
-            
-            {!isLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white">
-                    <p className="text-zinc-600">Loading visualization...</p>
-                </div>
-            )}
-
-            <AnimationControls
-                currentStep={currentStep}
-                maxStep={maxStep}
-                isPlaying={isPlaying}
-                onStepChange={handleStepChange}
-                onPlay={() => visualizerRef.current?.play()}
-                onPause={() => visualizerRef.current?.pause()}
-                onReset={() => visualizerRef.current?.reset()}
-            />
-        </div>
-    );
-}
-```
-
-Mari bahas pattern penting:
-
-**useRef untuk instance persistence** — `visualizerRef` menyimpan instance `StuffingVisualizer` yang persist across renders. Tanpa ref, setiap render akan membuat visualizer baru.
-
-**Subscription pattern** — `onStepChange` dan `onPlayStateChange` mengembalikan unsubscribe functions yang kita panggil di cleanup. Ini memastikan tidak ada lingering listeners.
-
-**Bidirectional sync** — React state dan visualizer state di-sync dua arah:
-- Visualizer → React: via subscription callbacks (`onStepChange`)
-- React → Visualizer: via method calls (`handleStepChange`)
-
-**Conditional rendering** — Loading indicator ditampilkan sampai `isLoaded` true.
-
-#### AnimationControls Component
-
-`AnimationControls` adalah "dumb component" (atau presentational component)—ia tidak punya internal state, hanya menerima props dan memanggil callbacks. Semua logic ada di parent `StuffingViewer`.
-
-Mengapa separation ini? **Single source of truth**. State (`currentStep`, `isPlaying`) di-manage di satu tempat. AnimationControls hanya menampilkan dan memanggil callbacks—membuatnya mudah di-test dan di-reuse.
-
-Buat file `components/animation-controls.tsx`:
-
-```tsx
-"use client";
-
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Pause, Play, RotateCcw } from "lucide-react";
-
-interface AnimationControlsProps {
-    currentStep: number;
-    maxStep: number;
-    isPlaying: boolean;
-    onStepChange: (step: number) => void;
-    onPlay: () => void;
-    onPause: () => void;
-    onReset: () => void;
-}
-
-export function AnimationControls({
-    currentStep,
-    maxStep,
-    isPlaying,
-    onStepChange,
-    onPlay,
-    onPause,
-    onReset,
-}: AnimationControlsProps) {
-    return (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg border border-zinc-200 p-4 flex items-center gap-4 min-w-[400px]">
-            <div className="flex gap-2">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={isPlaying ? onPause : onPlay}
-                >
-                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={onReset}
-                >
-                    <RotateCcw className="h-4 w-4" />
-                </Button>
-            </div>
-
-            <div className="flex-1 flex items-center gap-3">
-                <Slider
-                    value={[currentStep]}
-                    min={0}
-                    max={maxStep}
-                    step={1}
-                    onValueChange={(value) => onStepChange(value[0])}
-                    className="flex-1"
-                />
-                <span className="text-sm font-medium text-zinc-700 min-w-[60px] text-right">
-                    {currentStep} / {maxStep}
-                </span>
-            </div>
-        </div>
-    );
-}
-```
-
-Component ini "dumb"—ia menerima semua state via props dan memanggil callbacks untuk actions. Logic ada di parent (`StuffingViewer`).
-
-Kita menggunakan shadcn/ui `Button` dan `Slider`, serta Lucide icons. Component di-style dengan position absolute agar overlay di atas canvas.
-
----
-
-### 5.12 Demo Page
-
-Terakhir, kita buat demo page yang menggabungkan semuanya. Page ini menyediakan form untuk input container dan items, lalu menampilkan visualisasi 3D dari hasil packing.
-
-#### Kode Lengkap page.tsx
-
-Buat file `app/page.tsx` dengan kode lengkap berikut:
-
-```tsx
-"use client";
-
-import { useState, useMemo } from "react";
-import dynamic from "next/dynamic";
-import { Trash2 } from "lucide-react";
-import type { StuffingPlanData } from "@/lib/StuffingVisualizer";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-
-// Dynamic import untuk SSR compatibility
-const StuffingViewer = dynamic(
-    () => import("@/components/stuffing-viewer").then((mod) => mod.StuffingViewer),
-    { ssr: false, loading: () => <div className="flex items-center justify-center h-full">Loading 3D...</div> }
-);
-
-interface ItemInput {
-    label: string;
-    quantity: number;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    weight_kg: number;
-    color_hex: string;
-}
-
-// Generate random color from preset palette
-function randomColor(): string {
-    const colors = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"];
-    return colors[Math.floor(Math.random() * colors.length)];
-}
-
-// Simple greedy packing algorithm untuk demo
-function buildPlanData(
-    items: ItemInput[], 
-    container: { length_mm: number; width_mm: number; height_mm: number; max_weight_kg: number }
-): StuffingPlanData {
-    const allPlacements: StuffingPlanData["placements"] = [];
-    const allItems: StuffingPlanData["items"] = [];
-    
-    let stepNumber = 0;
-    let currentX = 0;
-    let currentY = 0;
-    let currentZ = 0;
-    let rowMaxWidth = 0;
-    let layerMaxHeight = 0;
-
-    items.forEach((item, itemIndex) => {
-        const itemId = `item-${itemIndex}`;
-        allItems.push({
-            item_id: itemId,
-            label: item.label,
-            length_mm: item.length_mm,
-            width_mm: item.width_mm,
-            height_mm: item.height_mm,
-            weight_kg: item.weight_kg,
-            quantity: item.quantity,
-            color_hex: item.color_hex,
-        });
-
-        for (let q = 0; q < item.quantity; q++) {
-            // Simple left-to-right, front-to-back, bottom-to-top packing
-            if (currentX + item.length_mm > container.length_mm) {
-                currentX = 0;
-                currentY += rowMaxWidth;
-                rowMaxWidth = 0;
-            }
-            if (currentY + item.width_mm > container.width_mm) {
-                currentY = 0;
-                currentZ += layerMaxHeight;
-                layerMaxHeight = 0;
-            }
-
-            stepNumber++;
-            allPlacements.push({
-                placement_id: `p-${stepNumber}`,
-                item_id: itemId,
-                pos_x: currentX,
-                pos_y: currentY,
-                pos_z: currentZ,
-                rotation: 0,
-                step_number: stepNumber,
-            });
-
-            currentX += item.length_mm;
-            rowMaxWidth = Math.max(rowMaxWidth, item.width_mm);
-            layerMaxHeight = Math.max(layerMaxHeight, item.height_mm);
-        }
-    });
-
-    return {
-        plan_id: "demo-plan",
-        plan_code: "DEMO-001",
-        container: {
-            name: "Custom Container",
-            length_mm: container.length_mm,
-            width_mm: container.width_mm,
-            height_mm: container.height_mm,
-            max_weight_kg: container.max_weight_kg,
-        },
-        items: allItems,
-        placements: allPlacements,
-        stats: {
-            total_items: allPlacements.length,
-            fitted_count: allPlacements.length,
-            unfitted_count: 0,
-            volume_utilization_pct: 0,
-        },
-    };
-}
-
-export default function HomePage() {
-    const [container, setContainer] = useState({
-        length_mm: 12000,
-        width_mm: 2400,
-        height_mm: 2600,
-        max_weight_kg: 28000,
-    });
-
-    const [items, setItems] = useState<ItemInput[]>([]);
-    const [form, setForm] = useState<ItemInput>({
-        label: "",
-        quantity: 1,
-        length_mm: 0,
-        width_mm: 0,
-        height_mm: 0,
-        weight_kg: 0,
-        color_hex: randomColor(),
-    });
-
-    const [planData, setPlanData] = useState<StuffingPlanData | null>(null);
-
-    const totalVolume = useMemo(
-        () => items.reduce((sum, item) => sum + (item.length_mm * item.width_mm * item.height_mm * item.quantity) / 1_000_000_000, 0),
-        [items]
-    );
-
-    const totalWeight = useMemo(
-        () => items.reduce((sum, item) => sum + item.weight_kg * item.quantity, 0),
-        [items]
-    );
-
-    const canAdd = form.label.trim() && form.quantity > 0 && form.length_mm > 0 && form.width_mm > 0 && form.height_mm > 0;
-
-    const handleAdd = () => {
-        if (!canAdd) return;
-        setItems([...items, { ...form }]);
-        setForm({ ...form, label: "", quantity: 1, length_mm: 0, width_mm: 0, height_mm: 0, weight_kg: 0, color_hex: randomColor() });
-    };
-
-    const handleRemove = (index: number) => {
-        setItems(items.filter((_, i) => i !== index));
-    };
-
-    const handleCalculate = () => {
-        if (items.length === 0) return;
-        const data = buildPlanData(items, container);
-        setPlanData(data);
-    };
-
-    return (
-        <main className="min-h-screen bg-zinc-50">
-            <header className="border-b bg-white">
-                <div className="container mx-auto px-4 py-4">
-                    <h1 className="text-2xl font-bold">Load & Stuffing Calculator</h1>
-                    <p className="text-sm text-zinc-600">3D Container Packing Visualization</p>
-                </div>
-            </header>
-
-            <div className="container mx-auto px-4 py-6">
-                <div className="grid gap-6 lg:grid-cols-12">
-                    {/* Left Panel: Inputs */}
-                    <div className="lg:col-span-5 space-y-6">
-                        {/* Container Settings */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Container</CardTitle>
-                                <CardDescription>Enter container dimensions (mm)</CardDescription>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="text-xs font-medium text-zinc-500">Length</label>
-                                    <Input
-                                        type="number"
-                                        value={container.length_mm}
-                                        onChange={(e) => setContainer({ ...container, length_mm: Number(e.target.value) })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-zinc-500">Width</label>
-                                    <Input
-                                        type="number"
-                                        value={container.width_mm}
-                                        onChange={(e) => setContainer({ ...container, width_mm: Number(e.target.value) })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-zinc-500">Height</label>
-                                    <Input
-                                        type="number"
-                                        value={container.height_mm}
-                                        onChange={(e) => setContainer({ ...container, height_mm: Number(e.target.value) })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-zinc-500">Max Weight (kg)</label>
-                                    <Input
-                                        type="number"
-                                        value={container.max_weight_kg}
-                                        onChange={(e) => setContainer({ ...container, max_weight_kg: Number(e.target.value) })}
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Add Item Form */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Add Item</CardTitle>
-                                <CardDescription>Enter item dimensions (mm) and weight (kg)</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="col-span-2">
-                                        <label className="text-xs font-medium text-zinc-500">Label</label>
-                                        <Input
-                                            placeholder="e.g. Carton Box"
-                                            value={form.label}
-                                            onChange={(e) => setForm({ ...form, label: e.target.value })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-zinc-500">Quantity</label>
-                                        <Input
-                                            type="number"
-                                            value={form.quantity}
-                                            onChange={(e) => setForm({ ...form, quantity: Math.max(1, Number(e.target.value)) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-zinc-500">Weight (kg)</label>
-                                        <Input
-                                            type="number"
-                                            value={form.weight_kg || ""}
-                                            onChange={(e) => setForm({ ...form, weight_kg: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-zinc-500">Length (mm)</label>
-                                        <Input
-                                            type="number"
-                                            value={form.length_mm || ""}
-                                            onChange={(e) => setForm({ ...form, length_mm: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-zinc-500">Width (mm)</label>
-                                        <Input
-                                            type="number"
-                                            value={form.width_mm || ""}
-                                            onChange={(e) => setForm({ ...form, width_mm: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-zinc-500">Height (mm)</label>
-                                        <Input
-                                            type="number"
-                                            value={form.height_mm || ""}
-                                            onChange={(e) => setForm({ ...form, height_mm: Number(e.target.value) })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-zinc-500">Color</label>
-                                        <Input
-                                            type="color"
-                                            value={form.color_hex}
-                                            onChange={(e) => setForm({ ...form, color_hex: e.target.value })}
-                                            className="h-10 p-1"
-                                        />
-                                    </div>
-                                </div>
-                                <Button onClick={handleAdd} disabled={!canAdd} className="w-full">
-                                    Add Item
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* Item List */}
-                        <Card>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div>
-                                    <CardTitle className="text-base">Items</CardTitle>
-                                    <CardDescription>{items.length} items added</CardDescription>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Badge variant="outline">{totalVolume.toFixed(2)} m³</Badge>
-                                    <Badge variant="outline">{totalWeight.toFixed(1)} kg</Badge>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                {items.length === 0 ? (
-                                    <p className="text-sm text-zinc-500">No items added yet.</p>
-                                ) : (
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Item</TableHead>
-                                                <TableHead>Qty</TableHead>
-                                                <TableHead>Size</TableHead>
-                                                <TableHead></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {items.map((item, idx) => (
-                                                <TableRow key={idx}>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="w-3 h-3 rounded" style={{ backgroundColor: item.color_hex }} />
-                                                            {item.label}
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell>{item.quantity}</TableCell>
-                                                    <TableCell className="text-xs">{item.length_mm}×{item.width_mm}×{item.height_mm}</TableCell>
-                                                    <TableCell>
-                                                        <Button variant="ghost" size="sm" onClick={() => handleRemove(idx)}>
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        <Button onClick={handleCalculate} disabled={items.length === 0} size="lg" className="w-full">
-                            Calculate Packing
-                        </Button>
-                    </div>
-
-                    {/* Right Panel: 3D Visualization */}
-                    <div className="lg:col-span-7">
-                        <Card className="h-[700px]">
-                            <CardHeader>
-                                <CardTitle className="text-base">3D Visualization</CardTitle>
-                                <CardDescription>
-                                    {planData ? `${planData.placements.length} placements` : "Add items and click Calculate"}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-[600px]">
-                                {planData ? (
-                                    <div className="h-full w-full rounded-lg border bg-white overflow-hidden">
-                                        <StuffingViewer data={planData} />
-                                    </div>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center border border-dashed rounded-lg bg-zinc-100">
-                                        <p className="text-zinc-500">No calculation result yet</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </div>
-        </main>
-    );
-}
-```
-
-Demo page ini menyediakan:
-
-- **Container Settings** — Form untuk dimensi container (default 12m container)
-- **Add Item Form** — Input label, quantity, dimensi, berat, dan warna
-- **Item List** — Table dengan summary volume dan berat
-- **Calculate Button** — Trigger packing dan visualisasi
-- **3D Visualization** — StuffingViewer dengan animation controls
-
-Perhatikan `buildPlanData()` hanya simple greedy placement untuk demo—item ditempatkan left-to-right, front-to-back, tanpa optimisasi. Untuk production, gunakan py3dbp di backend seperti di Bab 4.
-
----
-
-### Ringkasan
-
-Di Bab 5, kita telah membangun **sistem visualisasi 3D interaktif** untuk menampilkan hasil bin packing. Key accomplishments:
-
-1. **Project Setup** — Next.js dengan shadcn/ui dan Three.js
-2. **Manager Pattern** — Separation of concerns: Scene, Camera, Renderer, Light, Controls, Animation
-3. **Type Definitions** — Contract data antara backend dan visualizer
-4. **Container Mesh** — Wireframe rendering dengan floor platform
-5. **Item Mesh** — Solid boxes dengan rotation handling dan coordinate conversion
-6. **Animation System** — Step-by-step visibility dengan observer pattern
-7. **React Integration** — Wrapper component dengan bidirectional state sync
-8. **Demo Page** — Working example dengan dynamic import
-
-Arsitektur yang kita bangun scalable—menambahkan fitur seperti tooltips, export gambar, atau multiple containers bisa dilakukan tanpa refactoring besar.
-
-#### Struktur File Final
-
-```
-web/
-├── app/
-│   └── page.tsx
-├── components/
-│   ├── ui/           # shadcn components
-│   ├── stuffing-viewer.tsx
-│   └── animation-controls.tsx
-└── lib/
-    └── StuffingVisualizer/
-        ├── index.ts
-        ├── stuffing-visualizer.ts
-        ├── types.ts
-        ├── utils/
-        │   └── conversions.ts
-        ├── core/
-        │   ├── scene-manager.ts
-        │   ├── camera-manager.ts
-        │   ├── renderer-manager.ts
-        │   ├── light-manager.ts
-        │   ├── controls-manager.ts
-        │   └── animation-manager.ts
-        └── components/
-            ├── container-mesh.ts
-            └── item-mesh.ts
-```
-
-#### Further Reading
-
-- [Three.js Documentation](https://threejs.org/docs/) — Official documentation
-- [Discover Three.js](https://discoverthreejs.com/) — Comprehensive book
-- [Bruno Simon's Three.js Journey](https://threejs-journey.com/) — Video course
-- [React Three Fiber](https://docs.pmnd.rs/react-three-fiber/) — Declarative Three.js untuk React (alternative approach)
-
-<!-- BAB 6 STARTS HERE -->
-
-## Bab 6: Integrasi Full Stack
-
-Di bab-bab sebelumnya, kita telah membangun tiga pilar utama dari aplikasi Load & Stuffing Calculator secara terpisah: Backend API dengan Go (Bab 3), Packing Service dengan Python (Bab 4), dan Frontend Visualization dengan Next.js (Bab 5).
-
-Saat ini, ketiga komponen tersebut bagaikan pulau-pulau yang terisolasi. Frontend tidak dapat menyimpan data ke database, Backend belum menerima perintah dari pengguna, dan visualisasi belum menampilkan hasil kalkulasi yang sebenarnya.
-
-Dalam bab ini, kita akan melakukan **integrasi sistem**. Kita akan menghubungkan ketiga komponen tersebut menjadi satu kesatuan aplikasi yang berfungsi penuh (*working software*). Tujuan akhirnya adalah alur kerja yang mulus: Pengguna menginput data di browser, data diproses oleh backend dan service, lalu hasilnya divisualisasikan kembali di browser secara real-time.
-
-**Dalam bab ini, kita akan membahas topik-topik berikut:**
-
-- Konfigurasi CORS untuk komunikasi lintas domain
-- Pengelolaan Environment Variables di Frontend
-- Pembuatan Type-safe API Client
-- Implementasi CRUD untuk Containers dan Products
-- Alur kerja pembuatan Stuffing Plan
-- Integrasi Trigger Kalkulasi ke Packing Service
-- Visualisasi 3D menggunakan data Real-time
-- Penanganan Loading State dan Error Reporting
-- Layout Navigasi aplikasi mandiri
-
-**Technical Requirements**
-
-Untuk mengikuti bab ini, pastikan lingkungan pengembangan Anda siap:
-
-- **Go 1.21+** untuk Backend API
-- **Node.js 18+ & pnpm** untuk Frontend Next.js
-- **Python 3.10+** untuk Packing Service
-- **PostgreSQL 15+** yang sudah berjalan
-- **Web Browser Modern** (Chrome/Edge/Firefox)
-
----
-
-### 6.1 Konfigurasi CORS di Backend
-
-Tantangan pertama saat menghubungkan Frontend (localhost:3000) dengan Backend (localhost:8080) adalah **Same-Origin Policy**. Browser secara keamanan memblokir request AJAX/Fetch dari domain/port yang berbeda kecuali server mengizinkannya secara eksplisit melalui header CORS (*Cross-Origin Resource Sharing*).
-
-Jika kita mencoba memanggil API tanpa konfigurasi CORS, browser akan menampilkan error:
-`Access to fetch at 'http://localhost:8080/api/v1/containers' from origin 'http://localhost:3000' has been blocked by CORS policy`
-
-Solusinya adalah menambahkan **Middleware** di Gin framework untuk menyuntikkan header `Access-Control-Allow-Origin` yang sesuai pada setiap response.
-
-#### Config Support untuk CORS
-
-Alih-alih meng-hardcode `localhost:3000` di dalam kode (yang akan bermasalah saat deployment ke domain produksi), kita sebaiknya menyimpannya di environment variable.
-
-Update `internal/config/config.go` untuk membaca list allowed origins:
-
-```go
-package config
-
-import (
-	"os"
-	"strings"
-)
-
-type Config struct {
-	DatabaseURL        string
-	ServerPort         string
-	PackingServiceURL  string
-	CORSAllowedOrigins []string // Field baru
-}
-
-func Load() *Config {
-	return &Config{
-		DatabaseURL:        getEnv("DATABASE_URL", "postgres://localhost:5432/loadstuff"),
-		ServerPort:         getEnv("SERVER_PORT", "8080"),
-		PackingServiceURL:  getEnv("PACKING_SERVICE_URL", "http://localhost:5000"),
-		// Parse string "http://a.com,http://b.com" menjadi slice
-		CORSAllowedOrigins: strings.Split(getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"), ","),
-	}
-}
-
-func getEnv(key, fallback string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return fallback
-}
-```
-
-Dengan konfigurasi ini, kita bisa menentukan origin di file `.env` atau environment server:
-`CORS_ALLOWED_ORIGINS=http://localhost:3000,https://app.example.com`
-
-#### Implementasi Middleware
-
-Buat file baru `internal/api/cors.go`. Kita menggunakan library `github.com/gin-contrib/cors` yang sudah teruji:
-
-```go
-package api
-
-import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-)
-
-func corsMiddleware(allowedOrigins []string) gin.HandlerFunc {
-	config := cors.DefaultConfig()
-	// Gunakan list origin dari konfigurasi
-	config.AllowOrigins = allowedOrigins
-	
-	// Method yang diizinkan untuk frontend
-	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
-	
-	// Header penting yang sering dikirim frontend
-	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
-
-	return cors.New(config)
-}
-```
-
-#### Registrasi Middleware ke Router
-
-Terakhir, pasang middleware ini di `setupRouter` pada `internal/api/api.go` sebelum route didefinisikan:
-
-```go
-func (a *App) setupRouter() {
-	router := gin.Default()
-
-	// Pasang CORS middleware di level router global
-	// Frontend dari domain yang terdaftar di config sekarang bisa akses API
-	router.Use(corsMiddleware(a.config.CORSAllowedOrigins))
-
-	a.setupRoutes(router)
-	a.router = router
-}
-```
-
-Sekarang backend kita sudah "ramah" terhadap frontend dan siap menerima request lintas domain yang sah.
-
----
-
-### 6.2 Environment Variables di Frontend
-
-Setelah Backend siap menerima request, langkah berikutnya adalah mengkonfigurasi Frontend agar tahu *ke mana* harus mengirim request tersebut.
-
-#### The "No Hardcoding" Rule
-
-Kesalahan pemula yang paling umum adalah menulis URL API langsung di kode `fetch`:
-`fetch("http://localhost:8080/api/v1/containers")`
-
-Mengapa ini buruk?
-1.  Saat di-deploy ke production, URL API pasti berubah (misal menjadi `https://api.myapp.com`). Anda harus mengedit ratusan file untuk menggantinya.
-2.  Data sensitif (seperti API keys) tidak boleh masuk ke Git repository.
-
-Solusinya adalah menggunakan **Environment Variables**. Next.js memiliki dukungan built-in untuk ini.
-
-#### File .env.local
-
-Buat file baru `.env.local` di folder `web/`. File ini akan diabaikan oleh Git (karena ada rule di `.gitignore`).
-
-```bash
-NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
-```
-
-Perhatikan prefix `NEXT_PUBLIC_`. Di Next.js, hanya variable yang diawali dengan prefix ini yang akan diekspos ke browser (client-side bundle).
-
-**Mengapa kita membutuhkannya?**
-Karena aplikasi kita melakukan HTTP request dari browser pengguna (melalui `fetch` di Client Components), kode JavaScript yang berjalan di browser perlu mengetahui URL API. Jika kita tidak menggunakan prefix ini, variable hanya akan tersedia di server-side (Node.js) dan bernilai `undefined` di browser, menyebabkan error koneksi.
-
-#### Config Module
-
-Meskipun kita bisa mengakses `process.env.NEXT_PUBLIC_API_URL` di mana saja, praktik yang lebih baik adalah memusatkannya dalam satu module konfigurasi. Ini memberikan kita satu tempat untuk memberikan nilai default atau melakukan validasi jika diperlukan.
-
-Buat file `web/lib/config.ts`:
-
-```typescript
-interface EnvConfig {
-    apiBaseUrl: string;
-}
-
-// Fallback ke localhost jika env var tidak diset/kosong
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-export const config: EnvConfig = {
-    apiBaseUrl,
-};
-```
-
-Sekarang, komponen lain cukup mengimport `config.apiBaseUrl`. Jika URL berubah, kita hanya perlu update satu file (`.env` atau `config.ts`), dan seluruh aplikasi akan mengikutinya.
-
----
-
-### 6.3 Komunikasi Data
-
-Sekarang saatnya menghubungkan Frontend dengan Backend. Ini adalah momen krusial di mana dua subsistem yang terpisah mulai bertukar data.
-
-Secara fundamental, Backend Go dan Frontend TypeScript "berbicara bahasa yang berbeda". Backend mengirim JSON, sementara Frontend membutuhkan Object yang terstruktur. Tantangan kita adalah membuat penerjemah yang handal di antara keduanya.
-
-#### Arsitektur Komunikasi
-
-Ada dua pendekatan umum dalam menghubungkan Frontend ke API:
-
-**Pendekatan 1: Direct Fetch (Spaghetti Code)**
-Setiap UI component memanggil `fetch` secara mandiri. Ini cepat di awal, tapi sulit dipelihara.
-
-```mermaid
-graph LR
-    C1[ContainerList] -->|fetch| API
-    C2[ContainerForm] -->|fetch| API
-    P1[ProductList] -->|fetch| API
-    P2[ProductForm] -->|fetch| API
-    
-    style C1 fill:#f9f,stroke:#333
-    style C2 fill:#f9f,stroke:#333
-    style P1 fill:#f9f,stroke:#333
-    style P2 fill:#f9f,stroke:#333
-```
-
-Jika URL API berubah, kita harus mengedit 4 file.
-
-**Pendekatan 2: Centralized Client (Layered Architecture)**
-Kita membuat satu pintu gerbang untuk semua request. UI component tidak peduli detail `fetch` atau URL, mereka hanya memanggil fungsi bisnis.
-
-```mermaid
-graph LR
-    C1[ContainerList] --> Repo
-    C2[ContainerForm] --> Repo
-    P1[ProductList] --> Repo
-    P2[ProductForm] --> Repo
-    
-    Repo[API Client Layer] -->|fetch| API
-    
-    style Repo fill:#bbf,stroke:#333
-```
-
-Kita akan menggunakan **Pendekatan 2**. Ini memberikan kita fleksibilitas: jika besok kita ingin menambahkan header token ke *semua* request, kita cukup ubah satu file saja di layer tengah ini.
-
-Mari kita bangun layer ini langkah demi langkah.
-
-#### Mendefinisikan Kontrak Data (Types)
-
-Backend Go mengirimkan data JSON. Frontend TypeScript harus tahu persis apa isi JSON tersebut agar validasi tipe (type-checking) bisa bekerja.
-
-Buat file `web/lib/api/types.ts`.
-
-Pertama, kita butuh "amplop" standar. Backend Go kita selalu membungkus data dalam format `{ success: true, data: ... }`. Kita buat interface generik untuk ini:
-
-```typescript
-// T adalah generic type yang bisa diganti dengan tipe data apa saja (misal: Container)
-export interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-    error?: {
-        code: string;
-        message: string;
-        details?: any; // Untuk detail error validasi jika ada
-    };
-}
-```
-
-Selanjutnya, kita definisikan entitas. Properti di sini **harus sama persis** dengan field JSON dari API Go. Kita tidak hanya mendefinisikan Container dan Product, tapi juga **Plan** yang merupakan entitas transaksi utama di aplikasi ini.
-
-```typescript
-// --- Container Types ---
-
-export interface Container {
-    id: string;
-    name: string;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    max_weight_kg: number;
-}
-
-export interface CreateContainerRequest {
-    name: string;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    max_weight_kg: number;
-}
-
-export interface UpdateContainerRequest {
-    name: string;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    max_weight_kg: number;
-}
-
-// --- Product Types ---
-
-export interface Product {
-    id: string;
-    label: string;
-    sku: string;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    weight_kg: number;
-}
-
-export interface CreateProductRequest {
-    label: string;
-    sku: string;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    weight_kg: number;
-}
-
-export interface UpdateProductRequest {
-    label: string;
-    sku: string;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    weight_kg: number;
-}
-
-// --- Plan Types ---
-
-export interface Plan {
-    id: string;
-    container_id: string;
-    container_name?: string;
-    status: string;
-}
-
-export interface PlanItem {
-    id: string;
-    product_id: string;
-    label: string;
-    quantity: number;
-    length_mm: number;
-    width_mm: number;
-    height_mm: number;
-    weight_kg: number;
-}
-
-export interface PlanDetail extends Plan {
-    items: PlanItem[];
-    // Placements akan diisi setelah kalkulasi selesai
-    placements?: any[]; 
-}
-
-export interface CreatePlanRequest {
-    container_id: string;
-}
-
-export interface AddPlanItemRequest {
-    product_id: string;
-    quantity: number;
-}
-```
-
-Langkah menduplikasi struktur struct Go ke dalam interface TypeScript ini sangat krusial. Kita menggunakan penamaan `snake_case` (seperti `length_mm`) agar sesuai dengan format JSON yang dikirim oleh backend. 
-
-Tanpa kontrak yang jelas ini, data dari API akan dianggap bertipe `any`, yang mematikan fitur keamanan TypeScript. Dengan definisi tipe yang ketat, editor akan langsung memperingatkan (via garis merah) jika kita, misalnya, lupa menyertakan field wajib seperti `container_id` saat membuat Plan. Ini mencegah bug runtime yang seringkali sulit dideteksi.
-
-#### Membuat Wrapper Fetch
-
-Sekarang kita butuh "mesin" untuk melakukan request. Kita akan membuat wrapper function di atas `fetch`. Wrapper ini bertugas menangani hal-hal membosankan yang berulang:
-1.  Menempelkan Base URL (agar kita tidak tulis `http://localhost:8080` berulang-ulang).
-2.  Menambahkan Header `Content-Type: application/json`.
-3.  Mendeteksi HTTP Error (404, 500) dan melemparnya sebagai exception agar mudah ditangkap.
-
-Buat file `web/lib/api/client.ts`.
-
-Kita mulai dengan membuat Custom Error Class.
-
-```typescript
-import { config } from "@/lib/config";
-import type { ApiResponse } from "./types";
-
-export class APIError extends Error {
-    constructor(public status: number, message: string) {
-        super(message);
-        this.name = "APIError"; // Membantu saat debugging/logging
-    }
-}
-```
-
-Berikut adalah fungsi `fetcher` inti. Ini adalah "otak" dari komunikasi data kita:
-
-```typescript
-async function fetcher<T>(endpoint: string, init?: RequestInit): Promise<T> {
-    // Concatenation otomatis: "/containers" -> "http://localhost:8080/api/v1/containers"
-    const url = `${config.apiBaseUrl}${endpoint}`;
-    
-    // Header default
-    const headers = {
-        "Content-Type": "application/json",
-        ...init?.headers,
-    };
-
-    const response = await fetch(url, { ...init, headers });
-    
-    // Kasus khusus: 204 No Content (sukses tapi body kosong, misal setelah DELETE)
-    if (response.status === 204) {
-        return {} as T;
-    }
-
-    const data = await response.json();
-
-    // Fetch API unik: status 404/500 tidak dianggap exception (throw).
-    // Kita harus manual cek properti .ok dan throw error jika false.
-    if (!response.ok) {
-        // Ambil pesan error dari backend, fallback ke statusText jika kosong
-        throw new APIError(
-            response.status, 
-            data.error?.message || response.statusText || "Unknown error"
-        );
-    }
-
-    // Unwrapping: Backend membungkus data di properti .data, kita buka bungkusnya di sini
-    const result = data as ApiResponse<T>;
-    if (!result.success) {
-         throw new APIError(
-            response.status, 
-            (result as any).error?.message || "Operation failed"
-        );
-    }
-
-    return result.data;
-}
-
-// Terakhir, kita ekspos wrapper ini melalui object apiClient
-export const apiClient = {
-    get: <T>(endpoint: string) => fetcher<T>(endpoint, { method: "GET" }),
-    post: <T>(endpoint: string, body: any) => fetcher<T>(endpoint, { method: "POST", body: JSON.stringify(body) }),
-    put: <T>(endpoint: string, body: any) => fetcher<T>(endpoint, { method: "PUT", body: JSON.stringify(body) }),
-    del: <T>(endpoint: string) => fetcher<T>(endpoint, { method: "DELETE" }),
-};
-```
-
-Implementasi wrapper ini memberikan dua manfaat utama. Pertama, ia memperbaiki perilaku `fetch` bawaan yang tidak menganggap status 404 atau 500 sebagai error, memastikan aplikasi kita selalu masuk ke blok error handling saat terjadi masalah di server. Kedua, ia melakukan "Unwrapping" otomatis pada respon API. Backend selalu membungkus data dalam format `{ success: true, data: [...] }`, tapi komponen UI hanya membutuhkan isi datanya. Dengan mengupas lapisan amplop ini di level client, kode di komponen menjadi jauh lebih bersih dan fokus pada data bisnis.
-
-#### Modul Operasi (Repository Pattern)
-
-Level terakhir dari abstraksi adalah API Service. Alih-alih membiarkan UI component memanggil `apiClient.get("/containers")`, kita bungkus dalam fungsi bisnis yang jelas. Ini juga tempat kita mendefinisikan operasi CRUD lengkap: Create, Read, Update, Delete.
-
-Buat `web/lib/api/containers.ts`:
-
-```typescript
-import { apiClient } from "./client";
-import type { Container, CreateContainerRequest, UpdateContainerRequest } from "./types";
-
-export const containerApi = {
-    list: () => apiClient.get<Container[]>("/containers"),
-    get: (id: string) => apiClient.get<Container>(`/containers/${id}`),
-    create: (data: CreateContainerRequest) => apiClient.post<Container>("/containers", data),
-    update: (id: string, data: UpdateContainerRequest) => apiClient.put<Container>(`/containers/${id}`, data),
-    delete: (id: string) => apiClient.del<{ id: string }>(`/containers/${id}`),
-};
-```
-
-Buat `web/lib/api/products.ts`:
-
-```typescript
-import { apiClient } from "./client";
-import type { Product, CreateProductRequest, UpdateProductRequest } from "./types";
-
-export const productApi = {
-    list: () => apiClient.get<Product[]>("/products"),
-    get: (id: string) => apiClient.get<Product>(`/products/${id}`),
-    create: (data: CreateProductRequest) => apiClient.post<Product>("/products", data),
-    update: (id: string, data: UpdateProductRequest) => apiClient.put<Product>(`/products/${id}`, data),
-    delete: (id: string) => apiClient.del<{ id: string }>(`/products/${id}`),
-};
-```
-
-Pola ini dikenal sebagai **Repository Pattern**. Manfaat utamanya adalah isolasi perubahan. Jika suatu saat Backend memutuskan untuk mengubah struktur URL (misalnya dari `/containers` menjadi `/api/v2/cargo-containers`), perubahan tersebut hanya perlu dilakukan di satu titik dalam file ini. Puluhan komponen yang menggunakan fungsi `containerApi.list()` akan tetap berjalan normal tanpa perlu disentuh sedikitpun.
-
-Terakhir, buat `web/lib/api/plans.ts`. Ini sedikit lebih kompleks karena ada sub-resource (Items) dan action khusus (Calculate).
-
-```typescript
-import { apiClient } from "./client";
-import type { Plan, PlanDetail, CreatePlanRequest, AddPlanItemRequest } from "./types";
-
-export const planApi = {
-    list: () => apiClient.get<Plan[]>("/plans"),
-    get: (id: string) => apiClient.get<PlanDetail>(`/plans/${id}`),
-    create: (data: CreatePlanRequest) => apiClient.post<{ id: string }>("/plans", data),
-    delete: (id: string) => apiClient.del<{ id: string }>(`/plans/${id}`),
-
-    // Sub-resource: Menambahkan item ke dalam plan tertentu
-    addItem: (planId: string, data: AddPlanItemRequest) =>
-        apiClient.post<{ id: string }>(`/plans/${planId}/items`, data),
-
-    // Action khusus: Trigger kalkulasi packing
-    calculate: (planId: string) => apiClient.post<{ id: string }>(`/plans/${planId}/calculate`, {}),
-};
-```
-
-Pada modul Plan ini, kita melihat dua pola tambahan. Pertama, penggunaan nested resource pada `addItem` (`/plans/:id/items`) yang mencerminkan relasi parent-child antara Plan dan Item. Kedua, method `calculate` yang merepresentasikan sebuah Action (bukan CRUD biasa), di mana kita memicu proses komputasi backend menggunakan POST ke endpoint spesifik `/calculate`.
-
-#### Penggunaan di UI Component
-
-Hasil dari layer ini adalah kode UI yang **bersih**, **mudah dibaca**, dan **type-safe**.
-
-Contoh hipotetis penggunaan `containerApi`:
-
-```typescript
-const loadData = async () => {
-    try {
-        const result = await containerApi.list();
-        // Variable 'result' otomatis bertipe Container[], bukan 'any'!
-        setContainers(result); 
-    } catch (err) {
-        showError("Gagal mengambil data");
-    }
-};
-
-const handleUpdate = async (id: string, newData: any) => {
-    await containerApi.update(id, newData); // Method PUT dipanggil otomatis
-};
-```
-
-Dengan arsitektur ini, kita telah mengubah komunikasi data yang rentan kesalahan menjadi proses yang terstruktur dan aman.
-### 6.4 Implementasi UI Data Master
-
-Setelah memiliki "otak" (API Client & Repository) dan "kontrak" (Types), saatnya kita membangun "wajah" aplikasi.
-
-#### Persiapan Komponen UI
-
-Sepanjang bab ini, kita akan menggunakan banyak komponen dari library `shadcn/ui` agar tampilan konsisten dan estetik. Pastikan Anda sudah menginstall komponen-komponen berikut:
-
-```bash
-npx shadcn-ui@latest add table card input button select badge dialog
-```
-
-Di Next.js App Router (versi 13+), kita perlu membedakan dua jenis komponen:
-1.  **Server Components**: Default. Dirender di server, tidak bisa menggunakan hooks seperti `useState` atau event listener seperti `onClick`. Cocok untuk rendering statis.
-2.  **Client Components**: Ditandai dengan `"use client"`. Dirender di browser, interaktif, bisa pakai state. Cocok untuk Form dan Button.
-
-Untuk Data Master (Container & Product), kita membutuhkan interaktivitas tinggi (form input, delete button), jadi kita akan menggunakan **Client Components**.
-
-#### Strategi Komponen
-
-Kita akan menggunakan pola sederhana:
-*   **List Component**: Menampilkan tabel data, mengambil data saat mount (`useEffect`), dan mendengarkan event refresh.
-*   **Form Component**: Menampilkan input, mengirim data (`onSubmit`), dan memicu event refresh saat sukses.
-*   **Event Bus Sederhana**: Alih-alih menggunakan library state management kompleks (Redux/Zustand) yang berlebihan untuk kasus ini, kita akan menggunakan `window.dispatchEvent` untuk memberitahu List agar me-refresh data setelah Form sukses submit.
-
-#### Implementasi Container UI
-
-Mari kita buat form untuk mendaftarkan Container baru.
-
-Buat `web/components/container-form.tsx`:
-
-```tsx
-"use client"; // Wajib untuk interaktivitas
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { containerApi } from "@/lib/api/containers";
-
-export function ContainerForm() {
-    // State lokal untuk form fields
-    const [form, setForm] = useState({
-        name: "",
-        length_mm: 0,
-        width_mm: 0,
-        height_mm: 0,
-        max_weight_kg: 0
-    });
-    const [loading, setLoading] = useState(false);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            // Panggil API
-            await containerApi.create(form);
-            
-            // Reset form
-            setForm({ name: "", length_mm: 0, width_mm: 0, height_mm: 0, max_weight_kg: 0 });
-            
-            // Trigger event agar List Component tahu ada data baru
-            window.dispatchEvent(new Event("container:refresh"));
-        } catch (error) {
-            alert("Failed to create container");
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">Add New Container</CardTitle>
-                <CardDescription>Define container dimensions and weight limit.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Input Fields */}
-                    <div>
-                        <label className="text-xs font-medium text-zinc-500 mb-1 block">Name</label>
-                        <Input 
-                            placeholder="e.g. 20ft Standard"
-                            value={form.name} 
-                            onChange={e => setForm({...form, name: e.target.value})}
-                            required
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Length (mm)</label>
-                            <Input 
-                                type="number"
-                                value={form.length_mm || ""} 
-                                onChange={e => setForm({...form, length_mm: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Width (mm)</label>
-                            <Input 
-                                type="number"
-                                value={form.width_mm || ""} 
-                                onChange={e => setForm({...form, width_mm: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Height (mm)</label>
-                            <Input 
-                                type="number"
-                                value={form.height_mm || ""} 
-                                onChange={e => setForm({...form, height_mm: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Max Weight (kg)</label>
-                            <Input 
-                                type="number"
-                                value={form.max_weight_kg || ""} 
-                                onChange={e => setForm({...form, max_weight_kg: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <Button type="submit" disabled={loading} className="w-full">
-                        {loading ? "Creating..." : "Create Container"}
-                    </Button>
-                </form>
-            </CardContent>
-        </Card>
-    )
-}
-```
-
-Komponen formulir ini memiliki dua tanggung jawab utama: menangkap input user dan berkomunikasi dengan API. Kita menggunakan direktif `"use client"` di baris pertama karena komponen ini membutuhkan state (`useState`) untuk mengelola nilai input.
-
-Salah satu pola penting di sini adalah penggunaan `window.dispatchEvent`. Saat data berhasil disimpan ke backend, komponen ini "berteriak" ke seluruh aplikasi bahwa ada data baru (`container:refresh`). Ini adalah cara sederhana namun efektif untuk memberitahu komponen lain (seperti tabel daftar container) agar memuat ulang datanya, tanpa perlu menggunakan library state management yang kompleks.
-
-Selanjutnya, buat `web/components/container-list.tsx` untuk menampilkan data:
-
-```tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { containerApi } from "@/lib/api/containers";
-import type { Container } from "@/lib/api/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-
-export function ContainerList() {
-    const [containers, setContainers] = useState<Container[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const loadContainers = async () => {
-        setLoading(true);
-        try {
-            const data = await containerApi.list();
-            setContainers(data);
-        } catch (error) {
-            console.error("Failed to load containers", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        // Load data pertama kali
-        loadContainers();
-        
-        // Subscribe ke event refresh dari Form
-        const handleRefresh = () => loadContainers();
-        window.addEventListener("container:refresh", handleRefresh);
-        
-        // Jangan lupa cleanup listener saat unmount!
-        return () => window.removeEventListener("container:refresh", handleRefresh);
-    }, []);
-
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this container?")) return;
-        try {
-            await containerApi.delete(id);
-            loadContainers(); // Reload setelah delete
-        } catch (error) {
-            alert("Failed to delete container");
-        }
-    };
-
-    if (loading && containers.length === 0) return <div>Loading...</div>;
-
-    if (containers.length === 0) {
-        return <div className="p-4 text-center text-zinc-500 border rounded-lg border-dashed">No containers found. Create one to get started.</div>;
-    }
-
-    return (
-        <div className="border rounded-md">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Dimensions (Length x Width x Height)</TableHead>
-                        <TableHead>Max Weight</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {containers.map((c) => (
-                        <TableRow key={c.id}>
-                            <TableCell>{c.name}</TableCell>
-                            <TableCell>
-                                {c.length_mm} x {c.width_mm} x {c.height_mm} mm
-                            </TableCell>
-                            <TableCell>{c.max_weight_kg} kg</TableCell>
-                            <TableCell>
-                                <Button 
-                                    size="sm" 
-                                    variant="destructive" 
-                                    onClick={() => handleDelete(c.id)}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-    );
-}
-```
-
-Di sini kita melihat sisi lain dari komunikasi antar-komponen. Pada `useEffect`, kita mendaftarkan event listener untuk event `container:refresh`. Artinya, kapanpun form di atas sukses mengirim data, tabel ini akan otomatis memanggil `loadContainers()` untuk mengambil data terbaru dari server. 
-
-Pola `useEffect` dengan cleanup function (`return () => ...`) sangat krusial untuk mencegah "memory leak". Tanpa cleanup, setiap kali komponen ini di-render ulang (misalnya saat navigasi halaman), listener lama akan tetap hidup dan menumpuk, menyebabkan fungsi refresh dipanggil berkali-kali secara tidak perlu.
-
-#### Implementasi Product UI
-
-Sekarang kita beralih ke pengelolaan Produk. Polanya identik dengan Container, hanya field datanya yang berbeda.
-
-Buat `web/components/product-form.tsx`:
-
-```tsx
-"use client";
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { productApi } from "@/lib/api/products";
-
-export function ProductForm() {
-    const [form, setForm] = useState({
-        label: "",
-        sku: "",
-        length_mm: 0,
-        width_mm: 0,
-        height_mm: 0,
-        weight_kg: 0
-    });
-    const [loading, setLoading] = useState(false);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await productApi.create(form);
-            setForm({ label: "", sku: "", length_mm: 0, width_mm: 0, height_mm: 0, weight_kg: 0 });
-            window.dispatchEvent(new Event("product:refresh"));
-        } catch (error) {
-            alert("Failed to create product");
-            console.error(error);
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">Add New Product</CardTitle>
-                <CardDescription>Register a new product SKU and dimensions.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Label</label>
-                            <Input 
-                                placeholder="e.g. Cardboard Box A"
-                                value={form.label} 
-                                onChange={e => setForm({...form, label: e.target.value})}
-                                required
-                            />
-                        </div>
-                        <div>
-                             <label className="text-xs font-medium text-zinc-500 mb-1 block">SKU</label>
-                            <Input 
-                                placeholder="BOX-001"
-                                value={form.sku} 
-                                onChange={e => setForm({...form, sku: e.target.value})}
-                                required
-                            />
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Length (mm)</label>
-                            <Input 
-                                type="number"
-                                value={form.length_mm || ""} 
-                                onChange={e => setForm({...form, length_mm: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Width (mm)</label>
-                            <Input 
-                                type="number"
-                                value={form.width_mm || ""} 
-                                onChange={e => setForm({...form, width_mm: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Height (mm)</label>
-                            <Input 
-                                type="number"
-                                value={form.height_mm || ""} 
-                                onChange={e => setForm({...form, height_mm: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs font-medium text-zinc-500 mb-1 block">Weight (kg)</label>
-                            <Input 
-                                type="number"
-                                value={form.weight_kg || ""} 
-                                onChange={e => setForm({...form, weight_kg: Number(e.target.value)})}
-                                required
-                            />
-                        </div>
-                    </div>
-                    <Button type="submit" disabled={loading} className="w-full">
-                        {loading ? "Creating..." : "Create Product"}
-                    </Button>
-                </form>
-            </CardContent>
-        </Card>
-    )
-}
-```
-
-Kode ini nyaris identik dengan `ContainerForm`, membuktikan konsistensi arsitektur yang kita bangun. Perbedaan utamanya ada pada payload data yang dikirim ke `productApi.create` dan nama event yang dipicu, yaitu `product:refresh`. Konsistensi ini memudahkan developer lain (atau Anda di masa depan) untuk memahami dan memelihara kode, karena pola yang digunakan selalu seragam di seluruh aplikasi.
-
-Terakhir, buat `web/components/product-list.tsx`:
-
-```tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { productApi } from "@/lib/api/products";
-import type { Product } from "@/lib/api/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-
-export function ProductList() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const loadProducts = async () => {
-        setLoading(true);
-        try {
-            const data = await productApi.list();
-            setProducts(data);
-        } catch (error) {
-            console.error("Failed to load products", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadProducts();
-        const handleRefresh = () => loadProducts();
-        window.addEventListener("product:refresh", handleRefresh);
-        return () => window.removeEventListener("product:refresh", handleRefresh);
-    }, []);
-
-    const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this product?")) return;
-        try {
-            await productApi.delete(id);
-            loadProducts();
-        } catch (error) {
-            alert("Failed to delete product");
-            console.error(error);
-        }
-    };
-
-    if (loading && products.length === 0) {
-        return <div className="p-4 text-center text-zinc-500">Loading products...</div>;
-    }
-
-    if (products.length === 0) {
-        return <div className="p-4 text-center text-zinc-500 border rounded-lg border-dashed">No products found. Create one to get started.</div>;
-    }
-
-    return (
-        <div className="border rounded-md">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>SKU</TableHead>
-                        <TableHead>Label</TableHead>
-                        <TableHead>Dimensions</TableHead>
-                        <TableHead>Weight</TableHead>
-                        <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {products.map((p) => (
-                        <TableRow key={p.id}>
-                            <TableCell className="font-medium bg-zinc-50/50 text-xs font-mono">{p.sku}</TableCell>
-                            <TableCell>{p.label}</TableCell>
-                            <TableCell>
-                                {p.length_mm} x {p.width_mm} x {p.height_mm} mm
-                            </TableCell>
-                            <TableCell>{p.weight_kg} kg</TableCell>
-                            <TableCell>
-                                <Button 
-                                    size="sm" 
-                                    variant="destructive" 
-                                    onClick={() => handleDelete(p.id)}
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-    );
-}
-```
-
-Komponen ini melengkapi siklus manajemen produk. Ia menampilkan data dalam tabel yang rapi, dengan kolom SKU yang diberi styling khusus (`font-mono`) agar lebih mudah dibaca sebagai kode identifikasi. Tombol delete di sini langsung terhubung ke API, memberikan kontrol penuh kepada pengguna untuk mengelola inventori mereka.
-
-#### Halaman Manajemen Data Master
-
-Terakhir, kita pasang komponen-komponen ini di halaman utama untuk Containers dan Products.
-
-Buat `web/app/containers/page.tsx`:
-
-```tsx
-import { ContainerForm } from "@/components/container-form";
-import { ContainerList } from "@/components/container-list";
-
-export default function ContainersPage() {
-    return (
-        <div className="container py-10">
-            <h1 className="text-3xl font-bold mb-8">Manage Containers</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Form di kolom kiri (1/3 lebar) */}
-                <div className="md:col-span-1">
-                    <ContainerForm />
-                </div>
-                
-                {/* List di kolom kanan (2/3 lebar) */}
-                <div className="md:col-span-2">
-                    <ContainerList />
-                </div>
-            </div>
-        </div>
-    );
-}
-```
-
-Hal yang sama berlaku untuk `web/app/products/page.tsx`, kita hanya perlu mengganti komponen yang diimport:
-
-```tsx
-import { ProductForm } from "@/components/product-form";
-import { ProductList } from "@/components/product-list";
-
-export default function ProductsPage() {
-    return (
-        <div className="container py-10">
-            <h1 className="text-3xl font-bold mb-8">Manage Products</h1>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Form di kolom kiri (1/3 lebar) */}
-                <div className="md:col-span-1">
-                    <ProductForm />
-                </div>
-                
-                {/* List di kolom kanan (2/3 lebar) */}
-                <div className="md:col-span-2">
-                    <ProductList />
-                </div>
-            </div>
-        </div>
-    );
-}
-```
-
-Halaman inilah yang menyatukan semuanya. Kita menggunakan Grid Layout (`grid-cols-3`) untuk membagi layar: 1/3 untuk form input di sebelah kiri, dan 2/3 untuk daftar data di sebelah kanan. Layout ini umum digunakan dalam aplikasi dashboard admin karena memudahkan user untuk menambah data berkali-kali (`bulk entry`) tanpa harus berpindah halaman atau membuka modal dialog.
-
-Dengan selesainya implementasi ini, kita sekarang memiliki sistem Data Master yang solid. User bisa membuat, melihat, dan menghapus Container serta Product, yang nantinya akan menjadi bahan baku utama untuk proses kalkulasi muatan (Stuffing Plan) di section berikutnya.
-
-### 6.5 Logika Bisnis Inti: Stuffing Plan & Calculation
-
-Bagian ini adalah "jantung" dari aplikasi kita. Di sinilah user akan melakukan pekerjaan utama mereka: membuat rencana muatan, memasukkan daftar barang, dan meminta sistem untuk menghitung susunan terbaik.
-
-Kita akan menerapkan **Standard Flow**:
-1.  **Dashboard**: User melihat daftar plan yang ada.
-2.  **Wizard Step 1 (Creation)**: User memilih Kontainer yang akan digunakan.
-3.  **Workspace (Detail Page)**: User menambahkan produk satu per satu dan memicu kalkulasi.
-
-#### Implementasi Dashboard Rencana
-
-Halaman ini mirip dengan halaman Data Master, namun fokus pada status pengerjaan (`draft` vs `completed`).
-
-Buat `web/app/plans/page.tsx`:
-
-```tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { planApi } from "@/lib/api/plans";
-import type { Plan } from "@/lib/api/types";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Trash2, ArrowRight } from "lucide-react";
-import { PlanForm } from "@/components/plan-form";
-import { useRouter } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-
-export default function PlansPage() {
-    const [plans, setPlans] = useState<Plan[]>([]);
-    const [loading, setLoading] = useState(true);
-    const router = useRouter();
-
-    const loadPlans = async () => {
-        setLoading(true);
-        try {
-            const data = await planApi.list();
-            setPlans(data);
-        } catch (error) {
-            console.error("Failed to load plans", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadPlans();
-    }, []);
-
-    const handleDelete = async (e: React.MouseEvent, id: string) => {
-        e.stopPropagation(); // Mencegah row click event
-        if (!confirm("Are you sure you want to delete this plan?")) return;
-        try {
-            await planApi.delete(id);
-            loadPlans();
-        } catch (error) {
-            alert("Failed to delete plan");
-        }
-    };
-
-    return (
-        <main className="container mx-auto px-4 py-8">
-            <div className="flex flex-col items-center justify-center mb-8 text-center bg-white p-6 rounded-lg border shadow-sm">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Planning</h1>
-                    <p className="text-zinc-500 mt-2">Create and manage stuffing plans.</p>
-                </div>
-            </div>
-
-            <div className="grid gap-8 lg:grid-cols-12">
-                {/* Kolom Kiri: Form Pembuatan Plan Baru */}
-                <div className="lg:col-span-4">
-                    <PlanForm />
-                </div>
-                
-                {/* Kolom Kanan: Daftar Plan */}
-                <div className="lg:col-span-8">
-                    <div className="border rounded-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Container</TableHead>
-                                    <TableHead>Plan ID</TableHead>
-                                    <TableHead className="w-[100px]">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {plans.map((p) => (
-                                    <TableRow 
-                                        key={p.id} 
-                                        className="cursor-pointer hover:bg-zinc-50"
-                                        onClick={() => router.push(`/plans/${p.id}`)}
-                                    >
-                                        <TableCell>
-                                            <Badge variant={p.status === "completed" ? "default" : "secondary"}>
-                                                {p.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{p.container_name || "Unknown Container"}</TableCell>
-                                        <TableCell className="font-mono text-xs text-zinc-500">{p.id.substring(0, 8)}...</TableCell>
-                                        <TableCell>
-                                            <div className="flex gap-2">
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="ghost" 
-                                                    onClick={(e) => handleDelete(e, p.id)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
-                                                <Button size="sm" variant="ghost">
-                                                    <ArrowRight className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </div>
-            </div>
-        </main>
-    );
-}
-```
-
-Yang unik di sini adalah **Row Click Interaction**. Kita meletakkan `onClick` pada `<TableRow>` agar user bisa mengklik di mana saja pada baris untuk membuka detail. Namun, karena di dalam baris ada tombol Delete, kita perlu menggunakan `e.stopPropagation()` pada tombol Delete agar klik tombol tersebut tidak memicu perpindahan halaman.
-
-#### Formulir Pembuatan Rencana
-
-Untuk membuat plan, langkah pertama adalah memilih kontainer. Kita memisahkan logika ini ke komponen tersendiri agar kode halaman utama tidak terlalu gemuk.
-
-Buat `web/components/plan-form.tsx`:
-
-```tsx
-"use client";
-
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { planApi } from "@/lib/api/plans";
-import { containerApi } from "@/lib/api/containers";
-import { useRouter } from "next/navigation";
-import type { Container } from "@/lib/api/types";
-
-export function PlanForm() {
-    const [containers, setContainers] = useState<Container[]>([]);
-    const [selectedContainer, setSelectedContainer] = useState<string>("");
-    const [loading, setLoading] = useState(false);
-    const router = useRouter();
-
-    // Load daftar container saat komponen di-mount
-    useEffect(() => {
-        containerApi.list().then(setContainers).catch(console.error);
-    }, []);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedContainer) return;
-
-        setLoading(true);
-        try {
-            // 1. Create Plan di backend
-            const res = await planApi.create({ container_id: selectedContainer });
-            
-            // 2. Redirect user langsung ke halaman workspace (Detail Page)
-            router.push(`/plans/${res.id}`);
-        } catch (error) {
-            alert("Failed to create plan");
-            setLoading(false);
-        }
-        // Note: Kita tidak perlu setLoading(false) saat sukses karena halaman akan berpindah
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg">Create New Plan</CardTitle>
-                <CardDescription>Start by selecting a container.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="text-xs font-medium text-zinc-500 mb-1 block">Container</label>
-                        <Select onValueChange={setSelectedContainer} value={selectedContainer}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a container" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {containers.map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                        {c.name} ({c.length_mm}x{c.width_mm}x{c.height_mm} mm)
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <Button type="submit" disabled={loading || !selectedContainer} className="w-full">
-                        {loading ? "Creating..." : "Start Planning"}
-                    </Button>
-                </form>
-            </CardContent>
-        </Card>
-    )
-}
-```
-
-Disinilah alur kerja dimulai. Setelah user sukses membuat plan, mereka langsung "dilempar" (`router.push`) ke halaman detail untuk mulai bekerja.
-
-#### Halaman Detail dan Kalkulasi
-
-Ini adalah halaman paling kompleks. Ia harus menangani:
-1.  Menampilkan info Plan dan Container.
-2.  Form penambahan Barang (`AddItem`).
-3.  Daftar Barang yang sudah ditambahkan.
-4.  Tombol Trigger Kalkulasi.
-5.  Visualisasi Hasil.
-
-Sebelum membuat halaman utama, kita butuh satu komponen kecil untuk menampilkan ringkasan hasil (Stats) agar kode halaman tidak terlalu panjang.
-
-Buat `web/components/packing-result.tsx`:
-
-```tsx
-import { Card, CardContent } from "@/components/ui/card";
-
-interface PackingResultProps {
-    stats: {
-        total_items: number;
-        fitted_count: number;
-        unfitted_count: number;
-    }
-}
-
-export function PackingResult({ stats }: PackingResultProps) {
-    const fitRate = stats.total_items > 0 
-        ? ((stats.fitted_count / stats.total_items) * 100).toFixed(1) 
-        : "0.0";
-
-    return (
-        <Card className="bg-zinc-50 border-dashed">
-            <CardContent className="pt-6">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <div className="text-2xl font-bold text-zinc-900">{stats.fitted_count}</div>
-                        <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Packed</div>
-                    </div>
-                    <div>
-                        <div className="text-2xl font-bold text-zinc-900">{stats.total_items}</div>
-                        <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Total Items</div>
-                    </div>
-                    <div>
-                        <div className="text-2xl font-bold text-green-600">{fitRate}%</div>
-                        <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">Fit Rate</div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
-```
-
-Sekarang, mari kita rakit halaman utamanya. Buat `web/app/plans/[id]/page.tsx`:
-
-```tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { planApi } from "@/lib/api/plans";
-import { containerApi } from "@/lib/api/containers";
-import { productApi } from "@/lib/api/products";
-import type { PlanDetail, Container, Product } from "@/lib/api/types";
-import { transformToVisualizerData } from "@/lib/transforms";
-import { StuffingViewer } from "@/components/stuffing-viewer"; // Akan kita buat di section 6.6
-import { PackingResult } from "@/components/packing-result";
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Calculator, ArrowLeft, Truck } from "lucide-react";
-import Link from "next/link";
-
-export default function PlanDetailPage() {
-    const params = useParams();
-    const id = params.id as string;
-
-    // --- State Management ---
-    const [plan, setPlan] = useState<PlanDetail | null>(null);
-    const [container, setContainer] = useState<Container | null>(null);
-    const [products, setProducts] = useState<Product[]>([]);
-    
-    // Form State
-    const [selectedProduct, setSelectedProduct] = useState<string>("");
-    const [quantity, setQuantity] = useState<number>(1);
-    
-    // UI Loading States
-    const [loadingPlan, setLoadingPlan] = useState(true);
-    const [addingItem, setAddingItem] = useState(false);
-    const [calculating, setCalculating] = useState(false);
-
-    // Load semua data yang dibutuhkan saat mount
-    useEffect(() => {
-        const loadData = async () => {
-            setLoadingPlan(true);
-            try {
-                // 1. Load Plan Detail
-                const planData = await planApi.get(id);
-                setPlan(planData);
-
-                // 2. Load Container Info (untuk display dimensi)
-                const containerData = await containerApi.get(planData.container_id);
-                setContainer(containerData);
-
-                // 3. Load Product List (untuk dropdown)
-                const productsData = await productApi.list();
-                setProducts(productsData);
-            } catch (error) {
-                console.error("Failed to load plan details", error);
-            } finally {
-                setLoadingPlan(false);
-            }
-        };
-
-        if (id) loadData();
-    }, [id]);
-
-    // --- Logika Bisnis: Menambah Item ---
-    const handleAddItem = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!selectedProduct || quantity <= 0) return;
-
-        setAddingItem(true);
-        try {
-            // Panggil API Add Item
-            await planApi.addItem(id, {
-                product_id: selectedProduct,
-                quantity: quantity
-            });
-            
-            // Reload data plan untuk update tampilan list item
-            const updatedPlan = await planApi.get(id);
-            setPlan(updatedPlan);
-            
-            // Reset form quantity
-            setQuantity(1);
-        } catch (error) {
-            alert("Failed to add item");
-        } finally {
-            setAddingItem(false);
-        }
-    };
-
-    // --- Logika Bisnis: Kalkulasi ---
-    const handleCalculate = async () => {
-        setCalculating(true);
-        try {
-            // Trigger Flask Engine via Go Backend
-            await planApi.calculate(id);
-            
-            // Reload plan untuk mendapatkan hasil (status completed & placements)
-            const updatedPlan = await planApi.get(id);
-            setPlan(updatedPlan);
-        } catch (error) {
-            alert("Calculation failed");
-        } finally {
-            setCalculating(false);
-        }
-    };
-
-    if (loadingPlan || !plan || !container) {
-        return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
-    }
-
-    // Persiapkan data untuk visualizer (akan dibahas di section 6.6)
-    const visualizerData = transformToVisualizerData(plan, container);
-
-    return (
-        <main className="container mx-auto px-4 py-8 max-w-7xl">
-            {/* Header Area */}
-            <div className="mb-8">
-                <Link href="/plans" className="text-sm text-zinc-500 hover:text-zinc-900 flex items-center gap-1 mb-4">
-                    <ArrowLeft className="w-4 h-4" /> Back to Plans
-                </Link>
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                            Plan: {plan.id.substring(0, 8)}
-                            <Badge variant={plan.status === "completed" ? "default" : "secondary"}>
-                                {plan.status}
-                            </Badge>
-                        </h1>
-                        <p className="text-zinc-500 mt-2 flex items-center gap-2">
-                            <Truck className="w-4 h-4" /> 
-                            Container: <span className="font-medium text-zinc-900">{container.name}</span>
-                        </p>
-                    </div>
-                    {/* Tombol Kalkulasi hanya muncul jika ada item */}
-                    {plan.items.length > 0 && (
-                        <Button onClick={handleCalculate} disabled={calculating}>
-                            {calculating ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Calculating...
-                                </>
-                            ) : (
-                                <>
-                                    <Calculator className="w-4 h-4 mr-2" /> Calculate Packing
-                                </>
-                            )}
-                        </Button>
-                    )}
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Kiri: Input Item & List */}
-                <div className="lg:col-span-4 space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg">Cargo Items</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="mb-6">
-                                <form onSubmit={handleAddItem} className="space-y-3">
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div className="col-span-2">
-                                            <Select onValueChange={setSelectedProduct} value={selectedProduct}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Product" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {products.map(p => (
-                                                        <SelectItem key={p.id} value={p.id}>{p.label}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <Input 
-                                                type="number" 
-                                                min="1" 
-                                                value={quantity} 
-                                                onChange={e => setQuantity(parseInt(e.target.value))} 
-                                            />
-                                        </div>
-                                    </div>
-                                    <Button size="sm" type="submit" className="w-full" disabled={addingItem || !selectedProduct}>
-                                        {addingItem ? "Adding..." : "Add Item"}
-                                    </Button>
-                                </form>
-                            </div>
-
-                            {/* Daftar Item yang sudah masuk */}
-                            <div className="space-y-2">
-                                {plan.items.map((item) => (
-                                    <div key={item.id} className="flex items-center justify-between p-3 bg-zinc-50 rounded-lg border">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-2 h-8 bg-blue-500 rounded-full" />
-                                            <div>
-                                                <div className="font-medium text-sm">{item.label}</div>
-                                                <div className="text-xs text-zinc-500">
-                                                    {item.length_mm}x{item.width_mm}x{item.height_mm}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="font-bold text-lg text-zinc-700">x{item.quantity}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-
-                    {/* Stats */}
-                    {plan.placements && plan.placements.length > 0 && (
-                        <PackingResult stats={visualizerData.stats} />
-                    )}
-                </div>
-
-                {/* Kanan: Placeholder Visualizer */}
-                <div className="lg:col-span-8">
-                    <Card className="h-[600px] overflow-hidden flex flex-col">
-                        <CardHeader className="py-4 border-b">
-                            <CardTitle>3D Visualization</CardTitle>
-                        </CardHeader>
-                        <div className="flex-1 bg-zinc-100 flex items-center justify-center">
-                             {/* Kita akan memasang StuffingViewer di sini pada section 6.6 */}
-                             {plan.placements?.length > 0 ? (
-                                <StuffingViewer data={visualizerData} />
-                             ) : (
-                                <p className="text-zinc-400">Add items and calculate to view result.</p>
-                             )}
-                        </div>
-                    </Card>
-                </div>
-            </div>
-        </main>
-    );
-}
-```
-
-Halaman ini mendemonstrasikan integrasi penuh proses bisnis:
-1.  **Orkestrasi Data**: Mengambil data dari 3 sumber berbeda (`plan`, `container`, `products`) dan menggabungkannya.
-2.  **State Management**: Menangani loading state granular (`loadingPlan`, `addingItem`, `calculating`) untuk memberi feedback visual yang baik ke user.
-3.  **Real-time Update**: Setelah `addItem` atau `calculate`, kita melakukan fetch ulang (`planApi.get`) untuk memastikan data di layar selalu sinkron dengan server.
-
-Kini aplikasi kita sudah bisa menerima input, memproses kalkulasi, dan menyimpan hasilnya. Langkah terakhir yang paling menarik adalah: bagaimana cara menampilkan hasil kalkulasi tersebut?
-
-### 6.6 Logic: Visualisasi Hasil (Integration)
-
-Kita telah memiliki data hasil kalkulasi dari backend (koordinat x, y, z, rotasi). Tantangannya sekarang adalah: bagaimana menampilkan angka-angka abstrak ini menjadi visualisasi 3D yang bisa dipahami manusia?
-
-Ingat kembali di Bab 5 kita membangun `StuffingVisualizer` sebagai class TypeScript murni (Vanilla JS) yang agnostik terhadap framework. Di sini, kita akan mengintegrasikannya ke dalam Next.js React ecosystem.
-
-#### Transformasi Data Visualisasi
-
-API Backend kita didesain untuk efisiensi transfer data (DTO), sedangkan Visualizer kita butuh struktur data yang dioptimalkan untuk rendering 3D. Kita butuh "penerjemah" atau Adapter.
-
-Buat `web/lib/transforms.ts`:
-
-```typescript
-import type { PlanDetail, Container } from "./api/types";
-import type { StuffingPlanData } from "./StuffingVisualizer/types";
-
-export function transformToVisualizerData(plan: PlanDetail, container: Container): StuffingPlanData {
-    // Generate random colors for items since backend doesn't store them yet
-    const getColor = (id: string) => {
-        const colors = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4"];
-        let hash = 0;
-        for (let i = 0; i < id.length; i++) {
-            hash = id.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return colors[Math.abs(hash) % colors.length];
-    };
-
-    return {
-        plan_id: plan.id,
-        plan_code: plan.id.substring(0, 8).toUpperCase(),
-        container: {
-            name: container.name,
-            length_mm: container.length_mm, // Backend pakai snake_case
-            width_mm: container.width_mm,
-            height_mm: container.height_mm,
-            max_weight_kg: container.max_weight_kg,
-        },
-        items: plan.items.map((item) => ({
-            item_id: item.product_id, // Group by product type
-            label: item.label,
-            length_mm: item.length_mm,
-            width_mm: item.width_mm,
-            height_mm: item.height_mm,
-            weight_kg: item.weight_kg,
-            quantity: item.quantity,
-            color_hex: getColor(item.product_id), // Visualizer butuh warna!
-        })),
-        placements: (plan.placements || []).map((p) => ({
-            placement_id: p.id,
-            item_id: p.product_id,
-            pos_x: p.pos_x,
-            pos_y: p.pos_y,
-            pos_z: p.pos_z,
-            rotation: p.rotation,
-            step_number: p.step_number,
-        })),
-        stats: {
-            total_items: plan.items.reduce((sum, item) => sum + item.quantity, 0),
-            fitted_count: plan.placements ? plan.placements.length : 0,
-            unfitted_count: 0,
-            volume_utilization_pct: 0, 
-        },
-    };
-}
-```
-
-Fungsi adapter ini melakukan dua hal krusial:
-1.  **Normalization**: Mengubah `snake_case` dari API menjadi format yang diharapkan Visualizer (meskipun kebetulan di sini mirip, tapi prinsipnya penting).
-2.  **Enrichment**: Menambahkan data visual yang tidak ada di backend, seperti `color_hex`. Backend peduli logika geometri, Front-end peduli estetika. Kita menggunakan fungsi hash sederhana agar Product ID yang sama selalu mendapatkan warna yang sama.
-
-#### Komponen React Wrapper
-
-Karena `StuffingVisualizer` memanipulasi DOM secara langsung (Canvas/WebGL), kita harus membungkusnya dalam komponen React agar bisa hidup berdampingan dengan lifecycle React (Mounting, Unmounting).
-
-Buat `web/components/stuffing-viewer.tsx`:
 
 ```tsx
 "use client";
@@ -11101,7 +8919,7 @@ Di Bab 6, kita telah berhasil melakukan **integrasi sistem full-stack** yang men
 
 Aplikasi kita kini bukan lagi sekadar prototype terpisah, melainkan sebuah software sistematis yang siap untuk diuji skalabilitasnya.
 
-#### Further Reading
+### Bacaan Lanjutan
 
 Untuk memperdalam pemahaman tentang teknologi yang kita gunakan di bab ini, berikut beberapa referensi yang disarankan:
 
@@ -11114,9 +8932,9 @@ Untuk memperdalam pemahaman tentang teknologi yang kita gunakan di bab ini, beri
 
 Setelah menyelesaikan pengembangan aplikasi secara fungsional di bab sebelumnya, kita kini menghadapi tantangan terakhir dan mungkin yang paling krusial: bagaimana memindahkan aplikasi dari "laptop developer" ke dunia nyata (production). Realitas pengembangan perangkat lunak sering kali dihantui oleh frasa klise *"It works on my machine"*. Kode yang berjalan sempurna di lingkungan lokal bisa tiba-tiba gagal saat dijalankan di server produksi karena perbedaan versi OS, library yang hilang, atau konfigurasi network yang berbeda.
 
-Di bab ini, kita akan mentransformasi aplikasi Load Stuffing Calculator menjadi sebuah artefak yang **portable**, **reproducible**, dan **scalable**. Kita akan menggunakan pendekatan **Containerization** dengan Docker untuk membungkus setiap layanan (Go Backend, Python Packing Service, dan Next.js Frontend) menjadi unit isolasi yang mandiri.
-
-**Dalam bab ini, kita akan membahas:**
+Sekarang, kita akan mentransformasi aplikasi Load Stuffing Calculator menjadi sebuah artefak yang **portable**, **reproducible**, dan **scalable**. Kita akan menggunakan pendekatan **Containerization** dengan Docker untuk membungkus setiap layanan (Go Backend, Python Packing Service, dan Next.js Frontend) menjadi unit isolasi yang mandiri.
+ 
+ **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
 -   Prinsip **12-Factor App** dan manajemen konfigurasi
 -   Pengenalan Docker dan arsitektur kontainer
@@ -11146,7 +8964,7 @@ Pada `internal/config/config.go` di Bab 4, kita telah menyiapkan mekanisme pemba
 
 Pastikan kode kita memprioritaskan environment variable dibanding nilai default.
 
-Selain variabel aplikasi, ada satu variabel lingkungan krusial untuk framework itu sendiri: **Mode Produksi**.
+Selain variabel aplikasi, ada satu Environment Variable krusial untuk framework itu sendiri: **Mode Produksi**.
 -   **Go (Gin)**: Set `GIN_MODE=release`. Dalam mode debug (default), Gin akan mencatat setiap request dengan sangat detail dan melakukan pengecekan berlebihan yang memperlambat performa.
 -   **Next.js**: Secara otomatis mendeteksi `NODE_ENV=production`.
 
@@ -11154,7 +8972,7 @@ Jangan lupa menyertakan variable ini di konfigurasi deployment Anda nanti.
 
 #### Konfigurasi Frontend (Next.js)
 
-Next.js memiliki perlakuan khusus untuk variabel lingkungan. Variabel yang diawali dengan `NEXT_PUBLIC_` akan di-*embed* ke dalam bundle JavaScript browser saat waktu build (*build time*), sedangkan variabel tanpa prefix tersebut hanya tersedia di server-side Node.js (*runtime*).
+Next.js memiliki perlakuan khusus untuk Environment Variables. Variabel yang diawali dengan `NEXT_PUBLIC_` akan di-*embed* ke dalam bundle JavaScript browser saat waktu build (*build time*), sedangkan variabel tanpa prefix tersebut hanya tersedia di server-side Node.js (*runtime*).
 
 Di `web/lib/api/client.ts`, kita menggunakan `NEXT_PUBLIC_API_BASE_URL`.
 
@@ -11652,7 +9470,7 @@ Kita kemudian memonitor "kesehatan" dari kelompok 5% tersebut dengan mikroskopis
 
 
 
-### 7.6 Rangkuman
+### Ringkasan
 
 Bab ini telah membawa kita dari sekadar "menulis kode" menuju "menjalankan sistem". Kita telah memetakan perjalanan aplikasi dari laptop developer hingga siap melayani trafik dunia nyata.
 
@@ -11682,14 +9500,16 @@ Untuk memperdalam pemahaman Anda tentang topik DevOps dan Deployment, berikut re
 
 ## Bab 8: Fitur Lanjutan & Finalisasi
 
-Selamat! Anda telah sampai di bab terakhir dari buku ini. Sampai tahap ini, kita sudah memiliki aplikasi yang berfungsi secara teknis: Backend Go yang solid, Python Service yang cerdas, dan Frontend Next.js yang interaktif. Namun, sebuah sistem perangkat lunak belum bisa dikatakan siap produksi tanpa mempertimbangkan aspek keamanan, visibilitas operasional, dan kemampuan pelaporan.
+Selamat! Kita telah sampai di bab terakhir dari buku ini. Sampai tahap ini, kita sudah memiliki aplikasi yang berfungsi secara teknis: Backend Go yang solid, Python Service yang cerdas, dan Frontend Next.js yang interaktif. Namun, sebuah sistem perangkat lunak belum bisa dikatakan siap produksi tanpa mempertimbangkan aspek keamanan, visibilitas operasional, dan kemampuan pelaporan.
 
 Di bab ini, kita akan melengkapi aplikasi dengan tiga fitur esensial:
-1.  **Sistem Autentikasi**: Mengamankan aplikasi agar setiap pengguna memiliki ruang kerjanya sendiri.
-2.  **Dashboard Bisnis**: Mengubah data mentah menjadi wawasan statistik.
-3.  **Laporan Operasional (PDF)**: Menjembatani dunia digital dengan operasional fisik di lapangan.
-
-Kita akan membahas alasan di balik setiap keputusan teknis dan bagaimana implementasinya secara detail.
+ 1.  **Sistem Autentikasi**: Mengamankan aplikasi agar setiap pengguna memiliki ruang kerjanya sendiri.
+ 2.  **Dashboard Bisnis**: Mengubah data mentah menjadi wawasan statistik.
+ 3.  **Laporan Operasional (PDF)**: Menjembatani dunia digital dengan operasional fisik di lapangan.
+ 
+ Kita akan membahas alasan di balik setiap keputusan teknis dan bagaimana implementasinya secara detail.
+ 
+ **Dalam bab ini, kita akan membahas topik-topik berikut:**
 
 ### 8.1 Implementasi Autentikasi (JWT)
 
@@ -12021,16 +9841,16 @@ function drawPlacement(doc: jsPDF, placement: any, scale: number) {
 
 Kunci dari visualisasi yang benar ada pada baris perhitungan variabel `y`. Kita tidak hanya mengalikan posisi dengan scale, tetapi juga melakukan pengurangan dari `containerWidth`. Inilah "Inversi Y". Tanpa ini, gambar akan ter-mirror secara vertikal (barang yang seharusnya di "kiri-bawah" kontainer akan tergambar di "kiri-atas" kertas). Pemahaman geometri ini krusial saat bekerja dengan library grafis PDF.
 
-### 8.4 Penutup
+### Ringkasan
 
-Selamat! Anda telah menyelesaikan pembangunan aplikasi **Load Stuffing Calculator**.
+Selamat! Kita telah sampai di bab terakhir dari buku ini. Sampai tahap ini, kita sudah memiliki aplikasi yang berfungsi secara teknis: Backend Go yang solid, Python Service yang cerdas, dan Frontend Next.js yang interaktif. Namun, sebuah sistem perangkat lunak belum bisa dikatakan siap produksi tanpa mempertimbangkan aspek keamanan, visibilitas operasional, dan kemampuan pelaporan.
 
-Kita telah melalui perjalanan panjang membangun sistem terdistribusi modern yang mencakup:
-1.  **Backend Go**: API berkinerja tinggi dengan arsitektur yang rapi.
-2.  **Service Python**: Logika komputasi intensif yang terisolasi.
-3.  **Frontend Next.js**: Antarmuka pengguna yang interaktif.
-4.  **Keamanan & Efisiensi**: Implementasi JWT dan optimasi query database.
-
-Aplikasi ini sekarang memiliki fondasi yang kuat untuk dikembangkan lebih lanjut. Anda bisa mengembangkannya dengan menambah fitur kolaborasi real-time, optimasi algoritma yang lebih canggih, atau integrasi dengan sistem logistik lainnya.
+Aplikasi ini sekarang memiliki fondasi yang kuat untuk dikembangkan lebih lanjut. Kita bisa mengembangkannya dengan menambah fitur kolaborasi real-time, optimasi algoritma yang lebih canggih, atau integrasi dengan sistem logistik lainnya.
 
 Terima kasih telah mengikuti panduan ini. Teruslah berkarya dan eksplorasi teknologi baru!
+
+### Bacaan Lanjutan
+
+- **JWT Best Practices**: [IETF RFC 7519](https://tools.ietf.org/html/rfc7519)
+- **Goose Migration**: [Pressly Goose Documentation](https://github.com/pressly/goose)
+- **PDF Generation in JS**: [jsPDF Documentation](https://artskydj.github.io/jsPDF/docs/)
