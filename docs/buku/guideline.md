@@ -78,6 +78,6 @@ Dalam bab ini, kita akan menjawab tantangan tersebut dengan mengintegrasikan ala
 - _PostgreSQL version 15_
 - _SQLC CLI_ (sqlc.dev)
 - _Goose CLI_ ([github.com/pressly/goose](https://github.com/pressly/goose))
-- _VS Code with Go extension_ Anda dapat menemukan contoh kode dan file migrasi untuk bab ini di GitHub: [https://www.merriam-webster.com/dictionary/link](https://www.merriam-webster.com/dictionary/link)
+- _VS Code with Go extension_ Anda dapat menemukan contoh kode dan file migrasi untuk bab ini di GitHub: [https://github.com/anomalyco/load-stuffing-calculator](https://github.com/anomalyco/load-stuffing-calculator)
 
 
