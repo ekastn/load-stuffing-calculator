@@ -285,8 +285,7 @@ Bandung, 8 Januari 2026
 [4.2 Pembahasan Hasil Implementasi
 [51](#pembahasan-hasil-implementasi)](#pembahasan-hasil-implementasi)
 
-[4.3 Pengujian Code Coverage
-[63](#pengujian-code-coverage)](#pengujian-code-coverage)
+[4.3 Pengujian Code Coverage [63](#pengujian-system)](#pengujian-system)
 
 [BAB V KESIMPULAN & SARAN [64](#kesimpulan-saran)](#kesimpulan-saran)
 
@@ -873,7 +872,7 @@ Bandung, 8 Januari 2026
 incorrect.](media/image2.png){width="3.584613954505687in"
 height="4.990964566929134in"}
 
-[]{#_Toc218780631 .anchor}Gambar 3. 1 Alur Penelitian
+[]{#_Toc218780631 .anchor}Gambar 3. Alur Penelitian
 
 > Tahapan penelitian dijelaskan sebagai berikut:
 
@@ -895,7 +894,7 @@ height="4.990964566929134in"}
 be incorrect.](media/image3.png){width="3.3037959317585304in"
 height="2.853312554680665in"}
 
-[]{#_Toc218782999 .anchor}Gambar 3. 2 Metode Agile
+[]{#_Toc218782999 .anchor}Gambar 3. Metode Agile
 
 > Metode Agile adalah pendekatan pengembangan perangkat lunak yang
 > fleksibel dan iteratif, di mana produk dikembangkan dalam siklus
@@ -1181,7 +1180,7 @@ height="2.853312554680665in"}
 > ![](media/image4.png){width="5.793170384951881in"
 > height="2.929319772528434in"}
 
-[]{#_Toc218780632 .anchor}Gambar 3. 3 Diagram Use Case
+[]{#_Toc218780632 .anchor}Gambar 3. Diagram Use Case
 
 > Use case diagram pada Gambar 3.3 menggambarkan interaksi antara
 > pengguna dan sistem. Aktor utama dalam sistem ini adalah Admin,
@@ -1192,7 +1191,7 @@ height="2.853312554680665in"}
 
 1.  **Definisi Use Case**
 
-[]{#_Toc218781103 .anchor}Tabel 3. 1 Definisi Aktor
+[]{#_Toc218781103 .anchor}Tabel 3. Definisi Aktor
 
   -----------------------------------------------------------------------------
    **No.**  **Aktor**   **Keterangan**
@@ -1929,26 +1928,32 @@ height="2.853312554680665in"}
 > Sequence diagram menggambarkan interaksi antar komponen sistem dalam
 > urutan waktu (timeline). Diagram ini menunjukkan bagaimana objek-objek
 > dalam sistem berkomunikasi satu sama lain untuk menyelesaikan suatu
-> use case. Pada sub-bab ini, dijelaskan tiga alur utama yang
-> merepresentasikan arsitektur teknis sistem: autentikasi & workspace
-> context, pembuatan rencana dengan snapshot pattern, dan kalkulasi
-> muatan dengan algoritma 3D bin packing.
+> use case. Pada sub-bab ini, dijelaskan diagram sekuens untuk setiap
+> use case yang telah didefinisikan sebelumnya, mencakup alur autentikasi
+> dan akses workspace, manajemen data master (container dan product),
+> manajemen workspace multi-tenant dengan RBAC (role dan permission),
+> perencanaan pengiriman dengan snapshot pattern, kalkulasi muatan dengan
+> algoritma 3D bin packing, visualisasi interaktif, export PDF, serta
+> fitur trial access untuk pengguna guest. Setiap diagram menampilkan
+> interaksi antara Frontend (Next.js), API (Go), Middleware (autentikasi
+> dan permission), Handler, Service, dan Database (PostgreSQL), dengan
+> penekanan pada mekanisme isolasi multi-tenant dan kontrol akses berbasis
+> role.
 
-1.  **Sequence Diagram Authentication & Workspace Context**
+1.  **Sequence Diagram Autentikasi dan Konteks Workspace**
 
 > ![](media/image5.png){width="5.251094706911636in"
 > height="5.244397419072616in"}
 
-[]{#_Toc218783001 .anchor}Gambar 3. 4 Sequence Diagram Authentication &
-Workspace Context
+[]{#_Toc218783001 .anchor}Gambar 3. Sequence Diagram Autentikasi dan Konteks Workspace
 
-> Diagram pada Gambar \\\_\\\_\\\_ menunjukkan proses autentikasi
-> pengguna dan pengaturan konteks workspace. Alur dimulai ketika user
-> menginput kredensial di frontend Next.js, yang kemudian mengirim
-> request POST ke endpoint \`/api/v1/auth/login\` pada Go API. Backend
-> melakukan validasi kredensial dengan membandingkan password hash
-> menggunakan bcrypt, kemudian menghasilkan pasangan token JWT (access
-> token & refresh token).
+> Diagram pada Gambar 3.4 menunjukkan proses autentikasi pengguna dan
+> pengaturan konteks workspace. Alur dimulai ketika user menginput
+> kredensial di frontend Next.js, yang kemudian mengirim request POST ke
+> endpoint \`/api/v1/auth/login\` pada Go API. Backend melakukan
+> validasi kredensial dengan membandingkan password hash menggunakan
+> bcrypt, kemudian menghasilkan pasangan token JWT (access token &
+> refresh token).
 >
 > Sistem juga secara otomatis mengambil daftar workspace yang dapat
 > diakses oleh user beserta role dan permission-nya dari tabel
@@ -1959,14 +1964,14 @@ Workspace Context
 > (Admin/Planner/Operator). Mekanisme ini memastikan isolasi data
 > multi-tenant dan kontrol akses berbasis role (RBAC) yang granular.
 
-2.  **Sequence Diagram Create Plan**
+2.  **Sequence Diagram Pembuatan Rencana Muat**
 
 > ![](media/image6.png){width="5.24162510936133in"
 > height="4.011446850393701in"}
 
-[]{#_Toc218783002 .anchor}Gambar 3. 5 Sequence Diagram Create Plan
+[]{#_Toc218783002 .anchor}Gambar 3. Sequence Diagram Pembuatan Rencana Muat
 
-> Diagram ini menggambarkan alur pembuatan rencana muat (load plan) yang
+> Gambar 3.5 menggambarkan alur pembuatan rencana muat (load plan) yang
 > dimulai ketika user mengisi form di frontend dengan memilih container
 > dan menambahkan item-item barang, lalu mengirimkan request POST ke
 > endpoint \`/api/v1/plans\`. Setelah melewati validasi JWT dan
@@ -1989,15 +1994,14 @@ Workspace Context
 > operasi menyertakan filter \`workspace_id\` untuk isolasi
 > multi-tenant.
 
-3.  **Sequence Diagram Calculate Load & Visualize 3D**
+3.  **Sequence Diagram Kalkulasi Muatan dan Visualisasi 3D**
 
 > ![](media/image7.png){width="5.184806430446194in"
 > height="6.051146106736658in"}
 
-[]{#_Toc218783003 .anchor}Gambar 3. 6 Sequence Diagram Calculate Load &
-Visualize 3D
+[]{#_Toc218783003 .anchor}Gambar 3. Sequence Diagram Kalkulasi Muatan dan Visualisasi 3D
 
-> Diagram ini menunjukkan alur perhitungan packing dan visualisasi 3D
+> Gambar 3.6 menunjukkan alur perhitungan packing dan visualisasi 3D
 > yang dimulai ketika user menekan tombol \"Calculate\" pada halaman
 > detail rencana muat, disertai dengan opsi strategi algoritma (seperti
 > BestFitDecreasing atau Parallel) dan parameter gravity simulation.
@@ -2037,22 +2041,98 @@ Visualize 3D
 > hasil algoritma, membantu operator memahami sequence optimal untuk
 > loading fisik di lapangan.
 
+4.  **Sequence Diagram Manajemen Container**
+
+> ![](media/manage-container.png){width="5.5in"}
+
+[]{#_Toc218783006 .anchor}Gambar 3. Sequence Diagram Manajemen Container
+
+> Diagram pada Gambar 3.8 menunjukkan operasi CRUD (Create, Read, Update, Delete) untuk manajemen data container yang digunakan sebagai referensi dalam perencanaan muat. Alur dimulai ketika user (Admin atau Planner) melakukan aksi manajemen container melalui frontend Next.js, yang mengirim request ke endpoint `/api/v1/containers` dengan method HTTP yang sesuai (POST untuk create, GET untuk list/read, PUT untuk update, DELETE untuk delete). Setiap request melewati middleware autentikasi JWT dan validasi permission spesifik (`container:create`, `container:read`, `container:update`, `container:delete`) sesuai dengan operasi yang dilakukan. Request kemudian diteruskan ke ContainerHandler yang memanggil ContainerService untuk menjalankan logika bisnis, dan akhirnya melakukan operasi database melalui query yang di-scope berdasarkan `workspace_id` untuk menjaga isolasi data multi-tenant. Penanganan error mencakup kasus not found (404), constraint violation untuk delete operation jika container sedang digunakan oleh plan aktif (409 Conflict), serta response sukses dengan status code yang sesuai (201 Created untuk insert, 200 OK untuk update, 204 No Content untuk delete).
+
+5.  **Sequence Diagram Manajemen Product**
+
+> ![](media/manage-product.png){width="5.5in"}
+
+[]{#_Toc218783007 .anchor}Gambar 3. Sequence Diagram Manajemen Product
+
+> Gambar 3.9 menggambarkan alur operasi CRUD untuk manajemen katalog produk yang berfungsi sebagai master data barang yang sering dikirim. Mekanisme serupa dengan container management, di mana user mengirimkan request ke endpoint `/api/v1/products` dengan method HTTP yang sesuai setelah melewati validasi JWT dan permission check (`product:create`, `product:read`, `product:update`, `product:delete`). Aspek khusus pada product management adalah validasi unique constraint untuk field SKU (Stock Keeping Unit), di mana sistem akan mengembalikan error 409 Conflict jika terjadi duplikasi SKU dalam workspace yang sama. ProductService menangani mapping antara request data dan database record, termasuk atribut tambahan seperti `color_hex` untuk visualisasi 3D, `can_rotate` untuk constraint rotasi algoritma, dan `max_stack` untuk batasan tumpukan vertikal. Seluruh operasi database di-scope dengan `workspace_id` untuk memastikan isolasi data antar organisasi dalam arsitektur multi-tenant, dan delete operation akan gagal dengan error 409 jika produk sedang direferensi oleh `load_items` aktif.
+
+6.  **Sequence Diagram Manajemen Workspace**
+
+> ![](media/manage-workspace.png){width="5.5in"}
+
+[]{#_Toc218783008 .anchor}Gambar 3. Sequence Diagram Manajemen Workspace
+
+> Diagram pada Gambar 3.10 menunjukkan alur pengelolaan workspace yang merupakan unit isolasi data dalam sistem multi-tenant. Operasi LIST workspace membedakan akses berdasarkan role user, di mana founder dapat melihat semua workspace dalam sistem, sedangkan user regular hanya melihat workspace di mana mereka menjadi member melalui join query dengan tabel `workspace_members`. Operasi CREATE workspace melibatkan transaksi database yang membuat record workspace baru dan secara otomatis menambahkan creator sebagai member dengan role owner. UPDATE workspace mendukung dua jenis modifikasi: perubahan nama workspace dan transfer ownership, di mana transfer ownership memerlukan validasi bahwa penerima sudah menjadi member dan secara otomatis mengubah role owner lama menjadi admin. DELETE workspace hanya dapat dilakukan oleh owner dan akan melakukan CASCADE delete terhadap semua data terkait (members, invites, plans, items, results, placements, containers, products). Fitur SWITCH workspace memungkinkan user berpindah konteks workspace aktif dengan cara memvalidasi keanggotaan user di workspace target, kemudian men-generate access token baru yang menyertakan `workspace_id` dan role yang sesuai dalam JWT claims.
+
+7.  **Sequence Diagram Manajemen Member dan Invite**
+
+> ![](media/manage-member.png){width="5.5in"}
+
+[]{#_Toc218783009 .anchor}Gambar 3. Sequence Diagram Manajemen Member
+
+> Diagram pada Gambar 3.11 menampilkan operasi CRUD untuk manajemen keanggotaan workspace organisasi. Operasi LIST member mengembalikan semua user yang tergabung dalam workspace dengan informasi role masing-masing melalui join query antara tabel `workspace_members` dan `users`. Operasi ADD member menerima parameter `user_identifier` yang dapat berupa UUID, email, atau username untuk memberikan fleksibilitas dalam pencarian user yang sudah terdaftar di sistem, kemudian menambahkan user tersebut ke workspace dengan role yang ditentukan. Sistem melakukan beberapa validasi penting sebelum operasi write: memastikan workspace bertipe organization (bukan personal workspace), memvalidasi bahwa user target belum menjadi member untuk menghindari duplikasi keanggotaan, dan menolak operasi UPDATE atau DELETE terhadap member dengan role owner untuk menjaga integritas kepemilikan workspace. Operasi UPDATE role member memungkinkan perubahan role kecuali untuk owner, sedangkan operasi REMOVE member menghapus record dari tabel `workspace_members` dengan validasi yang sama. Seluruh operasi di-scope dengan `workspace_id` untuk isolasi multi-tenant dan memerlukan permission `member:create`, `member:update`, atau `member:delete` sesuai dengan aksi yang dilakukan.
+
+> ![](media/manage-invite.png){width="5.5in"}
+
+[]{#_Toc218783010 .anchor}Gambar 3. Sequence Diagram Manajemen Invite
+
+> Gambar 3.12 menunjukkan sistem undangan berbasis token untuk menambahkan user yang belum terdaftar ke dalam workspace organisasi. Operasi CREATE invite men-generate random token 32-byte menggunakan crypto-secure random generator, kemudian menyimpan hash dari token tersebut (bukan plaintext) ke database beserta email target dan role yang akan diberikan, dengan masa berlaku 7 hari dari waktu pembuatan. Token mentah hanya ditampilkan sekali kepada admin yang membuat invite untuk dibagikan kepada calon member melalui email atau metode komunikasi lainnya, dan tidak dapat diakses kembali setelah response dikirim demi alasan keamanan. Operasi ACCEPT invite dimulai ketika user baru melakukan registrasi atau login dengan menyertakan token invite sebagai parameter tambahan, yang kemudian divalidasi dengan cara membandingkan hash token dan memastikan belum expired. Sistem juga melakukan validasi bahwa email user yang melakukan accept sesuai dengan email yang tercatat pada invite untuk mencegah invite digunakan oleh pihak yang tidak berhak. Setelah validasi berhasil, sistem membuat record baru di tabel `workspace_members` dengan user ID dan role yang sudah ditentukan, menghapus record invite untuk mencegah reuse, dan men-generate access token JWT baru yang menyertakan `workspace_id` target dalam claims, sehingga user langsung masuk ke dalam konteks workspace yang mengundangnya setelah proses autentikasi selesai.
+
+8.  **Sequence Diagram Manajemen Role dan Permission**
+
+> ![](media/manage-role.png){width="5.5in"}
+
+[]{#_Toc218783011 .anchor}Gambar 3. Sequence Diagram Manajemen Role
+
+> Diagram pada Gambar 3.13 menggambarkan operasi CRUD untuk entitas role dalam sistem Role-Based Access Control (RBAC) yang mengatur hak akses user terhadap fitur sistem. Operasi LIST dan GET role menampilkan informasi role beserta metadata-nya, sedangkan CREATE dan UPDATE memungkinkan admin membuat role baru atau mengubah properti role yang sudah ada seperti nama dan deskripsi. Aspek khusus dari role management adalah dua operasi tambahan untuk mengelola permission assignment: GET role permissions mengembalikan array berisi permission IDs yang terkait dengan role tersebut melalui query join dengan tabel `role_permissions`, dan UPDATE role permissions melakukan replace operation dengan strategi delete-then-insert, yaitu menghapus seluruh relasi lama di tabel `role_permissions` kemudian melakukan bulk insert untuk permission baru yang dipilih. Setiap kali terjadi perubahan pada permission assignment, sistem memanggil method `PermissionCache.Invalidate()` untuk menghapus cache permission yang tersimpan di memory aplikasi, memastikan bahwa middleware authorization selalu menggunakan data permission terbaru saat melakukan pengecekan akses. Operasi DELETE role memerlukan validasi bahwa role tidak sedang digunakan oleh user aktif untuk mencegah orphaned references, dan seluruh operasi write memerlukan permission yang sesuai (`role:create`, `role:update`, `role:delete`).
+
+> ![](media/manage-permission.png){width="5.5in"}
+
+[]{#_Toc218783012 .anchor}Gambar 3. Sequence Diagram Manajemen Permission
+
+> Gambar 3.14 menunjukkan operasi CRUD untuk entitas permission yang merupakan unit dasar akses dalam sistem RBAC. Permission menggunakan naming convention berbasis resource dan action dengan format `resource:action` (contoh: `product:create`, `plan:update`, `workspace:delete`), yang memungkinkan granular access control terhadap setiap operasi di dalam sistem. Operasi CREATE permission men-generate record baru dengan nama unik di seluruh sistem (tidak di-scope per workspace), sehingga permission bersifat global dan dapat digunakan oleh role di berbagai workspace. Operasi UPDATE memungkinkan perubahan nama atau deskripsi permission, sedangkan operasi LIST dan GET menampilkan informasi permission yang tersedia untuk assignment ke role. Aspek penting dari permission management adalah cache invalidation yang di-trigger setiap kali terjadi operasi CREATE, UPDATE, atau DELETE permission, dengan cara memanggil `PermissionCache.Invalidate()` untuk memastikan konsistensi data permission di seluruh sistem dan mencegah penggunaan data stale dalam pengecekan authorization. Operasi DELETE permission akan gagal dengan error constraint violation jika permission sedang digunakan oleh role aktif melalui tabel `role_permissions`, karena adanya foreign key constraint yang melindungi integritas relasi data dalam sistem RBAC.
+
+9.  **Sequence Diagram Manajemen Item Muat**
+
+> ![](media/manage-items.png){width="5.5in"}
+
+[]{#_Toc218783013 .anchor}Gambar 3. Sequence Diagram Manajemen Item
+
+> Diagram pada Gambar 3.15 menunjukkan alur pengelolaan item barang dalam rencana pengiriman (load plan). Operasi ADD item mendukung dua mode input: menggunakan `product_id` untuk menyalin data dari katalog produk (Snapshot Pattern), atau menggunakan custom dimensions untuk barang yang tidak ada dalam katalog. Sebelum melakukan operasi write (ADD, UPDATE, DELETE), sistem memvalidasi bahwa status plan adalah DRAFT atau PARTIAL, karena plan dengan status COMPLETED tidak dapat diubah tanpa menghapus hasil kalkulasi terlebih dahulu. Implementasi Snapshot Pattern pada operasi ADD memastikan bahwa dimensi, berat, warna, dan atribut lain dari produk disalin ke tabel `load_items` tanpa menyimpan foreign key reference ke tabel `products`, sehingga perubahan atau penghapusan data master produk tidak mempengaruhi item yang sudah ditambahkan ke plan. Operasi UPDATE dan DELETE item akan secara otomatis menghapus record di tabel `plan_results` dan `plan_placements` jika ada, serta mengubah status plan kembali ke DRAFT untuk menandakan bahwa kalkulasi perlu dijalankan ulang. Operasi LIST items tidak memiliki endpoint tersendiri melainkan disertakan dalam response GET plan detail, yang juga menyertakan data calculation result dan placements jika tersedia.
+
+10.  **Sequence Diagram Export PDF**
+
+> ![](media/export-pdf.png){width="5.5in"}
+
+[]{#_Toc218783014 .anchor}Gambar 3. Sequence Diagram Export PDF
+
+> Gambar 3.16 menggambarkan alur export hasil kalkulasi ke format PDF yang bersifat frontend-only tanpa melibatkan backend API. Alur dimulai ketika user menekan tombol "Download PDF" pada halaman detail plan yang sudah dikalkulasi, kemudian StuffingViewer component memanggil method `generateReport()` pada StuffingVisualizer yang telah di-load dengan data plan lengkap termasuk placements. ReportGenerator menggunakan library jsPDF untuk membuat dokumen PDF dengan orientasi landscape format A4, terdiri dari halaman summary yang menampilkan informasi container, statistik utilisasi volume dan berat, serta breakdown tabel item yang dikelompokkan berdasarkan `item_id`, diikuti dengan halaman step-by-step untuk setiap placement yang menampilkan vector schematic (tampak atas, depan, samping) dan detail posisi koordinat (x, y, z), dimensi, berat, serta kode rotasi. Setelah PDF selesai di-generate sebagai Blob, browser men-trigger file download menggunakan mekanisme `URL.createObjectURL()` dan manipulasi DOM `<a>` element dengan attribute `download`, sehingga file PDF langsung tersimpan di perangkat user tanpa perlu request ke server, menghemat bandwidth dan meningkatkan responsiveness aplikasi.
+
+11.  **Sequence Diagram Akses Trial**
+
+> ![](media/trial-access.png){width="5.5in"}
+
+[]{#_Toc218783015 .anchor}Gambar 3. Sequence Diagram Akses Trial
+
+> Diagram pada Gambar 3.17 menunjukkan fitur trial access yang memungkinkan pengguna mencoba platform tanpa registrasi penuh. Alur dimulai dengan user mengakses landing page dan mendapatkan guest token dari endpoint `/api/v1/auth/guest`, yang men-generate JWT dengan TTL 30 hari, role "trial", dan `workspace_id` NULL tanpa membuat record di database. Guest user dapat membuat maksimal 3 rencana muat dengan `created_by_type='guest'` dan `created_by_id` berisi guest UUID dari token, serta dapat melihat list plan milik mereka sendiri melalui filter query berdasarkan kombinasi `created_by_type` dan `created_by_id`. Fitur claiming memungkinkan guest user yang memutuskan untuk melakukan registrasi atau login dapat mentransfer kepemilikan plan yang telah dibuat selama mode trial ke dalam workspace personal atau organisasi mereka. Proses claiming dilakukan dengan cara mengirimkan `guest_token` sebagai parameter tambahan pada request register atau login, yang kemudian men-trigger method `claimGuestPlansWithWorkspace()` untuk melakukan UPDATE query yang mengubah `created_by_type` dari 'guest' menjadi 'user', mengisi `workspace_id` dengan workspace aktif user, dan mengubah `created_by_id` menjadi user ID yang sebenarnya, sehingga plan yang dibuat saat trial tetap tersimpan dan dapat diakses setelah user login dengan akun penuh.
+
 ### **Arsitektur Sistem**
 
 ![](media/image8.png){width="5.926410761154855in"
 height="1.6911329833770778in"}
 
-[]{#_Toc218783004 .anchor}Gambar 3. 7 Arsitektur Sistem
+[]{#_Toc218783004 .anchor}Gambar 3. Arsitektur Sistem
 
 > Arsitektur sistem dirancang untuk menggambarkan topologi menyeluruh
-> dari aplikasi berbasis web yang mengintegrasikan perencanaan logistik,
-> algoritma bin packing 3D, dan visualisasi interaktif. Desain
-> arsitektur ini mengadopsi pola layanan terdistribusi (distributed
-> services) dengan REST API sebagai jembatan komunikasi antara frontend
-> dan backend, serta mendukung arsitektur multi-tenant melalui mekanisme
-> isolasi workspace. Sistem dibagi ke dalam tiga lapisan utama untuk
-> memastikan modularitas, skalabilitas, dan pemisahan tanggung jawab
-> (separation of concerns).
+> dari aplikasi berbasis web yang mengintegrasikan perencangaan
+> logistik, algoritma bin packing 3D, dan visualisasi interaktif. Desain
+> arsitektur pada Gambar 3.7 mengadopsi pola layanan berlapis
+> (service-based architecture) dengan REST API sebagai jembatan
+> komunikasi antara frontend dan backend, serta mendukung arsitektur
+> multi-tenant melalui mekanisme isolasi workspace. Sistem dibagi ke
+> dalam tiga lapisan utama untuk memastikan modularitas, skalabilitas,
+> dan pemisahan tanggung jawab (separation of concerns).
 
 1.  Aktor dan Client (Frontend Layer) Sisi klien dibangun menggunakan
     framework Next.js 14 sebagai aplikasi web responsif yang melayani
@@ -2128,7 +2208,7 @@ height="1.6911329833770778in"}
 ![](media/image9.png){width="5.751065179352581in"
 height="4.280055774278215in"}
 
-[]{#_Toc218783005 .anchor}Gambar 3. 8 Perancangan Basis Data
+[]{#_Toc218783005 .anchor}Gambar 3. Perancangan Basis Data
 
 > Skema basis data dirancang dengan memisahkan tanggung jawab antar
 > modul (Separation of Concerns). Pada lapisan keamanan, modul
@@ -2249,7 +2329,7 @@ height="4.280055774278215in"}
 > ![](media/image10.png){width="3.8268471128608925in"
 > height="3.6224420384951883in"}
 
-[]{#_Toc218847794 .anchor}Gambar 4. 1 Tampilan Halaman Login
+[]{#_Toc218847794 .anchor}Gambar 4. Tampilan Halaman Login
 
 > Berdasarkan Gambar 4.1, halaman login menampilkan formulir autentikasi
 > yang mewajibkan pengguna untuk memasukkan Username dan Password yang
@@ -2271,7 +2351,7 @@ height="4.280055774278215in"}
 > ![](media/image11.png){width="3.6240791776027996in"
 > height="3.705184820647419in"}
 
-[]{#_Toc218847795 .anchor}Gambar 4. 2 Tampilan Halaman Register
+[]{#_Toc218847795 .anchor}Gambar 4. Tampilan Halaman Register
 
 > Seperti terlihat pada Gambar 4.2, tahap pertama registrasi (Step 1 of
 > 2) fokus pada pengumpulan informasi akun dasar. Pengguna diminta untuk
@@ -2291,7 +2371,7 @@ height="4.280055774278215in"}
 > status operasional sistem serta menyediakan akses cepat ke berbagai
 > fitur manajemen muatan.
 
-[]{#_Toc218847796 .anchor}Gambar 4. 3 *Tampilan Halaman Dashboard*
+[]{#_Toc218847796 .anchor}Gambar 4. *Tampilan Halaman Dashboard*
 
 > Seperti ditunjukkan pada Gambar 4.3, halaman dashboard terdiri dari
 > beberapa elemen antarmuka yang tersusun secara terstruktur untuk
@@ -2320,8 +2400,7 @@ height="4.280055774278215in"}
 > ![](media/image13.png){width="5.174146981627296in"
 > height="2.5127832458442696in"}
 
-[]{#_Toc218847797 .anchor}Gambar 4. 4 Tampilan Halaman Container
-Profiles
+[]{#_Toc218847797 .anchor}Gambar 4. Tampilan Halaman Container Profiles
 
 > Berdasarkan Gambar 4.4, halaman ini menampilkan daftar kontainer dalam
 > bentuk tabel yang memuat informasi krusial seperti Nama Kontainer,
@@ -2342,8 +2421,7 @@ Profiles
 > ![](media/image14.png){width="5.539931102362205in"
 > height="2.6987674978127734in"}
 
-[]{#_Toc218847798 .anchor}Gambar 4. 5 Tampilan Halaman Producting
-Catalog
+[]{#_Toc218847798 .anchor}Gambar 4. Tampilan Halaman Producting Catalog
 
 > Seperti terlihat pada Gambar 4.5, setiap entitas produk
 > direpresentasikan dengan atribut detail meliputi Dimensi (LxWxH),
@@ -2364,7 +2442,7 @@ Catalog
 > ![](media/image15.png){width="5.537566710411198in"
 > height="2.680437445319335in"}
 
-[]{#_Toc218847799 .anchor}Gambar 4. 6 Tampilan Halaman All Shipments
+[]{#_Toc218847799 .anchor}Gambar 4. Tampilan Halaman All Shipments
 
 > Pada Gambar 4.6, data pengiriman ditampilkan dalam format kartu (card
 > view) yang informatif. Setiap kartu memuat ID Pengiriman, Tanggal
@@ -2384,7 +2462,7 @@ Catalog
 > ![](media/image16.png){width="5.5218153980752405in"
 > height="2.731541994750656in"}
 
-[]{#_Toc218847800 .anchor}Gambar 4. 7 Tampilan Halaman Visualisasi 3D
+[]{#_Toc218847800 .anchor}Gambar 4. Tampilan Halaman Visualisasi 3D
 
 > Pada Gambar 4.15, antarmuka menampilkan panel 3D Simulation di bagian
 > tengah yang memvisualisasikan kontainer 40ft High Cube beserta susunan
@@ -2411,7 +2489,7 @@ Catalog
 > ![](media/image17.png){width="5.444400699912511in"
 > height="2.7378838582677165in"}
 
-[]{#_Toc218847801 .anchor}Gambar 4. 8 Tampilan Halaman Create Shipment
+[]{#_Toc218847801 .anchor}Gambar 4. Tampilan Halaman Create Shipment
 
 > Gambar 4.7 memperlihatkan formulir perencanaan yang terbagi menjadi
 > beberapa blok logis. Pada bagian kiri, pengguna mengisi Shipment Title
@@ -2435,8 +2513,7 @@ Catalog
 > ![](media/image18.png){width="5.502244094488189in"
 > height="2.6791896325459317in"}
 >
-> []{#_Toc218847802 .anchor}Gambar 4. 9 Tampilan Halaman Loading
-> Shipments
+> []{#_Toc218847802 .anchor}Gambar 4. Tampilan Halaman Loading Shipments
 >
 > Gambar 4.8 menunjukkan tampilan awal (empty state) dari halaman
 > instruksi muat ketika belum ada rencana pengiriman yang dipilih atau
@@ -2457,7 +2534,7 @@ Catalog
 > ![](media/image19.png){width="5.472761373578303in"
 > height="2.6266338582677164in"}
 >
-> []{#_Toc218847803 .anchor}Gambar 4. 10 Tampilan Halaman Members
+> []{#_Toc218847803 .anchor}Gambar 4. Tampilan Halaman Members
 >
 > Sebagaimana ditampilkan pada Gambar 4.9, halaman ini menyajikan daftar
 > anggota aktif dalam format tabel yang memuat informasi Username,
@@ -2479,7 +2556,7 @@ Catalog
 > ![](media/image20.png){width="5.5276126421697285in"
 > height="2.690317147856518in"}
 >
-> []{#_Toc218847804 .anchor}Gambar 4. 11 Tampilan Halaman Invites
+> []{#_Toc218847804 .anchor}Gambar 4. Tampilan Halaman Invites
 >
 > Gambar 4.10 memperlihatkan antarmuka pengelolaan undangan yang
 > statusnya masih tertunda (pending). Tabel ini mencatat detail penting
@@ -2497,8 +2574,7 @@ Catalog
 > ![](media/image21.png){width="5.579463035870516in"
 > height="2.7804593175853016in"}
 >
-> []{#_Toc218847805 .anchor}Gambar 4. 12 Tampilan Halaman User
-> Management
+> []{#_Toc218847805 .anchor}Gambar 4. Tampilan Halaman User Management
 >
 > Berdasarkan Gambar 4.11, halaman ini menampilkan inventarisasi akun
 > pengguna secara global. Informasi yang disajikan meliputi Username,
@@ -2517,7 +2593,7 @@ Catalog
 > ![](media/image22.png){width="5.577604986876641in"
 > height="2.7634667541557305in"}
 >
-> []{#_Toc218847806 .anchor}Gambar 4. 13 Tampilan Halaman Workspaces
+> []{#_Toc218847806 .anchor}Gambar 4. Tampilan Halaman Workspaces
 > Management
 >
 > Pada Gambar 4.12, terlihat daftar workspace yang aktif beserta
@@ -2536,7 +2612,7 @@ Catalog
 > ![](media/image23.png){width="5.5526935695538056in"
 > height="2.69206583552056in"}
 >
-> []{#_Toc218847807 .anchor}Gambar 4. 14 Tampilan Halaman Roles
+> []{#_Toc218847807 .anchor}Gambar 4. Tampilan Halaman Roles
 >
 > Gambar 4.13 menunjukkan dua tampilan konfigurasi keamanan. Pada bagian
 > Roles, sistem mendefinisikan tingkatan jabatan pengguna seperti Admin,
@@ -2559,7 +2635,7 @@ Catalog
 > ![](media/image24.png){width="5.422410323709537in"
 > height="2.7460487751531057in"}
 >
-> []{#_Toc218847808 .anchor}Gambar 4. 15 Tampilan Halaman Permissions
+> []{#_Toc218847808 .anchor}Gambar 4. Tampilan Halaman Permissions
 >
 > Berdasarkan Gambar 4.14, sistem ini menerapkan kontrol akses yang
 > sangat granular (terperinci). Setiap izin direpresentasikan dalam
@@ -2573,9 +2649,231 @@ Catalog
 > akses dapat dikonfigurasi secara spesifik tanpa harus merombak kode
 > program.
 
-## Pengujian Code Coverage
+## Pengujian system
 
-[]{#_Toc218847809 .anchor}Gambar 4. 16 Pengujian Code Coverage
+### **Skenario Pengujian**
+
+Pengujian difokuskan pada evaluasi performa algoritma 3D Bin Packing
+dengan lima skenario yang berbeda berdasarkan jumlah item yang dimuat,
+sebagaimana ditunjukkan pada Tabel \_\_\_.
+
+  ------------------------------------------------------------------------
+  Skenario    Jumlah Item    Deskripsi
+  ----------- -------------- ---------------------------------------------
+  S1          50             Muatan ringan untuk pengujian dasar sistem
+
+  S2          100            Muatan sedang dengan heterogenitas item
+
+  S3          150            Muatan menengah untuk pengujian stabilitas
+
+  S4          200            Muatan berat dengan kompleksitas tinggi
+
+  S5          300            Muatan maksimal untuk stress testing
+  ------------------------------------------------------------------------
+
+Kontainer yang digunakan dalam seluruh pengujian adalah tipe 40-foot
+High Cube dengan dimensi internal 12.032 × 2.352 × 2.698 meter (volume
+76.35 m³) dan kapasitas berat maksimum 26,460 kg. Empat jenis produk
+dengan dimensi berbeda digunakan untuk mensimulasikan heterogenitas
+kargo, sebagaimana dirinci pada Tabel \_\_.
+
+  ------------------------------------------------------------------------
+  Komponen             Dimensi (mm)             Volume/Berat
+  -------------------- ------------------------ --------------------------
+  Kontainer 40ft HC    12,032 × 2,352 × 2,698   76.35 m³, 26,460 kg max
+
+  Euro Pallet          1,200 × 800 × 144        \-
+
+  Large Crate          1,000 × 600 × 500        \-
+
+  Medium Box           600 × 400 × 400          \-
+
+  Small Box            400 × 300 × 200          \-
+  ------------------------------------------------------------------------
+
+### **Hasil Pengujian Performa**
+
+Tabel \_\_ menunjukkan hasil pengujian untuk seluruh skenario dengan
+konfigurasi algoritma baseline (strategi Bigger First dengan stability
+checking aktif). Metrik yang diukur mencakup volume utilization, weight
+utilization, fill rate, dan computation time.
+
+  -----------------------------------------------------------------------
+  Skenario    Jumlah Item Vol. Util.  Weight      Fill Rate   Waktu (ms)
+                          (%)         Util. (%)   (%)         
+  ----------- ----------- ----------- ----------- ----------- -----------
+  S1          50          6.29 ± 0.00 2.83 ± 0.00 100.00      320 ± 6
+
+  S2          100         8.80 ± 0.00 4.16 ± 0.00 100.00      1,684 ± 131
+
+  S3          150         24.83 ±     11.15 ±     100.00      5,213 ± 169
+                          0.00        0.00                    
+
+  S4          200         35.45 ±     16.25 ±     100.00      10,826 ±
+                          0.00        0.00                    168
+
+  S5          300         55.26 ±     25.32 ±     100.00      38,343 ±
+                          0.00        0.00                    1,209
+  -----------------------------------------------------------------------
+
+Hasil pengujian menunjukkan bahwa algoritma berhasil menempatkan seluruh
+item (fill rate 100%) pada semua skenario. Hal ini mengindikasikan bahwa
+kapasitas kontainer 40-foot High Cube memadai untuk menampung seluruh
+konfigurasi item yang diuji. Volume utilization meningkat secara
+proporsional seiring bertambahnya jumlah item, dari 6.29% pada S1 hingga
+55.26% pada S5. Nilai weight utilization yang lebih rendah dibandingkan
+volume utilization menunjukkan bahwa constraint ruang
+(volume-constrained) merupakan faktor pembatas utama dibandingkan
+constraint berat.
+
+![](media/image25.png){width="4.536765091863517in"
+height="2.805194663167104in"}
+
+Gambar \_\_ memvisualisasikan perbandingan volume dan weight utilization
+untuk setiap skenario. Terlihat pola konsisten di mana volume
+utilization selalu lebih tinggi dengan rasio sekitar 2:1, mengkonfirmasi
+karakteristik volume-constrained dari konfigurasi pengujian. Aspek
+kritis dalam evaluasi algoritma 3D-BPP adalah skalabilitas computation
+time terhadap peningkatan jumlah item. Tabel \_\_ menyajikan statistik
+computation time yang lebih detail, mencakup nilai minimum, rata-rata,
+dan maksimum untuk setiap skenario.
+
+  -----------------------------------------------------------------------
+    Skenario     Jumlah Item      Min (ms)      Avg (ms)      Max (ms)
+  ------------ ---------------- ------------- ------------- -------------
+       S1             50             311           320           325
+
+       S2            100            1,489         1,684         1,791
+
+       S3            150            5,012         5,213         5,391
+
+       S4            200           10,544        10,826        10,972
+
+       S5            300           36,334        38,343        39,288
+  -----------------------------------------------------------------------
+
+![](media/image26.png){width="4.636363735783027in"
+height="2.863183508311461in"}
+
+Gambar \_\_ mengilustrasikan hubungan antara jumlah item dan computation
+time. Kurva menunjukkan pola pertumbuhan yang mendekati kuadratik
+(O(n²)), konsisten dengan karakteristik algoritma bin packing berbasis
+heuristic. Untuk setiap item yang akan ditempatkan, algoritma harus
+melakukan pengecekan collision dengan seluruh item yang telah
+diposisikan sebelumnya, menghasilkan pertumbuhan kompleksitas kuadratik.
+Meskipun computation time pada skenario S5 (300 item) mencapai rata-rata
+38 detik, nilai ini masih dalam batas toleransi untuk aplikasi load
+planning offline, di mana proses perencanaan pemuatan dilakukan sebelum
+aktivitas physical loading dimulai.
+
+![](media/image27.png){width="5.0in" height="4.151340769903762in"}
+
+Gambar \_\_ menyajikan ringkasan visual dari seluruh metrik performa
+yang diukur, mencakup volume utilization, fill rate, time scalability,
+dan korelasi volume-weight utilization dalam empat panel yang
+terintegrasi.
+
+### **Perbandingan Varian Algoritma**
+
+Untuk memahami kontribusi setiap komponen algoritma, dilakukan pengujian
+komparatif dengan tiga varian konfigurasi pada skenario S3 (150 item).
+Tabel \_\_ menunjukkan hasil perbandingan antara konfigurasi baseline
+(Bigger First + Stability), varian tanpa stability checking, dan varian
+dengan strategi Smaller First.
+
+  ------------------------------------------------------------------------
+  Varian                   Vol. Util.    Fill Rate   Waktu (ms)    Item
+                               (%)          (%)                   Termuat
+  ----------------------- ------------- ------------ ----------- ---------
+  Bigger First +              24.83        100.00       5,386       150
+  Stability                                                      
+
+  Bigger First (No            24.83        100.00       4,960       150
+  Stability)                                                     
+
+  Smaller First +             17.37        87.33       32,886       131
+  Stability                                                      
+  ------------------------------------------------------------------------
+
+Hasil perbandingan mengungkap beberapa temuan penting. Pertama, strategi
+Bigger First terbukti superior dibandingkan Smaller First, menghasilkan
+volume utilization 42.9% lebih tinggi secara relatif (24.83% absolut vs
+17.37% absolut) dan fill rate 12.67% lebih baik (100% vs 87.33%). Hal
+ini mengkonfirmasi prinsip heuristik bahwa menempatkan item besar
+terlebih dahulu meninggalkan ruang kecil yang dapat diisi oleh item
+kecil, namun tidak berlaku sebaliknya. Kedua, dampak stability checking
+terhadap computation time relatif minimal, di mana menonaktifkan
+stability checking hanya menghemat sekitar 8% waktu komputasi (5,386 ms
+vs 4,960 ms) tanpa mengubah hasil utilisasi. Hal ini menunjukkan bahwa
+overhead stability checking relatif kecil dan layak dipertahankan untuk
+memastikan keamanan physical loading. Ketiga, dari perspektif efisiensi
+komputasi, varian Smaller First memerlukan waktu 6.1 kali lebih lama
+(32,886 ms vs 5,386 ms) dibandingkan Bigger First. Perbedaan drastis ini
+disebabkan oleh peningkatan failed placement attempts ketika item kecil
+mengisi ruang yang seharusnya optimal untuk item besar.
+
+### **Cakupan Pengujian**
+
+Dilakukan pengujian unit dan integrasi secara menyeluruh terhadap
+seluruh komponen sistem yang dibangun menggunakan Go. Hasil pengujian
+menunjukkan coverage keseluruhan sebesar 94.48% (3,170 dari 3,355 baris
+kode tercakup), sebagaimana ditampilkan pada Gambar \_\_.
+
+![](media/image28.png){width="5.727272528433946in"
+height="5.045786307961505in"}
+
+Tabel \_\_ menyajikan breakdown coverage per modul backend, menunjukkan
+distribusi pengujian pada berbagai layer aplikasi.
+
+  -----------------------------------------------------------------------
+  Modul         Tracked     Covered     Partial     Missed     Coverage
+                 Lines                                            (%)
+  ----------- ----------- ----------- ----------- ----------- -----------
+  iddleware       96          96           0           0        100.00
+
+  config          13          13           0           0        100.00
+
+  env             21          21           0           0        100.00
+
+  response        17          17           0           0        100.00
+
+  types           15          15           0           0        100.00
+
+  handler         708         695          2          11         98.16
+
+  packer          227         221          0           6         97.36
+
+  auth            70          65           2           3         92.86
+
+  service        2,132       1,975        69          88         92.64
+
+  gateway         40          36           2           2         90.00
+
+  cache           16          16           0           0        100.00
+
+  Total          3,355       3,170        75          110        94.48
+  -----------------------------------------------------------------------
+
+Analisis coverage menunjukkan bahwa modul-modul kritis mencapai coverage
+sangat tinggi. Modul middleware mencapai 100% coverage, memastikan bahwa
+seluruh logic authentication dan RBAC (Role-Based Access Control)
+berfungsi dengan benar. Modul handler yang menangani API endpoints
+mencapai 98.16% coverage, mengindikasikan bahwa hampir seluruh
+request-response flow telah diuji. Modul packer yang mengimplementasikan
+logika 3D bin packing mencapai 97.36% coverage, memvalidasi kebenaran
+algoritma penataan barang. Modul service sebagai business logic layer
+mencapai 92.64% coverage, menguji sebagian besar skenario operasional
+sistem.
+
+Area yang belum tercakup (5.52% dari total kode) umumnya terdiri dari
+error handling paths yang sulit di-reproduce dalam environment testing,
+seperti failure scenarios pada koneksi database, external service
+timeouts, atau edge cases yang jarang terjadi dalam kondisi normal.
+Coverage di atas 90% untuk semua modul kritis menunjukkan bahwa sistem
+telah diuji dengan baik dan memiliki tingkat confidence yang tinggi
+untuk deployment production.
+
+[]{#_Toc218847809 .anchor}Gambar 4. Pengujian Code Coverage
 
 #  KESIMPULAN & SARAN
 
