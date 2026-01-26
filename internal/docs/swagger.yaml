@@ -377,6 +377,13 @@ definitions:
       name:
         maxLength: 150
         type: string
+      owner_user_id:
+        type: string
+      type:
+        enum:
+        - personal
+        - organization
+        type: string
     required:
     - name
     type: object
@@ -910,7 +917,11 @@ definitions:
         type: string
       name:
         type: string
+      owner_email:
+        type: string
       owner_user_id:
+        type: string
+      owner_username:
         type: string
       type:
         description: personal|organization

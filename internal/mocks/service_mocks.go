@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -419,8 +420,8 @@ type MockDashboardService struct {
 	mock.Mock
 }
 
-func (m *MockDashboardService) GetStats(ctx context.Context, role string) (*dto.DashboardStatsResponse, error) {
-	args := m.Called(ctx, role)
+func (m *MockDashboardService) GetStats(ctx context.Context, role string, workspaceID *uuid.UUID) (*dto.DashboardStatsResponse, error) {
+	args := m.Called(ctx, role, workspaceID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
