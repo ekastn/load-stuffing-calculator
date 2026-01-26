@@ -131,10 +131,10 @@ export default function ShipmentDetailPage() {
 
   return (
     <RouteGuard requiredPermissions={["plan:read"]}>
-    <div className="h-[calc(100vh-6rem)] flex flex-col gap-4">
-      <div className="flex items-center justify-between shrink-0 bg-white p-4 rounded-lg border border-border/50 shadow-sm">
+    <div className="flex flex-col gap-4 h-full lg:h-[calc(100vh-6rem)]">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between shrink-0 bg-white p-4 rounded-lg border border-border/50 shadow-sm gap-4 sm:gap-0">
             <div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-xl font-bold text-foreground uppercase tracking-tight">{currentPlan.title || currentPlan.plan_code}</h1>
                 <Badge variant={calc ? "default" : "outline"} className={calc ? "bg-green-600" : ""}>{currentPlan.status}</Badge>
               </div>
@@ -143,7 +143,7 @@ export default function ShipmentDetailPage() {
                 {container.name} — {container.length_mm} x {container.width_mm} x {container.height_mm} mm
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 w-full sm:w-auto flex-wrap">
                 {canMutateItems && (
                 <Button variant="outline" size="sm" onClick={() => setShowAddItem(true)} className="gap-2">
                     <Plus className="h-4 w-4" />
@@ -182,7 +182,7 @@ export default function ShipmentDetailPage() {
             
             {/* LEFT: 3D Visualization */}
             <div className="lg:col-span-8 flex flex-col gap-4 min-h-0">
-              <Card className="flex-1 border-border/50 bg-white shadow-sm overflow-hidden flex flex-col">
+              <Card className="h-[500px] lg:h-auto lg:flex-1 border-border/50 bg-white shadow-sm overflow-hidden flex flex-col">
                 <CardHeader className="py-2 px-4 shrink-0 border-b border-border/50 bg-slate-50/80 flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">3D Simulation</CardTitle>
 
@@ -249,8 +249,8 @@ export default function ShipmentDetailPage() {
                         <div className="flex justify-between items-baseline mb-1">
                             <span className="text-sm font-medium text-slate-600">Cargo Volume</span>
                             <div className="text-right">
-                                <span className="text-lg font-bold text-blue-600">{totalVolume.toFixed(2)} m³</span>
-                                <span className="text-xs text-muted-foreground ml-1">({volUtil.toFixed(1)}%)</span>
+                                <span className="text-lg font-bold text-blue-600">{totalVolume} m³</span>
+                                <span className="text-xs text-muted-foreground ml-1">({volUtil}%)</span>
                             </div>
                         </div>
                         <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">

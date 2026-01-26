@@ -28,8 +28,8 @@ export function AnimationControls({
     onDownload,
 }: AnimationControlsProps) {
     return (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg border border-zinc-200 p-4 flex items-center gap-4 min-w-[500px]">
-            <div className="flex gap-2">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg border border-zinc-200 p-4 flex flex-col sm:flex-row items-center gap-4 w-[calc(100%-2rem)] max-w-[500px]">
+            <div className="flex gap-2 w-full sm:w-auto justify-center">
                 <Button
                     variant="outline"
                     size="icon"
