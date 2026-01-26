@@ -26,7 +26,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout, permissions, isPlatformMember, activeWorkspaceId, switchWorkspace } = useAuth()
   const router = useRouter()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const canReadWorkspaces = hasAnyPermission(permissions ?? [], ["workspace:read"])
   const { workspaces } = useWorkspaces()
@@ -80,21 +80,35 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`${
-          sidebarOpen ? "w-64" : "w-0"
-        } border-r border-border bg-card transition-all duration-300 overflow-hidden flex flex-col`}
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:flex flex-col`}
       >
-        <div className="flex h-16 items-center border-b border-border px-6">
+        <div className="flex h-16 items-center justify-between border-b border-border px-6">
           <h1 className="text-xl font-bold text-primary">Load & Stuffing</h1>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground">
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
           {items.map((item) => (
             <button
               key={item.path}
-              onClick={() => router.push(item.path)}
+              onClick={() => {
+                router.push(item.path)
+                setSidebarOpen(false) // Close on mobile navigation
+              }}
               className={`w-full rounded-md px-4 py-2 text-left text-sm font-medium transition-colors ${
                 activePath === item.path
                   ? "bg-primary/10 text-primary"
@@ -140,25 +154,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        {/* <div className="flex h-16 items-center justify-between border-b border-border bg-card/50 px-6 backdrop-blur-sm"> */}
-        {/*   <button onClick={() => setSidebarOpen(!sidebarOpen)} className="rounded-md p-2 hover:bg-card/50 lg:hidden"> */}
-        {/*     {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />} */}
-        {/*   </button> */}
-        {/**/}
-        {/*   <div className="flex-1" /> */}
-        {/**/}
-        {/*   <div className="text-sm text-muted-foreground"> */}
-        {/*     {new Date().toLocaleDateString("en-US", { */}
-        {/*       weekday: "short", */}
-        {/*       month: "short", */}
-        {/*       day: "numeric", */}
-        {/*     })} */}
-        {/*   </div> */}
-        {/* </div> */}
+        <div className="flex h-16 items-center justify-between border-b border-border bg-card/50 px-6 backdrop-blur-sm lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="rounded-md p-2 hover:bg-card/50">
+            <Menu className="h-5 w-5" />
+          </button>
+
+          <div className="flex-1" />
+
+          <div className="text-sm text-muted-foreground">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+            })}
+          </div>
+        </div>
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto">
-          <div className="p-6">{children}</div>
+          <div className="p-4 lg:p-6">{children}</div>
         </div>
       </div>
     </div>
