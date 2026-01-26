@@ -15,13 +15,21 @@ type Querier interface {
 	AddLoadItem(ctx context.Context, arg AddLoadItemParams) (LoadItem, error)
 	AddRolePermission(ctx context.Context, arg AddRolePermissionParams) error
 	ClaimPlansFromGuest(ctx context.Context, arg ClaimPlansFromGuestParams) error
-	CountActivePlans(ctx context.Context) (int64, error)
-	CountCompletedPlans(ctx context.Context) (int64, error)
-	CountCompletedPlansToday(ctx context.Context) (int64, error)
-	CountContainers(ctx context.Context) (int64, error)
+	CountGlobalActivePlans(ctx context.Context) (int64, error)
+	CountGlobalCompletedPlans(ctx context.Context) (int64, error)
+	CountGlobalCompletedPlansToday(ctx context.Context) (int64, error)
+	CountGlobalContainers(ctx context.Context) (int64, error)
+	CountGlobalTotalItems(ctx context.Context) (int64, error)
+	// PLATFORM / FOUNDER QUERIES
+	CountGlobalUsers(ctx context.Context) (int64, error)
 	CountPlansByCreator(ctx context.Context, arg CountPlansByCreatorParams) (int64, error)
-	CountTotalItems(ctx context.Context) (int64, error)
-	CountTotalUsers(ctx context.Context) (int64, error)
+	CountWorkspaceActivePlans(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceCompletedPlans(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceCompletedPlansToday(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceContainers(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceItems(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	// WORKSPACE SCOPED QUERIES
+	CountWorkspaceMembers(ctx context.Context, workspaceID uuid.UUID) (int64, error)
 	CreateContainer(ctx context.Context, arg CreateContainerParams) (Container, error)
 	CreateInvite(ctx context.Context, arg CreateInviteParams) (Invite, error)
 	CreateLoadPlan(ctx context.Context, arg CreateLoadPlanParams) (LoadPlan, error)
@@ -47,9 +55,10 @@ type Querier interface {
 	DeleteRolePermissions(ctx context.Context, roleID uuid.UUID) error
 	DeleteUser(ctx context.Context, userID uuid.UUID) error
 	DeleteWorkspace(ctx context.Context, workspaceID uuid.UUID) error
-	GetAvgVolumeUtilization(ctx context.Context) (float64, error)
 	GetContainer(ctx context.Context, arg GetContainerParams) (Container, error)
 	GetContainerAny(ctx context.Context, containerID uuid.UUID) (Container, error)
+	GetGlobalAvgVolumeUtilization(ctx context.Context) (float64, error)
+	GetGlobalPlanStatusDistribution(ctx context.Context) ([]GetGlobalPlanStatusDistributionRow, error)
 	GetInviteByTokenHash(ctx context.Context, tokenHash string) (Invite, error)
 	GetLoadItem(ctx context.Context, arg GetLoadItemParams) (LoadItem, error)
 	GetLoadPlan(ctx context.Context, arg GetLoadPlanParams) (LoadPlan, error)
@@ -62,7 +71,6 @@ type Querier interface {
 	GetPermissionsByRole(ctx context.Context, name string) ([]string, error)
 	GetPersonalWorkspaceByOwner(ctx context.Context, ownerUserID uuid.UUID) (Workspace, error)
 	GetPlanResult(ctx context.Context, planID *uuid.UUID) (PlanResult, error)
-	GetPlanStatusDistribution(ctx context.Context) ([]GetPlanStatusDistributionRow, error)
 	GetPlatformRoleByUserID(ctx context.Context, userID uuid.UUID) (string, error)
 	GetProduct(ctx context.Context, arg GetProductParams) (Product, error)
 	GetProductAny(ctx context.Context, productID uuid.UUID) (Product, error)
@@ -74,6 +82,8 @@ type Querier interface {
 	GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByIDRow, error)
 	GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error)
 	GetWorkspace(ctx context.Context, workspaceID uuid.UUID) (Workspace, error)
+	GetWorkspaceAvgVolumeUtilization(ctx context.Context, workspaceID *uuid.UUID) (float64, error)
+	GetWorkspacePlanStatusDistribution(ctx context.Context, workspaceID *uuid.UUID) ([]GetWorkspacePlanStatusDistributionRow, error)
 	ListContainers(ctx context.Context, arg ListContainersParams) ([]Container, error)
 	ListContainersAll(ctx context.Context, arg ListContainersAllParams) ([]Container, error)
 	ListInvitesByWorkspace(ctx context.Context, arg ListInvitesByWorkspaceParams) ([]ListInvitesByWorkspaceRow, error)

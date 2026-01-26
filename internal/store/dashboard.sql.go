@@ -7,108 +7,243 @@ package store
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
-const countActivePlans = `-- name: CountActivePlans :one
+const countGlobalActivePlans = `-- name: CountGlobalActivePlans :one
 SELECT COUNT(*) FROM load_plans WHERE status NOT IN ('COMPLETED', 'FAILED')
 `
 
-func (q *Queries) CountActivePlans(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countActivePlans)
+func (q *Queries) CountGlobalActivePlans(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countGlobalActivePlans)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
-const countCompletedPlans = `-- name: CountCompletedPlans :one
+const countGlobalCompletedPlans = `-- name: CountGlobalCompletedPlans :one
 SELECT COUNT(*) FROM load_plans WHERE status = 'COMPLETED'
 `
 
-func (q *Queries) CountCompletedPlans(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countCompletedPlans)
+func (q *Queries) CountGlobalCompletedPlans(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countGlobalCompletedPlans)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
-const countCompletedPlansToday = `-- name: CountCompletedPlansToday :one
+const countGlobalCompletedPlansToday = `-- name: CountGlobalCompletedPlansToday :one
 SELECT COUNT(*) FROM load_plans 
 WHERE status = 'COMPLETED' 
 AND created_at >= CURRENT_DATE
 `
 
-func (q *Queries) CountCompletedPlansToday(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countCompletedPlansToday)
+func (q *Queries) CountGlobalCompletedPlansToday(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countGlobalCompletedPlansToday)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
-const countContainers = `-- name: CountContainers :one
+const countGlobalContainers = `-- name: CountGlobalContainers :one
 SELECT COUNT(*) FROM containers
 `
 
-func (q *Queries) CountContainers(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countContainers)
+func (q *Queries) CountGlobalContainers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countGlobalContainers)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
-const countTotalItems = `-- name: CountTotalItems :one
+const countGlobalTotalItems = `-- name: CountGlobalTotalItems :one
 SELECT COALESCE(SUM(quantity), 0)::BIGINT FROM load_items
 `
 
-func (q *Queries) CountTotalItems(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countTotalItems)
+func (q *Queries) CountGlobalTotalItems(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countGlobalTotalItems)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
-const countTotalUsers = `-- name: CountTotalUsers :one
+const countGlobalUsers = `-- name: CountGlobalUsers :one
+
 SELECT COUNT(*) FROM users
 `
 
-func (q *Queries) CountTotalUsers(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countTotalUsers)
+// PLATFORM / FOUNDER QUERIES
+func (q *Queries) CountGlobalUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countGlobalUsers)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
-const getAvgVolumeUtilization = `-- name: GetAvgVolumeUtilization :one
+const countWorkspaceActivePlans = `-- name: CountWorkspaceActivePlans :one
+SELECT COUNT(*) 
+FROM load_plans 
+WHERE workspace_id = $1 
+AND status NOT IN ('COMPLETED', 'FAILED')
+`
+
+func (q *Queries) CountWorkspaceActivePlans(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countWorkspaceActivePlans, workspaceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countWorkspaceCompletedPlans = `-- name: CountWorkspaceCompletedPlans :one
+SELECT COUNT(*) 
+FROM load_plans 
+WHERE workspace_id = $1 
+AND status = 'COMPLETED'
+`
+
+func (q *Queries) CountWorkspaceCompletedPlans(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countWorkspaceCompletedPlans, workspaceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countWorkspaceCompletedPlansToday = `-- name: CountWorkspaceCompletedPlansToday :one
+SELECT COUNT(*) 
+FROM load_plans 
+WHERE workspace_id = $1 
+AND status = 'COMPLETED' 
+AND created_at >= CURRENT_DATE
+`
+
+func (q *Queries) CountWorkspaceCompletedPlansToday(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countWorkspaceCompletedPlansToday, workspaceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countWorkspaceContainers = `-- name: CountWorkspaceContainers :one
+SELECT COUNT(*) 
+FROM containers 
+WHERE workspace_id = $1 OR workspace_id IS NULL
+`
+
+func (q *Queries) CountWorkspaceContainers(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countWorkspaceContainers, workspaceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countWorkspaceItems = `-- name: CountWorkspaceItems :one
+SELECT COALESCE(SUM(li.quantity), 0)::BIGINT 
+FROM load_items li
+JOIN load_plans lp ON li.plan_id = lp.plan_id
+WHERE lp.workspace_id = $1
+`
+
+func (q *Queries) CountWorkspaceItems(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countWorkspaceItems, workspaceID)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const countWorkspaceMembers = `-- name: CountWorkspaceMembers :one
+
+SELECT COUNT(*) 
+FROM members 
+WHERE workspace_id = $1
+`
+
+// WORKSPACE SCOPED QUERIES
+func (q *Queries) CountWorkspaceMembers(ctx context.Context, workspaceID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countWorkspaceMembers, workspaceID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getGlobalAvgVolumeUtilization = `-- name: GetGlobalAvgVolumeUtilization :one
 SELECT COALESCE(AVG(volume_utilization_pct), 0)::FLOAT
 FROM plan_results
 `
 
-func (q *Queries) GetAvgVolumeUtilization(ctx context.Context) (float64, error) {
-	row := q.db.QueryRow(ctx, getAvgVolumeUtilization)
+func (q *Queries) GetGlobalAvgVolumeUtilization(ctx context.Context) (float64, error) {
+	row := q.db.QueryRow(ctx, getGlobalAvgVolumeUtilization)
 	var column_1 float64
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
-const getPlanStatusDistribution = `-- name: GetPlanStatusDistribution :many
+const getGlobalPlanStatusDistribution = `-- name: GetGlobalPlanStatusDistribution :many
 SELECT status, COUNT(*) as count 
 FROM load_plans 
 GROUP BY status
 `
 
-type GetPlanStatusDistributionRow struct {
+type GetGlobalPlanStatusDistributionRow struct {
 	Status *string `json:"status"`
 	Count  int64   `json:"count"`
 }
 
-func (q *Queries) GetPlanStatusDistribution(ctx context.Context) ([]GetPlanStatusDistributionRow, error) {
-	rows, err := q.db.Query(ctx, getPlanStatusDistribution)
+func (q *Queries) GetGlobalPlanStatusDistribution(ctx context.Context) ([]GetGlobalPlanStatusDistributionRow, error) {
+	rows, err := q.db.Query(ctx, getGlobalPlanStatusDistribution)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetPlanStatusDistributionRow
+	var items []GetGlobalPlanStatusDistributionRow
 	for rows.Next() {
-		var i GetPlanStatusDistributionRow
+		var i GetGlobalPlanStatusDistributionRow
+		if err := rows.Scan(&i.Status, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getWorkspaceAvgVolumeUtilization = `-- name: GetWorkspaceAvgVolumeUtilization :one
+SELECT COALESCE(AVG(pr.volume_utilization_pct), 0)::FLOAT
+FROM plan_results pr
+JOIN load_plans lp ON pr.plan_id = lp.plan_id
+WHERE lp.workspace_id = $1
+`
+
+func (q *Queries) GetWorkspaceAvgVolumeUtilization(ctx context.Context, workspaceID *uuid.UUID) (float64, error) {
+	row := q.db.QueryRow(ctx, getWorkspaceAvgVolumeUtilization, workspaceID)
+	var column_1 float64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const getWorkspacePlanStatusDistribution = `-- name: GetWorkspacePlanStatusDistribution :many
+SELECT status, COUNT(*) as count 
+FROM load_plans 
+WHERE workspace_id = $1
+GROUP BY status
+`
+
+type GetWorkspacePlanStatusDistributionRow struct {
+	Status *string `json:"status"`
+	Count  int64   `json:"count"`
+}
+
+func (q *Queries) GetWorkspacePlanStatusDistribution(ctx context.Context, workspaceID *uuid.UUID) ([]GetWorkspacePlanStatusDistributionRow, error) {
+	rows, err := q.db.Query(ctx, getWorkspacePlanStatusDistribution, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetWorkspacePlanStatusDistributionRow
+	for rows.Next() {
+		var i GetWorkspacePlanStatusDistributionRow
 		if err := rows.Scan(&i.Status, &i.Count); err != nil {
 			return nil, err
 		}

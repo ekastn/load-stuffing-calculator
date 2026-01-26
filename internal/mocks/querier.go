@@ -77,17 +77,29 @@ type MockQuerier struct {
 	CountPlansByCreatorFunc         func(ctx context.Context, arg store.CountPlansByCreatorParams) (int64, error)
 	ClaimPlansFromGuestFunc         func(ctx context.Context, arg store.ClaimPlansFromGuestParams) error
 
-	AddRolePermissionFunc         func(ctx context.Context, arg store.AddRolePermissionParams) error
-	DeleteRolePermissionsFunc     func(ctx context.Context, roleID uuid.UUID) error
-	GetRolePermissionsFunc        func(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error)
-	CountActivePlansFunc          func(ctx context.Context) (int64, error)
-	CountCompletedPlansFunc       func(ctx context.Context) (int64, error)
-	CountCompletedPlansTodayFunc  func(ctx context.Context) (int64, error)
-	CountContainersFunc           func(ctx context.Context) (int64, error)
-	CountTotalItemsFunc           func(ctx context.Context) (int64, error)
-	CountTotalUsersFunc           func(ctx context.Context) (int64, error)
-	GetAvgVolumeUtilizationFunc   func(ctx context.Context) (float64, error)
-	GetPlanStatusDistributionFunc func(ctx context.Context) ([]store.GetPlanStatusDistributionRow, error)
+	AddRolePermissionFunc     func(ctx context.Context, arg store.AddRolePermissionParams) error
+	DeleteRolePermissionsFunc func(ctx context.Context, roleID uuid.UUID) error
+	GetRolePermissionsFunc    func(ctx context.Context, roleID uuid.UUID) ([]uuid.UUID, error)
+
+	// Global / Platform Stats
+	CountGlobalActivePlansFunc          func(ctx context.Context) (int64, error)
+	CountGlobalCompletedPlansFunc       func(ctx context.Context) (int64, error)
+	CountGlobalCompletedPlansTodayFunc  func(ctx context.Context) (int64, error)
+	CountGlobalContainersFunc           func(ctx context.Context) (int64, error)
+	CountGlobalTotalItemsFunc           func(ctx context.Context) (int64, error)
+	CountGlobalUsersFunc                func(ctx context.Context) (int64, error)
+	GetGlobalAvgVolumeUtilizationFunc   func(ctx context.Context) (float64, error)
+	GetGlobalPlanStatusDistributionFunc func(ctx context.Context) ([]store.GetGlobalPlanStatusDistributionRow, error)
+
+	// Workspace Stats
+	CountWorkspaceActivePlansFunc          func(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceCompletedPlansFunc       func(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceCompletedPlansTodayFunc  func(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceContainersFunc           func(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceItemsFunc                func(ctx context.Context, workspaceID *uuid.UUID) (int64, error)
+	CountWorkspaceMembersFunc              func(ctx context.Context, workspaceID uuid.UUID) (int64, error)
+	GetWorkspaceAvgVolumeUtilizationFunc   func(ctx context.Context, workspaceID *uuid.UUID) (float64, error)
+	GetWorkspacePlanStatusDistributionFunc func(ctx context.Context, workspaceID *uuid.UUID) ([]store.GetWorkspacePlanStatusDistributionRow, error)
 
 	AcceptInviteFunc                        func(ctx context.Context, arg store.AcceptInviteParams) error
 	CreateInviteFunc                        func(ctx context.Context, arg store.CreateInviteParams) (store.Invite, error)
@@ -569,46 +581,64 @@ func (m *MockQuerier) GetRolePermissions(ctx context.Context, roleID uuid.UUID) 
 	return nil, fmt.Errorf("GetRolePermissions not implemented")
 }
 
-func (m *MockQuerier) CountActivePlans(ctx context.Context) (int64, error) {
-	if m.CountActivePlansFunc != nil {
-		return m.CountActivePlansFunc(ctx)
+// ---------------------------------------------------------------------
+// Global / Platform Stats
+// ---------------------------------------------------------------------
+
+func (m *MockQuerier) CountGlobalActivePlans(ctx context.Context) (int64, error) {
+	if m.CountGlobalActivePlansFunc != nil {
+		return m.CountGlobalActivePlansFunc(ctx)
 	}
-	return 0, fmt.Errorf("CountActivePlans not implemented")
+	return 0, fmt.Errorf("CountGlobalActivePlans not implemented")
 }
 
-func (m *MockQuerier) CountCompletedPlans(ctx context.Context) (int64, error) {
-	if m.CountCompletedPlansFunc != nil {
-		return m.CountCompletedPlansFunc(ctx)
+func (m *MockQuerier) CountGlobalCompletedPlans(ctx context.Context) (int64, error) {
+	if m.CountGlobalCompletedPlansFunc != nil {
+		return m.CountGlobalCompletedPlansFunc(ctx)
 	}
-	return 0, fmt.Errorf("CountCompletedPlans not implemented")
+	return 0, fmt.Errorf("CountGlobalCompletedPlans not implemented")
 }
 
-func (m *MockQuerier) CountCompletedPlansToday(ctx context.Context) (int64, error) {
-	if m.CountCompletedPlansTodayFunc != nil {
-		return m.CountCompletedPlansTodayFunc(ctx)
+func (m *MockQuerier) CountGlobalCompletedPlansToday(ctx context.Context) (int64, error) {
+	if m.CountGlobalCompletedPlansTodayFunc != nil {
+		return m.CountGlobalCompletedPlansTodayFunc(ctx)
 	}
-	return 0, fmt.Errorf("CountCompletedPlansToday not implemented")
+	return 0, fmt.Errorf("CountGlobalCompletedPlansToday not implemented")
 }
 
-func (m *MockQuerier) CountContainers(ctx context.Context) (int64, error) {
-	if m.CountContainersFunc != nil {
-		return m.CountContainersFunc(ctx)
+func (m *MockQuerier) CountGlobalContainers(ctx context.Context) (int64, error) {
+	if m.CountGlobalContainersFunc != nil {
+		return m.CountGlobalContainersFunc(ctx)
 	}
-	return 0, fmt.Errorf("CountContainers not implemented")
+	return 0, fmt.Errorf("CountGlobalContainers not implemented")
 }
 
-func (m *MockQuerier) CountTotalItems(ctx context.Context) (int64, error) {
-	if m.CountTotalItemsFunc != nil {
-		return m.CountTotalItemsFunc(ctx)
+func (m *MockQuerier) CountGlobalTotalItems(ctx context.Context) (int64, error) {
+	if m.CountGlobalTotalItemsFunc != nil {
+		return m.CountGlobalTotalItemsFunc(ctx)
 	}
-	return 0, fmt.Errorf("CountTotalItems not implemented")
+	return 0, fmt.Errorf("CountGlobalTotalItems not implemented")
 }
 
-func (m *MockQuerier) CountTotalUsers(ctx context.Context) (int64, error) {
-	if m.CountTotalUsersFunc != nil {
-		return m.CountTotalUsersFunc(ctx)
+func (m *MockQuerier) CountGlobalUsers(ctx context.Context) (int64, error) {
+	if m.CountGlobalUsersFunc != nil {
+		return m.CountGlobalUsersFunc(ctx)
 	}
-	return 0, fmt.Errorf("CountTotalUsers not implemented")
+	return 0, fmt.Errorf("CountGlobalUsers not implemented")
+}
+
+func (m *MockQuerier) GetGlobalAvgVolumeUtilization(ctx context.Context) (float64, error) {
+	if m.GetGlobalAvgVolumeUtilizationFunc != nil {
+		return m.GetGlobalAvgVolumeUtilizationFunc(ctx)
+	}
+	return 0, fmt.Errorf("GetGlobalAvgVolumeUtilization not implemented")
+}
+
+func (m *MockQuerier) GetGlobalPlanStatusDistribution(ctx context.Context) ([]store.GetGlobalPlanStatusDistributionRow, error) {
+	if m.GetGlobalPlanStatusDistributionFunc != nil {
+		return m.GetGlobalPlanStatusDistributionFunc(ctx)
+	}
+	return nil, fmt.Errorf("GetGlobalPlanStatusDistribution not implemented")
 }
 
 func (m *MockQuerier) CountPlansByCreator(ctx context.Context, arg store.CountPlansByCreatorParams) (int64, error) {
@@ -625,18 +655,64 @@ func (m *MockQuerier) ClaimPlansFromGuest(ctx context.Context, arg store.ClaimPl
 	return fmt.Errorf("ClaimPlansFromGuest not implemented")
 }
 
-func (m *MockQuerier) GetAvgVolumeUtilization(ctx context.Context) (float64, error) {
-	if m.GetAvgVolumeUtilizationFunc != nil {
-		return m.GetAvgVolumeUtilizationFunc(ctx)
+// ---------------------------------------------------------------------
+// Workspace Stats
+// ---------------------------------------------------------------------
+
+func (m *MockQuerier) CountWorkspaceActivePlans(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	if m.CountWorkspaceActivePlansFunc != nil {
+		return m.CountWorkspaceActivePlansFunc(ctx, workspaceID)
 	}
-	return 0, fmt.Errorf("GetAvgVolumeUtilization not implemented")
+	return 0, fmt.Errorf("CountWorkspaceActivePlans not implemented")
 }
 
-func (m *MockQuerier) GetPlanStatusDistribution(ctx context.Context) ([]store.GetPlanStatusDistributionRow, error) {
-	if m.GetPlanStatusDistributionFunc != nil {
-		return m.GetPlanStatusDistributionFunc(ctx)
+func (m *MockQuerier) CountWorkspaceCompletedPlans(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	if m.CountWorkspaceCompletedPlansFunc != nil {
+		return m.CountWorkspaceCompletedPlansFunc(ctx, workspaceID)
 	}
-	return nil, fmt.Errorf("GetPlanStatusDistribution not implemented")
+	return 0, fmt.Errorf("CountWorkspaceCompletedPlans not implemented")
+}
+
+func (m *MockQuerier) CountWorkspaceCompletedPlansToday(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	if m.CountWorkspaceCompletedPlansTodayFunc != nil {
+		return m.CountWorkspaceCompletedPlansTodayFunc(ctx, workspaceID)
+	}
+	return 0, fmt.Errorf("CountWorkspaceCompletedPlansToday not implemented")
+}
+
+func (m *MockQuerier) CountWorkspaceContainers(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	if m.CountWorkspaceContainersFunc != nil {
+		return m.CountWorkspaceContainersFunc(ctx, workspaceID)
+	}
+	return 0, fmt.Errorf("CountWorkspaceContainers not implemented")
+}
+
+func (m *MockQuerier) CountWorkspaceItems(ctx context.Context, workspaceID *uuid.UUID) (int64, error) {
+	if m.CountWorkspaceItemsFunc != nil {
+		return m.CountWorkspaceItemsFunc(ctx, workspaceID)
+	}
+	return 0, fmt.Errorf("CountWorkspaceItems not implemented")
+}
+
+func (m *MockQuerier) CountWorkspaceMembers(ctx context.Context, workspaceID uuid.UUID) (int64, error) {
+	if m.CountWorkspaceMembersFunc != nil {
+		return m.CountWorkspaceMembersFunc(ctx, workspaceID)
+	}
+	return 0, fmt.Errorf("CountWorkspaceMembers not implemented")
+}
+
+func (m *MockQuerier) GetWorkspaceAvgVolumeUtilization(ctx context.Context, workspaceID *uuid.UUID) (float64, error) {
+	if m.GetWorkspaceAvgVolumeUtilizationFunc != nil {
+		return m.GetWorkspaceAvgVolumeUtilizationFunc(ctx, workspaceID)
+	}
+	return 0, fmt.Errorf("GetWorkspaceAvgVolumeUtilization not implemented")
+}
+
+func (m *MockQuerier) GetWorkspacePlanStatusDistribution(ctx context.Context, workspaceID *uuid.UUID) ([]store.GetWorkspacePlanStatusDistributionRow, error) {
+	if m.GetWorkspacePlanStatusDistributionFunc != nil {
+		return m.GetWorkspacePlanStatusDistributionFunc(ctx, workspaceID)
+	}
+	return nil, fmt.Errorf("GetWorkspacePlanStatusDistribution not implemented")
 }
 
 func (m *MockQuerier) AcceptInvite(ctx context.Context, arg store.AcceptInviteParams) error {

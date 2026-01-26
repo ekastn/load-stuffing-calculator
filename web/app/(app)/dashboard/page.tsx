@@ -40,7 +40,7 @@ export default function DashboardPage() {
     if (!user) return null
 
   const statsAdmin = dashboardStats?.admin ? [
-    { title: "Total Users", value: dashboardStats.admin.total_users.toString(), icon: Users },
+    { title: user.role === 'founder' ? "Total Users" : "Total Members", value: dashboardStats.admin.total_users.toString(), icon: Users },
     { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck },
     { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package },
     { title: "Success Rate", value: `${dashboardStats.admin.success_rate}%`, icon: BarChart3 },
@@ -60,8 +60,18 @@ export default function DashboardPage() {
     { title: "Avg Time/Load", value: dashboardStats.operator.avg_time_per_load, icon: Activity },
   ] : []
 
+  const statsPersonal = dashboardStats?.admin && dashboardStats?.planner ? [
+    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck },
+    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3 },
+    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Package },
+    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package },
+  ] : []
+
   const stats =
     {
+      founder: statsAdmin,
+      owner: statsAdmin,
+      personal: statsPersonal,
       admin: statsAdmin,
       planner: statsPlanner,
       operator: statsOperator,
@@ -69,8 +79,23 @@ export default function DashboardPage() {
 
   const quickActions =
     {
+      founder: [
+        { label: "Manage Users", path: "/users" },
+        { label: "View Workspaces", path: "/workspaces" },
+        { label: "System Logs", path: "/reports/audit" },
+      ],
+      owner: [
+        { label: "Manage Members", path: "/settings/members" },
+        { label: "New Container", path: "/containers" },
+        { label: "View Logs", path: "/reports/audit" },
+      ],
+      personal: [
+        { label: "Create Shipment", path: "/shipments/new" },
+        { label: "New Container", path: "/containers" },
+        { label: "View Shipments", path: "/shipments" },
+      ],
       admin: [
-        { label: "Add User", path: "/users" },
+        { label: "Manage Members", path: "/settings/members" },
         { label: "New Container", path: "/containers" },
         { label: "View Logs", path: "/reports/audit" },
       ],
@@ -92,7 +117,9 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground">Welcome, {user.username}!</h1>
           <p className="mt-2 text-muted-foreground">
-            {user.role === "admin" && "Manage system configuration and users"}
+            {user.role === "founder" && "Platform Administration"}
+            {(user.role === "owner" || user.role === "admin") && "Workspace Administration"}
+            {user.role === "personal" && "Personal Workspace"}
             {user.role === "planner" && "Plan and optimize container loads"}
             {user.role === "operator" && "Execute and validate container loading"}
           </p>

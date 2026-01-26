@@ -4049,6 +4049,16 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "maxLength": 150
+                },
+                "owner_user_id": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "personal",
+                        "organization"
+                    ]
                 }
             }
         },
@@ -4839,7 +4849,13 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "owner_email": {
+                    "type": "string"
+                },
                 "owner_user_id": {
+                    "type": "string"
+                },
+                "owner_username": {
                     "type": "string"
                 },
                 "type": {
