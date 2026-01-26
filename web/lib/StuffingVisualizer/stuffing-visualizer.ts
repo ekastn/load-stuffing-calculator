@@ -113,6 +113,9 @@ export class StuffingVisualizer {
         this.animationManager.setMaxStep(maxStep);
         this.animationManager.setCurrentStep(maxStep);
         
+        // Auto-fit camera to container
+        this.cameraManager.fitToContainer(this.data.container);
+
         // Initial visibility
         this.updateVisibleItems(maxStep);
         
