@@ -75,6 +75,7 @@ export function StuffingViewer({ data }: StuffingViewerProps) {
         if (!visualizerRef.current) {
             visualizerRef.current = new StuffingVisualizer({
                 backgroundColor: "#fff",
+                cameraFar: 100000
             });
         }
 

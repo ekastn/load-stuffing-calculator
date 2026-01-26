@@ -48,6 +48,30 @@ export class CameraManager {
         return this.camera;
     }
 
+    public fitToContainer(container: ContainerData): void {
+        // Reset to default angle
+        this.camera.position.set(15, 8, -10);
+        this.camera.lookAt(0, 0, 0);
+
+        // Convert dimensions to meters
+        const length = container.length_mm / 1000;
+        const width = container.width_mm / 1000;
+        const height = container.height_mm / 1000;
+
+        // Find maximum dimension to fit in frustum
+        // Frustum size is hardcoded to 20 in constructor
+        const maxDim = Math.max(length, width, height);
+        
+        // Calculate zoom needed. 
+        // Frustum size 20 covers 20 units.
+        // We want container (maxDim) to fill ~70% of screen.
+        // 20 / zoom = maxDim / 0.7  => zoom = (20 * 0.7) / maxDim = 14 / maxDim
+        const targetZoom = 14 / Math.max(maxDim, 1); // Prevent division by zero
+
+        this.camera.zoom = targetZoom;
+        this.camera.updateProjectionMatrix();
+    }
+
     public setupForScreenshot(
         renderer: WebGLRenderer, 
         width: number, 
