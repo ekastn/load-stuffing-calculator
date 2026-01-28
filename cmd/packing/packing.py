@@ -103,7 +103,7 @@ def pack_request(body: dict[str, Any]) -> PackSuccessResponse:
         check_stable=bool(req["options"].get("check_stable", True)),
         support_surface_ratio=float(req["options"].get("support_surface_ratio", 0.75)),
         binding=[],
-        number_of_decimals=0,
+        number_of_decimals=3, # Use 3 decimals for precision (milligram/millimeter)
     )
 
     pack_time_ms = int((time.perf_counter() - start_pack_at) * 1000)
@@ -131,10 +131,14 @@ def pack_request(body: dict[str, Any]) -> PackSuccessResponse:
         api_pos_y_cm = int(pz)
         api_pos_z_cm = int(py)
 
+        label = labels_by_id.get(item_id, item_id)
+        if label is None:
+            label = item_id
+
         placements.append(
             {
                 "item_id": item_id,
-                "label": labels_by_id.get(item_id, item_id),
+                "label": label,
                 "pos_x": from_cm(api_pos_x_cm, units),
                 "pos_y": from_cm(api_pos_y_cm, units),
                 "pos_z": from_cm(api_pos_z_cm, units),
