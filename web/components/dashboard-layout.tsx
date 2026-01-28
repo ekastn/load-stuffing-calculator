@@ -45,14 +45,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { label: "All Shipments", path: "/shipments", required: ["plan:read"] },
     { label: "Create Shipment", path: "/shipments/new", required: ["plan:create"] },
 
-    { label: "Loading Instructions", path: "/loading", required: ["plan:read"] },
+    // { label: "Loading Instructions", path: "/loading", required: ["plan:read"] },
 
     { label: "Members", path: "/settings/members", required: ["member:read"] },
     { label: "Invites", path: "/settings/invites", required: ["invite:read"] },
 
-    { label: "Manifests", path: "/reports/manifest", required: ["plan:read"] },
-    { label: "Execution Logs", path: "/reports/execution", required: ["plan:read"] },
-    { label: "Audit Logs", path: "/reports/audit", required: ["*"] },
+    // { label: "Manifests", path: "/reports/manifest", required: ["plan:read"] },
+    // { label: "Execution Logs", path: "/reports/execution", required: ["plan:read"] },
+    // { label: "Audit Logs", path: "/reports/audit", required: ["*"] },
 
     ...(isPlatformMember
       ? [
