@@ -44,7 +44,7 @@ class AppTheme {
       outline: AppColors.border,
     ),
     scaffoldBackgroundColor: AppColors.background,
-    cardTheme: const CardTheme(
+    cardTheme: const CardThemeData(
       color: AppColors.surface,
       elevation: 0,
       margin: EdgeInsets.all(0),
