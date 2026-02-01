@@ -4,14 +4,8 @@ import 'package:provider/provider.dart';
 import '../pages/auth/login_page.dart';
 import '../providers/auth_provider.dart';
 
-// Simple placeholder page until Home is implemented
-class PlaceholderHomePage extends StatelessWidget {
-  const PlaceholderHomePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('Home Page Placeholder')));
-  }
-}
+import '../pages/dashboard/dashboard_page.dart';
+import '../pages/main_shell_page.dart';
 
 GoRouter createRouter(AuthProvider authProvider) {
   return GoRouter(
@@ -30,12 +24,36 @@ GoRouter createRouter(AuthProvider authProvider) {
     },
     routes: [
       GoRoute(
-        path: '/',
-        builder: (context, state) => const PlaceholderHomePage(),
-      ),
-      GoRoute(
         path: '/login',
         builder: (context, state) => const LoginPage(),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => MainShellPage(child: child),
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (context, state) => const DashboardPage(),
+          ),
+          GoRoute(
+            path: '/plans',
+            builder: (context, state) => const Scaffold(
+              body: Center(child: Text('Plans List')),
+            ),
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) {
+              return Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed: () => context.read<AuthProvider>().logout(),
+                    child: const Text('Logout'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     ],
   );
