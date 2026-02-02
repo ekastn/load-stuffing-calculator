@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../components/buttons/quick_action_button.dart';
 import '../../components/cards/stat_card.dart';
 import '../../dtos/dashboard_dto.dart';
@@ -217,17 +218,15 @@ class _DashboardPageState extends State<DashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  QuickActionButton(label: 'New Plan', icon: Icons.add_circle_outline, onTap: () {
+                   QuickActionButton(label: 'Products', icon: Icons.inventory, onTap: () {
+                    context.push('/products');
+                  }),
+                  QuickActionButton(label: 'Containers', icon: Icons.view_in_ar, onTap: () {
+                    context.push('/containers');
+                  }),
+                   QuickActionButton(label: 'New Plan', icon: Icons.add_circle_outline, onTap: () {
                     // Navigate to Create Plan
-                  }),
-                  QuickActionButton(label: 'New Container', icon: Icons.add_box_outlined, onTap: () {
-                    // Navigate to Create Container
-                  }),
-                  QuickActionButton(label: 'View Plans', icon: Icons.list_alt, onTap: () {
-                    // Navigate to Plans
-                     // Default Tab Controller or GoRouter?
-                     // context.go('/plans'); 
-                     // But we are in Dashboard tab, switching tab is tricky without context.go
+                    // context.push('/plans/new');
                   }),
                 ],
               ),

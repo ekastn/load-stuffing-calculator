@@ -25,6 +25,16 @@ class MainShellPage extends StatelessWidget {
             label: 'Plans',
           ),
           NavigationDestination(
+            icon: Icon(Icons.inventory_outlined),
+            selectedIcon: Icon(Icons.inventory),
+            label: 'Products',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.view_in_ar_outlined),
+            selectedIcon: Icon(Icons.view_in_ar),
+            label: 'Containers',
+          ),
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: 'Profile',
@@ -39,8 +49,14 @@ class MainShellPage extends StatelessWidget {
     if (location.startsWith('/plans')) {
       return 1;
     }
-    if (location.startsWith('/profile')) {
+    if (location.startsWith('/products')) {
       return 2;
+    }
+    if (location.startsWith('/containers')) {
+      return 3;
+    }
+    if (location.startsWith('/profile')) {
+      return 4;
     }
     return 0; // Dashboard
   }
@@ -54,6 +70,12 @@ class MainShellPage extends StatelessWidget {
         context.go('/plans');
         break;
       case 2:
+        context.go('/products');
+        break;
+      case 3:
+        context.go('/containers');
+        break;
+      case 4:
         context.go('/profile');
         break;
     }
