@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/product_provider.dart';
 import '../../models/product_model.dart';
-import '../../dtos/product_dto.dart'; // Keeping DTO for Create Request
+import '../../dtos/product_dto.dart';
+import '../../components/inputs/app_text_field.dart';
+import '../../components/inputs/number_field.dart';
+import '../../components/widgets/loading_state.dart';
 
 class ProductFormPage extends StatefulWidget {
   final String? productId;
@@ -38,7 +41,6 @@ class _ProductFormPageState extends State<ProductFormPage> {
   Future<void> _loadProductData() async {
     setState(() => _isLoading = true);
     try {
-      // Find from provider cache first
       final provider = context.read<ProductProvider>();
       var product = provider.products.cast<ProductModel?>().firstWhere(
             (p) => p?.id == widget.productId,
@@ -65,74 +67,87 @@ class _ProductFormPageState extends State<ProductFormPage> {
         title: Text(widget.productId == null ? 'New Product' : 'Edit Product'),
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingState()
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    TextFormField(
+                    AppTextField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                      label: 'Product Name',
+                      required: true,
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _lengthController,
-                            decoration: const InputDecoration(labelText: 'Length (mm)'),
-                            keyboardType: TextInputType.number,
-                            validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Length',
+                            unit: 'mm',
+                            required: true,
+                            min: 0,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _widthController,
-                            decoration: const InputDecoration(labelText: 'Width (mm)'),
-                            keyboardType: TextInputType.number,
-                             validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Width',
+                            unit: 'mm',
+                            required: true,
+                            min: 0,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                     Row(
+                    Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _heightController,
-                            decoration: const InputDecoration(labelText: 'Height (mm)'),
-                            keyboardType: TextInputType.number,
-                             validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Height',
+                            unit: 'mm',
+                            required: true,
+                            min: 0,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _weightController,
-                            decoration: const InputDecoration(labelText: 'Weight (kg)'),
-                            keyboardType: TextInputType.number,
-                             validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Weight',
+                            unit: 'kg',
+                            required: true,
+                            min: 0,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
                       controller: _colorController,
-                      decoration: const InputDecoration(labelText: 'Color (Hex)'),
-                       validator: (v) => v == null || !v.startsWith('#') ? 'Must start with #' : null,
+                      label: 'Color (Hex)',
+                      hint: '#3498db',
+                      validator: (v) => v == null || !v.startsWith('#') 
+                          ? 'Must start with #' 
+                          : null,
                     ),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _submit,
-                        child: const Text('Save Product'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: Text(
+                          widget.productId == null ? 'Create Product' : 'Update Product',
+                          style: const TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
@@ -179,7 +194,11 @@ class _ProductFormPageState extends State<ProductFormPage> {
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Product saved successfully')),
+          SnackBar(
+            content: Text(widget.productId == null 
+                ? 'Product created successfully' 
+                : 'Product updated successfully'),
+          ),
         );
       }
     } catch (e) {
