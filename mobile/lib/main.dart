@@ -6,6 +6,7 @@ import 'config/theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/container_provider.dart';
 import 'providers/dashboard_provider.dart';
+import 'providers/plan_provider.dart';
 import 'providers/product_provider.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
@@ -65,6 +66,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(dashboardService, planService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PlanProvider(planService),
         ),
         ChangeNotifierProvider(
           create: (_) => ProductProvider(productService),
