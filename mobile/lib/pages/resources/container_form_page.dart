@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/container_provider.dart';
 import '../../models/container_model.dart';
-import '../../dtos/container_dto.dart'; // Keeping DTO for Create Request
+import '../../dtos/container_dto.dart';
+import '../../components/inputs/app_text_field.dart';
+import '../../components/inputs/number_field.dart';
+import '../../components/widgets/loading_state.dart';
 
 class ContainerFormPage extends StatefulWidget {
   final String? containerId;
@@ -64,66 +67,71 @@ class _ContainerFormPageState extends State<ContainerFormPage> {
         title: Text(widget.containerId == null ? 'New Container' : 'Edit Container'),
       ),
       body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
+          ? const LoadingState()
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    TextFormField(
+                    AppTextField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Name'),
-                      validator: (value) => value == null || value.isEmpty ? 'Required' : null,
+                      label: 'Container Name',
+                      required: true,
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _lengthController,
-                            decoration: const InputDecoration(labelText: 'Length (mm)'),
-                            keyboardType: TextInputType.number,
-                            validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Inner Length',
+                            unit: 'mm',
+                            required: true,
+                            min: 0,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _widthController,
-                            decoration: const InputDecoration(labelText: 'Width (mm)'),
-                            keyboardType: TextInputType.number,
-                             validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Inner Width',
+                            unit: 'mm',
+                            required: true,
+                            min: 0,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                     Row(
+                    Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _heightController,
-                            decoration: const InputDecoration(labelText: 'Height (mm)'),
-                            keyboardType: TextInputType.number,
-                             validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Inner Height',
+                            unit: 'mm',
+                            required: true,
+                            min: 0,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 12),
                         Expanded(
-                          child: TextFormField(
+                          child: NumberField(
                             controller: _weightController,
-                            decoration: const InputDecoration(labelText: 'Max Weight (kg)'),
-                            keyboardType: TextInputType.number,
-                             validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                            label: 'Max Weight',
+                            unit: 'kg',
+                            required: true,
+                            min: 0,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    TextFormField(
+                    AppTextField(
                       controller: _descController,
-                      decoration: const InputDecoration(labelText: 'Description'),
+                      label: 'Description',
+                      hint: 'Optional description',
                       maxLines: 3,
                     ),
                     const SizedBox(height: 32),
@@ -131,7 +139,13 @@ class _ContainerFormPageState extends State<ContainerFormPage> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: _submit,
-                        child: const Text('Save Container'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: Text(
+                          widget.containerId == null ? 'Create Container' : 'Update Container',
+                          style: const TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
@@ -178,7 +192,11 @@ class _ContainerFormPageState extends State<ContainerFormPage> {
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Container saved successfully')),
+          SnackBar(
+            content: Text(widget.containerId == null 
+                ? 'Container created successfully' 
+                : 'Container updated successfully'),
+          ),
         );
       }
     } catch (e) {

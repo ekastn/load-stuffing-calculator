@@ -3,7 +3,11 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/container_provider.dart';
 import '../../models/container_model.dart';
-// import '../../dtos/container_dto.dart';
+import '../../components/widgets/empty_state.dart';
+import '../../components/widgets/loading_state.dart';
+import '../../components/widgets/error_state.dart';
+import '../../components/cards/resource_list_item.dart';
+import '../../components/dialogs/confirm_dialog.dart';
 
 class ContainerListPage extends StatefulWidget {
   const ContainerListPage({super.key});
@@ -34,54 +38,44 @@ class _ContainerListPageState extends State<ContainerListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-            // Navigate to create form
-            context.push('/containers/new');
-        },
+        onPressed: () => context.push('/containers/new'),
         child: const Icon(Icons.add),
       ),
       body: Consumer<ContainerProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.containers.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoadingState();
           }
 
           if (provider.error != null && provider.containers.isEmpty) {
-            return Center(child: Text('Error: ${provider.error}'));
+            return ErrorState(
+              message: provider.error!,
+              onRetry: () => provider.fetchContainers(),
+            );
           }
 
           if (provider.containers.isEmpty) {
-            return const Center(child: Text('No containers found.'));
+            return const EmptyState(
+              message: 'No containers found.\nTap + to add a new container.',
+              icon: Icons.view_in_ar_outlined,
+            );
           }
 
           return ListView.builder(
             itemCount: provider.containers.length,
             itemBuilder: (context, index) {
               final container = provider.containers[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  leading: const Icon(Icons.view_in_ar, size: 40),
-                  title: Text(container.name),
-                  subtitle: Text('${container.innerLengthMm}x${container.innerWidthMm}x${container.innerHeightMm}mm\nMax: ${container.maxWeightKg}kg'),
-                  isThreeLine: true,
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                       IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () {
-                            // Navigation to edit
-                            context.push('/containers/${container.id}');
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _confirmDelete(context, container),
-                      ),
-                    ],
-                  ),
+              return ResourceListItem(
+                leading: Icon(
+                  Icons.view_in_ar,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
+                title: container.name,
+                subtitle:
+                    '${container.innerLengthMm}×${container.innerWidthMm}×${container.innerHeightMm}mm\nMax: ${container.maxWeightKg}kg',
+                onEdit: () => context.push('/containers/${container.id}'),
+                onDelete: () => _confirmDelete(context, container),
               );
             },
           );
@@ -91,38 +85,28 @@ class _ContainerListPageState extends State<ContainerListPage> {
   }
 
   void _confirmDelete(BuildContext context, ContainerModel container) {
-    showDialog(
+    ConfirmDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Container'),
-        content: Text('Are you sure you want to delete ${container.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await context.read<ContainerProvider>().deleteContainer(container.id);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Container deleted')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to delete: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: 'Delete Container',
+      content: 'Are you sure you want to delete ${container.name}?',
+      confirmText: 'Delete',
+      isDangerous: true,
+      onConfirm: () async {
+        try {
+          await context.read<ContainerProvider>().deleteContainer(container.id);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Container deleted')),
+            );
+          }
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to delete: $e')),
+            );
+          }
+        }
+      },
     );
   }
 }
