@@ -5,6 +5,7 @@ import '../pages/auth/login_page.dart';
 import '../pages/main_shell_page.dart';
 import '../pages/plans/plan_list_page.dart';
 import '../pages/plans/plan_form_page.dart';
+import '../pages/plans/plan_detail_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../pages/resources/container_form_page.dart';
 import '../pages/resources/container_list_page.dart';
@@ -48,6 +49,13 @@ GoRouter createRouter(AuthProvider authProvider) {
               GoRoute(
                 path: 'new',
                 builder: (context, state) => const PlanFormPage(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  return PlanDetailPage(planId: id);
+                },
               ),
             ],
           ),

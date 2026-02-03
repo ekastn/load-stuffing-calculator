@@ -7,6 +7,7 @@ import 'providers/auth_provider.dart';
 import 'providers/container_provider.dart';
 import 'providers/dashboard_provider.dart';
 import 'providers/plan_provider.dart';
+import 'providers/plan_detail_provider.dart';
 import 'providers/product_provider.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
@@ -75,6 +76,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => ContainerProvider(containerService),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => PlanDetailProvider(planService),
         ),
       ],
       child: const AppRoot(),
