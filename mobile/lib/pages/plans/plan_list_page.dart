@@ -74,6 +74,7 @@ class _PlanListPageState extends State<PlanListPage> {
                 title: plan.title,
                 subtitle:
                     '${plan.code} • ${plan.totalItems} items • ${plan.totalWeightKg.toStringAsFixed(1)}kg\n${plan.status.replaceAll('_', ' ').toUpperCase()}${plan.volumeUtilizationPct != null ? " • ${plan.volumeUtilizationPct!.toStringAsFixed(1)}% utilized" : ""}',
+                onTap: () => context.push('/plans/${plan.id}'),
                 onDelete: () => _confirmDelete(context, plan),
               );
             },
