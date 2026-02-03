@@ -1,13 +1,13 @@
 "use client"
 
-import { useAuth } from "@/lib/auth-context"
+import { useAuth, getAccessToken } from "@/lib/auth-context"
 import { usePlans } from "@/hooks/use-plans"
 import { RouteGuard } from "@/lib/route-guard"
 import { useParams } from "next/navigation"
 import { useEffect, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trash2, Package, RefreshCw, Box, Info, Plus, AlertTriangle } from "lucide-react"
+import { Trash2, Package, RefreshCw, Box, Info, Plus, AlertTriangle, Link2 } from "lucide-react"
 import { StuffingViewer } from "@/components/stuffing-viewer"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -185,7 +185,21 @@ export default function ShipmentDetailPage() {
               <Card className="h-[500px] lg:h-auto lg:flex-1 border-border/50 bg-white shadow-sm overflow-hidden flex flex-col">
                 <CardHeader className="py-2 px-4 shrink-0 border-b border-border/50 bg-slate-50/80 flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="text-xs font-bold uppercase tracking-wider text-slate-500">3D Simulation</CardTitle>
-
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs"
+                      onClick={() => {
+                        const token = getAccessToken()
+                        const baseUrl = `${window.location.origin}/embed/shipments/${shipmentId}`
+                        const embedUrl = token ? `${baseUrl}?token=${token}` : baseUrl
+                        navigator.clipboard.writeText(embedUrl)
+                        toast.success('Embed URL copied to clipboard')
+                      }}
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      Copy Embed URL
+                    </Button>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 relative">
                   <div className="absolute inset-0">
