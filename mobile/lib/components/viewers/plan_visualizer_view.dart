@@ -1,4 +1,6 @@
 import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../config/constants.dart';
@@ -161,7 +163,14 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
     return Stack(
       children: [
         if (_controller != null && _isInitialized)
-          WebViewWidget(controller: _controller!),
+          WebViewWidget(
+            controller: _controller!,
+            gestureRecognizers: {
+              Factory<OneSequenceGestureRecognizer>(
+                () => EagerGestureRecognizer(),
+              ),
+            },
+          ),
         if (_isLoading)
           Container(
             color: Colors.white,
