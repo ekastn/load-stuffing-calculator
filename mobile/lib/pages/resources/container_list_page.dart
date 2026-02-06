@@ -8,9 +8,11 @@ import '../../components/widgets/loading_state.dart';
 import '../../components/widgets/error_state.dart';
 import '../../components/cards/resource_list_item.dart';
 import '../../components/dialogs/confirm_dialog.dart';
+import '../../config/theme.dart';
 
 class ContainerListPage extends StatefulWidget {
-  const ContainerListPage({super.key});
+  final bool isEmbedded;
+  const ContainerListPage({super.key, this.isEmbedded = false});
 
   @override
   State<ContainerListPage> createState() => _ContainerListPageState();
@@ -27,21 +29,7 @@ class _ContainerListPageState extends State<ContainerListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Containers'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context.read<ContainerProvider>().fetchContainers(),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/containers/new'),
-        child: const Icon(Icons.add),
-      ),
-      body: Consumer<ContainerProvider>(
+    final content = Consumer<ContainerProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.containers.isEmpty) {
             return const LoadingState();
@@ -66,21 +54,77 @@ class _ContainerListPageState extends State<ContainerListPage> {
             itemBuilder: (context, index) {
               final container = provider.containers[index];
               return ResourceListItem(
-                leading: Icon(
-                  Icons.view_in_ar,
-                  size: 40,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
                 title: container.name,
-                subtitle:
-                    '${container.innerLengthMm}×${container.innerWidthMm}×${container.innerHeightMm}mm\nMax: ${container.maxWeightKg}kg',
-                onEdit: () => context.push('/containers/${container.id}'),
-                onDelete: () => _confirmDelete(context, container),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.textSecondary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('Container', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ),
+                content: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dimensions: ${container.innerLengthMm.toInt()} × ${container.innerWidthMm.toInt()} × ${container.innerHeightMm.toInt()} mm',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Max Weight: ${container.maxWeightKg.toStringAsFixed(1)} kg',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    ),
+                  ],
+                ),
+                actions: [
+                  _buildActionButton(
+                    context,
+                    label: 'Edit',
+                    icon: Icons.edit_outlined,
+                    color: AppColors.primary,
+                    onTap: () => context.push('/containers/${container.id}'),
+                  ),
+                  _buildActionButton(
+                    context,
+                    label: 'Delete',
+                    icon: Icons.delete_outline,
+                    color: AppColors.error,
+                    onTap: () => _confirmDelete(context, container),
+                  ),
+                ],
+                onTap: () => context.push('/containers/${container.id}'),
               );
             },
           );
         },
+      );
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        body: content,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => context.push('/containers/new'),
+          child: const Icon(Icons.add),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Containers'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context.read<ContainerProvider>().fetchContainers(),
+          ),
+        ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/containers/new'),
+        child: const Icon(Icons.add),
+      ),
+      body: content,
     );
   }
 
@@ -107,6 +151,30 @@ class _ContainerListPageState extends State<ContainerListPage> {
           }
         }
       },
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, {
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 18, color: color),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
     );
   }
 }

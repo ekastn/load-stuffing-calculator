@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/main_shell_page.dart';
 import '../pages/plans/plan_list_page.dart';
@@ -11,6 +9,7 @@ import '../pages/resources/container_form_page.dart';
 import '../pages/resources/container_list_page.dart';
 import '../pages/resources/product_form_page.dart';
 import '../pages/resources/product_list_page.dart';
+import '../pages/resources/resources_page.dart';
 import '../providers/auth_provider.dart';
 
 import '../pages/dashboard/dashboard_page.dart';
@@ -21,6 +20,11 @@ GoRouter createRouter(AuthProvider authProvider) {
     refreshListenable: authProvider,
     redirect: (context, state) {
       final isLoggingIn = state.uri.toString() == '/login';
+      
+      // Wait for auth initialization to complete
+      if (authProvider.isLoading) {
+        return null; // Stay where we are while loading
+      }
 
       if (!authProvider.isAuthenticated && !isLoggingIn) {
         return '/login';
@@ -44,7 +48,7 @@ GoRouter createRouter(AuthProvider authProvider) {
           ),
           GoRoute(
             path: '/plans',
-            builder: (context, state) => const PlanListPage(),
+            builder: (context, state) => const ResourcesPage(initialIndex: 0),
             routes: [
               GoRoute(
                 path: 'new',
@@ -65,7 +69,7 @@ GoRouter createRouter(AuthProvider authProvider) {
           ),
           GoRoute(
             path: '/products',
-            builder: (context, state) => const ProductListPage(),
+            builder: (context, state) => const ResourcesPage(initialIndex: 1),
             routes: [
               GoRoute(
                 path: 'new',
@@ -82,7 +86,7 @@ GoRouter createRouter(AuthProvider authProvider) {
           ),
           GoRoute(
             path: '/containers',
-            builder: (context, state) => const ContainerListPage(),
+            builder: (context, state) => const ResourcesPage(initialIndex: 2),
             routes: [
               GoRoute(
                 path: 'new',

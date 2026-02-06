@@ -7,6 +7,9 @@ import '../../providers/container_provider.dart';
 import '../../dtos/plan_dto.dart';
 import '../../components/inputs/app_text_field.dart';
 import '../../components/inputs/number_field.dart';
+import '../../components/cards/app_card.dart';
+import '../../components/buttons/app_button.dart';
+import '../../config/theme.dart';
 
 class PlanFormPage extends StatefulWidget {
   const PlanFormPage({super.key});
@@ -64,7 +67,7 @@ class _PlanFormPageState extends State<PlanFormPage> {
       body: _isSubmitting
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -87,49 +90,52 @@ class _PlanFormPageState extends State<PlanFormPage> {
   }
 
   Widget _buildBasicInfoSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '1. Basic Information',
-              style: Theme.of(context).textTheme.titleMedium,
+    return AppCard(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '1. Basic Information',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold
             ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: _titleController,
-              label: 'Plan Title',
-              hint: 'e.g., Export to Japan - December 2025',
-              required: true,
-            ),
-            const SizedBox(height: 16),
-            AppTextField(
-              controller: _notesController,
-              label: 'Notes',
-              hint: 'Optional notes',
-              maxLines: 3,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          AppTextField(
+            controller: _titleController,
+            label: 'Plan Title',
+            hint: 'e.g., Export to Japan - December 2025',
+            required: true,
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            controller: _notesController,
+            label: 'Notes',
+            hint: 'Optional notes',
+            maxLines: 3,
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildContainerSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '2. Container Selection',
-              style: Theme.of(context).textTheme.titleMedium,
+    return AppCard(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '2. Container Selection',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold
             ),
-            const SizedBox(height: 16),
-            SegmentedButton<String>(
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
                   value: 'preset',
@@ -149,14 +155,14 @@ class _PlanFormPageState extends State<PlanFormPage> {
                 });
               },
             ),
-            const SizedBox(height: 16),
-            if (_containerMode == 'preset') ...[
-              _buildPresetContainerSelector(),
-            ] else ...[
-              _buildCustomContainerInputs(),
-            ],
+          ),
+          const SizedBox(height: 20),
+          if (_containerMode == 'preset') ...[
+            _buildPresetContainerSelector(),
+          ] else ...[
+            _buildCustomContainerInputs(),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -165,10 +171,14 @@ class _PlanFormPageState extends State<PlanFormPage> {
     return Consumer<ContainerProvider>(
       builder: (context, provider, child) {
         if (provider.containers.isEmpty && !provider.isLoading) {
-          return const Text('No containers available. Use custom mode.');
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Text('No containers available. Use custom mode.', style: TextStyle(color: AppColors.textSecondary)),
+          );
         }
 
         return DropdownButtonFormField<String>(
+          isExpanded: true,
           initialValue: _selectedContainerId,
           decoration: const InputDecoration(
             labelText: 'Select Container',
@@ -179,6 +189,7 @@ class _PlanFormPageState extends State<PlanFormPage> {
               value: container.id,
               child: Text(
                 '${container.name} (${container.innerLengthMm}×${container.innerWidthMm}×${container.innerHeightMm}mm)',
+                overflow: TextOverflow.ellipsis,
               ),
             );
           }).toList(),
@@ -249,18 +260,21 @@ class _PlanFormPageState extends State<PlanFormPage> {
   }
 
   Widget _buildItemsSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '3. Add Items',
-              style: Theme.of(context).textTheme.titleMedium,
+    return AppCard(
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '3. Add Items',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold
             ),
-            const SizedBox(height: 16),
-            SegmentedButton<String>(
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<String>(
               segments: const [
                 ButtonSegment(
                   value: 'catalog',
@@ -280,14 +294,14 @@ class _PlanFormPageState extends State<PlanFormPage> {
                 });
               },
             ),
-            const SizedBox(height: 16),
-            if (_itemMode == 'catalog') ...[
-              _buildCatalogItemForm(),
-            ] else ...[
-              _buildManualItemForm(),
-            ],
+          ),
+          const SizedBox(height: 20),
+          if (_itemMode == 'catalog') ...[
+            _buildCatalogItemForm(),
+          ] else ...[
+            _buildManualItemForm(),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -296,12 +310,16 @@ class _PlanFormPageState extends State<PlanFormPage> {
     return Consumer<ProductProvider>(
       builder: (context, provider, child) {
         if (provider.products.isEmpty && !provider.isLoading) {
-          return const Text('No products available. Use manual mode.');
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Text('No products available. Use manual mode.', style: TextStyle(color: AppColors.textSecondary)),
+          );
         }
 
         return Column(
           children: [
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: _selectedProductId,
               decoration: const InputDecoration(
                 labelText: 'Select Product',
@@ -327,13 +345,11 @@ class _PlanFormPageState extends State<PlanFormPage> {
               min: 1,
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _selectedProductId == null ? null : _addCatalogItem,
-                icon: const Icon(Icons.add),
-                label: const Text('Add to List'),
-              ),
+            AppButton(
+              onPressed: _selectedProductId == null ? null : _addCatalogItem,
+              icon: Icons.add,
+              label: 'Add to List',
+              variant: AppButtonVariant.secondary,
             ),
           ],
         );
@@ -406,13 +422,11 @@ class _PlanFormPageState extends State<PlanFormPage> {
           min: 1,
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _addManualItem,
-            icon: const Icon(Icons.add),
-            label: const Text('Add to List'),
-          ),
+        AppButton(
+          onPressed: _addManualItem,
+          icon: Icons.add,
+          label: 'Add to List',
+          variant: AppButtonVariant.secondary,
         ),
       ],
     );
@@ -420,70 +434,85 @@ class _PlanFormPageState extends State<PlanFormPage> {
 
   Widget _buildItemsList() {
     if (_items.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Center(
-            child: Text(
-              'No items added yet',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
+      return AppCard(
+        padding: const EdgeInsets.all(32.0),
+        child: Center(
+          child: Column(
+            children: [
+               const Icon(Icons.playlist_add, size: 48, color: AppColors.textTertiary),
+               const SizedBox(height: 8),
+               Text(
+                'No items added yet',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Items (${_items.length})',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 12),
-            ..._items.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  title: Text(item.label ?? 'Item ${index + 1}'),
+    return AppCard(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Items',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_items.length}',
+                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _items.length,
+            separatorBuilder: (ctx, i) => const Divider(height: 1),
+            itemBuilder: (ctx, index) {
+               final item = _items[index];
+               return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(item.label ?? 'Item ${index + 1}', style: const TextStyle(fontWeight: FontWeight.w500)),
                   subtitle: Text(
-                    '${item.quantity}x • ${item.lengthMm}×${item.widthMm}×${item.heightMm}mm • ${item.weightKg}kg',
+                    '${item.quantity}x • ${item.lengthMm.toInt()}×${item.widthMm.toInt()}×${item.heightMm.toInt()}mm',
+                    style: const TextStyle(fontSize: 12),
                   ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
                     onPressed: () {
                       setState(() {
-                        _items.removeAt(index);
+                         _items.removeAt(index);
                       });
                     },
                   ),
-                ),
-              );
-            }),
-          ],
-        ),
+               );
+            },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: _isSubmitting ? null : _submit,
-        style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-        ),
-        child: const Text(
-          'Create Plan',
-          style: TextStyle(fontSize: 16),
-        ),
-      ),
+    return AppButton(
+      label: 'Create Plan',
+      onPressed: _isSubmitting ? null : _submit,
+      isLoading: _isSubmitting,
+      isFullWidth: true,
     );
   }
 
