@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
+import '../config/theme.dart';
 
 class UiHelpers {
   static Color getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'COMPLETED':
-        return Colors.green.shade100;
+        return AppColors.success.withOpacity(0.2);
       case 'DRAFT':
-        return Colors.grey.shade200;
+        return AppColors.textTertiary.withOpacity(0.2);
       case 'IN_PROGRESS':
-        return Colors.blue.shade100;
+        return AppColors.info.withOpacity(0.2);
       case 'FAILED':
-        return Colors.red.shade100;
+        return AppColors.error.withOpacity(0.2);
       default:
-        return Colors.grey.shade100;
+        return AppColors.surface;
     }
   }
 }

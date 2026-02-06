@@ -8,9 +8,11 @@ import '../../components/widgets/loading_state.dart';
 import '../../components/widgets/error_state.dart';
 import '../../components/cards/resource_list_item.dart';
 import '../../components/dialogs/confirm_dialog.dart';
+import '../../config/theme.dart';
 
 class ProductListPage extends StatefulWidget {
-  const ProductListPage({super.key});
+  final bool isEmbedded;
+  const ProductListPage({super.key, this.isEmbedded = false});
 
   @override
   State<ProductListPage> createState() => _ProductListPageState();
@@ -27,21 +29,7 @@ class _ProductListPageState extends State<ProductListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Products'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => context.read<ProductProvider>().fetchProducts(),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/products/new'),
-        child: const Icon(Icons.add),
-      ),
-      body: Consumer<ProductProvider>(
+    final content = Consumer<ProductProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading && provider.products.isEmpty) {
             return const LoadingState();
@@ -66,26 +54,80 @@ class _ProductListPageState extends State<ProductListPage> {
             itemBuilder: (context, index) {
               final product = provider.products[index];
               return ResourceListItem(
-                leading: CircleAvatar(
-                  backgroundColor: product.colorHex != null
-                      ? Color(int.parse(
-                          product.colorHex!.replaceFirst('#', '0xFF')))
-                      : Colors.grey,
-                  child: Text(
-                    product.name.substring(0, 1).toUpperCase(),
-                    style: const TextStyle(color: Colors.white),
+                code: product.id.length > 8 ? product.id.substring(0, 8).toUpperCase() : product.id.toUpperCase(),
+                title: product.name,
+                trailing: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: product.colorHex != null
+                        ? Color(int.parse(product.colorHex!.replaceFirst('#', '0xFF')))
+                        : Colors.grey,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
-                title: product.name,
-                subtitle:
-                    '${product.lengthMm}×${product.widthMm}×${product.heightMm}mm • ${product.weightKg}kg',
-                onEdit: () => context.push('/products/${product.id}'),
-                onDelete: () => _confirmDelete(context, product),
+                content: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dimensions: ${product.lengthMm.toInt()} × ${product.widthMm.toInt()} × ${product.heightMm.toInt()} mm',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Weight: ${product.weightKg.toStringAsFixed(1)} kg',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    ),
+                  ],
+                ),
+                actions: [
+                  _buildActionButton(
+                    context,
+                    label: 'Edit',
+                    icon: Icons.edit_outlined,
+                    color: AppColors.primary,
+                    onTap: () => context.push('/products/${product.id}'),
+                  ),
+                  _buildActionButton(
+                    context,
+                    label: 'Delete',
+                    icon: Icons.delete_outline,
+                    color: AppColors.error,
+                    onTap: () => _confirmDelete(context, product),
+                  ),
+                ],
+                onTap: () => context.push('/products/${product.id}'),
               );
             },
           );
         },
+      );
+
+    if (widget.isEmbedded) {
+      return Scaffold(
+        body: content,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => context.push('/products/new'),
+          child: const Icon(Icons.add),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Products'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context.read<ProductProvider>().fetchProducts(),
+          ),
+        ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/products/new'),
+        child: const Icon(Icons.add),
+      ),
+      body: content,
     );
   }
 
@@ -112,6 +154,30 @@ class _ProductListPageState extends State<ProductListPage> {
           }
         }
       },
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, {
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, size: 18, color: color),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
     );
   }
 }

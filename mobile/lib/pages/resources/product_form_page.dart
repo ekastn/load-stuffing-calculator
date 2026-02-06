@@ -7,6 +7,9 @@ import '../../dtos/product_dto.dart';
 import '../../components/inputs/app_text_field.dart';
 import '../../components/inputs/number_field.dart';
 import '../../components/widgets/loading_state.dart';
+import '../../components/cards/app_card.dart';
+import '../../components/buttons/app_button.dart';
+import '../../config/theme.dart';
 
 class ProductFormPage extends StatefulWidget {
   final String? productId;
@@ -69,86 +72,87 @@ class _ProductFormPageState extends State<ProductFormPage> {
       body: _isLoading 
           ? const LoadingState()
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(20.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    AppTextField(
-                      controller: _nameController,
-                      label: 'Product Name',
-                      required: true,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: NumberField(
-                            controller: _lengthController,
-                            label: 'Length',
-                            unit: 'mm',
-                            required: true,
-                            min: 0,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: NumberField(
-                            controller: _widthController,
-                            label: 'Width',
-                            unit: 'mm',
-                            required: true,
-                            min: 0,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: NumberField(
-                            controller: _heightController,
-                            label: 'Height',
-                            unit: 'mm',
-                            required: true,
-                            min: 0,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: NumberField(
-                            controller: _weightController,
-                            label: 'Weight',
-                            unit: 'kg',
-                            required: true,
-                            min: 0,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    AppTextField(
-                      controller: _colorController,
-                      label: 'Color (Hex)',
-                      hint: '#3498db',
-                      validator: (v) => v == null || !v.startsWith('#') 
-                          ? 'Must start with #' 
-                          : null,
+                    AppCard(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Product Details',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              AppTextField(
+                                controller: _nameController,
+                                label: 'Product Name',
+                                required: true,
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: NumberField(
+                                      controller: _lengthController,
+                                      label: 'Length',
+                                      unit: 'mm',
+                                      required: true,
+                                      min: 0,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: NumberField(
+                                      controller: _widthController,
+                                      label: 'Width',
+                                      unit: 'mm',
+                                      required: true,
+                                      min: 0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: NumberField(
+                                      controller: _heightController,
+                                      label: 'Height',
+                                      unit: 'mm',
+                                      required: true,
+                                      min: 0,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: NumberField(
+                                      controller: _weightController,
+                                      label: 'Weight',
+                                      unit: 'kg',
+                                      required: true,
+                                      min: 0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _buildColorPicker(),
+                            ]
+                        )
                     ),
                     const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
+                    AppButton(
                         onPressed: _submit,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: Text(
-                          widget.productId == null ? 'Create Product' : 'Update Product',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
+                        label: widget.productId == null ? 'Create Product' : 'Update Product',
+                        isFullWidth: true,
+                        isLoading: _isLoading,
                     ),
                   ],
                 ),
@@ -210,6 +214,76 @@ class _ProductFormPageState extends State<ProductFormPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildColorPicker() {
+    final List<String> palette = [
+      '#3498db', // Blue
+      '#e74c3c', // Red
+      '#2ecc71', // Green
+      '#f1c40f', // Yellow
+      '#9b59b6', // Purple
+      '#e67e22', // Orange
+      '#1abc9c', // Teal
+      '#34495e', // Navy
+      '#7f8c8d', // Grey
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+         const Text(
+          'Color',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: palette.map((colorHex) {
+            final isSelected = _colorController.text.toLowerCase() == colorHex.toLowerCase();
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _colorController.text = colorHex;
+                });
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Color(int.parse(colorHex.replaceFirst('#', '0xFF'))),
+                  shape: BoxShape.circle,
+                  border: isSelected 
+                      ? Border.all(color: AppColors.primary, width: 3)
+                      : Border.all(color: Colors.transparent),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: isSelected 
+                    ? const Icon(Icons.check, color: Colors.white, size: 24)
+                    : null,
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+        AppTextField(
+          controller: _colorController,
+          label: 'Custom Hex Color',
+          hint: '#3498db',
+          validator: (v) => v == null || !v.startsWith('#') || v.length != 7
+              ? 'Invalid Hex (e.g. #3498db)' 
+              : null,
+          onChanged: (val) => setState(() {}),
+        ),
+      ],
+    );
   }
 
   @override
