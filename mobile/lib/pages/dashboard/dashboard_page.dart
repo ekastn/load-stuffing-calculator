@@ -88,14 +88,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: AppCard(
                           onTap: () {
-                             context.push('/plans/${plan.planId}');
+                             context.push('/plans/${plan.id}');
                           },
                           child: Row(
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.inventory_2_outlined, color: AppColors.primary),
@@ -106,12 +106,12 @@ class _DashboardPageState extends State<DashboardPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      plan.title,
+                                      plan.title.isEmpty ? plan.code : plan.title,
                                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      plan.planCode,
+                                      plan.code,
                                       style: const TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 12,
@@ -245,10 +245,10 @@ class _DashboardPageState extends State<DashboardPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
                QuickActionButton(label: 'Products', icon: Icons.inventory, onTap: () {
-                context.push('/products');
+                context.go('/products');
               }),
               QuickActionButton(label: 'Containers', icon: Icons.view_in_ar, onTap: () {
-                context.push('/containers');
+                context.go('/containers');
               }),
                QuickActionButton(label: 'New Plan', icon: Icons.add_circle_outline, onTap: () {
                 context.push('/plans/new');
