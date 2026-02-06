@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../components/cards/app_card.dart';
+import '../../components/inputs/app_text_field.dart';
+import '../../components/buttons/app_button.dart';
+import '../../config/theme.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -33,10 +37,9 @@ class _LoginPageState extends State<LoginPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(authProvider.error!),
-            backgroundColor: Theme.of(context).colorScheme.error,
+            backgroundColor: AppColors.error,
           ),
         );
-        print(authProvider.error);
       }
     }
   }
@@ -44,86 +47,92 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Logo
-              // SvgPicture.asset(AppAssets.logo, height: 80), // Uncomment when asset exists
-              const Icon(Icons.inventory_2, size: 80, color: Color(0xFF1E3A8A)),
-              const SizedBox(height: 32),
-              
-              // Title
-              Text(
-                'Load Stuffing Calculator',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.bold,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Logo & Header
+                const Center(
+                  child: Icon(Icons.inventory_2, size: 64, color: AppColors.primary),
                 ),
-              ),
-              const SizedBox(height: 48),
-
-              // Login Form
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _usernameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your username';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock),
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Login Button
-                    Consumer<AuthProvider>(
-                      builder: (context, auth, child) {
-                        return SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: auth.isLoading ? null : _handleLogin,
-                            child: auth.isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Text('Login'),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                const SizedBox(height: 24),
+                
+                Text(
+                  'Welcome Back',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'Sign in to your account',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 48),
+
+                // Login Form Card
+                AppCard(
+                  padding: const EdgeInsets.all(32),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AppTextField(
+                          controller: _usernameController,
+                          label: 'Username',
+                          prefixIcon: Icons.person_outline,
+                          required: true,
+                        ),
+                        const SizedBox(height: 24),
+                        AppTextField(
+                          controller: _passwordController,
+                          label: 'Password',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: true,
+                          required: true,
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Login Button
+                        Consumer<AuthProvider>(
+                          builder: (context, auth, child) {
+                            return AppButton(
+                              label: 'Sign In',
+                              onPressed: _handleLogin,
+                              isLoading: auth.isLoading,
+                              isFullWidth: true,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                TextButton(
+                  onPressed: () {
+                    // TODO: Implement forgot password
+                  }, 
+                  child: Text(
+                    'Forgot Password?',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
