@@ -2,13 +2,13 @@ class Constants {
   // Use 10.0.2.2 for Android Emulator to access localhost
   static const String apiBaseUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'http://10.0.2.2:8080/api/v1',
+    defaultValue: 'https://stuffing-api.irc-enter.tech/api/v1',
   );
   
   // Web client base URL (for WebView embed routes)
   static const String webBaseUrl = String.fromEnvironment(
     'WEB_URL',
-    defaultValue: 'http://10.0.2.2:3000',
+    defaultValue: 'https://stuffing.irc-enter.tech',
   );
   
   static const String accessTokenKey = 'access_token';

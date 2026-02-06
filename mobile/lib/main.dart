@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:go_router/go_router.dart';
 import 'config/routes.dart';
 import 'config/theme.dart';
 import 'providers/auth_provider.dart';
@@ -86,20 +87,35 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AppRoot extends StatelessWidget {
+class AppRoot extends StatefulWidget {
   const AppRoot({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // 3. Consume Providers for High-Level Logic (e.g. Auth Status for Router)
-    // We create the router here, listening to AuthProvider changes.
-    final authProvider = context.read<AuthProvider>();
-    final router = createRouter(authProvider);
+  State<AppRoot> createState() => _AppRootState();
+}
 
+class _AppRootState extends State<AppRoot> {
+  bool _initialized = false;
+  late final GoRouter _router;
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Initialize auth state only once
+    if (!_initialized) {
+      _initialized = true;
+      final authProvider = context.read<AuthProvider>();
+      _router = createRouter(authProvider);
+      authProvider.initialize();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Load Stuffing Calculator',
       theme: AppTheme.lightTheme,
-      routerConfig: router,
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );
   }
