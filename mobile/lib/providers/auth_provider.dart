@@ -18,6 +18,22 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
   String? get error => _error;
 
+  /// Initialize auth state by checking for existing session
+  Future<void> initialize() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _user = await _authService.getCurrentUser();
+    } catch (e) {
+      _user = null;
+      // Silent failure - user will just see login screen
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> login(String username, String password) async {
     _isLoading = true;
     _error = null;

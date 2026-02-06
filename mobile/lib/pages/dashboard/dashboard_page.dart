@@ -135,8 +135,8 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildStatsSection(BuildContext context, DashboardStatsDto stats) {
-    // Get user role
-    final userRole = context.read<AuthProvider>().user?.role.toLowerCase() ?? '';
+    // Get user role - use watch to rebuild when user data loads
+    final userRole = context.watch<AuthProvider>().user?.role.toLowerCase() ?? '';
     final List<Widget> cards = [];
 
     // Personal User Logic (matches Web Client)

@@ -20,6 +20,11 @@ GoRouter createRouter(AuthProvider authProvider) {
     refreshListenable: authProvider,
     redirect: (context, state) {
       final isLoggingIn = state.uri.toString() == '/login';
+      
+      // Wait for auth initialization to complete
+      if (authProvider.isLoading) {
+        return null; // Stay where we are while loading
+      }
 
       if (!authProvider.isAuthenticated && !isLoggingIn) {
         return '/login';
