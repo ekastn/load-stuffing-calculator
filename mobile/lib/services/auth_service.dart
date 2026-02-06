@@ -45,4 +45,35 @@ class AuthService {
   Future<void> logout() async {
     await _storage.clearAll();
   }
+
+  /// Attempts to restore user session from stored token
+  Future<UserModel?> getCurrentUser() async {
+    try {
+      final token = await _storage.getAccessToken();
+      
+      if (token == null || token.isEmpty) {
+        return null;
+      }
+
+      // Verify token is still valid by fetching current user info
+      final response = await _api.get('/auth/me');
+
+      final apiResponse = ApiResponseDto<AuthMeResponseDto>.fromJson(
+        response.data,
+        (json) => AuthMeResponseDto.fromJson(json as Map<String, dynamic>),
+      );
+
+      if (!apiResponse.success || apiResponse.data == null) {
+        // Token is invalid, clear storage
+        await _storage.clearAll();
+        return null;
+      }
+
+      return AuthMapper.toUserModel(apiResponse.data!.user);
+    } catch (e) {
+      // If token validation fails, clear storage
+      await _storage.clearAll();
+      return null;
+    }
+  }
 }

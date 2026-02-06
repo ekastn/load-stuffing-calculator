@@ -49,3 +49,21 @@ Map<String, dynamic> _$UserSummaryDtoToJson(UserSummaryDto instance) =>
       'username': instance.username,
       'role': instance.role,
     };
+
+AuthMeResponseDto _$AuthMeResponseDtoFromJson(Map<String, dynamic> json) =>
+    AuthMeResponseDto(
+      user: UserSummaryDto.fromJson(json['user'] as Map<String, dynamic>),
+      activeWorkspaceId: json['active_workspace_id'] as String?,
+      permissions: (json['permissions'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      isPlatformMember: json['is_platform_member'] as bool,
+    );
+
+Map<String, dynamic> _$AuthMeResponseDtoToJson(AuthMeResponseDto instance) =>
+    <String, dynamic>{
+      'user': instance.user,
+      'active_workspace_id': instance.activeWorkspaceId,
+      'permissions': instance.permissions,
+      'is_platform_member': instance.isPlatformMember,
+    };
