@@ -6,6 +6,10 @@ import '../../components/viewers/plan_visualizer_view.dart';
 import '../../components/widgets/loading_state.dart';
 import '../../components/widgets/error_state.dart';
 import '../../components/widgets/empty_state.dart';
+import '../../components/cards/app_card.dart';
+import '../../components/cards/stat_card.dart';
+import '../../components/widgets/status_badge.dart';
+import '../../config/theme.dart';
 
 class PlanDetailPage extends StatefulWidget {
   final String planId;
@@ -128,91 +132,63 @@ class _PlanDetailPageState extends State<PlanDetailPage>
   }
 
   Widget _buildPlanHeader(PlanDetailModel plan) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        plan.title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      plan.title.isEmpty ? plan.code : plan.title,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    if (plan.title.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         plan.code,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[600],
+                          color: AppColors.textSecondary,
                           fontFamily: 'monospace',
                         ),
                       ),
                     ],
-                  ),
-                ),
-                _buildStatusBadge(plan.status),
-              ],
-            ),
-            if (plan.notes != null) ...[
-              const SizedBox(height: 12),
-              const Divider(),
-              const SizedBox(height: 8),
-              Text(
-                plan.notes!,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
+                  ],
                 ),
               ),
+              const SizedBox(width: 8),
+              StatusBadge.fromStatus(plan.status),
             ],
+          ),
+          if (plan.notes != null && plan.notes!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            Text(
+              'Notes:',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+             const SizedBox(height: 4),
+            Text(
+              plan.notes!,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+            ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    switch (status.toUpperCase()) {
-      case 'COMPLETED':
-        color = Colors.green;
-        break;
-      case 'IN_PROGRESS':
-        color = Colors.blue;
-        break;
-      case 'FAILED':
-        color = Colors.red;
-        break;
-      case 'DRAFT':
-        color = Colors.orange;
-        break;
-      default:
-        color = Colors.grey;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        status.replaceAll('_', ' ').toUpperCase(),
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
+        ],
       ),
     );
   }
@@ -221,43 +197,42 @@ class _PlanDetailPageState extends State<PlanDetailPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Statistics',
-          style: TextStyle(
-            fontSize: 18,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
-              child: _buildStatCard(
-                'Total Items',
-                stats.totalItems.toString(),
-                Icons.inventory_2_outlined,
-                Colors.blue,
+              child: StatCard(
+                title: 'Total Items',
+                value: stats.totalItems.toString(),
+                icon: Icons.inventory_2_outlined,
+                color: AppColors.info,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
-              child: _buildStatCard(
-                'Total Weight',
-                '${stats.totalWeightKg.toStringAsFixed(1)} kg',
-                Icons.scale_outlined,
-                Colors.orange,
+              child: StatCard(
+                title: 'Total Weight',
+                value: '${stats.totalWeightKg.toStringAsFixed(1)} kg',
+                icon: Icons.scale_outlined,
+                color: AppColors.secondary,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         _buildUtilizationCard(
           'Volume Utilization',
           stats.volumeUtilizationPct,
           '${stats.totalVolumeM3.toStringAsFixed(2)} m³',
-          Colors.green,
+          AppColors.success,
         ),
-        const SizedBox(height: 12),
+         const SizedBox(height: 16),
         _buildUtilizationCard(
           'Weight Utilization',
           stats.weightUtilizationPct,
@@ -268,88 +243,51 @@ class _PlanDetailPageState extends State<PlanDetailPage>
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: color),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildUtilizationCard(
       String label, double percentage, String subtitle, Color color) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-                Text(
-                  '${percentage.toStringAsFixed(1)}%',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+              ),
+              Text(
+                '${percentage.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: percentage / 100,
-                minHeight: 8,
-                backgroundColor: Colors.grey[200],
-                valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: percentage / 100,
+              minHeight: 8,
+              backgroundColor: AppColors.background,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -358,40 +296,36 @@ class _PlanDetailPageState extends State<PlanDetailPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Container Information',
-          style: TextStyle(
-            fontSize: 18,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (container.name != null) ...[
-                  _buildInfoRow('Name', container.name!),
-                  const SizedBox(height: 8),
-                ],
-                _buildInfoRow(
-                  'Dimensions',
-                  '${container.lengthMm.toInt()} × ${container.widthMm.toInt()} × ${container.heightMm.toInt()} mm',
-                ),
+        const SizedBox(height: 16),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (container.name != null) ...[
+                _buildInfoRow('Name', container.name!),
                 const SizedBox(height: 8),
-                _buildInfoRow(
-                  'Volume',
-                  '${container.volumeM3.toStringAsFixed(2)} m³',
-                ),
-                const SizedBox(height: 8),
-                _buildInfoRow(
-                  'Max Weight',
-                  '${container.maxWeightKg.toStringAsFixed(1)} kg',
-                ),
               ],
-            ),
+              _buildInfoRow(
+                'Dimensions',
+                '${container.lengthMm.toInt()} × ${container.widthMm.toInt()} × ${container.heightMm.toInt()} mm',
+              ),
+              const SizedBox(height: 8),
+              _buildInfoRow(
+                'Volume',
+                '${container.volumeM3.toStringAsFixed(2)} m³',
+              ),
+              const SizedBox(height: 8),
+              _buildInfoRow(
+                'Max Weight',
+                '${container.maxWeightKg.toStringAsFixed(1)} kg',
+              ),
+            ],
           ),
         ),
       ],
@@ -444,47 +378,59 @@ class _PlanDetailPageState extends State<PlanDetailPage>
   }
 
   Widget _buildItemCard(PlanItem item) {
-    return Card(
-      child: ListTile(
-        leading: Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: item.colorHex != null
-                ? Color(int.parse(item.colorHex!.substring(1), radix: 16) +
-                    0xFF000000)
-                : Colors.grey,
-            shape: BoxShape.circle,
-          ),
-        ),
-        title: Text(
-          item.label ?? item.itemId,
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        subtitle: Text(
-          '${item.quantity}× • ${item.lengthMm.toInt()}×${item.widthMm.toInt()}×${item.heightMm.toInt()} mm • ${item.weightKg} kg',
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${item.totalWeightKg.toStringAsFixed(1)} kg',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
+    return AppCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        children: [
+            Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: item.colorHex != null
+                    ? Color(int.parse(item.colorHex!.substring(1), radix: 16) +
+                        0xFF000000)
+                    : Colors.grey,
+                shape: BoxShape.circle,
               ),
             ),
-            Text(
-              '${item.totalVolumeM3.toStringAsFixed(3)} m³',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[600],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text(
+                    item.label ?? item.itemId,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                   const SizedBox(height: 4),
+                  Text(
+                    '${item.quantity}× • ${item.lengthMm.toInt()}×${item.widthMm.toInt()}×${item.heightMm.toInt()} mm • ${item.weightKg} kg',
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${item.totalWeightKg.toStringAsFixed(1)} kg',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  '${item.totalVolumeM3.toStringAsFixed(3)} m³',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }

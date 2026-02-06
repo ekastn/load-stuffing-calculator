@@ -52,3 +52,22 @@ class UserSummaryDto {
 
   factory UserSummaryDto.fromJson(Map<String, dynamic> json) => _$UserSummaryDtoFromJson(json);
 }
+
+@JsonSerializable()
+class AuthMeResponseDto {
+  final UserSummaryDto user;
+  @JsonKey(name: 'active_workspace_id')
+  final String? activeWorkspaceId;
+  final List<String> permissions;
+  @JsonKey(name: 'is_platform_member')
+  final bool isPlatformMember;
+
+  AuthMeResponseDto({
+    required this.user,
+    this.activeWorkspaceId,
+    required this.permissions,
+    required this.isPlatformMember,
+  });
+
+  factory AuthMeResponseDto.fromJson(Map<String, dynamic> json) => _$AuthMeResponseDtoFromJson(json);
+}
