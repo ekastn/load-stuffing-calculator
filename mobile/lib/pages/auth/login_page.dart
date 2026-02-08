@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../config/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../exceptions/login_exception.dart';
 import '../../components/sections/auth_form_layout.dart';
 import '../../components/forms/login_form_content.dart';
 
@@ -42,9 +43,12 @@ class _LoginPageState extends State<LoginPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Login failed: $e')));
+        final message = e is LoginException
+            ? e.toString()
+            : 'Login failed. Please try again.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
       }
     }
   }
@@ -64,8 +68,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
         footerActions: [
           TextButton(
-            onPressed: () {
-            },
+            onPressed: () {},
             child: const Text('Don\'t have an account? Sign up'),
           ),
         ],

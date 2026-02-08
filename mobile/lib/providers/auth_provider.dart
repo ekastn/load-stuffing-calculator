@@ -9,7 +9,7 @@ class AuthProvider extends ChangeNotifier {
 
   UserModel? _user;
   UserModel? get user => _user;
-  
+
   bool get isAuthenticated => _user != null;
 
   bool _isLoading = false;
@@ -44,6 +44,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       _user = null;
+      rethrow;
     } finally {
       _isLoading = false;
       notifyListeners();
