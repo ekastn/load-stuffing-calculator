@@ -1,7 +1,10 @@
+import 'package:dio/dio.dart';
+
 import '../dtos/api_response_dto.dart';
 import '../dtos/auth_dto.dart';
 import '../mappers/auth_mapper.dart';
 import '../models/user_model.dart';
+import '../exceptions/login_exception.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
 
@@ -13,10 +16,10 @@ class AuthService {
 
   Future<UserModel> login(String username, String password) async {
     try {
-      final response = await _api.post('/auth/login', data: {
-        'username': username,
-        'password': password,
-      });
+      final response = await _api.post(
+        '/auth/login',
+        data: {'username': username, 'password': password},
+      );
 
       final apiResponse = ApiResponseDto<LoginResponseDto>.fromJson(
         response.data,
@@ -24,7 +27,10 @@ class AuthService {
       );
 
       if (!apiResponse.success || apiResponse.data == null) {
-        throw Exception(apiResponse.errors?.firstOrNull?.message ?? 'Login failed');
+        throw LoginException(
+          apiResponse.errors?.firstOrNull?.message ??
+              'Invalid username or password',
+        );
       }
 
       final dto = apiResponse.data!;
@@ -37,8 +43,36 @@ class AuthService {
 
       return AuthMapper.toUserModel(dto.user);
     } catch (e) {
-      // In a real app we would map DioException to a domain exception here
-      rethrow; 
+      if (e is LoginException) rethrow;
+
+      // Handle DioException (API errors)
+      if (e is DioException) {
+        // Try to extract error message from response
+        if (e.response != null) {
+          try {
+            final apiResponse = ApiResponseDto<dynamic>.fromJson(
+              e.response!.data,
+              (json) => json,
+            );
+            final errorMessage =
+                apiResponse.errors?.firstOrNull?.message ??
+                'Invalid username or password';
+            throw LoginException(errorMessage);
+          } catch (_) {
+            // If parsing fails, use status-based message
+            if (e.response!.statusCode == 401) {
+              throw LoginException('Invalid username or password');
+            }
+          }
+        }
+        // Network/connection error
+        throw LoginException(
+          'Unable to connect. Please check your internet connection.',
+        );
+      }
+
+      // Unknown error
+      throw LoginException('Login failed: ${e.toString()}');
     }
   }
 
@@ -50,7 +84,7 @@ class AuthService {
   Future<UserModel?> getCurrentUser() async {
     try {
       final token = await _storage.getAccessToken();
-      
+
       if (token == null || token.isEmpty) {
         return null;
       }
