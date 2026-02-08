@@ -24,6 +24,11 @@ class DimensionInputs extends StatelessWidget {
   final String widthLabel;
   final String heightLabel;
   final String weightLabel;
+  final String dimensionSuffix;
+  final String weightSuffix;
+  final String hintText;
+  final double borderRadius;
+  final double spacing;
   final bool required;
 
   const DimensionInputs({
@@ -35,6 +40,11 @@ class DimensionInputs extends StatelessWidget {
     this.widthLabel = 'Width',
     this.heightLabel = 'Height',
     this.weightLabel = 'Max Weight',
+    this.dimensionSuffix = 'mm',
+    this.weightSuffix = 'kg',
+    this.hintText = '0',
+    this.borderRadius = 8.0,
+    this.spacing = 12.0,
     this.required = true,
     super.key,
   });
@@ -50,24 +60,28 @@ class DimensionInputs extends StatelessWidget {
               child: NumberField(
                 controller: lengthController,
                 label: lengthLabel,
-                unit: 'mm',
+                unit: dimensionSuffix,
                 required: required,
                 min: 0,
+                hintText: hintText,
+                borderRadius: borderRadius,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: spacing),
             Expanded(
               child: NumberField(
                 controller: widthController,
                 label: widthLabel,
-                unit: 'mm',
+                unit: dimensionSuffix,
                 required: required,
                 min: 0,
+                hintText: hintText,
+                borderRadius: borderRadius,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: spacing + 4),
         // Second row: Height and Weight
         Row(
           children: [
@@ -75,19 +89,23 @@ class DimensionInputs extends StatelessWidget {
               child: NumberField(
                 controller: heightController,
                 label: heightLabel,
-                unit: 'mm',
+                unit: dimensionSuffix,
                 required: required,
                 min: 0,
+                hintText: hintText,
+                borderRadius: borderRadius,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: spacing),
             Expanded(
               child: NumberField(
                 controller: weightController,
                 label: weightLabel,
-                unit: 'kg',
+                unit: weightSuffix,
                 required: required,
                 min: 0,
+                hintText: hintText,
+                borderRadius: borderRadius,
               ),
             ),
           ],
