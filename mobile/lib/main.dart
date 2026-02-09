@@ -18,8 +18,14 @@ import 'services/plan_service.dart';
 import 'services/product_service.dart';
 import 'services/storage_service.dart';
 
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  // Preserve native splash until we are ready
+  FlutterNativeSplash.preserve(
+    widgetsBinding: WidgetsFlutterBinding.ensureInitialized(),
+  );
 
   // 1. Initialize Infrastucture (Services)
   final storageService = StorageService(storage: const FlutterSecureStorage());
@@ -30,14 +36,16 @@ void main() {
   final productService = ProductService(apiService);
   final containerService = ContainerService(apiService);
 
-  runApp(MyApp(
-    authService: authService,
-    storageService: storageService,
-    dashboardService: dashboardService,
-    planService: planService,
-    productService: productService,
-    containerService: containerService,
-  ));
+  runApp(
+    MyApp(
+      authService: authService,
+      storageService: storageService,
+      dashboardService: dashboardService,
+      planService: planService,
+      productService: productService,
+      containerService: containerService,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -63,24 +71,16 @@ class MyApp extends StatelessWidget {
     // 2. Setup Provider Graph with Dependency Injection
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(authService),
-        ),
+        ChangeNotifierProvider(create: (_) => AuthProvider(authService)),
         ChangeNotifierProvider(
           create: (_) => DashboardProvider(dashboardService, planService),
         ),
-        ChangeNotifierProvider(
-          create: (_) => PlanProvider(planService),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ProductProvider(productService),
-        ),
+        ChangeNotifierProvider(create: (_) => PlanProvider(planService)),
+        ChangeNotifierProvider(create: (_) => ProductProvider(productService)),
         ChangeNotifierProvider(
           create: (_) => ContainerProvider(containerService),
         ),
-        ChangeNotifierProvider(
-          create: (_) => PlanDetailProvider(planService),
-        ),
+        ChangeNotifierProvider(create: (_) => PlanDetailProvider(planService)),
       ],
       child: const AppRoot(),
     );
@@ -97,7 +97,7 @@ class AppRoot extends StatefulWidget {
 class _AppRootState extends State<AppRoot> {
   bool _initialized = false;
   late final GoRouter _router;
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -106,6 +106,11 @@ class _AppRootState extends State<AppRoot> {
       _initialized = true;
       final authProvider = context.read<AuthProvider>();
       _router = createRouter(authProvider);
+
+      // Remove native splash once Flutter frame is ready
+      // The custom SplashScreen will take over
+      FlutterNativeSplash.remove();
+
       authProvider.initialize();
     }
   }
@@ -113,7 +118,7 @@ class _AppRootState extends State<AppRoot> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Load Stuffing Calculator',
+      title: 'LoadIQ',
       theme: AppTheme.lightTheme,
       routerConfig: _router,
       debugShowCheckedModeBanner: false,
