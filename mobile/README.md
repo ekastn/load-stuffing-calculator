@@ -32,6 +32,7 @@ This mobile client provides native access to the Load Stuffing Calculator system
 - JWT tokens stored in device keychain (flutter_secure_storage)
 - Session persistence across app restarts
 - Auto-logout on token expiration
+- User-friendly login error messages (invalid credentials, network errors)
 
 **Plans:**
 - List plans with pagination
@@ -48,7 +49,6 @@ This mobile client provides native access to the Load Stuffing Calculator system
 
 **Limitations:**
 - Token refresh not implemented (requires re-login after access token expires)
-- Profile page incomplete (no user info display or logout button)
 - No offline mode (network-required for all operations)
 - No QR/barcode scanning (dependency installed but not integrated)
 - Desktop WebView support limited (Linux shows fallback, macOS/Windows partial)
@@ -150,12 +150,15 @@ mobile/
 │   │   ├── routes.dart         # GoRouter configuration
 │   │   └── theme.dart          # Material 3 theme
 │   ├── components/
-│   │   ├── buttons/            # AppButton, QuickActionButton
-│   │   ├── cards/              # StatCard, ResourceListItem
-│   │   ├── dialogs/            # ConfirmDialog
-│   │   ├── inputs/             # AppTextField, NumberField
+│   │   ├── buttons/            # AppButton, QuickActionButton, PlanActionButton
+│   │   ├── cards/              # StatCard, ResourceListItem, PlanItemCard, InfoRow, UtilizationProgressCard
+│   │   ├── dialogs/            # ConfirmDialog, RecalculateDialog
+│   │   ├── fields/             # ColorPickerField
+│   │   ├── forms/              # LoginFormContent, ProductFormContent, ContainerFormContent
+│   │   ├── inputs/             # AppTextField, NumberField, DimensionInputs
+│   │   ├── sections/           # Composable page sections (plan, dashboard, auth, settings, resources)
 │   │   ├── viewers/            # PlanVisualizerView (WebView)
-│   │   └── widgets/            # LoadingState, ErrorState, EmptyState, StatusBadge
+│   │   └── widgets/            # LoadingState, ErrorState, EmptyState, StatusBadge, ProfileHeader, SettingsListItem
 │   ├── dtos/                   # API data transfer objects (json_serializable)
 │   │   ├── api_response_dto.dart
 │   │   ├── auth_dto.dart
@@ -164,6 +167,8 @@ mobile/
 │   │   ├── plan_dto.dart
 │   │   ├── plan_detail_dto.dart
 │   │   └── product_dto.dart
+│   ├── exceptions/             # Custom exceptions
+│   │   └── login_exception.dart
 │   ├── mappers/                # DTO to Model transformers
 │   │   ├── auth_mapper.dart
 │   │   ├── container_mapper.dart
@@ -179,7 +184,7 @@ mobile/
 │   │   ├── auth/               # LoginPage
 │   │   ├── dashboard/          # DashboardPage
 │   │   ├── plans/              # PlanListPage, PlanFormPage, PlanDetailPage
-│   │   ├── profile/            # ProfilePage (incomplete)
+│   │   ├── profile/            # ProfilePage (settings, logout)
 │   │   ├── resources/          # Product and Container pages
 │   │   └── main_shell_page.dart # Bottom navigation shell
 │   ├── providers/              # State management (ChangeNotifier)
@@ -683,7 +688,6 @@ open coverage/html/index.html
 - No biometric authentication (Touch ID, Face ID)
 
 **Features:**
-- Profile page incomplete (missing user info display, logout button)
 - No QR/barcode scanning integration (dependency installed, not used)
 - No offline mode (all operations require network)
 - Plans list pagination hardcoded (page 1, limit 10, no "Load More")
@@ -691,7 +695,6 @@ open coverage/html/index.html
 **UI/UX:**
 - No dark mode support
 - No localization (English only)
-- Generic error messages (not user-friendly)
 - Limited loading indicators on some screens
 
 **Platform-specific:**
@@ -779,10 +782,8 @@ flutter build ios --no-codesign
 ### High priority
 
 - Implement token refresh flow (auto-refresh when access token expires)
-- Complete profile page (user info display, logout button)
 - Add unit tests for services and mappers
 - Add widget tests for critical components
-- Improve error messages (user-friendly, localized)
 - Add loading indicators to all async operations
 
 ### Medium priority
