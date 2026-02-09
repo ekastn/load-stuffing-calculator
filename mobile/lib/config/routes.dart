@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import '../pages/auth/login_page.dart';
+import '../pages/splash_screen.dart';
 import '../pages/main_shell_page.dart';
 import '../pages/plans/plan_list_page.dart';
 import '../pages/plans/plan_form_page.dart';
@@ -16,29 +17,38 @@ import '../pages/dashboard/dashboard_page.dart';
 
 GoRouter createRouter(AuthProvider authProvider) {
   return GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     refreshListenable: authProvider,
     redirect: (context, state) {
       final isLoggingIn = state.uri.toString() == '/login';
-      
-      // Wait for auth initialization to complete
+      final isSplash = state.uri.toString() == '/splash';
+
+      // Still loading auth state
       if (authProvider.isLoading) {
-        return null; // Stay where we are while loading
+        return '/splash';
       }
 
-      if (!authProvider.isAuthenticated && !isLoggingIn) {
+      // If we are on splash and loading is done, decide where to go
+      if (isSplash && !authProvider.isLoading) {
+        return authProvider.isAuthenticated ? '/' : '/login';
+      }
+
+      if (!authProvider.isAuthenticated && !isLoggingIn && !isSplash) {
         return '/login';
       }
-      if (authProvider.isAuthenticated && isLoggingIn) {
+
+      if (authProvider.isAuthenticated && (isLoggingIn || isSplash)) {
         return '/';
       }
+
       return null;
     },
     routes: [
       GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
       ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       ShellRoute(
         builder: (context, state, child) => MainShellPage(child: child),
         routes: [
