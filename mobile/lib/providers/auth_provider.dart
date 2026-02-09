@@ -12,7 +12,7 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isAuthenticated => _user != null;
 
-  bool _isLoading = false;
+  bool _isLoading = true;
   bool get isLoading => _isLoading;
 
   String? _error;
