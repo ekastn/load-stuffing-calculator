@@ -77,9 +77,10 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
     }
     
     // Include plan data only on first load to avoid URL size issues
-    if (widget.planData != null && !_hasLoadedInitialData) {
-      queryParams.add('data=${widget.planData}');
-    }
+    // User requested to remove data param and rely on API fetch
+    // if (widget.planData != null && !_hasLoadedInitialData) {
+    //   queryParams.add('data=${widget.planData}');
+    // }
     
     if (widget.step != null) {
       queryParams.add('step=${widget.step}');
