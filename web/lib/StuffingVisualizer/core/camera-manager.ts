@@ -26,7 +26,9 @@ export class CameraManager {
     }
 
     public setDefaultPosition(): void {
-        this.camera.position.set(15, 8, -10);
+        // Position: Right (+X), Up (+Y), Front (+Z)
+        // Matches the "Door" view of the container
+        this.camera.position.set(15, 10, 15);
         this.camera.zoom = 1;
         this.camera.lookAt(0, 0, 0);
     }
@@ -49,8 +51,8 @@ export class CameraManager {
     }
 
     public fitToContainer(container: ContainerData): void {
-        // Reset to default angle
-        this.camera.position.set(15, 8, -10);
+        // Reset to default angle (Front-Right-Top)
+        this.camera.position.set(15, 10, 15);
         this.camera.lookAt(0, 0, 0);
 
         // Convert dimensions to meters
@@ -81,16 +83,20 @@ export class CameraManager {
         
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        // Maintain standard isometric-like angle
-        const offset = new Vector3(15, 8, -10);
+        // Use a fixed distance to maintain consistent view of the container
+        // This ensures we see the container context, not just the focused item
+        const distance = 25;
+        
+        // Straight front view - looking directly into the container
+        const offsetDirection = new Vector3(0.8, 0.4, -1);
+        const offset = offsetDirection.multiplyScalar(distance);
         this.camera.position.copy(center).add(offset);
+        
+        this.camera.up.set(0, 1, 0);
+        this.camera.updateMatrixWorld();
         this.camera.lookAt(center);
         
-        // Calculate zoom to fit the box with padding
-        // frustumSize (20) / zoom = maxDim * padding
-        const targetZoom = 20 / (Math.max(maxDim, 0.1) * padding);
-        
-        this.camera.zoom = targetZoom;
+        this.camera.zoom = 3;
         this.camera.updateProjectionMatrix();
     }
 
@@ -121,8 +127,8 @@ export class CameraManager {
         this.camera.top = frustumSize / 2;
         this.camera.bottom = -frustumSize / 2;
 
-        // Set isometric view
-        this.camera.position.set(15, 8, -10);
+        // Set isometric view (Front-Right-Top)
+        this.camera.position.set(15, 10, 15);
         this.camera.lookAt(0, 0, 0);
 
         // Calculate zoom to fit container
