@@ -34,6 +34,7 @@ This application solves the 3D bin packing problem for container loading. It cal
 - 3D bin packing calculation using multiple algorithms (boxpacker3, py3dbp)
 - Interactive 3D visualization with Three.js
 - Step-by-step loading animation
+- Barcode loading validation with mobile scanning
 - Product and container catalog management
 - PDF report generation
 - Multi-tenant workspace system
@@ -476,17 +477,19 @@ Response: { "access_token": "..." }
 
 ### Load planning endpoints
 
-| Method | Path | Permission |
-|--------|------|------------|
-| GET | `/api/v1/plans` | `plan:read` |
-| POST | `/api/v1/plans` | `plan:create` |
-| GET | `/api/v1/plans/:id` | `plan:read` |
-| PUT | `/api/v1/plans/:id` | `plan:update` |
-| DELETE | `/api/v1/plans/:id` | `plan:delete` |
-| POST | `/api/v1/plans/:id/calculate` | `plan:calculate` |
-| POST | `/api/v1/plans/:id/items` | `plan_item:create` |
-| PUT | `/api/v1/plans/:id/items/:itemId` | `plan_item:update` |
-| DELETE | `/api/v1/plans/:id/items/:itemId` | `plan_item:delete` |
+| Method | Path | Permission | Description |
+|--------|------|------------|-------------|
+| GET | `/api/v1/plans` | `plan:read` | List plans |
+| POST | `/api/v1/plans` | `plan:create` | Create plan |
+| GET | `/api/v1/plans/:id` | `plan:read` | Get plan detail |
+| PUT | `/api/v1/plans/:id` | `plan:update` | Update plan |
+| DELETE | `/api/v1/plans/:id` | `plan:delete` | Delete plan |
+| POST | `/api/v1/plans/:id/calculate` | `plan:calculate` | Run packing algorithm |
+| GET | `/api/v1/plans/:id/barcodes` | `plan:read` | Get generated QR codes |
+| POST | `/api/v1/plans/:id/validations` | `plan:read` | Validate scanned barcode |
+| POST | `/api/v1/plans/:id/items` | `plan_item:create` | Add item |
+| PUT | `/api/v1/plans/:id/items/:itemId` | `plan_item:update` | Update item |
+| DELETE | `/api/v1/plans/:id/items/:itemId` | `plan_item:delete` | Remove item |
 
 ### Master data endpoints
 

@@ -80,6 +80,10 @@ class AuthService {
     await _storage.clearAll();
   }
 
+  Future<String?> getAccessToken() async {
+    return await _storage.getAccessToken();
+  }
+
   /// Attempts to restore user session from stored token
   Future<UserModel?> getCurrentUser() async {
     try {
