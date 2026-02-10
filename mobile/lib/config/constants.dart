@@ -14,6 +14,7 @@ class Constants {
   static const String accessTokenKey = 'access_token';
   static const String refreshTokenKey = 'refresh_token';
   static const String activeWorkspaceIdKey = 'active_workspace_id';
+  static const String loadingSessionKey = 'loading_session';
 }
 
 // Backwards compatibility alias

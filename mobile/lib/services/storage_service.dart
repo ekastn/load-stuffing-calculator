@@ -34,4 +34,31 @@ class StorageService {
   Future<void> clearAll() async {
     await _storage.deleteAll();
   }
+
+  Future<void> saveLoadingSession(String payload) async {
+    await _storage.write(key: AppConstants.loadingSessionKey, value: payload);
+  }
+
+  Future<String?> getLoadingSession() async {
+    return await _storage.read(key: AppConstants.loadingSessionKey);
+  }
+
+  Future<void> deleteLoadingSession() async {
+    await _storage.delete(key: AppConstants.loadingSessionKey);
+  }
+
+  Future<void> saveLoadingExpectedItems(String planId, String payload) async {
+    await _storage.write(
+      key: '${AppConstants.loadingSessionKey}_items_$planId',
+      value: payload,
+    );
+  }
+
+  Future<String?> getLoadingExpectedItems(String planId) async {
+    return await _storage.read(key: '${AppConstants.loadingSessionKey}_items_$planId');
+  }
+
+  Future<void> deleteLoadingExpectedItems(String planId) async {
+    await _storage.delete(key: '${AppConstants.loadingSessionKey}_items_$planId');
+  }
 }
