@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../dtos/api_response_dto.dart';
 import '../dtos/plan_dto.dart';
 import '../dtos/plan_detail_dto.dart';
@@ -93,6 +94,13 @@ class PlanService {
     }
 
     return PlanMapper.fromDetailDto(apiResponse.data!);
+  }
+
+  // Get plan detail as raw JSON string for WebView embedding
+  Future<String> getPlanDetailRaw(String planId) async {
+    final response = await _api.get('/plans/$planId');
+    // Return the raw JSON response as string
+    return jsonEncode(response.data);
   }
 
   Future<void> updatePlan(
