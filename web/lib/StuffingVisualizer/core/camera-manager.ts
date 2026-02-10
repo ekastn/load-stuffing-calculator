@@ -1,4 +1,4 @@
-import { OrthographicCamera, WebGLRenderer, Vector2, Vector3, Quaternion } from "three";
+import { OrthographicCamera, WebGLRenderer, Vector2, Vector3, Quaternion, Box3 } from "three";
 import type { ContainerData } from "../types";
 
 export class CameraManager {
@@ -68,6 +68,28 @@ export class CameraManager {
         // 20 / zoom = maxDim / 0.7  => zoom = (20 * 0.7) / maxDim = 14 / maxDim
         const targetZoom = 14 / Math.max(maxDim, 1); // Prevent division by zero
 
+        this.camera.zoom = targetZoom;
+        this.camera.updateProjectionMatrix();
+    }
+
+    public focusOnBox(box: Box3, padding = 1.2): void {
+        const center = new Vector3();
+        box.getCenter(center);
+        
+        const size = new Vector3();
+        box.getSize(size);
+        
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        // Maintain standard isometric-like angle
+        const offset = new Vector3(15, 8, -10);
+        this.camera.position.copy(center).add(offset);
+        this.camera.lookAt(center);
+        
+        // Calculate zoom to fit the box with padding
+        // frustumSize (20) / zoom = maxDim * padding
+        const targetZoom = 20 / (Math.max(maxDim, 0.1) * padding);
+        
         this.camera.zoom = targetZoom;
         this.camera.updateProjectionMatrix();
     }
