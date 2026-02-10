@@ -9,7 +9,10 @@ import {
   UpdatePlanItemRequest,
   PlanItemDetail,
   CalculationResult,
-  CalculatePlanRequest
+  CalculatePlanRequest,
+  BarcodeInfo,
+  ValidateBarcodeRequest,
+  ValidationResult
 } from "../types"
 
 function withWorkspaceId(url: string, workspaceId?: string | null) {
@@ -98,6 +101,24 @@ export const PlanService = {
     } catch (error: any) {
       console.error(`PlanService.calculatePlan(${planId}) failed:`, error)
       throw new Error(error.message || "Failed to calculate plan")
+    }
+  },
+
+  getPlanBarcodes: async (planId: string): Promise<BarcodeInfo[]> => {
+    try {
+      return await apiGet<BarcodeInfo[]>(`/plans/${planId}/barcodes`)
+    } catch (error: any) {
+      console.error(`PlanService.getPlanBarcodes(${planId}) failed:`, error)
+      throw new Error(error.message || "Failed to fetch plan barcodes")
+    }
+  },
+
+  validatePlanBarcode: async (planId: string, data: ValidateBarcodeRequest): Promise<ValidationResult> => {
+    try {
+      return await apiPost<ValidationResult>(`/plans/${planId}/validations`, data)
+    } catch (error: any) {
+      console.error(`PlanService.validatePlanBarcode(${planId}) failed:`, error)
+      throw new Error(error.message || "Failed to validate barcode")
     }
   }
 }

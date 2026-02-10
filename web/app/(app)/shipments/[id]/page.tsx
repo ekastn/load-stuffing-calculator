@@ -4,10 +4,11 @@ import { useAuth, getAccessToken } from "@/lib/auth-context"
 import { usePlans } from "@/hooks/use-plans"
 import { RouteGuard } from "@/lib/route-guard"
 import { useParams } from "next/navigation"
+import Link from "next/link"
 import { useEffect, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Trash2, Package, RefreshCw, Box, Info, Plus, AlertTriangle, Link2 } from "lucide-react"
+import { Trash2, Package, RefreshCw, Box, Info, Plus, AlertTriangle, Link2, QrCode } from "lucide-react"
 import { StuffingViewer } from "@/components/stuffing-viewer"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
@@ -172,6 +173,18 @@ export default function ShipmentDetailPage() {
                   >
                       <Info className="h-4 w-4" />
                       Advanced
+                  </Button>
+
+                  <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      asChild
+                  >
+                      <Link href={`/shipments/${shipmentId}/barcodes`}>
+                          <QrCode className="h-4 w-4" />
+                          Barcodes
+                      </Link>
                   </Button>
                 </>
                 )}
