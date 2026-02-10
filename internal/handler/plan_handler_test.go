@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -745,4 +746,195 @@ func TestPlanHandler_CalculatePlan(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, w.Code)
 		mockSvc.AssertExpectations(t)
 	})
+}
+
+func TestPlanHandler_GetPlanBarcodes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	planID := uuid.New().String()
+	itemID := uuid.New().String()
+	itemLabel := "Test Item"
+
+	t.Run("success", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		plan := &dto.PlanDetailResponse{
+			PlanID: planID,
+			Items: []dto.PlanItemDetail{
+				{ItemID: itemID, Label: &itemLabel, LengthMM: 100, WidthMM: 100, HeightMM: 100},
+			},
+			Calculation: &dto.CalculationResult{
+				Placements: []dto.PlacementDetail{
+					{ItemID: itemID, StepNumber: 1, PositionX: 0, PositionY: 0, PositionZ: 0},
+				},
+			},
+		}
+
+		mockSvc.On("GetPlan", mock.Anything, planID).Return(plan, nil)
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/plans/"+planID+"/barcodes", nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.GetPlanBarcodes(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp struct {
+			Data []dto.BarcodeInfo `json:"data"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.NotEmpty(t, resp.Data)
+		assert.Equal(t, 1, resp.Data[0].StepNumber)
+		assert.Equal(t, itemLabel, resp.Data[0].ItemLabel)
+
+		// Verify deterministic barcode format: PLAN-{8}-STEP-{3}-{8}
+		expectedBarcode := fmt.Sprintf("PLAN-%s-STEP-001-%s", planID[:8], itemID[:8])
+		assert.Equal(t, expectedBarcode, resp.Data[0].Barcode)
+
+		mockSvc.AssertExpectations(t)
+	})
+
+	t.Run("plan_not_found", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		mockSvc.On("GetPlan", mock.Anything, planID).Return(nil, errors.New("not found"))
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest(http.MethodGet, "/plans/"+planID+"/barcodes", nil)
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.GetPlanBarcodes(c)
+
+		assert.Equal(t, http.StatusNotFound, w.Code)
+		mockSvc.AssertExpectations(t)
+	})
+}
+
+func TestPlanHandler_ValidatePlanBarcode(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	planID := uuid.New().String()
+	itemID := uuid.New().String()
+	step := 1
+	validBarcode := fmt.Sprintf("PLAN-%s-STEP-%03d-%s", planID[:8], step, itemID[:8])
+
+	t.Run("success_matched", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		req := dto.ValidateBarcodeRequest{
+			Barcode:      validBarcode,
+			ExpectedStep: intPtr(1),
+		}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/validations", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.ValidatePlanBarcode(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp struct {
+			Data dto.ValidationResult `json:"data"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.True(t, resp.Data.Valid)
+		assert.Equal(t, "MATCHED", resp.Data.Status)
+	})
+
+	t.Run("out_of_sequence", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		// Barcode is for step 1, but we expect step 2
+		req := dto.ValidateBarcodeRequest{
+			Barcode:      validBarcode,
+			ExpectedStep: intPtr(2),
+		}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/validations", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.ValidatePlanBarcode(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp struct {
+			Data dto.ValidationResult `json:"data"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.False(t, resp.Data.Valid)
+		assert.Equal(t, "OUT_OF_SEQUENCE", resp.Data.Status)
+	})
+
+	t.Run("wrong_plan", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		otherPlanID := uuid.New().String()
+		wrongBarcode := fmt.Sprintf("PLAN-%s-STEP-%03d-%s", otherPlanID[:8], step, itemID[:8])
+
+		req := dto.ValidateBarcodeRequest{
+			Barcode:      wrongBarcode,
+			ExpectedStep: intPtr(1),
+		}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/validations", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.ValidatePlanBarcode(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp struct {
+			Data dto.ValidationResult `json:"data"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.False(t, resp.Data.Valid)
+		assert.Equal(t, "WRONG_PLAN", resp.Data.Status)
+	})
+
+	t.Run("invalid_format", func(t *testing.T) {
+		mockSvc := new(mocks.MockPlanService)
+		h := handler.NewPlanHandler(mockSvc)
+
+		req := dto.ValidateBarcodeRequest{
+			Barcode: "INVALID-BARCODE",
+		}
+
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		jsonBytes, _ := json.Marshal(req)
+		c.Request = httptest.NewRequest(http.MethodPost, "/plans/"+planID+"/validations", bytes.NewBuffer(jsonBytes))
+		c.Params = gin.Params{{Key: "id", Value: planID}}
+
+		h.ValidatePlanBarcode(c)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+
+		var resp struct {
+			Data dto.ValidationResult `json:"data"`
+		}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+		assert.False(t, resp.Data.Valid)
+		assert.Equal(t, "INVALID_FORMAT", resp.Data.Status)
+	})
+}
+
+func intPtr(i int) *int {
+	return &i
 }

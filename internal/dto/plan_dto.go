@@ -158,3 +158,39 @@ type CalculatePlanRequest struct {
 	Goal     string `json:"goal" binding:"omitempty" example:"tightest"`
 	Gravity  *bool  `json:"gravity" binding:"omitempty" example:"true"`
 }
+
+type BarcodeInfo struct {
+	StepNumber int        `json:"step_number"`
+	ItemID     string     `json:"item_id"`
+	ItemLabel  string     `json:"item_label"`
+	Barcode    string     `json:"barcode"`
+	Position   Position   `json:"position"`
+	Dimensions Dimensions `json:"dimensions"`
+}
+
+type Position struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+	Z float64 `json:"z"`
+}
+
+type Dimensions struct {
+	Length float64 `json:"length"`
+	Width  float64 `json:"width"`
+	Height float64 `json:"height"`
+}
+
+type ValidateBarcodeRequest struct {
+	Barcode      string `json:"barcode" binding:"required"`
+	ExpectedStep *int   `json:"expected_step"` // Optional
+}
+
+type ValidationResult struct {
+	Valid      bool   `json:"valid"`
+	Status     string `json:"status"` // MATCHED, OUT_OF_SEQUENCE, WRONG_PLAN, INVALID_FORMAT
+	PlanID     string `json:"plan_id,omitempty"`
+	StepNumber int    `json:"step_number,omitempty"`
+	ItemID     string `json:"item_id,omitempty"`
+	Barcode    string `json:"barcode,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
