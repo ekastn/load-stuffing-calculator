@@ -269,13 +269,10 @@ export function TrialLoadCalculator() {
   return (
     <section className="pb-16 sm:pb-20" id="trial-calculator">
       <div className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Try the calculator</h2>
-          <p className="max-w-2xl text-muted-foreground">Build a quick load plan right here on the landing page.</p>
-        </div>
+
 
         {dataError && (
-          <Card className="border-border/50 bg-card/50 shadow-sm backdrop-blur">
+          <Card className="border-border/50 bg-card shadow-sm backdrop-blur">
             <CardHeader>
               <CardTitle className="text-base">Unable to load trial data</CardTitle>
               <CardDescription>{dataError}</CardDescription>
@@ -284,21 +281,22 @@ export function TrialLoadCalculator() {
         )}
 
          {/* TOP: Builder */}
-         <Card className="border-border/50 bg-card/50 shadow-sm backdrop-blur">
-           <CardHeader className="space-y-3">
-             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+         <Card className="border-border/50 bg-card shadow-sm backdrop-blur">
+            <CardHeader className="space-y-3 pb-2">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                
                <div className="space-y-1">
                  <CardTitle className="text-base">Build a trial load</CardTitle>
                  <CardDescription>Pick a container, add items, and run a 3D simulation.</CardDescription>
                </div>
-
-               <div className="flex flex-wrap items-center gap-2">
-                 <Badge variant="outline">{items.length} items</Badge>
-                 <Badge variant="outline">{fmtNumber(totalVolume, 2)} m³</Badge>
-                 <Badge variant="outline">{fmtNumber(totalWeight, 1)} kg</Badge>
-               </div>
-             </div>
-           </CardHeader>
+                
+                <div className="flex flex-wrap items-center gap-2 ml-auto">
+                  <Badge variant="secondary" className="bg-muted">{items.length} items</Badge>
+                  <Badge variant="secondary" className="bg-muted">{fmtNumber(totalVolume, 2)} m³</Badge>
+                  <Badge variant="secondary" className="bg-muted">{fmtNumber(totalWeight, 1)} kg</Badge>
+                </div>
+              </div>
+            </CardHeader>
 
 
           <CardContent className="space-y-6">
@@ -654,7 +652,7 @@ export function TrialLoadCalculator() {
         {/* BOTTOM: Shipments-like layout */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="lg:col-span-8">
-            <Card className="border-border/50 bg-card/50 shadow-sm backdrop-blur">
+            <Card className="border-border/50 bg-card shadow-sm backdrop-blur">
               <CardHeader>
                 <CardTitle className="text-base">3D simulation</CardTitle>
                 <CardDescription>
@@ -678,7 +676,7 @@ export function TrialLoadCalculator() {
           </div>
 
           <div className="lg:col-span-4">
-            <Card className="border-border/50 bg-card/50 shadow-sm backdrop-blur">
+            <Card className="border-border/50 bg-card shadow-sm backdrop-blur">
               <CardHeader>
                 <CardTitle className="text-base">Summary</CardTitle>
                 <CardDescription>Utilization and packing details.</CardDescription>

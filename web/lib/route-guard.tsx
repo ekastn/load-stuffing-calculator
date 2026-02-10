@@ -29,12 +29,9 @@ export function RouteGuard({
   useEffect(() => {
     if (isLoading) return
 
-    console.log("[v0] RouteGuard - User:", user?.role, "Allowed roles:", allowedRoles, "Required perms:", requiredPermissions)
-
     if (!user) {
       const nextPath = window.location.pathname + window.location.search
       const url = `/login?next=${encodeURIComponent(nextPath)}`
-      console.log("[v0] RouteGuard - No user, redirecting to", url)
       router.replace(url)
       return
     }
@@ -50,12 +47,10 @@ export function RouteGuard({
     const hasAccess = hasAccessByPermission ?? hasAccessByRole ?? true
 
     if (!hasAccess) {
-      console.log("[v0] RouteGuard - Unauthorized, redirecting to", redirectTo)
       router.replace(redirectTo)
       return
     }
 
-    console.log("[v0] RouteGuard - Access granted, rendering children")
   }, [user, isLoading, allowedRoles, requiredPermissions, permissions, redirectTo, router])
 
   if (isLoading) {
