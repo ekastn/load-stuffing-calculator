@@ -21,7 +21,6 @@ export function ProductPreview() {
              <div className="bg-white rounded-full p-1 flex items-center justify-center h-6 w-6 shadow-sm">
                <Image src="/logo.png" alt="LoadIQ" width={20} height={20} className="object-contain" />
              </div>
-             LoadIQ Limitless
           </div>
         </div>
 
