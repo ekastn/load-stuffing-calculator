@@ -61,7 +61,7 @@ export default function LandingPage() {
       </section>
 
       {/* Trial Calculator Section */}
-      <section className="py-32 bg-secondary border-y border-border/40 relative overflow-hidden">
+      <section className="py-32 bg-background border-y border-border/40 relative overflow-hidden">
          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.25] pointer-events-none" />
          <div className="container px-4 md:px-6 mx-auto relative z-10">
            <div className="text-center mb-12">
@@ -158,7 +158,7 @@ export default function LandingPage() {
       </section>
 
       {/* Workflow Section - Timeline */}
-      <section id="how-it-works" className="py-24 bg-secondary border-y border-border/40 relative overflow-hidden">
+      <section id="how-it-works" className="py-24 bg-background border-y border-border/40 relative overflow-hidden">
         {/* Subtle Noise Texture */}
         <div className="absolute inset-0 opacity-30 bg-[url('/noise.svg')] pointer-events-none" />
         <div className="container px-4 md:px-6 mx-auto">
