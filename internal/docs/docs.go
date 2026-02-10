@@ -1882,11 +1882,115 @@ const docTemplate = `{
                 }
             }
         },
+        "/plans/{id}/barcodes": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns generated barcodes for all placements in a plan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Get plan barcodes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.BarcodeInfo"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/plans/{id}/calculate": {
             "post": {
                 "security": [
                     {
                         "BearerAuth": []
+                    }
+                ],
+                "description": "Triggers the packing calculation for a plan.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Calculate plan",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Calculation Options",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CalculatePlanRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -2189,6 +2293,76 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/response.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/plans/{id}/validations": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates a scanned barcode against a plan",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "plans"
+                ],
+                "summary": "Validate plan barcode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Workspace override (founder only)",
+                        "name": "workspace_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Plan ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Validation Data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ValidateBarcodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/response.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ValidationResult"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/response.APIResponse"
                         }
@@ -3647,6 +3821,46 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.BarcodeInfo": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                },
+                "dimensions": {
+                    "$ref": "#/definitions/dto.Dimensions"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "item_label": {
+                    "type": "string"
+                },
+                "position": {
+                    "$ref": "#/definitions/dto.Position"
+                },
+                "step_number": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.CalculatePlanRequest": {
+            "type": "object",
+            "properties": {
+                "goal": {
+                    "type": "string",
+                    "example": "tightest"
+                },
+                "gravity": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "strategy": {
+                    "type": "string",
+                    "example": "bestfitdecreasing"
+                }
+            }
+        },
         "dto.CalculationResult": {
             "type": "object",
             "properties": {
@@ -4076,6 +4290,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.Dimensions": {
+            "type": "object",
+            "properties": {
+                "height": {
+                    "type": "number"
+                },
+                "length": {
+                    "type": "number"
+                },
+                "width": {
+                    "type": "number"
+                }
+            }
+        },
         "dto.GuestTokenResponse": {
             "type": "object",
             "properties": {
@@ -4434,6 +4662,20 @@ const docTemplate = `{
                 },
                 "pending_plans": {
                     "type": "integer"
+                }
+            }
+        },
+        "dto.Position": {
+            "type": "object",
+            "properties": {
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                },
+                "z": {
+                    "type": "number"
                 }
             }
         },
@@ -4837,6 +5079,48 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "example": "admin"
+                }
+            }
+        },
+        "dto.ValidateBarcodeRequest": {
+            "type": "object",
+            "required": [
+                "barcode"
+            ],
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                },
+                "expected_step": {
+                    "description": "Optional",
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ValidationResult": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "item_id": {
+                    "type": "string"
+                },
+                "plan_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "MATCHED, OUT_OF_SEQUENCE, WRONG_PLAN, INVALID_FORMAT",
+                    "type": "string"
+                },
+                "step_number": {
+                    "type": "integer"
+                },
+                "valid": {
+                    "type": "boolean"
                 }
             }
         },
