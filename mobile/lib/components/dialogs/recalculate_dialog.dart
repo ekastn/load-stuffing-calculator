@@ -58,7 +58,7 @@ class _RecalculateDialogState extends State<RecalculateDialog> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _strategy,
+            initialValue: _strategy,
             decoration: const InputDecoration(
               labelText: 'Strategy',
               border: OutlineInputBorder(),

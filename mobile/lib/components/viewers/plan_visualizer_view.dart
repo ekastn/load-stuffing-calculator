@@ -9,8 +9,15 @@ import 'package:url_launcher/url_launcher.dart';
 
 class PlanVisualizerView extends StatefulWidget {
   final String planId;
+  final bool loadingMode;
+  final int? step;
 
-  const PlanVisualizerView({super.key, required this.planId});
+  const PlanVisualizerView({
+    super.key,
+    required this.planId,
+    this.loadingMode = false,
+    this.step,
+  });
 
   @override
   State<PlanVisualizerView> createState() => _PlanVisualizerViewState();
@@ -22,6 +29,7 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
   String? _error;
   bool _isDesktop = false;
   bool _isInitialized = false;
+  String? _cachedToken;
 
   @override
   void initState() {
@@ -35,18 +43,47 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
     }
   }
 
+  @override
+  void didUpdateWidget(PlanVisualizerView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.step != oldWidget.step ||
+        widget.loadingMode != oldWidget.loadingMode) {
+      if (_controller != null && _isInitialized) {
+        _controller?.loadRequest(Uri.parse(_buildUrl(_cachedToken)));
+      }
+    }
+  }
+
+  String _buildUrl(String? token) {
+    final path = widget.loadingMode ? 'loading' : 'shipments';
+    final baseUrl = '${Constants.webBaseUrl}/embed/$path/${widget.planId}';
+
+    final queryParams = <String>[];
+    if (token != null) {
+      queryParams.add('token=$token');
+    }
+    if (widget.step != null) {
+      queryParams.add('step=${widget.step}');
+    }
+
+    if (queryParams.isEmpty) {
+      return baseUrl;
+    }
+
+    return '$baseUrl?${queryParams.join('&')}';
+  }
+
   Future<void> _initializeWebView() async {
     try {
       // Get the access token from secure storage
       final storageService = StorageService();
-      final token = await storageService.getAccessToken();
+      _cachedToken = await storageService.getAccessToken();
 
       if (!mounted) return;
 
       // Build URL with token parameter for authentication
-      final baseUrl =
-          '${Constants.webBaseUrl}/embed/shipments/${widget.planId}';
-      final url = token != null ? '$baseUrl?token=$token' : baseUrl;
+      final url = _buildUrl(_cachedToken);
 
       _controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -100,9 +137,7 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
   }
 
   Future<void> _openInBrowser() async {
-    final url = Uri.parse(
-      '${Constants.webBaseUrl}/embed/shipments/${widget.planId}',
-    );
+    final url = Uri.parse(_buildUrl(null));
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }
