@@ -37,6 +37,15 @@ class _SplashScreenState extends State<SplashScreen> {
                 letterSpacing: 1.2,
               ),
             ),
+            const SizedBox(height: 8),
+            // Subtitle
+            Text(
+              'Container Optimization System',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+                letterSpacing: 0.5,
+              ),
+            ),
             const SizedBox(height: 48),
             // Loading Spinner
             const CircularProgressIndicator(),
