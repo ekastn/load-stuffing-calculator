@@ -10,6 +10,9 @@ class AuthProvider extends ChangeNotifier {
   UserModel? _user;
   UserModel? get user => _user;
 
+  String? _accessToken;
+  String? get accessToken => _accessToken;
+
   bool get isAuthenticated => _user != null;
 
   bool _isLoading = true;
@@ -25,6 +28,9 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _user = await _authService.getCurrentUser();
+      if (_user != null) {
+        _accessToken = await _authService.getAccessToken();
+      }
     } catch (e) {
       _user = null;
       // Silent failure - user will just see login screen
@@ -41,6 +47,7 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _user = await _authService.login(username, password);
+      _accessToken = await _authService.getAccessToken();
     } catch (e) {
       _error = e.toString();
       _user = null;
@@ -54,6 +61,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     await _authService.logout();
     _user = null;
+    _accessToken = null;
     notifyListeners();
   }
 }
