@@ -1,8 +1,8 @@
 "use client"
 
 import { useParams, useSearchParams } from "next/navigation"
-import { useEffect, useState, Suspense } from "react"
-import { LoadingViewer } from "@/components/loading-viewer"
+import { useEffect, useState, Suspense, useRef } from "react"
+import { LoadingViewer, LoadingViewerRef } from "@/components/loading-viewer"
 import { toStuffingPlanData } from "@/lib/stuffing/to-stuffing-plan"
 import { PlanService } from "@/lib/services/plans"
 import type { PlanDetailResponse } from "@/lib/types"
@@ -13,15 +13,17 @@ function LoadingEmbedContent() {
   const searchParams = useSearchParams()
   const id = params.id as string
   
-  // Get step and token from search params
+  // Get step, token, and data from search params
   const stepStr = searchParams.get("step")
   const token = searchParams.get("token")
+  const dataParam = searchParams.get("data")
   
   const step = stepStr ? parseInt(stepStr, 10) : 0
 
   const [plan, setPlan] = useState<PlanDetailResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const viewerRef = useRef<LoadingViewerRef>(null)
 
   useEffect(() => {
     // Store token in localStorage for API calls if provided in the URL
@@ -33,6 +35,23 @@ function LoadingEmbedContent() {
       if (!id) return
       try {
         setIsLoading(true)
+        
+        // Check if plan data was provided in URL (from mobile app)
+        if (dataParam) {
+          try {
+            const decoded = atob(dataParam)
+            const planData = JSON.parse(decoded) as PlanDetailResponse
+            setPlan(planData)
+            setError(null)
+            setIsLoading(false)
+            return
+          } catch (decodeErr) {
+            console.warn("Failed to decode plan data, fetching from API:", decodeErr)
+            // Fall through to API fetch
+          }
+        }
+        
+        // Fetch from API if no data parameter or decoding failed
         const data = await PlanService.getPlan(id)
         setPlan(data)
         setError(null)
@@ -45,7 +64,22 @@ function LoadingEmbedContent() {
     }
 
     loadPlan()
-  }, [id, token])
+  }, [id, token, dataParam])
+
+  // Expose global setStep function for JavaScript bridge communication
+  useEffect(() => {
+    if (typeof window !== "undefined" && viewerRef.current) {
+      (window as any).setStep = (newStep: number) => {
+        console.log("setStep called from JS bridge:", newStep)
+        viewerRef.current?.setStep(newStep)
+      }
+
+      // Cleanup
+      return () => {
+        delete (window as any).setStep
+      }
+    }
+  }, [plan])
 
   if (isLoading) {
     return (
@@ -83,6 +117,7 @@ function LoadingEmbedContent() {
   return (
     <main className="w-full h-screen overflow-hidden">
       <LoadingViewer 
+        ref={viewerRef}
         data={toStuffingPlanData(plan)} 
         step={step} 
       />
