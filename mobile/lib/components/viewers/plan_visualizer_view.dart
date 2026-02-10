@@ -11,12 +11,14 @@ class PlanVisualizerView extends StatefulWidget {
   final String planId;
   final bool loadingMode;
   final int? step;
+  final String? planData; // Base64-encoded plan JSON
 
   const PlanVisualizerView({
     super.key,
     required this.planId,
     this.loadingMode = false,
     this.step,
+    this.planData,
   });
 
   @override
@@ -30,6 +32,7 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
   bool _isDesktop = false;
   bool _isInitialized = false;
   String? _cachedToken;
+  bool _hasLoadedInitialData = false;
 
   @override
   void initState() {
@@ -47,11 +50,20 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
   void didUpdateWidget(PlanVisualizerView oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (widget.step != oldWidget.step ||
-        widget.loadingMode != oldWidget.loadingMode) {
-      if (_controller != null && _isInitialized) {
-        _controller?.loadRequest(Uri.parse(_buildUrl(_cachedToken)));
-      }
+    // Use JavaScript bridge to update step instead of reloading page
+    if (widget.step != oldWidget.step && _controller != null && _isInitialized) {
+      _setStepViaJavaScript(widget.step ?? 0);
+    }
+  }
+
+  Future<void> _setStepViaJavaScript(int step) async {
+    try {
+      await _controller?.runJavaScript('window.setStep($step)');
+      debugPrint('Set step via JS bridge: $step');
+    } catch (e) {
+      debugPrint('Error setting step via JavaScript: $e');
+      // Fallback: reload page if JS bridge fails
+      _controller?.loadRequest(Uri.parse(_buildUrl(_cachedToken)));
     }
   }
 
@@ -63,6 +75,12 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
     if (token != null) {
       queryParams.add('token=$token');
     }
+    
+    // Include plan data only on first load to avoid URL size issues
+    if (widget.planData != null && !_hasLoadedInitialData) {
+      queryParams.add('data=${widget.planData}');
+    }
+    
     if (widget.step != null) {
       queryParams.add('step=${widget.step}');
     }
@@ -102,6 +120,7 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
               if (mounted) {
                 setState(() {
                   _isLoading = false;
+                  _hasLoadedInitialData = true; // Mark initial data as loaded
                 });
               }
             },
