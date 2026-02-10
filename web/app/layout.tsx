@@ -10,25 +10,19 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Load & Stuffing Calculator | Container Optimization System",
-  description: "IoT-integrated platform for optimizing container loads with real-time weight validation",
-  generator: "v0.app",
+  title: "LoadIQ | Container Optimization System",
+  description: "LoadIQ is a multi-tenant 3D container load planning platform featuring advanced packing algorithms, interactive visualization, and enterprise-grade workspace management.",
+  applicationName: "LoadIQ",
+  authors: [{ name: "LoadIQ Team" }],
+  keywords: ["container loading", "3D bin packing", "logistics", "supply chain", "optimization", "stuffing calculator"],
   icons: {
     icon: [
       {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
+        url: "/logo.png",
+        href: "/logo.png",
       },
     ],
-    apple: "/apple-icon.png",
+    apple: "/logo.png",
   },
 }
 
