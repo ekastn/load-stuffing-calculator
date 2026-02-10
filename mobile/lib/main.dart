@@ -10,6 +10,7 @@ import 'providers/dashboard_provider.dart';
 import 'providers/plan_provider.dart';
 import 'providers/plan_detail_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/loading_provider.dart';
 import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/container_service.dart';
@@ -81,6 +82,9 @@ class MyApp extends StatelessWidget {
           create: (_) => ContainerProvider(containerService),
         ),
         ChangeNotifierProvider(create: (_) => PlanDetailProvider(planService)),
+        ChangeNotifierProvider(
+          create: (_) => LoadingProvider(planService, storageService),
+        ),
       ],
       child: const AppRoot(),
     );
