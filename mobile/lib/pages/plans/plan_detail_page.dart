@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/plan_detail_provider.dart';
 import '../../components/viewers/plan_visualizer_view.dart';
 import '../../components/widgets/loading_state.dart';
@@ -86,23 +87,39 @@ class _PlanDetailPageState extends State<PlanDetailPage>
         builder: (context, provider, _) {
           if (provider.plan == null) return const SizedBox.shrink();
 
-          return FloatingActionButton.extended(
-            onPressed: provider.isCalculating
-                ? null
-                : () => _showRecalculateDialog(context),
-            icon: provider.isCalculating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.calculate),
-            label: Text(
-              provider.isCalculating ? 'Calculating...' : 'Recalculate',
-            ),
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FloatingActionButton.extended(
+                heroTag: 'loading_btn',
+                onPressed: () =>
+                    context.push('/plans/${widget.planId}/loading'),
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Start Loading'),
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              const SizedBox(height: 16),
+              FloatingActionButton.extended(
+                heroTag: 'recalculate_btn',
+                onPressed: provider.isCalculating
+                    ? null
+                    : () => _showRecalculateDialog(context),
+                icon: provider.isCalculating
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.calculate),
+                label: Text(
+                  provider.isCalculating ? 'Calculating...' : 'Recalculate',
+                ),
+              ),
+            ],
           );
         },
       ),

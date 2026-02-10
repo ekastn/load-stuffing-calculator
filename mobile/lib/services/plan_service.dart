@@ -14,10 +14,7 @@ class PlanService {
   Future<List<PlanModel>> getPlans({int page = 1, int limit = 10}) async {
     final response = await _api.get(
       '/plans',
-      queryParameters: {
-        'page': page,
-        'limit': limit,
-      },
+      queryParameters: {'page': page, 'limit': limit},
     );
 
     final apiResponse = ApiResponseDto<List<PlanListItemDto>>.fromJson(
@@ -29,7 +26,8 @@ class PlanService {
 
     if (!apiResponse.success) {
       throw Exception(
-          apiResponse.errors?.firstOrNull?.message ?? 'Failed to fetch plans');
+        apiResponse.errors?.firstOrNull?.message ?? 'Failed to fetch plans',
+      );
     }
 
     return apiResponse.data?.map(PlanMapper.fromDto).toList() ?? [];
@@ -45,7 +43,8 @@ class PlanService {
 
     if (!apiResponse.success) {
       throw Exception(
-          apiResponse.errors?.firstOrNull?.message ?? 'Failed to create plan');
+        apiResponse.errors?.firstOrNull?.message ?? 'Failed to create plan',
+      );
     }
 
     final dto = apiResponse.data!;
@@ -73,7 +72,8 @@ class PlanService {
 
     if (!apiResponse.success) {
       throw Exception(
-          apiResponse.errors?.firstOrNull?.message ?? 'Failed to delete plan');
+        apiResponse.errors?.firstOrNull?.message ?? 'Failed to delete plan',
+      );
     }
   }
 
@@ -87,10 +87,39 @@ class PlanService {
 
     if (!apiResponse.success) {
       throw Exception(
-          apiResponse.errors?.firstOrNull?.message ?? 'Failed to fetch plan detail');
+        apiResponse.errors?.firstOrNull?.message ??
+            'Failed to fetch plan detail',
+      );
     }
 
     return PlanMapper.fromDetailDto(apiResponse.data!);
+  }
+
+  Future<void> updatePlan(
+    String planId, {
+    String? status,
+    Map<String, dynamic>? loadingNotes,
+  }) async {
+    final Map<String, dynamic> requestData = {};
+    if (status != null) {
+      requestData['status'] = status;
+    }
+    if (loadingNotes != null) {
+      requestData['loading_notes'] = loadingNotes;
+    }
+
+    final response = await _api.put('/plans/$planId', data: requestData);
+
+    final apiResponse = ApiResponseDto<Map<String, dynamic>>.fromJson(
+      response.data,
+      (json) => json as Map<String, dynamic>,
+    );
+
+    if (!apiResponse.success) {
+      throw Exception(
+        apiResponse.errors?.firstOrNull?.message ?? 'Failed to update plan',
+      );
+    }
   }
 
   Future<PlanDetailModel> recalculate(
@@ -120,7 +149,9 @@ class PlanService {
 
     if (!apiResponse.success) {
       throw Exception(
-          apiResponse.errors?.firstOrNull?.message ?? 'Failed to recalculate plan');
+        apiResponse.errors?.firstOrNull?.message ??
+            'Failed to recalculate plan',
+      );
     }
 
     return PlanMapper.fromDetailDto(apiResponse.data!);
