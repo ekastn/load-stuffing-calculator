@@ -126,6 +126,8 @@ export class StuffingVisualizer {
 
     public setStep(step: number): void {
         this.animationManager.setCurrentStep(step);
+        // Explicitly update visibility and camera focus when step changes
+        this.updateVisibleItems(step);
     }
 
     public setLoadingMode(enabled: boolean): void {
@@ -148,14 +150,20 @@ export class StuffingVisualizer {
         for (const itemMesh of this.itemMeshes) {
             const stepNumber = itemMesh.getStepNumber();
             
-            if (this.loadingMode) {
-                const isVisible = stepNumber === targetStep;
-                itemMesh.getGroup().visible = isVisible;
-                if (isVisible) {
+            // All items up to targetStep are visible
+            const isVisible = stepNumber <= targetStep;
+            itemMesh.getGroup().visible = isVisible;
+            
+            // Identify focused item (the current step)
+            if (stepNumber === targetStep) {
+                // Ensure world matrix is updated before calculating box
+                itemMesh.getGroup().updateMatrixWorld(true);
+                
+                if (!focusedItemBox) {
                     focusedItemBox = new Box3().setFromObject(itemMesh.getGroup());
+                } else {
+                    focusedItemBox.expandByObject(itemMesh.getGroup());
                 }
-            } else {
-                itemMesh.getGroup().visible = stepNumber <= targetStep;
             }
         }
 
@@ -165,16 +173,12 @@ export class StuffingVisualizer {
             // Update controls target to match the focused item
             const center = new Vector3();
             focusedItemBox.getCenter(center);
-            const controls = this.controlsManager.getControls();
-            if (controls) {
-                controls.target.copy(center);
-            }
+            this.controlsManager.setTarget(center.x, center.y, center.z);
+            this.controlsManager.update();
         } else if (!this.loadingMode) {
             // Reset controls target to container center when not in loading mode
-            const controls = this.controlsManager.getControls();
-            if (controls) {
-                controls.target.set(0, 0, 0);
-            }
+            this.controlsManager.setTarget(0, 0, 0);
+            this.controlsManager.update();
         }
     }
 
