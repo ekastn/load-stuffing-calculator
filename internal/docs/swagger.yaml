@@ -89,6 +89,33 @@ definitions:
       user:
         $ref: '#/definitions/dto.UserSummary'
     type: object
+  dto.BarcodeInfo:
+    properties:
+      barcode:
+        type: string
+      dimensions:
+        $ref: '#/definitions/dto.Dimensions'
+      item_id:
+        type: string
+      item_label:
+        type: string
+      position:
+        $ref: '#/definitions/dto.Position'
+      step_number:
+        type: integer
+    type: object
+  dto.CalculatePlanRequest:
+    properties:
+      goal:
+        example: tightest
+        type: string
+      gravity:
+        example: true
+        type: boolean
+      strategy:
+        example: bestfitdecreasing
+        type: string
+    type: object
   dto.CalculationResult:
     properties:
       algorithm:
@@ -396,6 +423,15 @@ definitions:
       planner:
         $ref: '#/definitions/dto.PlannerStats'
     type: object
+  dto.Dimensions:
+    properties:
+      height:
+        type: number
+      length:
+        type: number
+      width:
+        type: number
+    type: object
   dto.GuestTokenResponse:
     properties:
       access_token:
@@ -634,6 +670,15 @@ definitions:
         type: integer
       pending_plans:
         type: integer
+    type: object
+  dto.Position:
+    properties:
+      x:
+        type: number
+      "y":
+        type: number
+      z:
+        type: number
     type: object
   dto.ProductResponse:
     properties:
@@ -910,6 +955,34 @@ definitions:
       username:
         example: admin
         type: string
+    type: object
+  dto.ValidateBarcodeRequest:
+    properties:
+      barcode:
+        type: string
+      expected_step:
+        description: Optional
+        type: integer
+    required:
+    - barcode
+    type: object
+  dto.ValidationResult:
+    properties:
+      barcode:
+        type: string
+      error:
+        type: string
+      item_id:
+        type: string
+      plan_id:
+        type: string
+      status:
+        description: MATCHED, OUT_OF_SEQUENCE, WRONG_PLAN, INVALID_FORMAT
+        type: string
+      step_number:
+        type: integer
+      valid:
+        type: boolean
     type: object
   dto.WorkspaceResponse:
     properties:
@@ -2118,8 +2191,70 @@ paths:
       summary: Update a plan
       tags:
       - plans
+  /plans/{id}/barcodes:
+    get:
+      consumes:
+      - application/json
+      description: Returns generated barcodes for all placements in a plan
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.BarcodeInfo'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get plan barcodes
+      tags:
+      - plans
   /plans/{id}/calculate:
     post:
+      consumes:
+      - application/json
+      description: Triggers the packing calculation for a plan.
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Calculation Options
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/dto.CalculatePlanRequest'
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
@@ -2140,6 +2275,9 @@ paths:
             $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
+      summary: Calculate plan
+      tags:
+      - plans
   /plans/{id}/items:
     post:
       consumes:
@@ -2309,6 +2447,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Update plan item
+      tags:
+      - plans
+  /plans/{id}/validations:
+    post:
+      consumes:
+      - application/json
+      description: Validates a scanned barcode against a plan
+      parameters:
+      - description: Workspace override (founder only)
+        in: query
+        name: workspace_id
+        type: string
+      - description: Plan ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Validation Data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ValidateBarcodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ValidationResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Validate plan barcode
       tags:
       - plans
   /products:
