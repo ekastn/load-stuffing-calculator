@@ -7,11 +7,7 @@ class StatusBadge extends StatelessWidget {
   final String label;
   final StatusType type;
 
-  const StatusBadge({
-    super.key,
-    required this.label,
-    required this.type,
-  });
+  const StatusBadge({super.key, required this.label, required this.type});
 
   factory StatusBadge.fromStatus(String status) {
     StatusType type;
@@ -31,7 +27,7 @@ class StatusBadge extends StatelessWidget {
       default:
         type = StatusType.neutral;
     }
-    
+
     return StatusBadge(
       label: status.replaceAll('_', ' ').toUpperCase(),
       type: type,
@@ -45,23 +41,23 @@ class StatusBadge extends StatelessWidget {
 
     switch (type) {
       case StatusType.success:
-        backgroundColor = AppColors.success.withOpacity(0.1);
+        backgroundColor = AppColors.success.withValues(alpha: 0.1);
         textColor = AppColors.success;
         break;
       case StatusType.warning:
-        backgroundColor = AppColors.warning.withOpacity(0.1);
+        backgroundColor = AppColors.warning.withValues(alpha: 0.1);
         textColor = AppColors.warning;
         break;
       case StatusType.error:
-        backgroundColor = AppColors.error.withOpacity(0.1);
+        backgroundColor = AppColors.error.withValues(alpha: 0.1);
         textColor = AppColors.error;
         break;
       case StatusType.info:
-        backgroundColor = AppColors.info.withOpacity(0.1);
+        backgroundColor = AppColors.info.withValues(alpha: 0.1);
         textColor = AppColors.info;
         break;
       case StatusType.neutral:
-        backgroundColor = AppColors.textTertiary.withOpacity(0.1);
+        backgroundColor = AppColors.textTertiary.withValues(alpha: 0.1);
         textColor = AppColors.textTertiary;
         break;
     }

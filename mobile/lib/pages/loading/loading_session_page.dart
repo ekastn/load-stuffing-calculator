@@ -197,7 +197,11 @@ class _LoadingSessionPageState extends State<LoadingSessionPage> {
     if (session == null) return const SizedBox.shrink();
 
     // We reuse PlanVisualizerView but pass the current step to highlight
-    return PlanVisualizerView(planId: session.planId);
+    return PlanVisualizerView(
+      planId: session.planId,
+      loadingMode: true,
+      step: session.currentStepIndex + 1,
+    );
   }
 
   Widget _buildActionButtons(LoadingProvider provider, ExpectedItem? item) {
