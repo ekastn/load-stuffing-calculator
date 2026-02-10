@@ -27,7 +27,7 @@ class QuickActionButton extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(icon, color: AppColors.primary, size: 28),
@@ -36,9 +36,9 @@ class QuickActionButton extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                fontSize: 12, 
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary
+                color: AppColors.textPrimary,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,

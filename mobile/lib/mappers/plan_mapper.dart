@@ -51,7 +51,7 @@ class PlanMapper {
       calculation: dto.calculation != null
           ? _mapCalculation(dto.calculation!)
           : null,
-      createdBy: dto.createdBy.username ?? 'Unknown',
+      createdBy: dto.createdBy.username,
       createdAt: _parseDate(dto.createdAt),
       updatedAt: _parseDate(dto.updatedAt),
       completedAt: _parseDateNullable(dto.completedAt),
@@ -109,8 +109,7 @@ class PlanMapper {
       efficiencyScore: dto.efficiencyScore,
       volumeUtilizationPct: dto.volumeUtilizationPct,
       visualizationUrl: dto.visualizationUrl,
-      placements:
-          dto.placements?.map(_mapPlacement).toList(),
+      placements: dto.placements?.map(_mapPlacement).toList(),
     );
   }
 
