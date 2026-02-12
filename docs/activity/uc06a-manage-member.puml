@@ -1,0 +1,72 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+
+|User|
+start
+:Access Workspace
+Members page;
+:View member list;
+:Select action
+(Add/Update Role/Remove);
+
+note right
+  User can perform:
+  - Add new member
+  - Update member role
+  - Remove member
+end note
+
+:Fill form fields:
+- User identifier (for Add)
+- Role selection;
+:Click submit button;
+
+|Frontend|
+:Validate input format;
+
+if (Valid?) then (yes)
+  :Send HTTP request
+  to backend API;
+
+  |Backend|
+  :Validate authentication
+  and authorization;
+
+  if (Authorized?) then (yes)
+    :Process business logic;
+
+    |Database|
+    :Execute query
+    (INSERT/UPDATE/DELETE)
+    for workspace members;
+
+    |Backend|
+    :Return response;
+
+    |Frontend|
+    if (Success?) then (yes)
+      :Show success message;
+      :Refresh member list;
+    else (no)
+      :Display error message;
+    endif
+  else (no)
+    :Return 403 Forbidden;
+    
+    |Frontend|
+    :Show permission error;
+  endif
+else (no)
+  :Show validation error;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

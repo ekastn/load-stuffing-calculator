@@ -1,0 +1,75 @@
+sequenceDiagram
+    actor User as Guest/Trial User
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT Middleware
+    participant AuthHandler as AuthHandler
+    participant AuthService as AuthService
+    participant PlanService as PlanService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Guest action
+    Frontend->>API: Request with guest or claiming flow
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt POST /auth/guest (Get Guest Token)
+        API->>AuthHandler: GuestToken(ctx)
+        Handler->>AuthService: GuestToken(ctx)
+        Note over AuthService: Generate UUID for guest_id<br/>No DB record created<br/>TTL: 30 days, role="trial"
+        AuthService-->>Handler: GuestTokenResponse {access_token}
+        Handler-->>Frontend: 200 OK {access_token}
+        Frontend-->>User: Guest mode activated
+
+    else POST /plans (Create Plan as Guest)
+        Note over Middleware: Extract guest_uuid from token<br/>role="trial", workspace_id=nil
+        API->>PlanService: CreateCompletePlan(ctx, req)
+        PlanService->>DB: Count guest plans (max 3 check)
+        alt Count >= 3
+            Handler-->>Frontend: 400 Bad Request "Trial limit reached"
+        else Count < 3
+            Note over PlanService: Insert with created_by_type='guest'<br/>created_by_id=guest_uuid<br/>workspace_id=NULL
+            PlanService->>DB: Insert plan + items (guest owned)
+            Handler-->>Frontend: 201 Created
+        end
+
+    else GET /plans (List Guest Plans)
+        Note over Middleware: Extract guest_uuid from token
+        API->>PlanService: ListPlans(ctx, page, limit)
+        Note over PlanService: Trial users see only their guest plans
+        PlanService->>DB: Query plans (created_by_type='guest', created_by_id=guest_uuid)
+        Handler-->>Frontend: 200 OK [guest plans]
+
+    else POST /auth/register (Register & Claim)
+        API->>AuthHandler: Register(ctx)
+        Handler->>AuthService: Register(ctx, req)
+        Note over AuthService: Create user account<br/>Create workspace<br/>Add member with owner role
+        AuthService->>DB: Insert user + workspace + workspace_member
+        alt Guest token provided
+            Note over AuthService: Claim guest plans:<br/>UPDATE created_by_type='user'<br/>SET workspace_id, created_by_id
+            AuthService->>DB: Transfer plans & items to user workspace
+        end
+        Note over AuthService: Generate access + refresh tokens
+        Handler-->>Frontend: 201 Created {tokens, workspace}
+        Frontend-->>User: Account created, guest plans claimed
+
+    else POST /auth/login (Login & Claim)
+        API->>AuthHandler: Login(ctx)
+        Handler->>AuthService: Login(ctx, req)
+        AuthService->>DB: Verify credentials
+        alt Invalid password
+            Handler-->>Frontend: 401 Unauthorized
+        else Valid credentials
+            Note over AuthService: Resolve user workspace + role
+            AuthService->>DB: Generate tokens
+            alt Guest token provided
+                Note over AuthService: Claim guest plans into user workspace
+                AuthService->>DB: Transfer plans & items to user workspace
+            end
+            Handler-->>Frontend: 200 OK {tokens, workspace}
+            Frontend-->>User: Logged in, guest plans claimed
+        end
+    end
+
+    Frontend-->>User: Display result

@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Click "Try for Free";
+
+|Frontend|
+:Request guest token;
+
+|Backend|
+:Generate guest token;
+
+note right
+  **Guest Token:** UUID, trial role,
+  30-day validity, no DB record
+  
+  **Limits:** Max 3 plans, full features
+  
+  **Claim:** Login/register transfers
+  guest plans to user account
+end note
+
+|Frontend|
+:Store token, show trial banner;
+:Redirect to dashboard;
+
+|User|
+:Use trial features;
+:Click "Register/Login" to claim;
+:Submit credentials;
+
+|Frontend|
+:Send auth with guest token;
+
+|Backend|
+:Authenticate user;
+
+if (Valid?) then (yes)
+  :Transfer guest plans to user;
+  
+  |Database|
+  :Update plan ownership;
+  
+  |Backend|
+  :Return token + transfer count;
+  
+  |Frontend|
+  :Show success, clear banner;
+  
+else (no)
+  :Return error;
+  
+  |Frontend|
+  :Show error message;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml
