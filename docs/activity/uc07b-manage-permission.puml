@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Access Permissions page;
+:View permission list;
+:Select action
+(Create/Update/Delete);
+
+note right
+  Permission format:
+  resource:action
+end note
+
+:Fill form or select item;
+:Click submit;
+
+|Frontend|
+:Validate name format
+(resource:action);
+
+if (Valid?) then (yes)
+  :Send HTTP request;
+  
+  |Backend|
+  :Validate authentication
+  and authorization;
+  
+  if (Authorized?) then (yes)
+    |Database|
+    :Check business constraints;
+    
+    note right
+      - Name uniqueness
+      - Not in use (for delete)
+    end note
+    
+    |Backend|
+    if (Success?) then (yes)
+      :Clear permission cache;
+      :Return success response;
+      
+      |Frontend|
+      :Show success message;
+      :Refresh list;
+    else (no)
+      :Return 409 Conflict;
+      
+      |Frontend|
+      :Show constraint error;
+    endif
+  else (no)
+    :Return 403 Forbidden;
+    
+    |Frontend|
+    :Show permission error;
+  endif
+else (no)
+  :Show format error;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

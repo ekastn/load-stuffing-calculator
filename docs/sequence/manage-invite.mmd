@@ -1,0 +1,59 @@
+sequenceDiagram
+    actor User as Admin/Owner
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as InviteHandler
+    participant Service as InviteService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Invite action
+    Frontend->>API: Request to /api/v1/invites
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt GET /invites (List)
+        Note over Middleware: Check "invite:read"
+        API->>Handler: ListInvites(ctx)
+        Handler->>Service: ListInvites(ctx, page, limit)
+        Service->>DB: Query invites with metadata (workspace scoped)
+        Handler-->>Frontend: 200 OK [{invites}]
+
+    else POST /invites (Create)
+        Note over Middleware: Check "invite:create"
+        API->>Handler: CreateInvite(ctx)
+        Handler->>Service: CreateInvite(ctx, req)
+        alt Workspace is personal
+            Handler-->>Frontend: 400 Bad Request
+        else Workspace is org
+            Note over Service: Generate 32-byte token (shown once)<br/>Hash token, expires in 7 days
+            Service->>DB: Insert workspace_invite
+            Handler-->>Frontend: 201 Created {invite, token}
+        end
+
+    else DELETE /invites/:id (Revoke)
+        Note over Middleware: Check "invite:delete"
+        API->>Handler: RevokeInvite(ctx)
+        Handler->>Service: RevokeInvite(ctx, invite_id)
+        Service->>DB: Update revoked_at timestamp
+        Handler-->>Frontend: 200 OK
+
+    else POST /invites/accept (Accept)
+        Note over Middleware: Check JWT (user authenticated)
+        API->>Handler: AcceptInvite(ctx)
+        Handler->>Service: AcceptInvite(ctx, req)
+        Service->>DB: Find invite by token_hash
+        alt Invalid token
+            Handler-->>Frontend: 400 Bad Request
+        else Email mismatch
+            Note over Service: user.email != invite.email
+            Handler-->>Frontend: 400 Bad Request
+        else Valid invite
+            Note over Service: Create workspace_member<br/>Update accepted_at<br/>Generate new access token
+            Service->>DB: Insert member + Update invite
+            Handler-->>Frontend: 200 OK {new_access_token, workspace}
+        end
+    end
+
+    Frontend-->>User: Display result

@@ -1,0 +1,52 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    subgraph EXTERNAL["External Access"]
+        USER["👤 User<br/>Browser"]
+    end
+    
+    subgraph DOCKER["🐳 Docker Host"]
+        direction LR
+        
+        subgraph FRONTEND["Frontend"]
+            WEB["📱 web<br/>Next.js 14<br/>:3000"]
+        end
+        
+        subgraph BACKEND["Backend"]
+            API["⚙️ api<br/>Go/Gin<br/>:8080"]
+            PACKING["🧮 packing<br/>Python<br/>:5051"]
+        end
+        
+        subgraph DATABASE["Database"]
+            DB[("🗄️ db<br/>PostgreSQL<br/>:5432")]
+            VOL[("💾 pgdata")]
+        end
+        
+        subgraph MIGRATION["Migration"]
+            MIGRATE["🔄 migrate<br/>Goose"]
+        end
+    end
+    
+    %% External connections
+    USER -->|"HTTP"| WEB
+    
+    %% Internal connections
+    WEB -->|"REST API"| API
+    API -->|"SQL"| DB
+    API -->|"POST /pack"| PACKING
+    MIGRATE -->|"Migrations"| DB
+    DB --- VOL
+    
+    %% Styling
+    classDef frontend fill:#E3F2FD,stroke:#1976D2,stroke-width:2px,color:#0D47A1
+    classDef backend fill:#E8F5E9,stroke:#388E3C,stroke-width:2px,color:#1B5E20
+    classDef database fill:#FFF3E0,stroke:#F57C00,stroke-width:2px,color:#E65100
+    classDef migration fill:#F3E5F5,stroke:#7B1FA2,stroke-width:2px,color:#4A148C
+    classDef external fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#37474F
+    classDef volume fill:#FFECB3,stroke:#FFA000,stroke-width:1px,color:#FF6F00
+    
+    class WEB frontend
+    class API,PACKING backend
+    class DB database
+    class MIGRATE migration
+    class USER external
+    class VOL volume

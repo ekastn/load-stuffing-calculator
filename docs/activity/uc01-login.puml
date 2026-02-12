@@ -1,0 +1,64 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Input email dan password;
+
+|Frontend|
+:Validate input format;
+
+if (Valid?) then (yes)
+  :Send login request;
+  
+  |Backend|
+  :Verify credentials;
+  
+  |Database|
+  :Retrieve user data;
+  
+  |Backend|
+  if (Credentials valid?) then (yes)
+    :Generate JWT tokens;
+    
+    |Database|
+    :Store refresh token;
+    :Fetch workspaces & permissions;
+    
+    |Backend|
+    :Return auth data;
+    
+    |Frontend|
+    :Store token;
+    :Load workspace context;
+    :Redirect to dashboard;
+    
+    note right
+      **Redirect by Role:**
+      - Admin → Admin Dashboard
+      - Planner → Planner Dashboard
+      - Operator → Operator Dashboard
+    end note
+    
+  else (no)
+    :Return auth error;
+    
+    |Frontend|
+    :Show error message;
+  endif
+  
+else (no)
+  :Show validation error;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

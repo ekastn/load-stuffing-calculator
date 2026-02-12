@@ -1,0 +1,72 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Click "Buat Rencana Baru";
+:Fill plan form & submit;
+
+note right
+  **Plan Form:**
+  - Code, description
+  - Container: from catalog
+    or custom dimensions
+  - Auto-calculate toggle
+  
+  **Snapshot Pattern:**
+  Container dimensions copied,
+  not referenced
+end note
+
+|Frontend|
+:Validate input;
+:Send create request;
+
+|Backend|
+:Validate auth & permission;
+
+if (Trial user?) then (yes)
+  |Database|
+  :Count existing plans;
+  
+  |Backend|
+  if (Limit reached?) then (yes)
+    :Return error;
+    
+    |Frontend|
+    :Show "Trial limit (3 plans)";
+    :Prompt to register;
+    
+    |User|
+    :View result;
+    stop
+  endif
+endif
+
+|Database|
+:Save plan (status = DRAFT);
+
+|Backend|
+:Return success;
+
+|Frontend|
+:Show success message;
+:Redirect to plan detail;
+
+note right
+  **Next Steps:**
+  - Add items (UC-09)
+  - Calculate (UC-10)
+end note
+
+|User|
+:View result;
+stop
+
+@enduml

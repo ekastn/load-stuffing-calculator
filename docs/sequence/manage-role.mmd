@@ -1,0 +1,69 @@
+sequenceDiagram
+    actor User as Admin/Founder
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as RoleHandler
+    participant Service as RoleService
+    participant Cache as PermissionCache
+    participant DB as PostgreSQL
+
+    User->>Frontend: Role action
+    Frontend->>API: Request to /api/v1/roles
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt GET /roles (List)
+        Note over Middleware: Check "role:read"
+        API->>Handler: ListRoles(ctx)
+        Handler->>Service: ListRoles(ctx, page, limit)
+        Service->>DB: Query roles (paginated)
+        Handler-->>Frontend: 200 OK [{roles}]
+
+    else GET /roles/:id (Get One)
+        Note over Middleware: Check "role:read"
+        API->>Handler: GetRole(ctx)
+        Handler->>Service: GetRole(ctx, id)
+        Service->>DB: Query role by ID
+        Handler-->>Frontend: 200 OK or 404 Not Found
+
+    else POST /roles (Create)
+        Note over Middleware: Check "role:create"
+        API->>Handler: CreateRole(ctx)
+        Handler->>Service: CreateRole(ctx, req)
+        Service->>DB: Insert role
+        Handler-->>Frontend: 201 Created or 409 Conflict
+
+    else PUT /roles/:id (Update)
+        Note over Middleware: Check "role:update"
+        API->>Handler: UpdateRole(ctx)
+        Handler->>Service: UpdateRole(ctx, id, req)
+        Service->>DB: Update role
+        Handler-->>Frontend: 200 OK or 404 Not Found
+
+    else DELETE /roles/:id (Delete)
+        Note over Middleware: Check "role:delete"
+        API->>Handler: DeleteRole(ctx)
+        Handler->>Service: DeleteRole(ctx, id)
+        Service->>DB: Delete role
+        Handler-->>Frontend: 200 OK or 409 Conflict (in use)
+
+    else GET /roles/:id/permissions (Get Permissions)
+        Note over Middleware: Check "role:read"
+        API->>Handler: GetRolePermissions(ctx)
+        Handler->>Service: GetRolePermissions(ctx, id)
+        Service->>DB: Query role_permissions
+        Handler-->>Frontend: 200 OK [permission_ids]
+
+    else PUT /roles/:id/permissions (Update Permissions)
+        Note over Middleware: Check "role:update"
+        API->>Handler: UpdateRolePermissions(ctx)
+        Handler->>Service: UpdateRolePermissions(ctx, id, permission_ids)
+        Note over Service: Replace all: DELETE old + INSERT new
+        Service->>DB: Update role_permissions
+        Handler->>Cache: Invalidate permission cache
+        Handler-->>Frontend: 200 OK
+    end
+
+    Frontend-->>User: Display result

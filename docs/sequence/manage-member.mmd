@@ -1,0 +1,68 @@
+sequenceDiagram
+    actor User as Admin/Owner
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as MemberHandler
+    participant Service as MemberService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Member action
+    Frontend->>API: Request to /api/v1/members
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt GET /members (List)
+        Note over Middleware: Check "member:read"
+        API->>Handler: ListMembers(ctx)
+        Handler->>Service: ListMembers(ctx, page, limit)
+        Service->>DB: Query members with user info (workspace scoped)
+        Handler-->>Frontend: 200 OK [{members}]
+
+    else POST /members (Add)
+        Note over Middleware: Check "member:create"
+        API->>Handler: AddMember(ctx)
+        Handler->>Service: AddMember(ctx, req)
+        alt Workspace is personal
+            Handler-->>Frontend: 400 Bad Request
+        else Workspace is org
+            Note over Service: Parse user_identifier<br/>(UUID/email/username)
+            Service->>DB: Find user + Insert workspace_member
+            alt Already member
+                Handler-->>Frontend: 400 Bad Request
+            else Member added
+                Handler-->>Frontend: 201 Created
+            end
+        end
+
+    else PATCH /members/:id (Update Role)
+        Note over Middleware: Check "member:update"
+        API->>Handler: UpdateMemberRole(ctx)
+        Handler->>Service: UpdateMemberRole(ctx, member_id, req)
+        alt Workspace is personal
+            Handler-->>Frontend: 400 Bad Request
+        else Member is owner
+            Note over Service: Cannot change owner role
+            Handler-->>Frontend: 400 Bad Request
+        else Valid update
+            Service->>DB: Update member role_id
+            Handler-->>Frontend: 200 OK
+        end
+
+    else DELETE /members/:id (Remove)
+        Note over Middleware: Check "member:delete"
+        API->>Handler: DeleteMember(ctx)
+        Handler->>Service: DeleteMember(ctx, member_id)
+        alt Workspace is personal
+            Handler-->>Frontend: 400 Bad Request
+        else Member is owner
+            Note over Service: Cannot remove owner
+            Handler-->>Frontend: 400 Bad Request
+        else Valid removal
+            Service->>DB: Delete workspace_member
+            Handler-->>Frontend: 200 OK
+        end
+    end
+
+    Frontend-->>User: Display result

@@ -1,0 +1,74 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Access Invites page;
+:View invite list;
+
+if (Action?) then (CREATE/REVOKE)
+  :Fill email & role
+  or select invite to revoke;
+  :Submit;
+  
+  |Frontend|
+  :Validate & send request;
+  
+  |Backend|
+  :Validate auth;
+  
+  |Database|
+  :Generate secure token
+  & store with expiry
+  OR mark as revoked;
+  
+  |Frontend|
+  :Show token to admin
+  or show success;
+
+else (ACCEPT)
+  :Receive token from admin;
+  :Access login/register page;
+  :Enter credentials + token;
+  :Submit;
+  
+  |Frontend|
+  :Send auth request
+  with invite token;
+  
+  |Backend|
+  :Authenticate user;
+  :Validate invite token
+  & check email match;
+  
+  if (Valid & matched?) then (yes)
+    |Database|
+    :Add user as workspace member;
+    :Mark invite as accepted;
+    
+    |Backend|
+    :Generate JWT token
+    with workspace context;
+    
+    |Frontend|
+    :Store token;
+    :Set workspace context;
+    :Redirect to dashboard;
+  else (no)
+    |Frontend|
+    :Show error
+    (expired/invalid/mismatch);
+  endif
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

@@ -1,0 +1,32 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+
+|User|
+start
+:Klik menu "Master Data";
+
+|Frontend|
+:Display sub-menu options:\n- Container Profiles\n- Product Catalog;
+
+|User|
+if (Pilih sub-menu?) then (Container Profiles)
+  |Frontend|
+  :Navigate to Container page;
+  note right
+    Lanjut ke UC-03
+  end note
+  stop
+else (Product Catalog)
+  |Frontend|
+  :Navigate to Product page;
+  note right
+    Lanjut ke UC-04
+  end note
+  stop
+endif
+
+@enduml

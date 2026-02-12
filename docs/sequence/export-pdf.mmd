@@ -1,0 +1,36 @@
+sequenceDiagram
+    actor User as Planner/Operator
+    participant Viewer as StuffingViewer
+    participant Visualizer as StuffingVisualizer
+    participant Reporter as ReportGenerator
+    participant Browser as Browser
+
+    %% USER VIEWS PLAN
+    rect rgb(240, 255, 240)
+        Note over User,Visualizer: View Plan
+        User->>Viewer: View plan detail page
+        Viewer->>Visualizer: Initialize with plan data
+        Note over Visualizer: Parse placements,<br/>create 3D meshes
+        Visualizer-->>Viewer: 3D visualization ready
+        Viewer-->>User: Display stuffing visualization
+    end
+
+    %% TRIGGER EXPORT
+    rect rgb(230, 245, 255)
+        Note over User,Reporter: Generate PDF
+        User->>Viewer: Click "Download PDF"
+        Viewer->>Visualizer: generateReport(config)
+        
+        Visualizer->>Reporter: Generate stuffing instructions
+        Note over Reporter: Create summary page:<br/>- Container info<br/>- Item breakdown table<br/>- Utilization stats
+        Note over Reporter: Create step-by-step pages:<br/>- Vector schematics (top/front/side)<br/>- Placement details per step
+        Reporter-->>Visualizer: PDF blob
+    end
+
+    %% DOWNLOAD
+    rect rgb(255, 245, 240)
+        Note over Viewer,Browser: Download File
+        Visualizer-->>Viewer: PDF ready
+        Viewer->>Browser: Trigger file download
+        Browser-->>User: Save "stuffing-plan-{code}.pdf"
+    end
