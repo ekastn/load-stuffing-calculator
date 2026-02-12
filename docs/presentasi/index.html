@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem 3D Bin Packing Interaktif</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e;
+            --text-color: #e0e0e0;
+            --accent-color: #e94560;
+            --secondary-bg: #16213e;
+            --slide-padding: 40px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .slide-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            /* Center vertically by default */
+            align-items: center;
+            padding: var(--slide-padding);
+            background-color: var(--bg-color);
+            /* Ensure opaque background */
+            z-index: 0;
+            pointer-events: none;
+            /* Allow clicks to pass through hidden slides */
+        }
+
+        .slide.active {
+            opacity: 1;
+            z-index: 1;
+            pointer-events: auto;
+        }
+
+        .slide-content {
+            max-width: 1200px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .slide.center-content .slide-content {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            margin-bottom: 0.5em;
+            color: var(--accent-color);
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 3.5rem;
+            margin-bottom: 0.8em;
+            color: var(--accent-color);
+            border-bottom: 3px solid var(--secondary-bg);
+            padding-bottom: 15px;
+        }
+
+        ul,
+        ol {
+            font-size: 2.2rem;
+            list-style-type: none;
+        }
+
+        li {
+            margin-bottom: 0.6em;
+            padding-left: 1.5em;
+            position: relative;
+        }
+
+        li::before {
+            content: "➤";
+            color: var(--accent-color);
+            position: absolute;
+            left: 0;
+            font-size: 1.8rem;
+            top: 0.1em;
+        }
+
+        p {
+            font-size: 2.2rem;
+            line-height: 1.5;
+            margin-bottom: 0.8em;
+        }
+
+        .img-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            max-height: 80vh;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 75vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--secondary-bg);
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 1;
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 5px;
+            background-color: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            font-size: 1rem;
+            color: #666;
+            z-index: 100;
+        }
+
+        /* Specific Slide Layouts */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .highlight-box {
+            background-color: var(--secondary-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid var(--accent-color);
+            margin-top: 20px;
+        }
+
+        .ulbi-logo {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            width: 250px;
+            z-index: 1000;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="slide-number" id="slideNumber">1 / 12</div>
+
+    <div class="slide-container">
+        <img src="images/LOGO ULBI - WIDE DARK.png" class="ulbi-logo" alt="Logo ULBI">
+
+        <!-- Slide 1: Title -->
+        <div class="slide active center-content">
+            <div class="slide-content">
+                <h1>PLATFORM LOAD & STUFFING CALCULATOR</h1>
+                <h2 style="font-size: 2.5rem; border-bottom: none; margin-bottom: 2rem; color: #aaa;">DENGAN ALGORITMA
+                    3D BIN PACKING UNTUK OPTIMASI DAN VISUALISASI PEMUATAN</h2>
+
+                <div
+                    style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; text-align: left; max-width: 1000px; margin-left: auto; margin-right: auto;">
+                    <div>
+                        <ul style="font-size: 1.6rem;">
+                            <li style="margin-bottom: 10px;">Muhamad Saladin Eka Septian<br><span
+                                    style="color: #aaa; font-size: 1.4rem;">714230037</span></li>
+                            <li style="margin-bottom: 10px;">Pembimbing: Roni Andarsyah, S.T., M.Kom., SFPC</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <ul style="font-size: 1.6rem;">
+                            <li style="margin-bottom: 10px;">Dina Oktafiani<br><span
+                                    style="color: #aaa; font-size: 1.4rem;">714230047</span></li>
+                            <li style="margin-bottom: 10px;">Penguji: Nisa Hanum Harani, S.Kom., M.T., CDSP, SFPC</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Urgensi -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>1. Urgensi Penelitian</h2>
+                <ul>
+                    <li><strong>Krisis Pengiriman Global:</strong> Lonjakan tarif kargo (hingga 173% rute Asia-Eropa di
+                        2024 - Red Sea Crisis).</li>
+                    <li><strong>Efisiensi Ruang:</strong> Ruang kosong dalam kontainer = Biaya terbuang.
+                    </li>
+                    <li><strong>Ketergantungan Manual:</strong> Perencanaan muatan masih bergantung pada insting
+                        operator, yang tidak konsisten.</li>
+                    <li><strong>Masalah Keamanan:</strong> Susunan manual sering kali tidak stabil, membahayakan muatan.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 3a: Tinjauan Pustaka Detail -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>2. State of the Art: Temuan Terdahulu</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                    <div>
+                        <h3
+                            style="color: var(--accent-color); border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 15px;">
+                            Advanced Algorithms</h3>
+                        <ul>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Zhao et al. (2022) - Deep Reinforcement Learning:</strong><br>
+                                <span style="color: #aaa;">"Outperforms state-of-the-art methods."</span><br>
+                                Fokus pada efisiensi ruang belajar mandiri, namun sangat kompleks untuk
+                                diimplementasikan di sistem gudang konvensional.
+                            </li>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Ananno et al. (2024) - Genetic Algorithm:</strong><br>
+                                <span style="color: #aaa;">"Multi-container optimization with real world
+                                    constraints."</span><br>
+                                Sangat baik untuk menangani constraint berat, tetapi waktu komputasi cenderung lama
+                                untuk skenario interaktif.
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3
+                            style="color: var(--accent-color); border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 15px;">
+                            Existing Tools</h3>
+                        <ul>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Krebs & Ehmke (2023):</strong><br>
+                                <span style="color: #aaa;">"Solution validator and visualizer."</span><br>
+                                Tool desktop (Java/C++) untuk validasi matematis peneliti. Tidak dirancang untuk UX
+                                operator lapangan.
+                            </li>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Poerwandono et al. (2023):</strong><br>
+                                <span style="color: #aaa;">"Web-based 3D visualization."</span><br>
+                                Menggunakan Three.js tetapi hanya menampilkan hasil akhir (statis). Operator tidak tahu
+                                urutan mana yang harus dimasukkan duluan.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Slide 4: Gap Penelitian -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>3. Gap Penelitian</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 30px;">
+                            Solusi algoritma yang ada (Advanced Algo) seringkali berhenti sebagai <em>"desktop-based
+                                tools for researchers"</em> [Krebs2023], bukan alat operasional yang mudah diakses.
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            Visualisasi eksisting [Poerwandono2023] hanya menampilkan hasil akhir, tanpa fitur
+                            <em>"integrated step-by-step loading guidance"</em> untuk operator.
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            Evaluasi algoritma sering menggunakan <em>"randomly generated datasets"</em> [Ribeiro2023],
+                            yang tidak mencerminkan kompleksitas heterogen industri nyata.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Identifikasi Masalah -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>4. Identifikasi Masalah</h2>
+                <div>
+                    <ol style="margin-left: 40px; line-height: 1.6;">
+                        <li style="margin-bottom: 25px;">
+                            <strong>Keterbatasan Integrasi Sistem:</strong><br>
+                            Tool optimasi yang ada umumnya <em>standalone</em>/desktop, sulit diintegrasikan dengan
+                            sistem manajemen gudang modern.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Kesenjangan Algoritma vs Eksekusi:</strong><br>
+                            Operator sulit menerjemahkan hasil perhitungan matematis ke dalam tumpukan fisik tanpa
+                            panduan visual yang kronologis.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Validasi yang Tidak Realistis:</strong><br>
+                            Banyak studi menggunakan data simulasi acak yang tidak mewakili kompleksitas barang
+                            heterogen di lapangan.
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Tujuan Penelitian -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>5. Tujuan Penelitian</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 25px;">
+                            <strong>1. Arsitektur Terpisah (Layered Architecture):</strong><br>
+                            Merancang sistem dengan pemisahan tegas antara <em>Calculation Engine</em> (Python) dan
+                            <em>Data Management</em> (Go/Postgres), untuk menjamin skalabilitas dan kemudahan integrasi.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>2. Visualisasi Interaktif & Panduan Langkah:</strong><br>
+                            Mengembangkan visualisasi berbasis WebGL yang tidak hanya menampilkan hasil akhir, tetapi
+                            memberikan <em>"step-by-step loading guidance"</em> agar dapat diikuti secara kronologis
+                            oleh operator.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>3. Evaluasi Skenario Heterogen:</strong><br>
+                            Mengukur efektivitas sistem menggunakan skenario item yang realistis (bukan data acak),
+                            untuk memvalidasi performa algoritma <em>Bigger First</em> dalam kondisi operasional nyata.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Alasan Memakai Heuristik -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>6. Alasan Memakai Heuristik</h2>
+                <div class="two-column">
+                    <div>
+                        <ul>
+                            <li style="margin-bottom: 20px;">
+                                <strong>1. Masalah NP-Hard (Exponential Explosion):</strong><br>
+                                Secara matematis, mencari solusi "paling sempurna" untuk 300 item butuh waktu jutaan
+                                tahun. Heuristik memangkas ruang pencarian ini.
+                            </li>
+                            <li style="margin-bottom: 20px;">
+                                <strong>2. "Good Enough" in Seconds:</strong><br>
+                                Di lapangan, operator butuh solusi dalam < 30 detik (Real-time). Algoritma eksak butuh
+                                    berjam-jam. Heuristik memberi solusi 80-90% optimal secara instan. </li>
+                            <li style="margin-bottom: 20px;">
+                                <strong>3. Deterministic & Predictable:</strong><br>
+                                Hasilnya selalu konsisten (tidak berubah-ubah seperti AI/Genetic Algo), sehingga mudah
+                                diverifikasi dan dipercaya oleh manusia.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box" style="display: flex; flex-direction: column; justify-content: center;">
+                        <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">Strategi:
+                            Bigger First Descending</h3>
+                        <p style="margin-bottom: 15px;">
+                            <em>"Big Rocks First" Principle</em>
+                        </p>
+                        <ul>
+                            <li>Item besar ditaruh duluan sebagai fondasi stabil.</li>
+                            <li>Item kecil mengisi celah (gap-filling).</li>
+                            <li>Mencegah "floating items" dan ketidakstabilan tumpukan.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Arsitektur Sistem -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>7. Arsitektur Sistem</h2>
+                <p>Arsitektur Layered: Memisahkan Logic, Data, dan Komputasi Berat.</p>
+                <div class="img-container">
+                    <img src="images/architecture.png" alt="Arsitektur Sistem">
+                </div>
+                <div style="text-align: center; margin-top: 10px; color: #aaa;">
+                    Frontend (Web) ↔ Backend API (Go) ↔ Packing Service (Python)
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Alur Proses -->
+        <div class="slide center-content">
+            <div class="slide-content">
+                <h2>8. Alur Proses Pemuatan</h2>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="img-container" style="max-height: 50vh; margin-bottom: 20px;">
+                        <img src="images/flowchart.png" alt="Flowchart Proses" style="max-height: 50vh;">
+                    </div>
+                    <div style="width: 80%; text-align: left;">
+                        <ol style="margin-left: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <li>Input Dimensi Container & Item.</li>
+                            <li>Pre-processing (Sorting Bigger First).</li>
+                            <li>Packing Algorithm:
+                                <ul style="color: #aaa; margin-top: 5px;">
+                                    <li>Cari posisi valid (non-overlap).</li>
+                                    <li>Cek stabilitas (75% support).</li>
+                                </ul>
+                            </li>
+                            <li>Output JSON Koordinat & Urutan.</li>
+                            <li>Visualisasi WebGL (Three.js).</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Slide 9: Demo Aplikasi -->
+        <div class="slide center-content">
+            <div class="slide-content">
+                <h2>9. Demonstrasi Aplikasi</h2>
+                <div style="margin: 50px 0;">
+                    <p style="font-size: 5rem;">🚀</p>
+                    <p style="margin-top: 20px; color: var(--accent-color);">Sesi Live Demo</p>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: Evaluasi Hasil -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>10. Evaluasi Hasil Pengujian</h2>
+                <div class="two-column">
+                    <div>
+                        <ul>
+                            <li><strong>Skenario Uji:</strong> 50 - 300 item heterogen.</li>
+                            <li><strong>Performansi:</strong>
+                                <ul>
+                                    <li>Utilisasi Volume ~55% (Skenario Terberat).</li>
+                                    <li>Fill Rate 100% (Semua barang masuk).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Waktu Komputasi:</strong> Quadratic O(n²), tapi tetap < 40 detik untuk 300
+                                    items.</li>
+                        </ul>
+                    </div>
+                    <div class="img-container">
+                        <img src="images/detailed_metrics.png" alt="Grafik Hasil Pengujian">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Challenge & Limitasi -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>11. Challenge & Limitasi</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 30px;">
+                            <strong>Bentuk Barang (Irregular Shapes):</strong><br>
+                            Saat ini algoritma hanya mendukung <em>Rectangular Boxes</em>. Belum bisa menangani barang
+                            berbentuk silinder, L-shape, atau karung yang bisa berubah bentuk (deformable).
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            <strong>Local Optima (Deterministik):</strong><br>
+                            Karena sifatnya deterministik (selalu mengikuti aturan baku), algoritma tidak melakukan
+                            eksplorasi solusi alternatif yang "mungkin" lebih baik, tidak seperti AI yang bisa belajar
+                            dari kesalahan.
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            <strong>Batasan Fisik Ekstrim (Physical Constraints):</strong><br>
+                            Pengujian belum mencakup skenario <em>Max Weight Limit</em> (batas tonase kontainer) atau
+                            <em>Load Bearing</em> (kekuatan tumpukan bawah menahan beban atas) secara ekstrim. Fokus
+                            saat ini masih pada efisiensi volume.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Slide 12: Future Direction -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>12. Future Direction (Rencana Pengembangan)</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 25px;">
+                            <strong>AI & Metaheuristics:</strong> integrasi Genetic Algorithm atau Simulated Annealing
+                            untuk mencari solusi global optimum (meningkatkan utilisasi ruang).
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Online Packing (Real-time):</strong> Implementasi Deep Reinforcement Learning (DRL)
+                            untuk menangani barang yang datang secara dinamis (live stream of items).
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>IoT Integration:</strong> Integrasi dengan sensor dimensi otomatis dan tracking
+                            real-time saat pemuatan fisik.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>User Experience Study:</strong> Melakukan studi formal dengan operator gudang asli
+                            untuk mengukur efektivitas panduan visual di lapangan.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Kesimpulan -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>13. Kesimpulan</h2>
+                <div style="text-align: justify;">
+                    <p>
+                        Penelitian ini berhasil mengembangkan sistem 3D Bin Packing interaktif yang menjembatani
+                        kesenjangan antara algoritma optimasi dan operasional gudang. Melalui penerapan <strong>Layered
+                            Architecture</strong> dan visualisasi <strong>WebGL Step-by-Step</strong>, sistem ini
+                        terbukti mampu memproses 300 item heterogen dalam waktu &lt; 40 detik dengan <strong>utilisasi
+                            volume 55,26%</strong> dan <strong>fill rate 100%</strong>. Hasil ini menunjukkan bahwa
+                        pendekatan heuristik deterministik (Bigger First) tidak hanya efisien secara komputasi, tetapi
+                        juga menghasilkan rencana pemuatan yang stabil dan dapat dieksekusi secara praktis oleh operator
+                        lapangan.
+                    </p>
+                </div>
+                <div class="highlight-box" style="margin-top: 40px; text-align: center;">
+                    <p><strong>Terima Kasih</strong></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn" onclick="prevSlide()">❮ Prev</button>
+        <button id="nextBtn" onclick="nextSlide()">Next ❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const slideNumberDisplay = document.getElementById('slideNumber');
+        const totalSlides = slides.length;
+
+        function updateSlide() {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+
+            // Update Progress Bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = progress + '%';
+
+            // Update Slide Number
+            slideNumberDisplay.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+
+</html>
