@@ -1,0 +1,56 @@
+sequenceDiagram
+    actor User as Admin/Founder
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as PermissionHandler
+    participant Service as PermissionService
+    participant Cache as PermissionCache
+    participant DB as PostgreSQL
+
+    User->>Frontend: Permission action
+    Frontend->>API: Request to /api/v1/permissions
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt GET /permissions (List)
+        Note over Middleware: Check "permission:read"
+        API->>Handler: ListPermissions(ctx)
+        Handler->>Service: ListPermissions(ctx, page, limit)
+        Service->>DB: Query permissions (paginated)
+        Handler-->>Frontend: 200 OK [{permissions}]
+
+    else GET /permissions/:id (Get One)
+        Note over Middleware: Check "permission:read"
+        API->>Handler: GetPermission(ctx)
+        Handler->>Service: GetPermission(ctx, id)
+        Service->>DB: Query permission by ID
+        Handler-->>Frontend: 200 OK or 404 Not Found
+
+    else POST /permissions (Create)
+        Note over Middleware: Check "permission:create"
+        API->>Handler: CreatePermission(ctx)
+        Handler->>Service: CreatePermission(ctx, req)
+        Service->>DB: Insert permission
+        Handler->>Cache: Invalidate permission cache
+        Handler-->>Frontend: 201 Created or 409 Conflict
+
+    else PUT /permissions/:id (Update)
+        Note over Middleware: Check "permission:update"
+        API->>Handler: UpdatePermission(ctx)
+        Handler->>Service: UpdatePermission(ctx, id, req)
+        Service->>DB: Update permission
+        Handler->>Cache: Invalidate permission cache
+        Handler-->>Frontend: 200 OK or 404 Not Found
+
+    else DELETE /permissions/:id (Delete)
+        Note over Middleware: Check "permission:delete"
+        API->>Handler: DeletePermission(ctx)
+        Handler->>Service: DeletePermission(ctx, id)
+        Service->>DB: Delete permission (CASCADE role_permissions)
+        Handler->>Cache: Invalidate permission cache
+        Handler-->>Frontend: 200 OK or 409 Conflict (in use)
+    end
+
+    Frontend-->>User: Display result

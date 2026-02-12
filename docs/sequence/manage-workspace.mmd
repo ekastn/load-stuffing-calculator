@@ -1,0 +1,74 @@
+sequenceDiagram
+    actor User as Admin/Owner
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as WorkspaceHandler
+    participant Service as WorkspaceService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Workspace action
+    Frontend->>API: Request to /api/v1/workspaces
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt GET /workspaces (List)
+        Note over Middleware: Check "workspace:read"
+        API->>Handler: ListWorkspaces(ctx)
+        Handler->>Service: ListWorkspaces(ctx, page, limit)
+        alt User is Founder
+            Note over Service: Founder sees all workspaces
+            Service->>DB: Query all workspaces (paginated)
+        else Regular User
+            Service->>DB: Query workspaces via memberships
+        end
+        Handler-->>Frontend: 200 OK [{workspaces}]
+
+    else POST /workspaces (Create)
+        Note over Middleware: Check "workspace:create"
+        API->>Handler: CreateWorkspace(ctx)
+        Handler->>Service: CreateWorkspace(ctx, req)
+        Note over Service: Transaction: Insert workspace<br/>+ Add creator as owner member
+        Service->>DB: Insert workspace + workspace_member
+        Handler-->>Frontend: 201 Created
+
+    else PATCH /workspaces/:id (Update)
+        Note over Middleware: Check "workspace:update"
+        API->>Handler: UpdateWorkspace(ctx)
+        Handler->>Service: UpdateWorkspace(ctx, id, req)
+        alt Name update
+            Service->>DB: Update workspace name
+            Handler-->>Frontend: 200 OK
+        else Ownership transfer
+            Note over Service: Verify new owner is member<br/>Update workspace.owner_id<br/>Update member roles
+            Service->>DB: Update workspace + member roles
+            Handler-->>Frontend: 200 OK
+        end
+
+    else DELETE /workspaces/:id (Delete)
+        Note over Middleware: Check "workspace:delete"
+        API->>Handler: DeleteWorkspace(ctx)
+        Handler->>Service: DeleteWorkspace(ctx, id)
+        alt User is not owner
+            Handler-->>Frontend: 403 Forbidden
+        else User is owner
+            Note over Service: CASCADE: members, invites, plans,<br/>items, results, placements, containers, products
+            Service->>DB: Delete workspace
+            Handler-->>Frontend: 204 No Content
+        end
+
+    else POST /auth/switch-workspace (Switch)
+        Note over Middleware: Validate JWT
+        API->>Handler: SwitchWorkspace(ctx)
+        Handler->>Service: SwitchWorkspace(ctx, req)
+        Service->>DB: Verify user is member of target workspace
+        alt Not a member
+            Handler-->>Frontend: 403 Forbidden
+        else Is member
+            Note over Service: Generate new access token<br/>with new workspace context
+            Handler-->>Frontend: 200 OK {new_access_token, workspace}
+        end
+    end
+
+    Frontend-->>User: Display result

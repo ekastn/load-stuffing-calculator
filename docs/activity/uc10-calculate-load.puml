@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Access Plan Detail page;
+:Click "Hitung Optimasi";
+
+note right
+  **Optional Config:**
+  Strategy, stability ratio,
+  gravity simulation
+end note
+
+|Frontend|
+:Show loading, send request;
+
+|Backend|
+:Validate auth & permission;
+
+|Database|
+:Retrieve plan and items;
+
+|Backend|
+:Execute 3D bin packing;
+
+note right
+  **Algorithm:**
+  - Best fit decreasing
+  - Position & rotation calc
+  - Step sequence assignment
+  - Utilization stats
+end note
+
+if (All items fit?) then (yes)
+  :Set status = COMPLETED;
+else (partial)
+  :Set status = PARTIAL;
+endif
+
+|Database|
+:Save results & placements;
+
+|Backend|
+:Return result;
+
+|Frontend|
+:Hide loading;
+:Display result summary;
+
+if (Partial?) then (yes)
+  :Show unfitted items warning;
+endif
+
+:Enable View 3D & Export PDF;
+
+note right
+  **Next Actions:**
+  - View 3D (UC-11)
+  - Export PDF (UC-12)
+end note
+
+|User|
+:View result;
+stop
+
+@enduml

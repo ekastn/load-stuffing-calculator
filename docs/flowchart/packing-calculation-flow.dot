@@ -1,0 +1,96 @@
+digraph PackingCalculationFlow {
+    rankdir=TB;
+    bgcolor="white";
+    fontname="Arial";
+    node [fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=9];
+    nodesep=0.8;
+    ranksep=0.5;
+    
+    // Start/End
+    node [shape=circle, style=filled, fillcolor="#C8E6C9", color="#388E3C", width=0.7, fixedsize=true];
+    start [label="Start"];
+    end_ok [label="OK"];
+    node [fillcolor="#FFCDD2", color="#D32F2F"];
+    end_fail [label="Fail"];
+    
+    // Decisions
+    node [shape=diamond, fillcolor="#FFF9C4", color="#FBC02D", width=1.2, height=0.9, fixedsize=false];
+    d_items [label="Ada\nItems?"];
+    d_strat [label="Custom\nStrategy?"];
+    d_grav [label="Apply\nGravity?"];
+    d_status [label="Status?"];
+    
+    // Processes - Input
+    node [shape=box, style="rounded,filled", fillcolor="#E3F2FD", color="#1976D2", width=1.8, height=0.5];
+    p1 [label="Terima Request"];
+    p2 [label="Fetch Plan & Items"];
+    p3 [label="Convert ke mm/gram"];
+    
+    // Algorithm
+    node [fillcolor="#E8F5E9", color="#388E3C"];
+    p4 [label="Default: BFD"];
+    p5 [label="Init Strategy"];
+    p6 [label="Eksekusi Packing"];
+    
+    // Post-process
+    node [fillcolor="#FFF3E0", color="#F57C00"];
+    p7 [label="Apply Gravity"];
+    p8 [label="Build Result"];
+    p9 [label="Hitung Stats"];
+    
+    // Persist
+    node [fillcolor="#E3F2FD", color="#1976D2"];
+    p10 [label="Simpan Result"];
+    p11 [label="Insert Placements"];
+    p12 [label="Update Plan Status"];
+    p13 [label="Return Result"];
+    
+    // Error
+    node [fillcolor="#FFEBEE", color="#D32F2F"];
+    p_err [label="Return Error"];
+    
+    // Invisible spacers
+    node [shape=point, width=0, height=0];
+    inv1 [style=invis];
+    inv2 [style=invis];
+    inv3 [style=invis];
+    
+    // Flow
+    start -> p1 -> p2 -> d_items;
+    
+    // Items check - branch
+    {rank=same; p3; inv1; p_err}
+    d_items -> p3 [label="Ya"];
+    d_items -> p_err [label="Tidak"];
+    p3 -> inv1 [style=invis];
+    inv1 -> p_err [style=invis];
+    p_err -> end_fail;
+    
+    // Strategy branch
+    p3 -> d_strat;
+    {rank=same; p4; inv2; p5}
+    d_strat -> p4 [label="Tidak"];
+    d_strat -> p5 [label="Ya"];
+    p4 -> inv2 [style=invis];
+    inv2 -> p5 [style=invis];
+    p4 -> p6;
+    p5 -> p6;
+    
+    // Execute and gravity
+    p6 -> d_grav;
+    {rank=same; p7; inv3; p8}
+    d_grav -> p7 [label="Ya"];
+    d_grav -> p8 [label="Tidak"];
+    p7 -> inv3 [style=invis];
+    inv3 -> p8 [style=invis];
+    p7 -> p9;
+    p8 -> p9;
+    
+    // Status and persist (linear)
+    p9 -> d_status;
+    d_status -> p10 [label="OK/Partial"];
+    p10 -> p11 -> p12 -> p13 -> end_ok;
+    
+    {rank=same; end_ok; end_fail}
+}
