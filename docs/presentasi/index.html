@@ -431,7 +431,7 @@
         <!-- Slide 3a: Tinjauan Pustaka Detail -->
         <div class="slide">
             <div class="slide-content">
-                <h2>2. State of the Art: Temuan Terdahulu</h2>
+                <h2>2. State of the Art</h2>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
                     <div>
                         <h3
@@ -439,10 +439,11 @@
                             Advanced Algorithms</h3>
                         <ul>
                             <li style="margin-bottom: 15px;">
-                                <strong>Zhao et al. (2022) - Deep Reinforcement Learning:</strong><br>
-                                <span style="color: #aaa;">"Outperforms state-of-the-art methods."</span><br>
-                                Fokus pada efisiensi ruang belajar mandiri, namun sangat kompleks untuk
-                                diimplementasikan di sistem gudang konvensional.
+                                <strong>Ma et al. (2025) - Hybrid Block-Building & GA:</strong><br>
+                                <span style="color: #aaa;">"Optimized placement for strongly heterogeneous
+                                    cargo."</span><br>
+                                Menggabungkan heuristik dengan Genetic Algorithm untuk hasil optimal, namun waktu
+                                komputasi masih menjadi tantangan untuk interaksi real-time.
                             </li>
                             <li style="margin-bottom: 15px;">
                                 <strong>Ananno et al. (2024) - Genetic Algorithm:</strong><br>
@@ -485,7 +486,7 @@
                 <div>
                     <ul>
                         <li style="margin-bottom: 30px;">
-                            Solusi algoritma yang ada (Advanced Algo) seringkali berhenti sebagai <em>"desktop-based
+                            Solusi algoritma yang ada seringkali berhenti sebagai <em>"desktop-based
                                 tools for researchers"</em> [Krebs2023], bukan alat operasional yang mudah diakses.
                         </li>
                         <li style="margin-bottom: 30px;">
@@ -558,51 +559,51 @@
             </div>
         </div>
 
-        <!-- Slide 7: Alasan Memakai Heuristik -->
-        <div class="slide">
-            <div class="slide-content">
-                <h2>6. Alasan Memakai Heuristik</h2>
-                <div class="two-column">
-                    <div>
-                        <ul>
-                            <li style="margin-bottom: 20px;">
-                                <strong>1. Masalah NP-Hard (Exponential Explosion):</strong><br>
-                                Secara matematis, mencari solusi "paling sempurna" untuk 300 item butuh waktu jutaan
-                                tahun. Heuristik memangkas ruang pencarian ini.
-                            </li>
-                            <li style="margin-bottom: 20px;">
-                                <strong>2. "Good Enough" in Seconds:</strong><br>
-                                Di lapangan, operator butuh solusi dalam < 30 detik (Real-time). Algoritma eksak butuh
-                                    berjam-jam. Heuristik memberi solusi 80-90% optimal secara instan. </li>
-                            <li style="margin-bottom: 20px;">
-                                <strong>3. Deterministic & Predictable:</strong><br>
-                                Hasilnya selalu konsisten (tidak berubah-ubah seperti AI/Genetic Algo), sehingga
-                                mudah
-                                diverifikasi dan dipercaya oleh manusia.
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="highlight-box" style="display: flex; flex-direction: column; justify-content: center;">
-                        <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;">
-                            Strategi:
-                            Bigger First Descending</h3>
-                        <p style="margin-bottom: 15px;">
-                            <em>"Big Rocks First" Principle</em>
-                        </p>
-                        <ul>
-                            <li>Item besar ditaruh duluan sebagai fondasi stabil.</li>
-                            <li>Item kecil mengisi celah (gap-filling).</li>
-                            <li>Mencegah "floating items" dan ketidakstabilan tumpukan.</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- <!-- Slide 7: Alasan Memakai Heuristik --> -->
+        <!-- <div class="slide"> -->
+        <!--     <div class="slide-content"> -->
+        <!--         <h2>6. Alasan Memakai Heuristik</h2> -->
+        <!--         <div class="two-column"> -->
+        <!--             <div> -->
+        <!--                 <ul> -->
+        <!--                     <li style="margin-bottom: 20px;"> -->
+        <!--                         <strong>1. Masalah NP-Hard (Exponential Explosion):</strong><br> -->
+        <!--                         Secara matematis, mencari solusi "paling sempurna" untuk 300 item butuh waktu jutaan -->
+        <!--                         tahun. Heuristik memangkas ruang pencarian ini. -->
+        <!--                     </li> -->
+        <!--                     <li style="margin-bottom: 20px;"> -->
+        <!--                         <strong>2. "Good Enough" in Seconds:</strong><br> -->
+        <!--                         Di lapangan, operator butuh solusi dalam < 30 detik (Real-time). Algoritma eksak butuh -->
+        <!--                             berjam-jam. Heuristik memberi solusi 80-90% optimal secara instan. </li> -->
+        <!--                     <li style="margin-bottom: 20px;"> -->
+        <!--                         <strong>3. Deterministic & Predictable:</strong><br> -->
+        <!--                         Hasilnya selalu konsisten (tidak berubah-ubah seperti AI/Genetic Algo), sehingga -->
+        <!--                         mudah -->
+        <!--                         diverifikasi dan dipercaya oleh manusia. -->
+        <!--                     </li> -->
+        <!--                 </ul> -->
+        <!--             </div> -->
+        <!--             <div class="highlight-box" style="display: flex; flex-direction: column; justify-content: center;"> -->
+        <!--                 <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;"> -->
+        <!--                     Strategi: -->
+        <!--                     Bigger First Descending</h3> -->
+        <!--                 <p style="margin-bottom: 15px;"> -->
+        <!--                     <em>"Big Rocks First" Principle</em> -->
+        <!--                 </p> -->
+        <!--                 <ul> -->
+        <!--                     <li>Item besar ditaruh duluan sebagai fondasi stabil.</li> -->
+        <!--                     <li>Item kecil mengisi celah (gap-filling).</li> -->
+        <!--                     <li>Mencegah "floating items" dan ketidakstabilan tumpukan.</li> -->
+        <!--                 </ul> -->
+        <!--             </div> -->
+        <!--         </div> -->
+        <!--     </div> -->
+        <!-- </div> -->
 
         <!-- Slide 8: Arsitektur Sistem -->
         <div class="slide">
             <div class="slide-content">
-                <h2>7. Arsitektur Sistem</h2>
+                <h2>6. Arsitektur Sistem</h2>
                 <div class="img-container">
                     <img src="images/architecture.png" alt="Arsitektur Sistem">
                 </div>
@@ -612,7 +613,7 @@
         <!-- Slide 9: Alur Proses -->
         <div class="slide center-content">
             <div class="slide-content">
-                <h2>8. Alur Proses Pemuatan</h2>
+                <h2>7. Alur Proses Pemuatan</h2>
                 <div style="display: flex; flex-direction: column; align-items: center;">
                     <div class="img-container" style="max-height: 50vh; margin-bottom: 20px;">
                         <img src="images/flowchart.png" alt="Flowchart Proses" style="max-height: 50vh;">
@@ -639,11 +640,11 @@
         <!-- Slide 9: Demo Aplikasi -->
         <div class="slide center-content">
             <div class="slide-content">
-                <h2>9. Demonstrasi Aplikasi</h2>
-                <div style="margin: 50px 0;">
-                    <p style="font-size: 5rem;">🚀</p>
-                    <p style="margin-top: 20px; color: var(--accent-color);">Sesi Live Demo</p>
-
+                <h2>8. Demo Aplikasi</h2>
+                <div
+                    style="margin: 30px 0; display: flex; justify-content: center; align-items: center; height: 400px;">
+                    <iframe src="https://lottie.host/embed/df87e9f9-de32-40f6-a7ed-5c59387a264d/jhmd16uPJr.lottie"
+                        style="width: 400px; height: 400px; border: none;"></iframe>
                 </div>
             </div>
         </div>
@@ -651,7 +652,7 @@
         <!-- Slide 10: Evaluasi Hasil -->
         <div class="slide">
             <div class="slide-content">
-                <h2>10. Evaluasi Hasil Pengujian</h2>
+                <h2>9. Evaluasi Hasil Pengujian</h2>
                 <div class="two-column">
                     <div>
                         <ul>
@@ -676,7 +677,7 @@
         <!-- Slide 11: Challenge & Limitasi -->
         <div class="slide">
             <div class="slide-content">
-                <h2>11. Challenge & Limitasi</h2>
+                <h2>10. Tantangan & Limitasi</h2>
                 <div>
                     <ul>
                         <li style="margin-bottom: 30px;">
@@ -687,7 +688,7 @@
                         </li>
                         <li style="margin-bottom: 30px;">
                             <strong>Local Optima (Deterministik):</strong><br>
-                            Karena sifatnya deterministik (selalu mengikuti aturan baku), algoritma tidak melakukan
+                            Karena sifatnya deterministik, algoritma tidak melakukan
                             eksplorasi solusi alternatif yang "mungkin" lebih baik, tidak seperti AI yang bisa
                             belajar
                             dari kesalahan.
@@ -708,7 +709,7 @@
         <!-- Slide 12: Future Direction -->
         <div class="slide">
             <div class="slide-content">
-                <h2>12. Future Direction (Rencana Pengembangan)</h2>
+                <h2>11. Future Direction (Rencana Pengembangan)</h2>
                 <div>
                     <ul>
                         <li style="margin-bottom: 25px;">
@@ -738,22 +739,28 @@
         <!-- Slide 13: Kesimpulan -->
         <div class="slide">
             <div class="slide-content">
-                <h2>13. Kesimpulan</h2>
-                <div style="text-align: justify;">
-                    <p>
+                <h2>12. Kesimpulan</h2>
+                <div style="text-align: left;">
+                    <p style="margin-bottom: 30px;">
                         Penelitian ini berhasil mengembangkan sistem 3D Bin Packing interaktif yang menjembatani
-                        kesenjangan antara algoritma optimasi dan operasional gudang. Melalui penerapan
-                        <strong>Layered
-                            Architecture</strong> dan visualisasi <strong>WebGL Step-by-Step</strong>, sistem ini
-                        terbukti mampu memproses 300 item heterogen dalam waktu &lt; 40 detik dengan
-                        <strong>utilisasi
-                            volume 55,26%</strong> dan <strong>fill rate 100%</strong>. Hasil ini menunjukkan bahwa
-                        pendekatan heuristik deterministik (Bigger First) tidak hanya efisien secara komputasi,
-                        tetapi
-                        juga menghasilkan rencana pemuatan yang stabil dan dapat dieksekusi secara praktis oleh
-                        operator
-                        lapangan.
+                        gap antara algoritma optimasi dan operasional gudang.
                     </p>
+                    <ol>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Kinerja Komputasi:</strong><br>
+                            Penerapan heuristik <em>Bigger First</em> memproses 300 item heterogen dalam waktu &lt; 40
+                            detik, mencapai <strong>Fill Rate 100%</strong> dan utilisasi volume 55,26% pada skenario
+                            uji terberat.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Validasi Eksekusi:</strong><br>
+                            Implementasi <strong>Visualisasi WebGL Step-by-Step</strong> mentransformasi sekumpulan
+                            koordinat 3D menjadi instruksi pemuatan sekuensial. Fitur ini memverifikasi bahwa solusi
+                            algoritma tidak hanya optimal secara spasial, tetapi juga <strong>dapat direalisasikan
+                                secara
+                                fisik</strong> oleh operator tanpa ambiguitas urutan tumpukan.
+                        </li>
+                    </ol>
                 </div>
                 <div class="highlight-box" style="margin-top: 40px; text-align: center;">
                     <p><strong>Terima Kasih</strong></p>
