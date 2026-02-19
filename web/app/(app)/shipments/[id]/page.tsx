@@ -98,12 +98,30 @@ export default function ShipmentDetailPage() {
   // Stats Logic
   const skuStats = useMemo(() => {
     if (!currentPlan) return []
-    const map = new Map<string, { name: string, qty: number, vol: number, weight: number, color: string }>()
+    const map = new Map<string, { 
+      name: string, 
+      sku: string,
+      qty: number, 
+      vol: number, 
+      weight: number,
+      unitWeight: number,
+      dims: string,
+      color: string 
+    }>()
     
     currentPlan.items.forEach(item => {
         const key = item.label || item.item_id
         if (!map.has(key)) {
-            map.set(key, { name: key, qty: 0, vol: 0, weight: 0, color: item.color_hex || "#ccc" })
+            map.set(key, { 
+              name: key, 
+              sku: item.sku || item.product_sku || "N/A",
+              qty: 0, 
+              vol: 0, 
+              weight: 0,
+              unitWeight: item.weight_kg,
+              dims: `${item.length_mm}×${item.width_mm}×${item.height_mm}`,
+              color: item.color_hex || "#ccc" 
+            })
         }
         const entry = map.get(key)!
         entry.qty += item.quantity
@@ -329,23 +347,38 @@ export default function ShipmentDetailPage() {
                         </ResponsiveContainer>
                     </div>
 
-                    {/* Detailed List */}
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-12 text-[10px] uppercase font-bold text-slate-400 border-b pb-2">
-                            <div className="col-span-6 pl-2">Name</div>
-                            <div className="col-span-3 text-right">Pkg</div>
-                            <div className="col-span-3 text-right">Vol</div>
-                        </div>
-                        {skuStats.map((sku) => (
-                            <div key={sku.name} className="grid grid-cols-12 items-center text-sm py-1 border-b border-slate-50 last:border-0">
-                                <div className="col-span-6 flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: sku.color }} />
-                                    <span className="font-medium text-slate-700 truncate" title={sku.name}>{sku.name}</span>
-                                </div>
-                                <div className="col-span-3 text-right text-slate-600">{sku.qty}</div>
-                                <div className="col-span-3 text-right text-slate-600">{sku.vol.toFixed(2)}</div>
+                    {/* Detailed Table with CSS Grid */}
+                    <div className="overflow-x-auto -mx-4 px-4">
+                        <div className="min-w-[800px]">
+                            {/* Header Row */}
+                            <div className="grid grid-cols-7 gap-4 border-b text-[10px] uppercase font-bold text-slate-400 py-2">
+                                <div className="text-left pl-2">SKU</div>
+                                <div className="text-left">Label</div>
+                                <div className="text-center">Color</div>
+                                <div className="text-left">Unit Dims (mm)</div>
+                                <div className="text-right">Count</div>
+                                <div className="text-right">Unit Wt (kg)</div>
+                                <div className="text-right pr-2">Total Vol (m³)</div>
                             </div>
-                        ))}
+                            {/* Data Rows */}
+                            {skuStats.map((sku) => (
+                                <div key={sku.name} className="grid grid-cols-7 gap-4 border-b border-slate-50 last:border-0 py-2 text-sm">
+                                    <div className="text-left pl-2 text-slate-600 font-mono text-xs truncate">{sku.sku}</div>
+                                    <div className="text-left">
+                                        <span className="font-medium text-slate-700 truncate max-w-[120px] inline-block" title={sku.name}>
+                                            {sku.name}
+                                        </span>
+                                    </div>
+                                    <div className="text-center">
+                                        <div className="w-3 h-3 rounded-full inline-block" style={{ backgroundColor: sku.color }} />
+                                    </div>
+                                    <div className="text-left text-slate-600 font-mono text-xs">{sku.dims}</div>
+                                    <div className="text-right text-slate-600">{sku.qty}</div>
+                                    <div className="text-right text-slate-600">{sku.unitWeight}</div>
+                                    <div className="text-right pr-2 text-slate-600">{sku.vol.toFixed(2)}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </CardContent>
               </Card>
