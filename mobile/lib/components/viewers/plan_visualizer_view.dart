@@ -9,8 +9,17 @@ import 'package:url_launcher/url_launcher.dart';
 
 class PlanVisualizerView extends StatefulWidget {
   final String planId;
+  final bool loadingMode;
+  final int? step;
+  final String? planData; // Base64-encoded plan JSON
 
-  const PlanVisualizerView({super.key, required this.planId});
+  const PlanVisualizerView({
+    super.key,
+    required this.planId,
+    this.loadingMode = false,
+    this.step,
+    this.planData,
+  });
 
   @override
   State<PlanVisualizerView> createState() => _PlanVisualizerViewState();
@@ -22,6 +31,8 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
   String? _error;
   bool _isDesktop = false;
   bool _isInitialized = false;
+  String? _cachedToken;
+  bool _hasLoadedInitialData = false;
 
   @override
   void initState() {
@@ -35,18 +46,63 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
     }
   }
 
+  @override
+  void didUpdateWidget(PlanVisualizerView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Use JavaScript bridge to update step instead of reloading page
+    if (widget.step != oldWidget.step && _controller != null && _isInitialized) {
+      _setStepViaJavaScript(widget.step ?? 0);
+    }
+  }
+
+  Future<void> _setStepViaJavaScript(int step) async {
+    try {
+      await _controller?.runJavaScript('window.setStep($step)');
+      debugPrint('Set step via JS bridge: $step');
+    } catch (e) {
+      debugPrint('Error setting step via JavaScript: $e');
+      // Fallback: reload page if JS bridge fails
+      _controller?.loadRequest(Uri.parse(_buildUrl(_cachedToken)));
+    }
+  }
+
+  String _buildUrl(String? token) {
+    final path = widget.loadingMode ? 'loading' : 'shipments';
+    final baseUrl = '${Constants.webBaseUrl}/embed/$path/${widget.planId}';
+
+    final queryParams = <String>[];
+    if (token != null) {
+      queryParams.add('token=$token');
+    }
+    
+    // Include plan data only on first load to avoid URL size issues
+    // User requested to remove data param and rely on API fetch
+    // if (widget.planData != null && !_hasLoadedInitialData) {
+    //   queryParams.add('data=${widget.planData}');
+    // }
+    
+    if (widget.step != null) {
+      queryParams.add('step=${widget.step}');
+    }
+
+    if (queryParams.isEmpty) {
+      return baseUrl;
+    }
+
+    return '$baseUrl?${queryParams.join('&')}';
+  }
+
   Future<void> _initializeWebView() async {
     try {
       // Get the access token from secure storage
       final storageService = StorageService();
-      final token = await storageService.getAccessToken();
+      _cachedToken = await storageService.getAccessToken();
 
       if (!mounted) return;
 
       // Build URL with token parameter for authentication
-      final baseUrl =
-          '${Constants.webBaseUrl}/embed/shipments/${widget.planId}';
-      final url = token != null ? '$baseUrl?token=$token' : baseUrl;
+      final url = _buildUrl(_cachedToken);
 
       _controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -65,6 +121,7 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
               if (mounted) {
                 setState(() {
                   _isLoading = false;
+                  _hasLoadedInitialData = true; // Mark initial data as loaded
                 });
               }
             },
@@ -100,9 +157,7 @@ class _PlanVisualizerViewState extends State<PlanVisualizerView> {
   }
 
   Future<void> _openInBrowser() async {
-    final url = Uri.parse(
-      '${Constants.webBaseUrl}/embed/shipments/${widget.planId}',
-    );
+    final url = Uri.parse(_buildUrl(null));
     if (await canLaunchUrl(url)) {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     }

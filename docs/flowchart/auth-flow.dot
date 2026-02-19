@@ -1,0 +1,90 @@
+digraph AuthFlow {
+    rankdir=TB;
+    bgcolor="white";
+    fontname="Arial";
+    node [fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=9];
+    nodesep=0.8;
+    ranksep=0.5;
+    splines=true;
+    
+    // Start/End
+    node [shape=circle, style=filled, fillcolor="#C8E6C9", color="#388E3C", width=0.7, fixedsize=true];
+    start [label="Start"];
+    end_ok [label="OK"];
+    node [fillcolor="#FFCDD2", color="#D32F2F"];
+    end_fail [label="Fail"];
+    
+    // Decisions
+    node [shape=diamond, fillcolor="#FFF9C4", color="#FBC02D", width=1.2, height=0.9, fixedsize=false];
+    d_type [label="Tipe\nRequest?"];
+    d_email [label="Email\nValid?"];
+    d_creds [label="Kredensial\nValid?"];
+    d_pwd [label="Password\nMatch?"];
+    
+    // Processes
+    node [shape=box, style="rounded,filled", fillcolor="#E3F2FD", color="#1976D2", width=1.8, height=0.5];
+    p1 [label="Terima Request"];
+    p2 [label="Validasi Input"];
+    p7 [label="Generate JWT Token"];
+    p8 [label="Simpan Refresh Token"];
+    p9 [label="Return Tokens"];
+    
+    // Register path (left)
+    node [fillcolor="#E8F5E9", color="#388E3C"];
+    p3 [label="Hash Password"];
+    p4 [label="Buat User & Workspace"];
+    
+    // Login path (right)
+    node [fillcolor="#FFF3E0", color="#F57C00"];
+    p6 [label="Verifikasi Password"];
+    
+    // Error
+    node [fillcolor="#FFEBEE", color="#D32F2F"];
+    p_err [label="Return Error"];
+    
+    // Invisible nodes for spacing
+    node [shape=point, width=0, height=0];
+    inv1 [style=invis];
+    inv2 [style=invis];
+    
+    // Row 1: Start
+    start -> p1;
+    
+    // Row 2: Input validation
+    p1 -> p2 -> d_type;
+    
+    // Row 3: Branch decision (side by side)
+    {rank=same; d_email; inv1; d_creds}
+    d_type -> d_email [label="Register"];
+    d_type -> d_creds [label="Login"];
+    d_email -> inv1 [style=invis];
+    inv1 -> d_creds [style=invis];
+    
+    // Row 4: First process step
+    {rank=same; p3; inv2; p6}
+    d_email -> p3 [label="Ya"];
+    d_creds -> p6 [label="Ya"];
+    p3 -> inv2 [style=invis];
+    inv2 -> p6 [style=invis];
+    
+    // Row 5: Second process step / password check
+    {rank=same; p4; d_pwd}
+    p3 -> p4;
+    p6 -> d_pwd;
+    
+    // Converge to JWT
+    p4 -> p7;
+    d_pwd -> p7 [label="Ya"];
+    
+    // Error paths
+    d_email -> p_err [label="Tidak"];
+    d_creds -> p_err [label="Tidak"];
+    d_pwd -> p_err [label="Tidak"];
+    
+    // Final row
+    p7 -> p8 -> p9 -> end_ok;
+    p_err -> end_fail;
+    
+    {rank=same; end_ok; end_fail}
+}

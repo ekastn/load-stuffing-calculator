@@ -1,5 +1,6 @@
 export interface CreateProductRequest {
   name: string
+  sku?: string
   length_mm: number
   width_mm: number
   height_mm: number
@@ -9,6 +10,7 @@ export interface CreateProductRequest {
 
 export interface UpdateProductRequest {
   name: string
+  sku?: string
   length_mm: number
   width_mm: number
   height_mm: number
@@ -19,6 +21,7 @@ export interface UpdateProductRequest {
 export interface ProductResponse {
   id: string
   name: string
+  sku?: string
   length_mm: number
   width_mm: number
   height_mm: number

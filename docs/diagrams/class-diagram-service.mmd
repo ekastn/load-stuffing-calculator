@@ -1,0 +1,259 @@
+---
+title: Class Diagram - Service Layer Architecture
+---
+%%{init: {'theme': 'default', 'themeVariables': { 'fontSize': '14px'}}}%%
+classDiagram
+    direction TB
+
+    %% ========== ROW 1: HANDLERS (Auth Group) ==========
+    class AuthHandler {
+        -svc AuthService
+        +Login()
+        +Register()
+        +RefreshToken()
+        +Me()
+    }
+
+    class UserHandler {
+        -svc UserService
+        +CreateUser()
+        +GetUser()
+        +ListUsers()
+        +UpdateUser()
+        +DeleteUser()
+    }
+
+    class RoleHandler {
+        -svc RoleService
+        +CreateRole()
+        +GetRole()
+        +ListRoles()
+        +UpdateRole()
+        +DeleteRole()
+    }
+
+    class PermissionHandler {
+        -svc PermissionService
+        +CreatePermission()
+        +ListPermissions()
+        +DeletePermission()
+    }
+
+    %% ========== ROW 1: HANDLERS (Workspace Group) ==========
+    class WorkspaceHandler {
+        -svc WorkspaceService
+        +ListWorkspaces()
+        +CreateWorkspace()
+        +UpdateWorkspace()
+        +DeleteWorkspace()
+    }
+
+    class MemberHandler {
+        -svc MemberService
+        +ListMembers()
+        +AddMember()
+        +UpdateMemberRole()
+        +DeleteMember()
+    }
+
+    class InviteHandler {
+        -svc InviteService
+        +ListInvites()
+        +CreateInvite()
+        +AcceptInvite()
+    }
+
+    %% ========== ROW 1: HANDLERS (Data & Planning Group) ==========
+    class ContainerHandler {
+        -svc ContainerService
+        +CreateContainer()
+        +GetContainer()
+        +ListContainers()
+        +UpdateContainer()
+        +DeleteContainer()
+    }
+
+    class ProductHandler {
+        -svc ProductService
+        +CreateProduct()
+        +GetProduct()
+        +ListProducts()
+        +UpdateProduct()
+        +DeleteProduct()
+    }
+
+    class PlanHandler {
+        -svc PlanService
+        +CreatePlan()
+        +GetPlan()
+        +ListPlans()
+        +UpdatePlan()
+        +DeletePlan()
+        +CalculatePlan()
+    }
+
+    class DashboardHandler {
+        -svc DashboardService
+        +GetStats()
+    }
+
+    %% ========== ROW 2: SERVICES (Auth Group) ==========
+    class AuthService {
+        <<interface>>
+        +Login()
+        +Register()
+        +RefreshToken()
+        +Me()
+    }
+
+    class UserService {
+        <<interface>>
+        +CreateUser()
+        +GetUserByID()
+        +ListUsers()
+        +UpdateUser()
+        +DeleteUser()
+    }
+
+    class RoleService {
+        <<interface>>
+        +CreateRole()
+        +GetRole()
+        +ListRoles()
+        +UpdateRole()
+        +DeleteRole()
+    }
+
+    class PermissionService {
+        <<interface>>
+        +CreatePermission()
+        +GetPermission()
+        +ListPermissions()
+        +DeletePermission()
+    }
+
+    %% ========== ROW 2: SERVICES (Workspace Group) ==========
+    class WorkspaceService {
+        <<interface>>
+        +ListWorkspaces()
+        +CreateWorkspace()
+        +UpdateWorkspace()
+        +DeleteWorkspace()
+    }
+
+    class MemberService {
+        <<interface>>
+        +ListMembers()
+        +AddMember()
+        +UpdateMemberRole()
+        +DeleteMember()
+    }
+
+    class InviteService {
+        <<interface>>
+        +ListInvites()
+        +CreateInvite()
+        +AcceptInvite()
+    }
+
+    %% ========== ROW 2: SERVICES (Data & Planning Group) ==========
+    class ContainerService {
+        <<interface>>
+        +CreateContainer()
+        +GetContainer()
+        +ListContainers()
+        +UpdateContainer()
+        +DeleteContainer()
+    }
+
+    class ProductService {
+        <<interface>>
+        +CreateProduct()
+        +GetProduct()
+        +ListProducts()
+        +UpdateProduct()
+        +DeleteProduct()
+    }
+
+    class PlanService {
+        <<interface>>
+        +CreatePlan()
+        +GetPlan()
+        +ListPlans()
+        +CalculatePlan()
+    }
+
+    class DashboardService {
+        <<interface>>
+        +GetStats()
+    }
+
+    class Packer {
+        <<interface>>
+        +Pack()
+    }
+
+    %% ========== ROW 3: INFRASTRUCTURE ==========
+    class defaultPacker {
+        +Pack()
+        -toBox()
+        -toItems()
+        -buildResult()
+        -applyGravity()
+        -inferRotationType()
+    }
+
+    class Querier {
+        <<interface>>
+        +CreateUser()
+        +GetUserByID()
+        +CreateLoadPlan()
+        +GetLoadPlan()
+        +ListLoadPlans()
+        +CreatePlanResult()
+        +CreatePlanPlacement()
+    }
+
+    class PermissionCache {
+        -cache map
+        -mu sync.RWMutex
+        +Get()
+        +Set()
+        +Invalidate()
+        +InvalidateAll()
+    }
+
+    %% ========== RELATIONSHIPS ==========
+    %% Handler to Service (same column alignment)
+    AuthHandler --> AuthService
+    UserHandler --> UserService
+    RoleHandler --> RoleService
+    PermissionHandler --> PermissionService
+    WorkspaceHandler --> WorkspaceService
+    MemberHandler --> MemberService
+    InviteHandler --> InviteService
+    ContainerHandler --> ContainerService
+    ProductHandler --> ProductService
+    PlanHandler --> PlanService
+    DashboardHandler --> DashboardService
+
+    %% Cache usage
+    RoleHandler ..> PermissionCache : uses
+    PermissionHandler ..> PermissionCache : uses
+
+    %% Service to Store
+    AuthService --> Querier
+    UserService --> Querier
+    RoleService --> Querier
+    PermissionService --> Querier
+    WorkspaceService --> Querier
+    MemberService --> Querier
+    InviteService --> Querier
+    ContainerService --> Querier
+    ProductService --> Querier
+    PlanService --> Querier
+    DashboardService --> Querier
+
+    %% Packer
+    PlanService --> Packer
+    defaultPacker ..|> Packer

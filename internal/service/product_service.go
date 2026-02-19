@@ -50,6 +50,7 @@ func (s *productService) CreateProduct(ctx context.Context, req dto.CreateProduc
 	product, err := s.q.CreateProduct(ctx, store.CreateProductParams{
 		WorkspaceID: workspaceID,
 		Name:        req.Name,
+		Sku:         req.SKU,
 		LengthMm:    toNumeric(req.LengthMM),
 		WidthMm:     toNumeric(req.WidthMM),
 		HeightMm:    toNumeric(req.HeightMM),
@@ -160,6 +161,7 @@ func (s *productService) UpdateProduct(ctx context.Context, id string, req dto.U
 		err = s.q.UpdateProductAny(ctx, store.UpdateProductAnyParams{
 			ProductID: productID,
 			Name:      req.Name,
+			Sku:       req.SKU,
 			LengthMm:  toNumeric(req.LengthMM),
 			WidthMm:   toNumeric(req.WidthMM),
 			HeightMm:  toNumeric(req.HeightMM),
@@ -187,6 +189,7 @@ func (s *productService) UpdateProduct(ctx context.Context, id string, req dto.U
 		ProductID:   productID,
 		WorkspaceID: workspaceID,
 		Name:        req.Name,
+		Sku:         req.SKU,
 		LengthMm:    toNumeric(req.LengthMM),
 		WidthMm:     toNumeric(req.WidthMM),
 		HeightMm:    toNumeric(req.HeightMM),
@@ -240,6 +243,7 @@ func mapProductToResponse(p store.Product) *dto.ProductResponse {
 	return &dto.ProductResponse{
 		ID:       p.ProductID.String(),
 		Name:     p.Name,
+		SKU:      p.Sku,
 		LengthMM: toFloat(p.LengthMm),
 		WidthMM:  toFloat(p.WidthMm),
 		HeightMM: toFloat(p.HeightMm),

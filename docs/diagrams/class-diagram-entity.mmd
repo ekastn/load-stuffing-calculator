@@ -1,0 +1,183 @@
+---
+title: Class Diagram - Domain Entities
+---
+classDiagram
+    direction TB
+
+    %% ==================== AUTH MODULE ====================
+    class User {
+        +UUID UserID
+        +UUID RoleID
+        +string Username
+        +string Email
+        +string PasswordHash
+        +datetime CreatedAt
+        +datetime UpdatedAt
+    }
+
+    class Role {
+        +UUID RoleID
+        +string Name
+        +string Description
+        +datetime CreatedAt
+    }
+
+    class Permission {
+        +UUID PermissionID
+        +string Name
+        +string Description
+        +datetime CreatedAt
+    }
+
+    class RolePermission {
+        +UUID RoleID
+        +UUID PermissionID
+    }
+
+    class RefreshToken {
+        +string Token
+        +UUID UserID
+        +UUID WorkspaceID
+        +datetime ExpiresAt
+        +datetime RevokedAt
+        +datetime CreatedAt
+    }
+
+    %% ==================== WORKSPACE MODULE ====================
+    class Workspace {
+        +UUID WorkspaceID
+        +string Type
+        +string Name
+        +UUID OwnerUserID
+        +datetime CreatedAt
+        +datetime UpdatedAt
+    }
+
+    class Member {
+        +UUID MemberID
+        +UUID WorkspaceID
+        +UUID UserID
+        +UUID RoleID
+        +datetime CreatedAt
+        +datetime UpdatedAt
+    }
+
+    class Invite {
+        +UUID InviteID
+        +UUID WorkspaceID
+        +string Email
+        +UUID RoleID
+        +string TokenHash
+        +UUID InvitedByUserID
+        +datetime ExpiresAt
+        +datetime AcceptedAt
+        +datetime RevokedAt
+        +datetime CreatedAt
+    }
+
+    %% ==================== MASTER DATA MODULE ====================
+    class Container {
+        +UUID ContainerID
+        +UUID WorkspaceID
+        +string Name
+        +decimal InnerLengthMM
+        +decimal InnerWidthMM
+        +decimal InnerHeightMM
+        +decimal MaxWeightKG
+        +string Description
+        +datetime CreatedAt
+        +datetime UpdatedAt
+    }
+
+    class Product {
+        +UUID ProductID
+        +UUID WorkspaceID
+        +string Name
+        +decimal LengthMM
+        +decimal WidthMM
+        +decimal HeightMM
+        +decimal WeightKG
+        +string ColorHex
+        +datetime CreatedAt
+        +datetime UpdatedAt
+    }
+
+    %% ==================== PLANNING MODULE ====================
+    class LoadPlan {
+        +UUID PlanID
+        +UUID WorkspaceID
+        +string PlanCode
+        +string Status
+        +string ContLabel
+        +decimal LengthMM
+        +decimal WidthMM
+        +decimal HeightMM
+        +decimal MaxWeightKG
+        +string CreatedByType
+        +UUID CreatedByID
+        +datetime CreatedAt
+    }
+
+    class LoadItem {
+        +UUID ItemID
+        +UUID PlanID
+        +string ItemLabel
+        +decimal LengthMM
+        +decimal WidthMM
+        +decimal HeightMM
+        +decimal WeightKG
+        +int Quantity
+        +bool AllowRotation
+        +string ColorHex
+    }
+
+    class PlanResult {
+        +UUID ResultID
+        +UUID PlanID
+        +decimal TotalLoadedWeightKG
+        +decimal VolumeUtilizationPct
+        +bool IsFeasible
+        +datetime CreatedAt
+    }
+
+    class PlanPlacement {
+        +UUID PlacementID
+        +UUID ResultID
+        +UUID ItemID
+        +decimal PosX
+        +decimal PosY
+        +decimal PosZ
+        +int RotationCode
+        +int StepNumber
+    }
+
+    %% ==================== RELATIONSHIPS ====================
+    
+    %% Auth relationships
+    User "*" --> "1" Role : has role
+    Role "1" --> "*" RolePermission : has
+    Permission "1" --> "*" RolePermission : assigned to
+    User "1" --> "*" RefreshToken : owns
+
+    %% Workspace relationships
+    Workspace "1" --> "1" User : owned by
+    Workspace "1" *-- "*" Member : contains
+    Workspace "1" *-- "*" Invite : has
+    Member "*" --> "1" User : references
+    Member "*" --> "1" Role : has role
+    Invite "*" --> "1" User : invited by
+
+    %% Master Data relationships
+    Workspace "1" *-- "*" Container : owns
+    Workspace "1" *-- "*" Product : owns
+
+    %% Planning relationships
+    Workspace "1" *-- "*" LoadPlan : contains
+    LoadPlan "1" *-- "*" LoadItem : contains
+    LoadPlan "1" --> "0..1" PlanResult : has result
+    PlanResult "1" *-- "*" PlanPlacement : contains
+    PlanPlacement "*" --> "1" LoadItem : references
+
+    %% Master Data to Planning (snapshot/template relationships)
+    Container "1" ..> "*" LoadPlan : template for
+    Product "1" ..> "*" LoadItem : template for

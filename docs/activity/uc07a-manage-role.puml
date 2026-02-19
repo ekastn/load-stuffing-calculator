@@ -1,0 +1,61 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Access Roles page;
+:View role list;
+
+if (Action?) then (Basic CRUD)
+  :Fill form;
+  :Submit;
+  
+  |Frontend|
+  :Validate & send request;
+  
+  |Backend|
+  :Validate auth;
+  
+  |Database|
+  :Execute CRUD operation;
+  
+  |Backend|
+  :Clear cache;
+  
+  |Frontend|
+  :Show result;
+
+else (Assign Permissions)
+  :Click "Manage Permissions";
+  
+  |Frontend|
+  :Show permission checklist;
+  
+  |User|
+  :Select permissions;
+  :Save;
+  
+  |Backend|
+  :Validate auth;
+  
+  |Database|
+  :Replace assignments;
+  
+  |Backend|
+  :Clear cache;
+  
+  |Frontend|
+  :Show result;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

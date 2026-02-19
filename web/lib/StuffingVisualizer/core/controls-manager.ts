@@ -14,6 +14,13 @@ export class ControlsManager {
         this.controls.maxPolarAngle = Math.PI / 2;
     }
 
+    public setTarget(x: number, y: number, z: number): void {
+        if (this.controls) {
+            this.controls.target.set(x, y, z);
+            this.controls.update();
+        }
+    }
+
     public update(): void {
         this.controls?.update();
     }

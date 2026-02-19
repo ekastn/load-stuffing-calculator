@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useAuth } from "@/lib/auth-context"
 import { usePathname, useRouter } from "next/navigation"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { LogOut, Menu, X } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -94,9 +95,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:flex flex-col`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-border px-6">
-          <h1 className="text-xl font-bold text-primary">Load & Stuffing</h1>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground">
+        <div className="flex h-16 items-center border-b border-border px-6 gap-3">
+          <div className="relative w-8 h-8 flex-shrink-0">
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              fill
+              className="object-contain rounded-md"
+            />
+          </div>
+          <h1 className="text-lg font-bold text-primary">LoadIQ</h1>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground ml-auto">
             <X className="h-5 w-5" />
           </button>
         </div>

@@ -1,0 +1,62 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Click "Visualisasi 3D" tab;
+
+|Frontend|
+:Request plan with placements;
+
+|Backend|
+:Validate auth & permission;
+
+|Database|
+:Retrieve plan & placements;
+
+|Backend|
+if (Has calculation?) then (yes)
+  :Return placement data;
+  
+  |Frontend|
+  :Initialize 3D scene;
+  :Render container & items;
+  :Show step playback controls;
+  
+  note right
+    **3D Scene (Three.js):**
+    - Container wireframe
+    - Items with position/rotation
+    - Camera & lighting
+    
+    **Interactions:**
+    - Rotate/zoom/pan camera
+    - Step slider & auto-play
+    - Click item for details
+    - Reset camera view
+  end note
+  
+  |User|
+  :Interact with 3D view;
+  
+  |Frontend|
+  :Update scene & re-render;
+  
+else (no)
+  :Return error;
+  
+  |Frontend|
+  :Show "Calculate first" message;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml
