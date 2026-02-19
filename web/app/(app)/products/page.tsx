@@ -43,6 +43,7 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState<CreateProductRequest>({
     name: "",
+    sku: "",
     length_mm: 0,
     width_mm: 0,
     height_mm: 0,
@@ -79,6 +80,7 @@ export default function ProductsPage() {
     if (success) {
       setFormData({
         name: "",
+        sku: "",
         length_mm: 0,
         width_mm: 0,
         height_mm: 0,
@@ -93,6 +95,7 @@ export default function ProductsPage() {
   const handleEdit = (product: ProductResponse) => {
     setFormData({
       name: product.name,
+      sku: product.sku ?? "",
       length_mm: product.length_mm,
       width_mm: product.width_mm,
       height_mm: product.height_mm,
@@ -123,6 +126,7 @@ export default function ProductsPage() {
   const openNewForm = () => {
     setFormData({
         name: "",
+        sku: "",
         length_mm: 0,
         width_mm: 0,
         height_mm: 0,
@@ -138,6 +142,15 @@ export default function ProductsPage() {
       accessorKey: "name",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Name" />
+      ),
+    },
+    {
+      accessorKey: "sku",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="SKU" />
+      ),
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">{row.original.sku || "-"}</span>
       ),
     },
     {
@@ -269,15 +282,23 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Weight (kg)</label>
+                      <label className="text-sm font-medium">SKU</label>
                       <Input
-                        type="number"
-                        value={formData.weight_kg || ""}
-                        onChange={(e) => setFormData({ ...formData, weight_kg: Number(e.target.value) })}
-                        placeholder="0.0"
-                        required
+                        value={formData.sku}
+                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                        placeholder="e.g., BOX-001"
                       />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Weight (kg)</label>
+                    <Input
+                      type="number"
+                      value={formData.weight_kg || ""}
+                      onChange={(e) => setFormData({ ...formData, weight_kg: Number(e.target.value) })}
+                      placeholder="0.0"
+                      required
+                    />
                   </div>
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="space-y-2">
