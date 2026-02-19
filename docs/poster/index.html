@@ -60,13 +60,12 @@
         <header class="poster-header">
             <h1>Interactive 3D Bin Packing System for Optimized Container Loading Operations</h1>
             <div class="authors">
-                <p><strong>Muhamad Saladin Eka Septian</strong>, Dina Oktafiani, Roni Andarsyah</p>
-                <p class="affiliation">Universitas Logistik dan Bisnis Internasional</p>
+                <p>Muhamad Saladin Eka Septian, Dina Oktafiani</p>
+                <p class="affiliation">Program Studi D4 Teknik Informatika, Universitas Logistik dan Bisnis Internasional</p>
+                <p class="affiliation">Dosen Pembimbing: Roni Andarsyah, S.T., M.Kom., SFPC</p>
             </div>
-            <!-- <div class="header-logo">
-                <img src="assets/logo_ulbi.png" alt="Logo ULBI" class="logo-img">
-            </div> -->
         </header>
+
 
         <!-- Main Content Grid (2 Columns) -->
         <div class="poster-grid">
@@ -106,18 +105,35 @@
                     <h2>Metodologi & Algoritma</h2>
                     <div class="section-content">
                         <h3>1. Arsitektur Sistem</h3>
-                        <div class="mermaid" style="display: flex; justify-content: center; margin-bottom: 15px;">
-                            graph TD
-                            A["<b>Frontend Web</b><br />Next.js + Three.js"] -->|HTTP/JSON| B["<b>Backend
-                                API</b><br />Go (Gin Framework)"]
-                            B -->|SQL| C[("<b>Database</b><br />PostgreSQL")]
-                            B -->|gRPC/HTTP| D["<b>Packing Service</b><br />Python + py3dbp"]
-                            classDef box fill:#fff,stroke:#2c3e50,stroke-width:2px,rx:5,ry:5;
-                            class A,B,C,D box;
+                        <div class="mermaid" style="width: 100%; margin-bottom: -10px; margin-top: -20px; min-height: 180px;">
+                            flowchart LR
+                            A["<b>Frontend Web</b><br />Next.js + Three.js"]:::frontend -->|HTTP/JSON| B["<b>Backend
+                                API</b><br />Go (Gin Framework)"]:::backend
+                            B -->|SQL| C[("<b>Database</b><br />PostgreSQL")]:::db
+                            B -->|gRPC/HTTP| D["<b>Packing Service</b><br />Python + py3dbp"]:::service
+                            
+                            classDef frontend fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff,font-size:14px;
+                            classDef backend fill:#2980b9,stroke:#2c3e50,stroke-width:2px,color:#fff,font-size:14px;
+                            classDef db fill:#27ae60,stroke:#2c3e50,stroke-width:2px,color:#fff,font-size:14px;
+                            classDef service fill:#8e44ad,stroke:#2c3e50,stroke-width:2px,color:#fff,font-size:14px;
+                            
+                            linkStyle default stroke:#00a8ff,stroke-width:3px,fill:none;
                         </div>
                         <script type="module">
                             import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-                            mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+                            mermaid.initialize({ 
+                                startOnLoad: true, 
+                                theme: 'dark', 
+                                securityLevel: 'loose',
+                                flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis', nodeSpacing: 30, rankSpacing: 40 },
+                                themeVariables: { 
+                                    primaryColor: '#0a2b5e', 
+                                    lineColor: '#00a8ff', 
+                                    textColor: '#ffffff',
+                                    mainBkg: '#0a2b5e',
+                                    nodeBorder: '#00a8ff'
+                                } 
+                            });
                         </script>
 
                         <h3>2. Algoritma & Batasan (Constraints)</h3>
@@ -139,6 +155,19 @@
                     </div>
                 </section>
 
+                <!-- Section: Keunggulan -->
+                <section class="poster-section highlight-section">
+                    <h2>Keunggulan</h2>
+                    <div class="section-content">
+                        <ul class="check-list">
+                            <li><strong>Panduan Stuffing Step-by-Step:</strong> Visualisasi 3D bertindak sebagai instruktur digital, memandu operator menata barang satu per satu sesuai urutan optimal.</li>
+                            <li><strong>Zero Trial-and-Error:</strong> Simulasi pra-muat menjamin akurasi posisi sejak awal, menghilangkan risiko bongkar-muat ulang di lapangan.</li>
+                            <li><strong>Eksekusi Tanpa Mikir:</strong> Mengubah algoritma rumit menjadi instruksi visual intuitif, sehingga operator bisa langsung bekerja tanpa menebak-nebak posisi.</li>
+                            <li><strong>Jaminan Keamanan:</strong> Memastikan aturan penumpukan (berat & orientasi) dipatuhi secara otomatis saat eksekusi stuffing berlangsung.</li>
+                        </ul>
+                    </div>
+                </section>
+
             </div>
 
             <!-- Right Column -->
@@ -147,9 +176,20 @@
                 <!-- Section 4: Visualisasi (Centerpiece) -->
                 <section class="poster-section visual-centerpiece">
                     <h2>Visualisasi Interaktif</h2>
-                    <div class="figure-container">
-                        <img src="assets/antarmuka.png" alt="Antarmuka Visualisasi 3D" class="main-figure">
-
+                    <div class="visual-grid">
+                        <div class="visual-main">
+                            <div class="figure-container no-bg">
+                                <img src="assets/visual_3d.png" alt="Tampilan 3D Real-time" class="main-figure">
+                            </div>
+                        </div>
+                        <div class="visual-sub">
+                            <div class="figure-container no-bg">
+                                <img src="assets/visual_summary.png" alt="Ringkasan Statistik" class="main-figure">
+                            </div>
+                            <div class="figure-container no-bg">
+                                <img src="assets/visual_brakedown.png" alt="Rincian Item" class="main-figure">
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -173,38 +213,32 @@
 
                     <div class="figure-container small-figure">
                         <img src="assets/detailed_metrics.png" alt="Grafik Metrik Detil" class="chart-figure">
-
                     </div>
 
                     <p class="result-note">Strategi <strong>Bigger First</strong> terbukti <strong>43% lebih
                             efisien</strong> dibandingkan Smaller First.</p>
                 </section>
 
-                <!-- Section 6: Challenges & Limitations -->
-                <section class="poster-section highlight-section">
-                    <h2>Tantangan & Batasan</h2>
-                    <div class="section-content">
-                        <ul>
-                            <li><strong>Optimasi Lokal vs Global:</strong> Pendekatan heuristik saat ini memprioritaskan
-                                kecepatan komputasi, namun belum menjamin solusi optimal global yang mungkin dicapai
-                                dengan <em>Meta-Heuristics</em>.</li>
-                            <li><strong>Kompleksitas Geometri:</strong> Sistem saat ini dikhususkan untuk kargo
-                                berbentuk kubus/balok (rectangular) dan belum mendukung geometri ireguler.</li>
-                            <li><strong>Validasi Operasional:</strong> Pengujian berfokus pada simulasi data; validasi
-                                empiris melalui studi lapangan dengan operator logistik diperlukan untuk konfirmasi
-                                efektivitas praktis.</li>
-                        </ul>
-                    </div>
-                </section>
-
                 <!-- Section 6: Kesimpulan -->
                 <section class="poster-section conclusion-section">
                     <h2>Kesimpulan</h2>
                     <div class="section-content">
-                        <p>Sistem ini berhasil menjembatani kesenjangan antara optimasi algoritma dan eksekusi fisik.
-                            Fitur <strong>visualisasi langkah-demi-langkah</strong> memungkinkan rencana muatan yang
-                            kompleks dapat dilaksanakan dengan mudah oleh operator gudang tanpa memerlukan instalasi
-                            perangkat lunak khusus.</p>
+                        <p>Sistem ini dibangun untuk memvalidasi <strong>keterlaksanaan fisik</strong> dari rencana muatan. Dengan fitur simulasi
+                            interaktif, operator dapat memverifikasi urutan dan posisi barang sebelum proses pemuatan dimulai. Pendekatan ini
+                            mengubah data optimasi menjadi panduan kerja praktis, memastikan bahwa target efisiensi ruang yang dihitung sistem
+                            benar-benar tercapai dalam operasional nyata.</p>
+                    </div>
+                </section>
+
+                <!-- Section 7: Referensi Utama -->
+                <section class="poster-section references-section">
+                    <h2>Referensi Utama</h2>
+                    <div class="section-content">
+                        <ul>
+                            <li>[1] Ma, Y. et al. (2025). <em>Hybrid Block-Building with Genetic Algorithm for 3D-BPP.</em></li>
+                            <li>[2] Ananno, A.A. et al. (2024). <em>Multi-Heuristic Algorithm for Multi-Container Optimization.</em></li>
+                            <li>[3] Poerwandono, A. et al. (2023). <em>Web-based 3D Visualization using Three.js.</em></li>
+                        </ul>
                     </div>
                 </section>
 
