@@ -1,4 +1,4 @@
-import { OrthographicCamera, Scene, WebGLRenderer, Camera } from "three";
+import { OrthographicCamera, Scene, WebGLRenderer, Camera, Box3, Vector3 } from "three";
 import { ContainerMesh } from "./components/container-mesh";
 import { ItemMesh } from "./components/item-mesh";
 import { CameraManager } from "./core/camera-manager";
@@ -25,6 +25,7 @@ export class StuffingVisualizer {
     private data: StuffingPlanData | null = null;
     private camera: OrthographicCamera;
     private config: SceneConfig;
+    private loadingMode: boolean = false;
 
     constructor(config: SceneConfig = {}) {
         this.config = config;
@@ -125,6 +126,14 @@ export class StuffingVisualizer {
 
     public setStep(step: number): void {
         this.animationManager.setCurrentStep(step);
+        // Explicitly update visibility and camera focus when step changes
+        this.updateVisibleItems(step);
+    }
+
+    public setLoadingMode(enabled: boolean): void {
+        this.loadingMode = enabled;
+        // Refresh visibility immediately
+        this.updateVisibleItems(this.getCurrentStep());
     }
 
     public getMaxStep(): number {
@@ -136,10 +145,41 @@ export class StuffingVisualizer {
     }
 
     private updateVisibleItems(targetStep: number): void {
-        this.itemMeshes.forEach((itemMesh) => {
+        let focusedItemBox: Box3 | null = null;
+
+        for (const itemMesh of this.itemMeshes) {
             const stepNumber = itemMesh.getStepNumber();
-            itemMesh.getGroup().visible = stepNumber <= targetStep;
-        });
+            
+            // All items up to targetStep are visible
+            const isVisible = stepNumber <= targetStep;
+            itemMesh.getGroup().visible = isVisible;
+            
+            // Identify focused item (the current step)
+            if (stepNumber === targetStep) {
+                // Ensure world matrix is updated before calculating box
+                itemMesh.getGroup().updateMatrixWorld(true);
+                
+                if (!focusedItemBox) {
+                    focusedItemBox = new Box3().setFromObject(itemMesh.getGroup());
+                } else {
+                    focusedItemBox.expandByObject(itemMesh.getGroup());
+                }
+            }
+        }
+
+        if (this.loadingMode && focusedItemBox) {
+            this.cameraManager.focusOnBox(focusedItemBox);
+            
+            // Update controls target to match the focused item
+            const center = new Vector3();
+            focusedItemBox.getCenter(center);
+            this.controlsManager.setTarget(center.x, center.y, center.z);
+            this.controlsManager.update();
+        } else if (!this.loadingMode) {
+            // Reset controls target to container center when not in loading mode
+            this.controlsManager.setTarget(0, 0, 0);
+            this.controlsManager.update();
+        }
     }
 
     public clear(): void {

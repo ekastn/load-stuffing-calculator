@@ -196,8 +196,15 @@ class _LoadingSessionPageState extends State<LoadingSessionPage> {
     final session = provider.currentSession;
     if (session == null) return const SizedBox.shrink();
 
-    // We reuse PlanVisualizerView but pass the current step to highlight
-    return PlanVisualizerView(planId: session.planId);
+    // Pass plan data to avoid API calls on initial load
+    final planData = provider.getPlanDataJson();
+
+    return PlanVisualizerView(
+      planId: session.planId,
+      loadingMode: true,
+      step: session.currentStepIndex + 1,
+      planData: planData,
+    );
   }
 
   Widget _buildActionButtons(LoadingProvider provider, ExpectedItem? item) {

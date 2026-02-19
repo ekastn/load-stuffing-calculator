@@ -9,7 +9,9 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(
-      RequestOptions options, RequestInterceptorHandler handler) async {
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     final token = await _storage.getAccessToken();
     if (token != null) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -29,14 +31,16 @@ class AuthInterceptor extends Interceptor {
 
 class ApiService {
   final Dio _dio;
-  
+
   ApiService(StorageService storage)
-      : _dio = Dio(BaseOptions(
-          baseUrl: AppConstants.apiBaseUrl,
+    : _dio = Dio(
+        BaseOptions(
+          baseUrl: Constants.apiBaseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
           headers: {'Content-Type': 'application/json'},
-        )) {
+        ),
+      ) {
     _dio.interceptors.add(AuthInterceptor(storage));
   }
 

@@ -118,6 +118,7 @@ type Product struct {
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 	WorkspaceID *uuid.UUID       `json:"workspace_id"`
+	Sku         *string          `json:"sku"`
 }
 
 type RefreshToken struct {

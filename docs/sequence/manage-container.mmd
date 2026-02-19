@@ -1,0 +1,59 @@
+sequenceDiagram
+    actor User as Admin/Planner
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as ContainerHandler
+    participant Service as ContainerService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Container action
+    Frontend->>API: Request to /api/v1/containers
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt POST /containers (Create)
+        Note over Middleware: Check "container:create"
+        API->>Handler: CreateContainer(ctx)
+        Handler->>Service: CreateContainer(ctx, req)
+        Service->>DB: Insert container (workspace scoped)
+        DB-->>Service: Container record
+        Service-->>Handler: ContainerResponse
+        Handler-->>Frontend: 201 Created
+
+    else GET /containers (List)
+        Note over Middleware: Check "container:read"
+        API->>Handler: ListContainers(ctx)
+        Handler->>Service: ListContainers(ctx, page, limit)
+        Service->>DB: Query containers (workspace scoped, paginated)
+        DB-->>Service: Container list
+        Service-->>Handler: []ContainerResponse
+        Handler-->>Frontend: 200 OK [{containers}]
+
+    else GET /containers/:id (Get One)
+        Note over Middleware: Check "container:read"
+        API->>Handler: GetContainer(ctx)
+        Handler->>Service: GetContainer(ctx, id)
+        Service->>DB: Query by ID (workspace scoped)
+        DB-->>Service: Container or nil
+        Handler-->>Frontend: 200 OK or 404 Not Found
+
+    else PUT /containers/:id (Update)
+        Note over Middleware: Check "container:update"
+        API->>Handler: UpdateContainer(ctx)
+        Handler->>Service: UpdateContainer(ctx, id, req)
+        Service->>DB: Update container (workspace scoped)
+        DB-->>Service: Success or ErrNotFound
+        Handler-->>Frontend: 200 OK or 404 Not Found
+
+    else DELETE /containers/:id (Delete)
+        Note over Middleware: Check "container:delete"
+        API->>Handler: DeleteContainer(ctx)
+        Handler->>Service: DeleteContainer(ctx, id)
+        Service->>DB: Delete container (workspace scoped)
+        DB-->>Service: Success or ErrInUse
+        Handler-->>Frontend: 204 No Content or 409 Conflict
+    end
+
+    Frontend-->>User: Display result

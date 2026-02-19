@@ -1,0 +1,59 @@
+sequenceDiagram
+    actor User as Admin/Planner
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as ProductHandler
+    participant Service as ProductService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Product action
+    Frontend->>API: Request to /api/v1/products
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt POST /products (Create)
+        Note over Middleware: Check "product:create"
+        API->>Handler: CreateProduct(ctx)
+        Handler->>Service: CreateProduct(ctx, req)
+        Service->>DB: Insert product (workspace scoped)
+        DB-->>Service: Product record or ErrDuplicateSKU
+        Service-->>Handler: ProductResponse
+        Handler-->>Frontend: 201 Created or 409 Conflict
+
+    else GET /products (List)
+        Note over Middleware: Check "product:read"
+        API->>Handler: ListProducts(ctx)
+        Handler->>Service: ListProducts(ctx, page, limit)
+        Service->>DB: Query products (workspace scoped, paginated)
+        DB-->>Service: Product list
+        Service-->>Handler: []ProductResponse
+        Handler-->>Frontend: 200 OK [{products}]
+
+    else GET /products/:id (Get One)
+        Note over Middleware: Check "product:read"
+        API->>Handler: GetProduct(ctx)
+        Handler->>Service: GetProduct(ctx, id)
+        Service->>DB: Query by ID (workspace scoped)
+        DB-->>Service: Product or nil
+        Handler-->>Frontend: 200 OK or 404 Not Found
+
+    else PUT /products/:id (Update)
+        Note over Middleware: Check "product:update"
+        API->>Handler: UpdateProduct(ctx)
+        Handler->>Service: UpdateProduct(ctx, id, req)
+        Service->>DB: Update product (workspace scoped)
+        DB-->>Service: Success or ErrNotFound/ErrDuplicateSKU
+        Handler-->>Frontend: 200 OK or 404/409 Error
+
+    else DELETE /products/:id (Delete)
+        Note over Middleware: Check "product:delete"
+        API->>Handler: DeleteProduct(ctx)
+        Handler->>Service: DeleteProduct(ctx, id)
+        Service->>DB: Delete product (workspace scoped)
+        DB-->>Service: Success or ErrInUse
+        Handler-->>Frontend: 204 No Content or 409 Conflict
+    end
+
+    Frontend-->>User: Display result

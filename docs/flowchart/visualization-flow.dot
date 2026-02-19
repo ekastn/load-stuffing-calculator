@@ -1,0 +1,82 @@
+digraph VisualizationFlow {
+    rankdir=TB;
+    bgcolor="white";
+    fontname="Arial";
+    node [fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=9];
+    nodesep=0.8;
+    ranksep=0.5;
+    
+    // Start/End
+    node [shape=circle, style=filled, fillcolor="#C8E6C9", color="#388E3C", width=0.7, fixedsize=true];
+    start [label="Start"];
+    end [label="End"];
+    
+    // Decisions
+    node [shape=diamond, fillcolor="#FFF9C4", color="#FBC02D", width=1.2, height=0.9, fixedsize=false];
+    d_res [label="Ada\nHasil?"];
+    d_valid [label="Step\nValid?"];
+    d_act [label="User\nAction?"];
+    
+    // Init phase
+    node [shape=box, style="rounded,filled", fillcolor="#E3F2FD", color="#1976D2", width=1.8, height=0.5];
+    p1 [label="Buka Halaman"];
+    p2 [label="Fetch Plan & Placements"];
+    
+    // Three.js
+    node [fillcolor="#E8F5E9", color="#388E3C"];
+    p3 [label="Init Three.js Scene"];
+    p4 [label="Render Container Wire"];
+    p5 [label="Set Step = 1"];
+    
+    // Render loop
+    node [fillcolor="#FFF3E0", color="#F57C00"];
+    p6 [label="Filter Items by Step"];
+    p7 [label="Render 3D Boxes"];
+    p8 [label="Update UI Info"];
+    
+    // Interaction
+    node [fillcolor="#E3F2FD", color="#1976D2"];
+    p9 [label="Tunggu User Input"];
+    p10 [label="Step++"];
+    p11 [label="Step--"];
+    
+    // Empty state
+    node [fillcolor="#FFEBEE", color="#D32F2F"];
+    p_empty [label="Show Empty State"];
+    
+    // Spacers
+    node [shape=point, width=0, height=0];
+    inv1 [style=invis];
+    inv2 [style=invis];
+    
+    // Flow
+    start -> p1 -> p2 -> d_res;
+    
+    // Result check
+    {rank=same; p3; inv1; p_empty}
+    d_res -> p3 [label="Ya"];
+    d_res -> p_empty [label="Tidak"];
+    p3 -> inv1 [style=invis];
+    inv1 -> p_empty [style=invis];
+    p_empty -> end;
+    
+    // Init chain
+    p3 -> p4 -> p5 -> p6 -> p7 -> p8 -> p9 -> d_act;
+    
+    // Action branch
+    {rank=same; p10; inv2; p11; end}
+    d_act -> p10 [label="Next"];
+    d_act -> p11 [label="Prev"];
+    d_act -> end [label="Close"];
+    p10 -> inv2 [style=invis];
+    inv2 -> p11 [style=invis];
+    
+    // Step validation loop
+    p10 -> d_valid;
+    {rank=same; p6; d_valid}
+    d_valid -> p6 [label="Ya"];
+    d_valid -> p9 [label="Max"];
+    
+    p11 -> p6;
+}

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem 3D Bin Packing Interaktif</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --light-gray: #ecf0f1;
+            --slide-padding: 60px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Background Decorations from Poster */
+        .bg-decorations {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            /* Behind slides */
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .decor-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(var(--light-gray) 1px, transparent 1px),
+                linear-gradient(90deg, var(--light-gray) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center;
+            opacity: 0.5;
+        }
+
+        .decor-dots {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            background-image: radial-gradient(var(--primary-color) 2px, transparent 2px);
+            background-size: 10px 10px;
+            opacity: 0.3;
+        }
+
+        .dots-1 {
+            bottom: 40px;
+            left: 40px;
+        }
+
+        .dots-2 {
+            top: 40px;
+            right: 40px;
+        }
+
+        .decor-stripes {
+            position: absolute;
+            width: 150px;
+            height: 40px;
+            background-image: repeating-linear-gradient(45deg,
+                    var(--accent-color),
+                    var(--accent-color) 1px,
+                    transparent 1px,
+                    transparent 10px);
+            opacity: 0.15;
+        }
+
+        .stripes-1 {
+            bottom: 80px;
+            right: 60px;
+            transform: rotate(-15deg);
+        }
+
+        .decor-plus {
+            position: absolute;
+            color: var(--primary-color);
+            font-weight: bold;
+            opacity: 0.2;
+            font-family: monospace;
+            font-size: 60px;
+        }
+
+        .plus-1 {
+            top: 15%;
+            left: 15%;
+        }
+
+        .plus-2 {
+            bottom: 15%;
+            right: 15%;
+        }
+
+        .decor-circuit {
+            position: absolute;
+            color: var(--primary-color);
+            opacity: 0.3;
+        }
+
+        .circuit-1 {
+            top: 100px;
+            right: 50px;
+            width: 300px;
+            height: 300px;
+            transform: rotate(90deg);
+        }
+
+        .circuit-2 {
+            bottom: 50px;
+            left: 50px;
+            width: 250px;
+            height: 250px;
+        }
+
+        .slide-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            z-index: 20;
+            /* Slides above decorations */
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: var(--slide-padding);
+            /* Transparent background so decorations show through */
+            background: transparent;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .slide.active {
+            opacity: 1;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .slide-content {
+            max-width: 1400px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .slide.center-content .slide-content {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 0.5em;
+            color: var(--primary-color);
+            /* Changed from accent to primary for better contrast */
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 2.8rem;
+            margin-bottom: 0.8em;
+            color: var(--accent-color);
+            border-bottom: 4px solid var(--primary-color);
+            padding-bottom: 15px;
+            display: inline-block;
+            /* Only border the text width */
+            padding-right: 20px;
+        }
+
+        ul,
+        ol {
+            font-size: 2rem;
+            list-style-type: none;
+            color: var(--text-color);
+        }
+
+        li {
+            margin-bottom: 0.8em;
+            padding-left: 1.5em;
+            position: relative;
+        }
+
+        li::before {
+            content: "➤";
+            color: var(--accent-color);
+            position: absolute;
+            left: 0;
+            font-size: 1.5rem;
+            top: 0.2em;
+        }
+
+        p {
+            font-size: 2rem;
+            line-height: 1.6;
+            margin-bottom: 0.8em;
+            color: #444;
+        }
+
+        .img-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            max-height: 70vh;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 65vh;
+            border-radius: 4px;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: none;
+            padding: 10px;
+            font-size: 3rem;
+            /* Large arrows */
+            cursor: pointer;
+            opacity: 0.5;
+            /* Subtle by default */
+            transition: all 0.2s;
+            box-shadow: none;
+        }
+
+        button:hover {
+            opacity: 1;
+            color: var(--accent-color);
+            background-color: transparent;
+            transform: scale(1.2);
+            /* Slight grow instead of lift */
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 6px;
+            background-color: var(--accent-color);
+            width: 0%;
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            z-index: 100;
+            font-weight: bold;
+            opacity: 0.6;
+        }
+
+        /* Specific Slide Layouts */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: start;
+        }
+
+        .highlight-box {
+            background-color: var(--light-gray);
+            padding: 30px;
+            border-radius: 12px;
+            border-left: 8px solid var(--accent-color);
+            margin-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .ulbi-logo {
+            position: absolute;
+            top: 40px;
+            right: 50px;
+            width: 200px;
+            z-index: 1000;
+            filter: none;
+            /* Removed drop shadow for cleaner look */
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-bar" id="progressBar"></div>
+    <div class="slide-number" id="slideNumber">1 / 12</div>
+
+    <!-- Background Decorations (Static across slides) -->
+    <div class="bg-decorations">
+        <div class="decor-grid"></div>
+        <div class="decor-dots dots-1"></div>
+        <div class="decor-dots dots-2"></div>
+        <div class="decor-stripes stripes-1"></div>
+        <div class="decor-plus plus-1">+</div>
+        <div class="decor-plus plus-2">+</div>
+
+        <svg class="decor-circuit circuit-1" width="300" height="300" viewBox="0 0 100 100">
+            <path d="M10,10 L40,10 L40,50 L80,50" fill="none" stroke="currentColor" stroke-width="0.5" />
+            <circle cx="10" cy="10" r="2" fill="currentColor" />
+            <circle cx="80" cy="50" r="2" fill="none" stroke="currentColor" stroke-width="0.5" />
+        </svg>
+        <svg class="decor-circuit circuit-2" width="200" height="200" viewBox="0 0 100 100">
+            <path d="M90,90 L60,90 L60,40 L20,40" fill="none" stroke="currentColor" stroke-width="0.5" />
+            <circle cx="90" cy="90" r="2" fill="currentColor" />
+            <circle cx="20" cy="40" r="2" fill="none" stroke="currentColor" stroke-width="0.5" />
+        </svg>
+    </div>
+
+    <div class="slide-container">
+        <!-- Logo ULBI (using normal, not dark wide version) -->
+        <img src="images/LOGO ULBI - WIDE DARK.png" class="ulbi-logo" alt="Logo ULBI">
+
+        <!-- Slide 1: Title -->
+        <div class="slide active center-content">
+            <div class="slide-content">
+                <h1>PLATFORM LOAD & STUFFING CALCULATOR</h1>
+                <h2 style="font-size: 2.5rem; border-bottom: none; margin-bottom: 2rem; color: #aaa;">DENGAN
+                    ALGORITMA
+                    3D BIN PACKING UNTUK OPTIMASI DAN VISUALISASI PEMUATAN</h2>
+
+                <div
+                    style="margin-top: 50px; max-width: 1200px; margin-left: auto; margin-right: auto; text-align: center;">
+
+                    <!-- Row 1: Students -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-bottom: 40px;">
+                        <div>
+                            <h3 style="font-size: 2rem; color: var(--primary-color); margin-bottom: 5px;">Muhamad
+                                Saladin Eka Septian</h3>
+                            <p style="font-size: 1.5rem; color: #666; margin: 0;">NPM: 714230037</p>
+                        </div>
+                        <div>
+                            <h3 style="font-size: 2rem; color: var(--primary-color); margin-bottom: 5px;">Dina Oktafiani
+                            </h3>
+                            <p style="font-size: 1.5rem; color: #666; margin: 0;">NPM: 714230047</p>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div
+                        style="width: 150px; height: 3px; background: var(--accent-color); margin: 0 auto 40px auto; opacity: 0.5;">
+                    </div>
+
+                    <!-- Row 2: Supervisors -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px;">
+                        <div>
+                            <p
+                                style="font-size: 1.4rem; color: var(--accent-color); font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">
+                                Pembimbing</p>
+                            <h3 style="font-size: 1.8rem; color: var(--text-color); margin: 0;">Roni Andarsyah, S.T.,
+                                M.Kom., SFPC</h3>
+                        </div>
+                        <div>
+                            <p
+                                style="font-size: 1.4rem; color: var(--accent-color); font-weight: bold; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;">
+                                Penguji</p>
+                            <h3 style="font-size: 1.8rem; color: var(--text-color); margin: 0;">Nisa Hanum Harani,
+                                S.Kom., M.T., CDSP, SFPC</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Urgensi -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>1. Urgensi Penelitian</h2>
+                <ul>
+                    <li><strong>Krisis Pengiriman Global:</strong> Lonjakan tarif kargo (hingga 173% rute Asia-Eropa
+                        di
+                        2024 - Red Sea Crisis).</li>
+                    <li><strong>Efisiensi Ruang:</strong> Ruang kosong dalam kontainer = Biaya terbuang.
+                    </li>
+                    <li><strong>Ketergantungan Manual:</strong> Perencanaan muatan masih bergantung pada insting
+                        operator, yang tidak konsisten.</li>
+                    <li><strong>Masalah Keamanan:</strong> Susunan manual sering kali tidak stabil, membahayakan
+                        muatan.
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 3a: Tinjauan Pustaka Detail -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>2. State of the Art</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+                    <div>
+                        <h3
+                            style="color: var(--accent-color); border-bottom: 2px solid var(--primary-color); padding-bottom: 5px; margin-bottom: 15px;">
+                            Advanced Algorithms</h3>
+                        <ul>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Ma et al. (2025) - Hybrid Block-Building & GA:</strong><br>
+                                <span style="color: #aaa;">"Optimized placement for strongly heterogeneous
+                                    cargo."</span><br>
+                                Menggabungkan heuristik dengan Genetic Algorithm untuk hasil optimal, namun waktu
+                                komputasi masih menjadi tantangan untuk interaksi real-time.
+                            </li>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Ananno et al. (2024) - Genetic Algorithm:</strong><br>
+                                <span style="color: #aaa;">"Multi-container optimization with real world
+                                    constraints."</span><br>
+                                Sangat baik untuk menangani constraint berat, tetapi waktu komputasi cenderung lama
+                                untuk skenario interaktif.
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3
+                            style="color: var(--accent-color); border-bottom: 1px solid #444; padding-bottom: 5px; margin-bottom: 15px;">
+                            Existing Tools</h3>
+                        <ul>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Krebs & Ehmke (2023):</strong><br>
+                                <span style="color: #aaa;">"Solution validator and visualizer."</span><br>
+                                Tool desktop (Java/C++) untuk validasi matematis peneliti. Tidak dirancang untuk UX
+                                operator lapangan.
+                            </li>
+                            <li style="margin-bottom: 15px;">
+                                <strong>Poerwandono et al. (2023):</strong><br>
+                                <span style="color: #aaa;">"Web-based 3D visualization."</span><br>
+                                Menggunakan Three.js tetapi hanya menampilkan hasil akhir (statis). Operator tidak
+                                tahu
+                                urutan mana yang harus dimasukkan duluan.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Slide 4: Gap Penelitian -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>3. Gap Penelitian</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 30px;">
+                            Solusi algoritma yang ada seringkali berhenti sebagai <em>"desktop-based
+                                tools for researchers"</em> [Krebs2023], bukan alat operasional yang mudah diakses.
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            Visualisasi eksisting [Poerwandono2023] hanya menampilkan hasil akhir, tanpa fitur
+                            <em>"integrated step-by-step loading guidance"</em> untuk operator.
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            Evaluasi algoritma sering menggunakan <em>"randomly generated datasets"</em>
+                            [Ribeiro2023],
+                            yang tidak mencerminkan kompleksitas heterogen industri nyata.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: Identifikasi Masalah -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>4. Identifikasi Masalah</h2>
+                <div>
+                    <ol style="margin-left: 40px; line-height: 1.6;">
+                        <li style="margin-bottom: 25px;">
+                            <strong>Keterbatasan Integrasi Sistem:</strong><br>
+                            Tool optimasi yang ada umumnya <em>standalone</em>/desktop, sulit diintegrasikan dengan
+                            sistem manajemen gudang modern.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Kesenjangan Algoritma vs Eksekusi:</strong><br>
+                            Operator sulit menerjemahkan hasil perhitungan matematis ke dalam tumpukan fisik tanpa
+                            panduan visual yang kronologis.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Validasi yang Tidak Realistis:</strong><br>
+                            Banyak studi menggunakan data simulasi acak yang tidak mewakili kompleksitas barang
+                            heterogen di lapangan.
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Tujuan Penelitian -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>5. Tujuan Penelitian</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 25px;">
+                            <strong>1. Arsitektur Terpisah (Layered Architecture):</strong><br>
+                            Merancang sistem dengan pemisahan tegas antara <em>Calculation Engine</em> (Python) dan
+                            <em>Data Management</em> (Go/Postgres), untuk menjamin skalabilitas dan kemudahan
+                            integrasi.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>2. Visualisasi Interaktif & Panduan Langkah:</strong><br>
+                            Mengembangkan visualisasi berbasis WebGL yang tidak hanya menampilkan hasil akhir,
+                            tetapi
+                            memberikan <em>"step-by-step loading guidance"</em> agar dapat diikuti secara kronologis
+                            oleh operator.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>3. Evaluasi Skenario Heterogen:</strong><br>
+                            Mengukur efektivitas sistem menggunakan skenario item yang realistis (bukan data acak),
+                            untuk memvalidasi performa algoritma <em>Bigger First</em> dalam kondisi operasional
+                            nyata.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- <!-- Slide 7: Alasan Memakai Heuristik --> -->
+        <!-- <div class="slide"> -->
+        <!--     <div class="slide-content"> -->
+        <!--         <h2>6. Alasan Memakai Heuristik</h2> -->
+        <!--         <div class="two-column"> -->
+        <!--             <div> -->
+        <!--                 <ul> -->
+        <!--                     <li style="margin-bottom: 20px;"> -->
+        <!--                         <strong>1. Masalah NP-Hard (Exponential Explosion):</strong><br> -->
+        <!--                         Secara matematis, mencari solusi "paling sempurna" untuk 300 item butuh waktu jutaan -->
+        <!--                         tahun. Heuristik memangkas ruang pencarian ini. -->
+        <!--                     </li> -->
+        <!--                     <li style="margin-bottom: 20px;"> -->
+        <!--                         <strong>2. "Good Enough" in Seconds:</strong><br> -->
+        <!--                         Di lapangan, operator butuh solusi dalam < 30 detik (Real-time). Algoritma eksak butuh -->
+        <!--                             berjam-jam. Heuristik memberi solusi 80-90% optimal secara instan. </li> -->
+        <!--                     <li style="margin-bottom: 20px;"> -->
+        <!--                         <strong>3. Deterministic & Predictable:</strong><br> -->
+        <!--                         Hasilnya selalu konsisten (tidak berubah-ubah seperti AI/Genetic Algo), sehingga -->
+        <!--                         mudah -->
+        <!--                         diverifikasi dan dipercaya oleh manusia. -->
+        <!--                     </li> -->
+        <!--                 </ul> -->
+        <!--             </div> -->
+        <!--             <div class="highlight-box" style="display: flex; flex-direction: column; justify-content: center;"> -->
+        <!--                 <h3 style="border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 15px;"> -->
+        <!--                     Strategi: -->
+        <!--                     Bigger First Descending</h3> -->
+        <!--                 <p style="margin-bottom: 15px;"> -->
+        <!--                     <em>"Big Rocks First" Principle</em> -->
+        <!--                 </p> -->
+        <!--                 <ul> -->
+        <!--                     <li>Item besar ditaruh duluan sebagai fondasi stabil.</li> -->
+        <!--                     <li>Item kecil mengisi celah (gap-filling).</li> -->
+        <!--                     <li>Mencegah "floating items" dan ketidakstabilan tumpukan.</li> -->
+        <!--                 </ul> -->
+        <!--             </div> -->
+        <!--         </div> -->
+        <!--     </div> -->
+        <!-- </div> -->
+
+        <!-- Slide 8: Arsitektur Sistem -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>6. Arsitektur Sistem</h2>
+                <div class="img-container">
+                    <img src="images/architecture.png" alt="Arsitektur Sistem">
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Alur Proses -->
+        <div class="slide center-content">
+            <div class="slide-content">
+                <h2>7. Alur Proses Pemuatan</h2>
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="img-container" style="max-height: 50vh; margin-bottom: 20px;">
+                        <img src="images/flowchart.png" alt="Flowchart Proses" style="max-height: 50vh;">
+                    </div>
+                    <div style="width: 80%; text-align: left;">
+                        <ol style="margin-left: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <li>Input Dimensi Container & Item.</li>
+                            <li>Pre-processing (Sorting Bigger First).</li>
+                            <li>Packing Algorithm:
+                                <ul style="color: #aaa; margin-top: 5px;">
+                                    <li>Cari posisi valid (non-overlap).</li>
+                                    <li>Cek stabilitas (75% support).</li>
+                                </ul>
+                            </li>
+                            <li>Output JSON Koordinat & Urutan.</li>
+                            <li>Visualisasi WebGL (Three.js).</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Slide 9: Demo Aplikasi -->
+        <div class="slide center-content">
+            <div class="slide-content">
+                <h2>8. Demo Aplikasi</h2>
+                <div
+                    style="margin: 30px 0; display: flex; justify-content: center; align-items: center; height: 400px;">
+                    <iframe src="https://lottie.host/embed/df87e9f9-de32-40f6-a7ed-5c59387a264d/jhmd16uPJr.lottie"
+                        style="width: 400px; height: 400px; border: none;"></iframe>
+                </div>
+                <a href="https://stuffing.irc-enter.tech" target="_blank" rel="noopener noreferrer"
+                    style="display: inline-block; margin-top: 20px; color: var(--accent-color); font-size: 1.2rem; font-weight: 600; text-decoration: underline;">
+                    https://stuffing.irc-enter.tech →
+                </a>
+            </div>
+        </div>
+
+        <!-- Slide 10: Evaluasi Hasil -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>9. Evaluasi Hasil Pengujian</h2>
+                <div class="two-column">
+                    <div>
+                        <ul>
+                            <li><strong>Skenario Uji:</strong> 50 - 300 item heterogen.</li>
+                            <li><strong>Performansi:</strong>
+                                <ul>
+                                    <li>Utilisasi Volume ~55% (Skenario Terberat).</li>
+                                    <li>Fill Rate 100% (Semua barang masuk).</li>
+                                </ul>
+                            </li>
+                            <li><strong>Waktu Komputasi:</strong> Quadratic O(n²), tapi tetap < 40 detik untuk 300
+                                    items.</li>
+                        </ul>
+                    </div>
+                    <div class="img-container">
+                        <img src="images/detailed_metrics.png" alt="Grafik Hasil Pengujian">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: Challenge & Limitasi -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>10. Tantangan & Limitasi</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 30px;">
+                            <strong>Bentuk Barang (Irregular Shapes):</strong><br>
+                            Saat ini algoritma hanya mendukung <em>Rectangular Boxes</em>. Belum bisa menangani
+                            barang
+                            berbentuk silinder, L-shape, atau karung yang bisa berubah bentuk (deformable).
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            <strong>Local Optima (Deterministik):</strong><br>
+                            Karena sifatnya deterministik, algoritma tidak melakukan
+                            eksplorasi solusi alternatif yang "mungkin" lebih baik, tidak seperti AI yang bisa
+                            belajar
+                            dari kesalahan.
+                        </li>
+                        <li style="margin-bottom: 30px;">
+                            <strong>Batasan Fisik Ekstrim (Physical Constraints):</strong><br>
+                            Pengujian belum mencakup skenario <em>Max Weight Limit</em> (batas tonase kontainer)
+                            atau
+                            <em>Load Bearing</em> (kekuatan tumpukan bawah menahan beban atas) secara ekstrim. Fokus
+                            saat ini masih pada efisiensi volume.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Slide 12: Future Direction -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>11. Pengembangan Lanjutan</h2>
+                <div>
+                    <ul>
+                        <li style="margin-bottom: 25px;">
+                            <strong>AI & Metaheuristics:</strong> integrasi Genetic Algorithm atau Simulated
+                            Annealing
+                            untuk mencari solusi global optimum (meningkatkan utilisasi ruang).
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Online Packing (Real-time):</strong> Implementasi Deep Reinforcement Learning
+                            (DRL)
+                            untuk menangani barang yang datang secara dinamis (live stream of items).
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>IoT Integration:</strong> Integrasi dengan sensor dimensi otomatis dan tracking
+                            real-time saat pemuatan fisik.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>User Experience Study:</strong> Melakukan studi formal dengan operator gudang
+                            asli
+                            untuk mengukur efektivitas panduan visual di lapangan.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 13: Kesimpulan -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>12. Kesimpulan</h2>
+                <div style="text-align: left;">
+                    <p style="margin-bottom: 30px;">
+                        Penelitian ini berhasil mengembangkan sistem 3D Bin Packing interaktif yang menjembatani
+                        gap antara algoritma optimasi dan operasional gudang.
+                    </p>
+                    <ol>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Kinerja Komputasi:</strong><br>
+                            Penerapan heuristik <em>Bigger First</em> memproses 300 item heterogen dalam waktu &lt; 40
+                            detik, mencapai <strong>Fill Rate 100%</strong> dan utilisasi volume 55,26% pada skenario
+                            uji terberat.
+                        </li>
+                        <li style="margin-bottom: 25px;">
+                            <strong>Validasi Eksekusi:</strong><br>
+                            Implementasi <strong>Visualisasi WebGL Step-by-Step</strong> mentransformasi sekumpulan
+                            koordinat 3D menjadi instruksi pemuatan sekuensial. Fitur ini memverifikasi bahwa solusi
+                            algoritma tidak hanya optimal secara spasial, tetapi juga <strong>dapat direalisasikan
+                                secara
+                                fisik</strong> oleh operator tanpa ambiguitas urutan tumpukan.
+                        </li>
+                    </ol>
+                </div>
+                <div class="highlight-box" style="margin-top: 40px; text-align: center;">
+                    <p><strong>Terima Kasih</strong></p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button id="prevBtn" onclick="prevSlide()">❮</button>
+        <button id="nextBtn" onclick="nextSlide()">❯</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const progressBar = document.getElementById('progressBar');
+        const slideNumberDisplay = document.getElementById('slideNumber');
+        const totalSlides = slides.length;
+
+        function updateSlide() {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[currentSlide].classList.add('active');
+
+            // Update Progress Bar
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            progressBar.style.width = progress + '%';
+
+            // Update Slide Number
+            slideNumberDisplay.textContent = `${currentSlide + 1} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Initialize
+        updateSlide();
+    </script>
+</body>
+
+</html>

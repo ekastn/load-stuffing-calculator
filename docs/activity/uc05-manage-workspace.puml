@@ -1,0 +1,66 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Access Workspaces page;
+:View workspace list;
+:Select action
+(Create/Update/Delete/Switch);
+
+note right
+  CREATE: Auto-add creator as owner
+  UPDATE: Rename or transfer ownership
+  DELETE: CASCADE all related data
+  SWITCH: New JWT with workspace context
+end note
+
+:Perform action;
+:Submit;
+
+|Frontend|
+:Validate input;
+
+if (Valid?) then (yes)
+  :Send HTTP request;
+  
+  |Backend|
+  :Validate authentication
+  and authorization;
+  
+  if (Authorized?) then (yes)
+    |Database|
+    :Execute operation
+    with business rules;
+    
+    |Backend|
+    :Return response;
+    
+    |Frontend|
+    if (Success?) then (yes)
+      :Show success message;
+      :Update UI state;
+    else (no)
+      :Display error message;
+    endif
+  else (no)
+    :Return 403 Forbidden;
+    
+    |Frontend|
+    :Show permission error;
+  endif
+else (no)
+  :Show validation error;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

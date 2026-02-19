@@ -180,7 +180,7 @@ export default function DashboardPage() {
                 <span className="text-muted-foreground">Just now</span>
               </div>
               <div className="flex items-center justify-between border-b border-border pb-3">
-                <span className="text-foreground">Welcome to Load & Stuffing</span>
+                <span className="text-foreground">Welcome to LoadIQ</span>
                 <span className="text-muted-foreground">Real-time Dashboard</span>
               </div>
             </div>

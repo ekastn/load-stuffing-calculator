@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poster Penelitian - 3D Bin Packing Interaktif</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="poster-container">
+        <!-- Background Decorations -->
+        <div class="bg-decorations">
+            <!-- Grid and Dots -->
+            <div class="decor-grid grid-1"></div>
+            <div class="decor-dots dots-1"></div>
+
+            <!-- Graphic Accents -->
+            <div class="decor-stripes stripes-1"></div>
+            <div class="decor-plus plus-1">+</div>
+            <div class="decor-plus plus-2">+</div>
+            <div class="decor-plus plus-3">+</div>
+
+            <!-- Circuit Lines (SVG) -->
+            <svg class="decor-circuit circuit-1" width="300" height="300" viewBox="0 0 100 100">
+                <path d="M10,10 L40,10 L40,50 L80,50" fill="none" stroke="currentColor" stroke-width="0.5" />
+                <circle cx="10" cy="10" r="2" fill="currentColor" />
+                <circle cx="80" cy="50" r="2" fill="none" stroke="currentColor" stroke-width="0.5" />
+            </svg>
+            <svg class="decor-circuit circuit-2" width="200" height="200" viewBox="0 0 100 100">
+                <path d="M90,90 L60,90 L60,40 L20,40" fill="none" stroke="currentColor" stroke-width="0.5" />
+                <circle cx="90" cy="90" r="2" fill="currentColor" />
+                <circle cx="20" cy="40" r="2" fill="none" stroke="currentColor" stroke-width="0.5" />
+            </svg>
+
+            <!-- Network Nodes (SVG) -->
+            <svg class="decor-network network-1" width="200" height="200" viewBox="0 0 100 100">
+                <circle cx="20" cy="20" r="3" fill="currentColor" />
+                <circle cx="80" cy="30" r="3" fill="currentColor" />
+                <circle cx="50" cy="80" r="3" fill="currentColor" />
+                <line x1="20" y1="20" x2="80" y2="30" stroke="currentColor" stroke-width="0.5" />
+                <line x1="80" y1="30" x2="50" y2="80" stroke="currentColor" stroke-width="0.5" />
+                <line x1="50" y1="80" x2="20" y2="20" stroke="currentColor" stroke-width="0.5" />
+            </svg>
+
+            <!-- Tech Corner Brackets -->
+            <div class="decor-bracket bracket-tl"></div>
+            <div class="decor-bracket bracket-br"></div>
+
+            <!-- Hexagon Grid -->
+            <div class="decor-hex"></div>
+        </div>
+
+        <!-- Header Section -->
+        <header class="poster-header">
+            <h1>Interactive 3D Bin Packing System for Optimized Container Loading Operations</h1>
+            <div class="authors">
+                <p>Muhamad Saladin Eka Septian, Dina Oktafiani</p>
+                <p class="affiliation">Program Studi D4 Teknik Informatika, Universitas Logistik dan Bisnis Internasional</p>
+                <p class="affiliation">Dosen Pembimbing: Roni Andarsyah, S.T., M.Kom., SFPC</p>
+            </div>
+        </header>
+
+
+        <!-- Main Content Grid (2 Columns) -->
+        <div class="poster-grid">
+
+            <!-- Left Column -->
+            <div class="column left-column">
+
+                <!-- Section 1: Latar Belakang -->
+                <section class="poster-section">
+                    <h2>Latar Belakang & Masalah</h2>
+                    <div class="section-content">
+                        <ul>
+                            <li><strong>Inefisiensi Manual:</strong> Perencanaan muatan kontainer saat ini sangat
+                                bergantung pada intuisi operator, menyebabkan ruang kosong yang tidak optimal.</li>
+                            <li><strong>Kesenjangan Alat (The Gap):</strong> Algoritma optimasi (3D-BPP) sudah ada,
+                                namun alat yang tersedia ditujukan untuk peneliti, bukan untuk <strong>operator
+                                    gudang</strong>.</li>
+                            <li><strong>Kesulitan Eksekusi:</strong> Rencana muatan yang optimal di atas kertas sulit
+                                dieksekusi secara fisik tanpa panduan visual yang jelas.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Section 2: Tujuan -->
+                <section class="poster-section highlight-section">
+                    <h2>Tujuan Penelitian</h2>
+                    <div class="section-content">
+                        <p>Mengembangkan sistem perencanaan muatan berbasis web yang mengintegrasikan algoritma
+                            <strong>3D Bin Packing</strong> dengan <strong>Visualisasi Interaktif</strong> untuk memandu
+                            operator secara langkah-demi-langkah.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Section 3: Metodologi -->
+                <section class="poster-section">
+                    <h2>Metodologi & Algoritma</h2>
+                    <div class="section-content">
+                        <h3>1. Arsitektur Sistem</h3>
+                        <div class="mermaid" style="width: 100%; margin-bottom: -10px; margin-top: -20px; min-height: 180px;">
+                            flowchart LR
+                            A["<b>Frontend Web</b><br />Next.js + Three.js"]:::frontend -->|HTTP/JSON| B["<b>Backend
+                                API</b><br />Go (Gin Framework)"]:::backend
+                            B -->|SQL| C[("<b>Database</b><br />PostgreSQL")]:::db
+                            B -->|gRPC/HTTP| D["<b>Packing Service</b><br />Python + py3dbp"]:::service
+                            
+                            classDef frontend fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff,font-size:14px;
+                            classDef backend fill:#2980b9,stroke:#2c3e50,stroke-width:2px,color:#fff,font-size:14px;
+                            classDef db fill:#27ae60,stroke:#2c3e50,stroke-width:2px,color:#fff,font-size:14px;
+                            classDef service fill:#8e44ad,stroke:#2c3e50,stroke-width:2px,color:#fff,font-size:14px;
+                            
+                            linkStyle default stroke:#00a8ff,stroke-width:3px,fill:none;
+                        </div>
+                        <script type="module">
+                            import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+                            mermaid.initialize({ 
+                                startOnLoad: true, 
+                                theme: 'dark', 
+                                securityLevel: 'loose',
+                                flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis', nodeSpacing: 30, rankSpacing: 40 },
+                                themeVariables: { 
+                                    primaryColor: '#0a2b5e', 
+                                    lineColor: '#00a8ff', 
+                                    textColor: '#ffffff',
+                                    mainBkg: '#0a2b5e',
+                                    nodeBorder: '#00a8ff'
+                                } 
+                            });
+                        </script>
+
+                        <h3>2. Algoritma & Batasan (Constraints)</h3>
+                        <p>Menggunakan pendekatan <strong>Constructive Heuristic</strong> (Bigger First) dengan batasan
+                            fisik yang ketat:</p>
+                        <ul>
+                            <li><strong>Volume & Berat:</strong> Total muatan tidak boleh melebihi kapasitas dan batas
+                                berat kontainer.</li>
+                            <li><strong>Orientasi (6 Sumbu):</strong> Rotasi barang dibatasi sesuai jenisnya (misal:
+                                "This Side Up").</li>
+                            <li><strong>Non-Overlapping:</strong> Posisi barang tidak boleh saling tumpang tindih dalam
+                                ruang 3D.</li>
+                            <li><strong>Stabilitas (75% Rule):</strong> Barang hanya ditempatkan jika min.
+                                <strong>75%</strong> alasnya tertopang oleh barang di bawahnya.
+                            </li>
+                            <li><strong>Load Bearing:</strong> Barang di bawah harus mampu menahan berat total tumpukan
+                                di atasnya.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Section: Keunggulan -->
+                <section class="poster-section highlight-section">
+                    <h2>Keunggulan</h2>
+                    <div class="section-content">
+                        <ul class="check-list">
+                            <li><strong>Panduan Stuffing Step-by-Step:</strong> Visualisasi 3D bertindak sebagai instruktur digital, memandu operator menata barang satu per satu sesuai urutan optimal.</li>
+                            <li><strong>Zero Trial-and-Error:</strong> Simulasi pra-muat menjamin akurasi posisi sejak awal, menghilangkan risiko bongkar-muat ulang di lapangan.</li>
+                            <li><strong>Eksekusi Tanpa Mikir:</strong> Mengubah algoritma rumit menjadi instruksi visual intuitif, sehingga operator bisa langsung bekerja tanpa menebak-nebak posisi.</li>
+                            <li><strong>Jaminan Keamanan:</strong> Memastikan aturan penumpukan (berat & orientasi) dipatuhi secara otomatis saat eksekusi stuffing berlangsung.</li>
+                        </ul>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- Right Column -->
+            <div class="column right-column">
+
+                <!-- Section 4: Visualisasi (Centerpiece) -->
+                <section class="poster-section visual-centerpiece">
+                    <h2>Visualisasi Interaktif</h2>
+                    <div class="visual-grid">
+                        <div class="visual-main">
+                            <div class="figure-container no-bg">
+                                <img src="assets/visual_3d.png" alt="Tampilan 3D Real-time" class="main-figure">
+                            </div>
+                        </div>
+                        <div class="visual-sub">
+                            <div class="figure-container no-bg">
+                                <img src="assets/visual_summary.png" alt="Ringkasan Statistik" class="main-figure">
+                            </div>
+                            <div class="figure-container no-bg">
+                                <img src="assets/visual_brakedown.png" alt="Rincian Item" class="main-figure">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section 5: Hasil Eksperimen -->
+                <section class="poster-section">
+                    <h2>Hasil Eksperimen (S1 - S5)</h2>
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <h3>100%</h3>
+                            <p>Fill Rate (Semua Skenario)</p>
+                        </div>
+                        <div class="result-card">
+                            <h3>55.26%</h3>
+                            <p>Volume Utilization (Skenario Terkompleks - S5)</p>
+                        </div>
+                        <div class="result-card">
+                            <h3>&lt; 40 Detik</h3>
+                            <p>Waktu Komputasi (300 Item)</p>
+                        </div>
+                    </div>
+
+                    <div class="figure-container small-figure">
+                        <img src="assets/detailed_metrics.png" alt="Grafik Metrik Detil" class="chart-figure">
+                    </div>
+
+                    <p class="result-note">Strategi <strong>Bigger First</strong> terbukti <strong>43% lebih
+                            efisien</strong> dibandingkan Smaller First.</p>
+                </section>
+
+                <!-- Section 6: Kesimpulan -->
+                <section class="poster-section conclusion-section">
+                    <h2>Kesimpulan</h2>
+                    <div class="section-content">
+                        <p>Sistem ini dibangun untuk memvalidasi <strong>keterlaksanaan fisik</strong> dari rencana muatan. Dengan fitur simulasi
+                            interaktif, operator dapat memverifikasi urutan dan posisi barang sebelum proses pemuatan dimulai. Pendekatan ini
+                            mengubah data optimasi menjadi panduan kerja praktis, memastikan bahwa target efisiensi ruang yang dihitung sistem
+                            benar-benar tercapai dalam operasional nyata.</p>
+                    </div>
+                </section>
+
+                <!-- Section 7: Referensi Utama -->
+                <section class="poster-section references-section">
+                    <h2>Referensi Utama</h2>
+                    <div class="section-content">
+                        <ul>
+                            <li>[1] Ma, Y. et al. (2025). <em>Hybrid Block-Building with Genetic Algorithm for 3D-BPP.</em></li>
+                            <li>[2] Ananno, A.A. et al. (2024). <em>Multi-Heuristic Algorithm for Multi-Container Optimization.</em></li>
+                            <li>[3] Poerwandono, A. et al. (2023). <em>Web-based 3D Visualization using Three.js.</em></li>
+                        </ul>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

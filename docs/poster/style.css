@@ -1,0 +1,644 @@
+/* Page Setup for A3 Portrait */
+:root {
+    /* Dark Tech Theme Palette */
+    --primary-color: #00a8ff; /* Cyan/Electric Blue - for technical accents */
+    --accent-color: #f39c12; /* Bright Orange - matching book cover logo/boxes */
+    --bg-color: #051b3b;     /* Deep Navy - matching book cover background */
+    --text-color: #ffffff;   /* White text for contrast */
+    --text-muted: #bdc3c7;   /* Light gray for secondary text */
+    --card-bg: rgba(255, 255, 255, 0.05); /* Glass effect */
+    --card-border: rgba(0, 168, 255, 0.3); /* Subtle cyan border */
+    --border-radius: 8px;
+    
+    /* A3 Dimensions in pixels (approx 300dpi for screen preview, but scalable) */
+    /* A3 Portrait: 297mm x 420mm */
+    --page-width: 1123px;
+    --page-height: 1587px;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #1a1a1a; /* Darker outer background for presentation */
+    display: flex;
+    justify-content: center;
+    color: var(--text-color);
+}
+
+.poster-container {
+    width: 297mm;
+    height: 420mm;
+    background-color: var(--bg-color);
+    background-image: radial-gradient(circle at 50% 30%, #0a2b5e 0%, #051b3b 70%); /* Deep ocean gradient */
+    box-sizing: border-box;
+    padding: 15mm 15mm 15mm 15mm; /* Reduced bottom padding from 25mm to 15mm */
+    display: flex;
+    flex-direction: column;
+    gap: 8mm;
+    overflow: hidden;
+    box-shadow: 0 0 50px rgba(0, 168, 255, 0.1); /* Subtle blue glow */
+    position: relative;
+}
+
+/* Background Decorations Layer */
+.bg-decorations {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* Behind content */
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.decor-grid {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    /* Blueprint grid effect */
+    background-image: 
+        linear-gradient(rgba(0, 168, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 168, 255, 0.1) 1px, transparent 1px);
+    background-size: 20mm 20mm;
+    background-position: center;
+    opacity: 0.6;
+}
+
+.decor-dots {
+    position: absolute;
+    width: 60mm;
+    height: 60mm;
+    /* Cyan dots */
+    background-image: radial-gradient(var(--primary-color) 1.5px, transparent 1.5px); 
+    background-size: 6mm 6mm;
+    opacity: 0.4;
+}
+
+.dots-1 {
+    bottom: 20mm; 
+    left: 20mm;
+}
+
+.decor-stripes {
+    position: absolute;
+    width: 60mm;
+    height: 15mm;
+    background-image: repeating-linear-gradient(
+        45deg,
+        var(--accent-color),
+        var(--accent-color) 1px,
+        transparent 1px,
+        transparent 5px
+    );
+    opacity: 0.3; /* Orange warning stripes */
+}
+
+.stripes-1 {
+    bottom: 30mm;
+    right: 20mm;
+    transform: rotate(-15deg);
+}
+
+.decor-plus {
+    position: absolute;
+    color: var(--primary-color);
+    font-size: 40pt;
+    font-weight: bold;
+    opacity: 0.2;
+    font-family: monospace;
+}
+
+.plus-1 {
+    top: 35mm;
+    left: 48%; 
+}
+
+.plus-2 {
+    bottom: 150mm;
+    right: 15mm;
+    font-size: 70pt;
+    opacity: 0.15;
+}
+
+.plus-3 {
+    top: 10mm;
+    left: 10mm;
+    font-size: 80pt;
+    color: var(--accent-color);
+    opacity: 0.1;
+}
+
+.decor-circuit {
+    position: absolute;
+    color: var(--primary-color);
+    opacity: 0.4;
+}
+
+.circuit-1 {
+    top: 80mm;
+    right: 10mm;
+    width: 80mm;
+    height: 80mm;
+    transform: rotate(90deg);
+}
+
+.circuit-2 {
+    bottom: 50mm;
+    left: 10mm;
+    width: 60mm;
+    height: 60mm;
+}
+
+/* Hexagon now uses cyan fill */
+.decor-hex {
+    position: absolute;
+    top: 30%;
+    left: 40%;
+    width: 60mm;
+    height: 50mm;
+    background-image: url("data:image/svg+xml,%3Csvg width='24' height='40' viewBox='0 0 24 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40c5.523 0 10-4.477 10-10V10c0-5.523-4.477-10-10-10S-10 4.477-10 10v20c0 5.523 4.477 10 10 10z' fill='%2300a8ff' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    z-index: -1;
+}
+
+.decor-network {
+    position: absolute;
+    color: var(--accent-color);
+    opacity: 0.6;
+}
+
+.network-1 {
+    top: 20mm;
+    left: 20mm;
+    transform: rotate(45deg);
+}
+
+.decor-bracket {
+    position: absolute;
+    width: 20mm;
+    height: 20mm;
+    border-color: var(--primary-color);
+    border-style: solid;
+    border-width: 0;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 2px var(--primary-color));
+}
+
+.bracket-tl {
+    top: 5mm;
+    left: 5mm;
+    border-top-width: 3px;
+    border-left-width: 3px;
+}
+
+.bracket-br {
+    bottom: 5mm;
+    right: 5mm;
+    border-bottom-width: 3px;
+    border-right-width: 3px;
+}
+
+/* Ensure content is above decorations */
+.poster-header, .poster-grid {
+    position: relative;
+    z-index: 1;
+}
+
+/* Header */
+.poster-header {
+    text-align: center;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 5mm;
+    margin-bottom: 5mm;
+    padding-right: 20mm; 
+    padding-left: 20mm;
+    position: relative;
+    z-index: 1;
+    background: linear-gradient(to bottom, transparent, rgba(0, 168, 255, 0.05)); /* Subtle glow at bottom */
+}
+
+.poster-header h1 {
+    font-size: 22pt;
+    color: var(--text-color);
+    margin: 0 0 3mm 0;
+    line-height: 1.1;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 168, 255, 0.5); /* Glowing text */
+    letter-spacing: 1px;
+}
+
+/* Highlight specific keywords if we wrapped them in spans in HTML, 
+   but for now, let's target the strong tag or create a gradient effect */
+
+.authors p {
+    font-size: 14pt;
+    margin: 3px 0;
+    color: var(--text-color);
+}
+
+.authors .affiliation {
+    font-size: 12pt;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.header-logo {
+    position: absolute;
+    right: 15mm;
+    top: 15mm;
+    z-index: 10;
+    width: 45mm; 
+    height: auto;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.logo-img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+}
+
+/* Grid Layout */
+.poster-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8mm;
+    flex: 1;
+    min-height: 0;
+    margin-top: -8mm;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 5mm; /* Reduced from 6mm */
+    justify-content: flex-start; 
+}
+
+/* Sections */
+.poster-section h2 {
+    font-size: 16pt;
+    color: var(--accent-color); /* Orange headers */
+    border-left: 4px solid var(--primary-color); /* Blue border */
+    padding-left: 10px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-shadow: 0 0 5px rgba(243, 156, 18, 0.4);
+}
+
+.section-content {
+    font-size: 10pt; /* Reduced from 10.5pt */
+    line-height: 1.4;
+    text-align: justify;
+    color: var(--text-muted);
+}
+
+/* Common Card Style for Sections */
+.section-content, .highlight-section, .conclusion-section {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 12px; /* Reduced from 15px */
+    border-radius: var(--border-radius);
+    backdrop-filter: blur(5px);
+}
+
+/* Remove default padding from section-content since we applied it generally above, 
+   but we need to be careful not to double pad if nested */
+.section-content {
+    padding: 0; /* Reset because we'll apply card style to specific containers or just keep it simple */
+    background-color: transparent;
+    border: none;
+    backdrop-filter: none;
+}
+
+/* Apply card style to the content wrapper inside sections if needed, 
+   or just style specific blocks */
+
+.poster-section .section-content {
+    /* Default styling for text blocks */
+}
+
+ul {
+    padding-left: 20px;
+    margin: 0;
+}
+
+li {
+    margin-bottom: 5px;
+}
+
+li strong {
+    color: var(--text-color); /* White for emphasis */
+}
+
+/* Highlight Section (Orange Accent) */
+.highlight-section {
+    background-color: rgba(243, 156, 18, 0.1); /* Low opacity orange */
+    border: 1px solid rgba(243, 156, 18, 0.3);
+    border-left: 5px solid var(--accent-color);
+}
+
+.highlight-section h2 {
+    border: none;
+    padding: 0;
+    color: var(--accent-color);
+    text-shadow: none;
+}
+
+.highlight-section .section-content {
+    color: #fff;
+}
+
+/* Visuals */
+.visual-centerpiece {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.full-width-visual .figure-container {
+    border: 1px solid var(--primary-color);
+    background: rgba(0, 168, 255, 0.05);
+    padding: 0;
+    overflow: hidden;
+}
+
+.full-width-visual .main-figure {
+    width: 100%;
+    height: auto;
+    max-height: 350px; /* Allowed taller since it's full width */
+    object-fit: cover;
+    object-position: top;
+    border-radius: var(--border-radius);
+}
+
+
+
+/* Check List Styling */
+.check-list {
+    list-style: none;
+    padding-left: 0;
+}
+
+.check-list li {
+    position: relative;
+    padding-left: 25px;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+}
+
+.check-list li::before {
+    content: '✔';
+    position: absolute;
+    left: 0;
+    color: var(--accent-color);
+    font-weight: bold;
+}
+
+.visual-centerpiece h2 {
+    text-align: left !important;
+    width: 100%;
+}
+
+.figure-container {
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--primary-color);
+    padding: 5px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 0 15px rgba(0, 168, 255, 0.15);
+    position: relative;
+}
+
+/* Add corner markers to figures for tech look */
+.figure-container::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    right: -1px;
+    width: 15px;
+    height: 15px;
+    border-bottom: 2px solid var(--primary-color);
+    border-right: 2px solid var(--primary-color);
+}
+
+.figure-container::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    width: 15px;
+    height: 15px;
+    border-top: 2px solid var(--primary-color);
+    border-left: 2px solid var(--primary-color);
+}
+
+.main-figure {
+    width: 100%;
+    height: auto;
+    max-height: 220px;
+    object-fit: contain;
+    display: block;
+    border-radius: 4px;
+    /* If images have white backgrounds, mix-blend-mode might help or just opacity */
+}
+
+.small-figure img {
+    width: 100%;
+    height: auto;
+    max-height: 280px;
+    object-fit: contain;
+}
+
+.chart-figure {
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.caption {
+    font-size: 9pt;
+    color: var(--primary-color);
+    margin-top: 5px;
+    text-align: center;
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+/* Results Grid */
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.result-card {
+    background: linear-gradient(135deg, rgba(0, 168, 255, 0.1), rgba(0, 168, 255, 0.2));
+    border: 1px solid var(--primary-color);
+    color: white;
+    padding: 8px 5px;
+    text-align: center;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.result-card h3 {
+    font-size: 20pt;
+    margin: 0;
+    color: var(--primary-color);
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(0, 168, 255, 0.4);
+}
+
+.result-card p {
+    font-size: 8pt;
+    margin: 4px 0 0 0;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.result-note {
+    font-weight: bold;
+    color: var(--accent-color);
+    margin-top: 8px;
+    text-align: center;
+    font-style: italic;
+    font-size: 10pt;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+    padding-top: 8px;
+}
+
+/* Conclusion */
+.conclusion-section {
+    background: linear-gradient(to right, rgba(0, 168, 255, 0.1), rgba(0, 168, 255, 0.05));
+    border: 1px solid var(--primary-color);
+    color: white;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-top: 0;
+}
+
+/* Mermaid / Diagram Container */
+.mermaid {
+    padding: 0;
+    margin-bottom: 10px;
+}
+
+.conclusion-section h2 {
+    color: white;
+    border-left: 5px solid var(--accent-color);
+    text-shadow: none;
+}
+
+
+
+/* Visuals Grid Layout for Multiple Images */
+.visual-grid {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr; /* 3D Left (larger), Stats Right (smaller) */
+    gap: 12px; /* Reduced from 15px */
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.95); /* White background to unify images */
+    padding: 10px; /* Reduced from 15px */
+    border-radius: var(--border-radius);
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(0, 168, 255, 0.1);
+}
+
+.figure-container.no-bg {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+.figure-container.no-bg::after,
+.figure-container.no-bg::before {
+    display: none;
+}
+
+.visual-main .figure-container {
+    width: 100%;
+}
+
+.visual-main .main-figure {
+    max-height: none; /* Let height flow naturally */
+    width: 100%;
+    height: auto;
+    object-fit: contain; /* Preserve aspect ratio */
+}
+
+.visual-sub {
+    display: flex;
+    flex-direction: column; /* Stack summary and breakdown vertically on the right */
+    gap: 10px;
+    height: 100%;
+    justify-content: space-between;
+}
+
+.visual-sub .figure-container {
+    /* Smaller containers for summary and breakdown */
+}
+
+.visual-sub .figure-container:first-child .main-figure {
+    max-height: 140px; 
+    width: 100%;
+    object-fit: contain;
+}
+
+.visual-sub .figure-container:last-child .main-figure {
+    max-height: 170px; /* Reduced from 190px */
+    width: 100%;
+    object-fit: contain;
+}
+
+/* References (Footer Style) */
+.references-section {
+    margin-top: 5px;
+    opacity: 0.8;
+}
+
+.references-section h2 {
+    font-size: 14pt;
+    margin-bottom: 4px;
+    border-left: 4px solid var(--text-muted);
+    color: var(--text-muted);
+}
+
+.references-section .section-content {
+    background: transparent;
+    border: none;
+    padding: 0 0 0 5px;
+    font-size: 10pt;
+    color: var(--text-muted);
+    box-shadow: none;
+}
+
+.references-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.references-section li {
+    margin-bottom: 2px;
+}
+
+/* Header Logo (Top Left) */
+.header-logo-left {
+    position: absolute;
+    left: 15mm;
+    top: 15mm;
+    z-index: 10;
+}
+
+.header-logo-img {
+    max-height: 35px;
+    width: auto;
+    object-fit: contain;
+    opacity: 0.9;
+}

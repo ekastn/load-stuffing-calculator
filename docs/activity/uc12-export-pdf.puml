@@ -1,0 +1,44 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Click "Export to PDF";
+
+|Frontend|
+if (Has calculation?) then (yes)
+  :Show loading indicator;
+  :Generate PDF from state;
+  
+  note right
+    **Pure Frontend Operation**
+    No backend API call
+    
+    **PDF Contents:**
+    - Summary & header
+    - Container info
+    - Utilization stats
+    - Items breakdown
+    - Unfitted items (if any)
+    - Step-by-step pages with
+      2D schematics (top/front/side)
+  end note
+  
+  :Trigger browser download;
+  :Show success message;
+  
+else (no)
+  :Show "Calculate first" error;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

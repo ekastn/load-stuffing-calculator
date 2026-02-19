@@ -14,7 +14,8 @@ class LoadingProvider extends ChangeNotifier {
   LoadingSession? _currentSession;
   LoadingSession? get currentSession => _currentSession;
 
-  PlanDetailModel? _currentPlan;
+  PlanDetailModel? currentPlan; // Made public for WebView embedding
+  String? _rawPlanJson; // Cache raw JSON response from API
   List<PlacementDetail>? _placements; // Sorted by step_number
 
   bool _isLoading = false;
@@ -28,6 +29,18 @@ class LoadingProvider extends ChangeNotifier {
       ? 0
       : (_currentSession!.validatedCount / _currentSession!.totalItems * 100)
             .round();
+  
+  // Get plan data as base64-encoded JSON for WebView embedding
+  String? getPlanDataJson() {
+    if (_rawPlanJson == null) return null;
+    try {
+      final bytes = utf8.encode(_rawPlanJson!);
+      return base64Encode(bytes);
+    } catch (e) {
+      debugPrint('Error encoding plan data: $e');
+      return null;
+    }
+  }
 
   // Start new loading session (100% local initially)
   Future<void> startSession(String planId) async {
@@ -36,15 +49,17 @@ class LoadingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Fetch plan data from backend
-      _currentPlan = await _planService.getPlanDetail(planId);
+      // 1. Fetch plan data from backend and cache raw JSON
+      final response = await _planService.getPlanDetailRaw(planId);
+      _rawPlanJson = response; // Store raw JSON string
+      currentPlan = await _planService.getPlanDetail(planId);
 
-      if (_currentPlan?.calculation?.placements == null ||
-          _currentPlan!.calculation!.placements!.isEmpty) {
+      if (currentPlan?.calculation?.placements == null ||
+          currentPlan!.calculation!.placements!.isEmpty) {
         throw Exception("Plan has no placements to load");
       }
 
-      _placements = List.from(_currentPlan!.calculation!.placements!)
+      _placements = List.from(currentPlan!.calculation!.placements!)
         ..sort((a, b) => a.stepNumber.compareTo(b.stepNumber));
 
       // 2. Create local session
@@ -65,7 +80,7 @@ class LoadingProvider extends ChangeNotifier {
     } catch (e) {
       _error = e.toString();
       _currentSession = null;
-      _currentPlan = null;
+      currentPlan = null;
       _placements = null;
     } finally {
       _isLoading = false;
@@ -84,10 +99,10 @@ class LoadingProvider extends ChangeNotifier {
         _currentSession = LoadingSession.fromJson(jsonDecode(sessionJson));
 
         // Reload plan data
-        _currentPlan = await _planService.getPlanDetail(
+        currentPlan = await _planService.getPlanDetail(
           _currentSession!.planId,
         );
-        _placements = List.from(_currentPlan!.calculation!.placements!)
+        _placements = List.from(currentPlan!.calculation!.placements!)
           ..sort((a, b) => a.stepNumber.compareTo(b.stepNumber));
       }
     } catch (e) {
@@ -102,13 +117,13 @@ class LoadingProvider extends ChangeNotifier {
   ExpectedItem? getCurrentExpectedItem() {
     if (_currentSession == null ||
         _placements == null ||
-        _currentPlan == null) {
+        currentPlan == null) {
       return null;
     }
     if (_currentSession!.currentStepIndex >= _placements!.length) return null;
 
     final placement = _placements![_currentSession!.currentStepIndex];
-    final item = _currentPlan!.items.firstWhere(
+    final item = currentPlan!.items.firstWhere(
       (i) => i.itemId == placement.itemId,
       orElse: () => throw Exception("Item not found: ${placement.itemId}"),
     );
@@ -285,14 +300,14 @@ class LoadingProvider extends ChangeNotifier {
     await _storage.deleteLoadingSession();
 
     _currentSession = null;
-    _currentPlan = null;
+    currentPlan = null;
     _placements = null;
 
     notifyListeners();
   }
 
   Future<void> _syncToBackend() async {
-    if (_currentSession == null || _currentPlan == null) return;
+    if (_currentSession == null || currentPlan == null) return;
 
     final loadingNotes = {
       'session_id': _currentSession!.sessionId,
@@ -308,7 +323,7 @@ class LoadingProvider extends ChangeNotifier {
 
     try {
       await _planService.updatePlan(
-        _currentPlan!.id,
+        currentPlan!.id,
         status: 'COMPLETED',
         loadingNotes: loadingNotes,
       );
