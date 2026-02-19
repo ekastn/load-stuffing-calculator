@@ -174,23 +174,29 @@ export class ReportGenerator {
 
         // Calculate column positions based on available width
         const availableWidth = (containerX + containerWidth - 20) - rightX;
-        const colPackages = rightX + (availableWidth * 0.40);
-        const colVolume = rightX + (availableWidth * 0.55);
+        const colSKU = rightX;
+        const colName = rightX + (availableWidth * 0.12);
+        const colDims = rightX + (availableWidth * 0.38);
+        const colPackages = rightX + (availableWidth * 0.52);
+        const colVolume = rightX + (availableWidth * 0.62);
         const colWeight = rightX + (availableWidth * 0.75);
 
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont(undefined, "bold");
-        doc.text("Name", rightX, rightY);
-        doc.text("Packages", colPackages, rightY);
+        doc.text("SKU", colSKU, rightY);
+        doc.text("Name", colName, rightY);
+        doc.text("Unit Dims", colDims, rightY);
+        doc.text("(mm)", colDims, rightY + 3);
+        doc.text("Count", colPackages, rightY);
         doc.text("Volume", colVolume, rightY);
         doc.text("Weight", colWeight, rightY);
-        rightY += 1;
-
-        doc.line(rightX, rightY, containerX + containerWidth - 20, rightY);
         rightY += 6;
 
+        doc.line(rightX, rightY, containerX + containerWidth - 20, rightY);
+        rightY += 4;
+
         // Items data with better formatting
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont(undefined, "normal");
 
         const itemCounts = new Map<string, { item: ItemData; count: number }>();
@@ -210,12 +216,16 @@ export class ReportGenerator {
             const totalVolume =
                 (item.length_mm * item.width_mm * item.height_mm * count) / 1_000_000_000;
             const totalWeight = item.weight_kg * count;
+            const unitDims = `${item.length_mm}×${item.width_mm}×${item.height_mm}`;
+            const sku = item.sku || item.product_sku || "N/A";
 
-            doc.text(item.label, rightX, rightY);
-            doc.text(count.toString(), colPackages + 5, rightY);
+            doc.text(sku, colSKU, rightY);
+            doc.text(item.label.substring(0, 20), colName, rightY);
+            doc.text(unitDims, colDims, rightY);
+            doc.text(count.toString(), colPackages + 3, rightY);
             doc.text(`${totalVolume.toFixed(1)} m3`, colVolume, rightY);
             doc.text(`${totalWeight.toFixed(1)} kg`, colWeight, rightY);
-            rightY += 6;
+            rightY += 5;
         });
     }
 
@@ -439,8 +449,14 @@ export class ReportGenerator {
 
         if (currentItem) {
             const dims = this.getDimsForRotation(currentItem, placement.rotation);
+            const sku = currentItem.sku || currentItem.product_sku || "N/A";
+            
+            // Line 1: SKU and Unit Weight
+            doc.text(`SKU: ${sku}   Unit Weight: ${currentItem.weight_kg} kg`, margin, infoY + 6);
+            
+            // Line 2: Position, Dimensions, Rotation
             const infoLine = `pos(mm): (${placement.pos_x.toFixed(0)}, ${placement.pos_y.toFixed(0)}, ${placement.pos_z.toFixed(0)})   dims(mm): ${dims.length_mm}×${dims.width_mm}×${dims.height_mm}   rot: ${placement.rotation}`;
-            doc.text(infoLine, margin, infoY + 8);
+            doc.text(infoLine, margin, infoY + 13);
         } else {
             doc.text(
                 `pos(mm): (${placement.pos_x.toFixed(0)}, ${placement.pos_y.toFixed(0)}, ${placement.pos_z.toFixed(0)})   rot: ${placement.rotation}`,
