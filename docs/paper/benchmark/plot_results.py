@@ -69,6 +69,7 @@ class AggregatedResult:
     """Aggregated statistics for a scenario+variant combination."""
     scenario_id: str
     variant: str
+    container_key: str
     num_runs: int
     total_items: int
     avg_fitted: float
@@ -99,6 +100,7 @@ def load_results(results_dir: Path) -> list[AggregatedResult]:
         results.append(AggregatedResult(
             scenario_id=item["scenario_id"],
             variant=item["variant"],
+            container_key=item.get("container_key", "40ft_high_cube"),
             num_runs=item["num_runs"],
             total_items=item["total_items"],
             avg_fitted=item["avg_fitted"],
@@ -511,10 +513,14 @@ def plot_detailed_metrics(
 def generate_all_plots(
     results: list[AggregatedResult],
     output_dir: Path,
+    container_filter: str | None = None,
 ) -> None:
     """Generate all plots for the paper."""
     
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    if container_filter:
+        results = [r for r in results if r.container_key == container_filter]
     
     print("Generating plots...")
     
@@ -545,7 +551,14 @@ def main():
         default=None,
         help="Output directory for figures (default: <input>/figures/)",
     )
-    
+
+    parser.add_argument(
+        "-c", "--container",
+        type=str,
+        default=None,
+        help="Filter by container key (e.g. 40ft_high_cube). Default: all containers.",
+    )
+
     args = parser.parse_args()
     
     script_dir = Path(__file__).parent.resolve()
@@ -566,7 +579,7 @@ def main():
         sys.exit(1)
     
     results = load_results(input_dir)
-    generate_all_plots(results, output_dir)
+    generate_all_plots(results, output_dir, container_filter=args.container)
 
 
 if __name__ == "__main__":

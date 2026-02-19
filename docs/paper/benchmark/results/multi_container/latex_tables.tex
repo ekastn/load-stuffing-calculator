@@ -1,0 +1,96 @@
+% Auto-generated LaTeX tables from benchmark results
+% Generated at: 2026-02-19T17:42:32.663937
+
+% =============================================================================
+% TABLE 1: Main Performance Results (Baseline, 40ft High Cube)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Hasil Pengujian Performa Algoritma pada Kontainer 40ft High Cube}
+    \label{tab:results}
+    \small
+    \begin{tabular}{lrrrrr}
+        \toprule
+        \textbf{Skenario} & \textbf{Item} & \textbf{Vol. Util. (\%)} & \textbf{Berat Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Waktu (ms)} \\
+        \midrule
+        S1 & 50 & 6.29 $\pm$ 0.00 & 2.83 $\pm$ 0.00 & 100.00 & 262.2 $\pm$ 2.8 \\
+        S2 & 100 & 8.80 $\pm$ 0.00 & 4.16 $\pm$ 0.00 & 100.00 & 1211.3 $\pm$ 5.7 \\
+        S3 & 150 & 24.83 $\pm$ 0.00 & 11.15 $\pm$ 0.00 & 100.00 & 3460.8 $\pm$ 36.0 \\
+        S4 & 200 & 35.45 $\pm$ 0.00 & 16.25 $\pm$ 0.00 & 100.00 & 7308.1 $\pm$ 13.3 \\
+        S5 & 300 & 55.26 $\pm$ 0.00 & 25.32 $\pm$ 0.00 & 100.00 & 25004.0 $\pm$ 1484.0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE 2: Algorithm Variant Comparison (S3, 40ft High Cube)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Perbandingan Varian Algoritma pada Skenario S3 (150 item)}
+    \label{tab:variants}
+    \small
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Varian} & \textbf{Vol. Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Waktu (ms)} & \textbf{Item Termuat} \\
+        \midrule
+        Baseline (Bigger First + Stability) & 24.83 & 100.00 & 3460.8 & 150 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE 3: Scalability Analysis (Baseline, 40ft High Cube)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Analisis Skalabilitas Waktu Komputasi}
+    \label{tab:scalability}
+    \small
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Skenario} & \textbf{Jumlah Item} & \textbf{Min (ms)} & \textbf{Rata-rata (ms)} & \textbf{Max (ms)} \\
+        \midrule
+        S1 & 50 & 258 & 262.2 & 267 \\
+        S2 & 100 & 1202 & 1211.3 & 1222 \\
+        S3 & 150 & 3418 & 3460.8 & 3542 \\
+        S4 & 200 & 7281 & 7308.1 & 7338 \\
+        S5 & 300 & 23335 & 25004.0 & 28417 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE 4: Multi-Container Comparison (Baseline variant, all containers)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Perbandingan Performa Algoritma pada Berbagai Tipe Kontainer}
+    \label{tab:multicontainer}
+    \small
+    \begin{tabular}{llrrrr}
+        \toprule
+        \textbf{Skenario} & \textbf{Kontainer} & \textbf{Vol. Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Item Termuat} & \textbf{Waktu (ms)} \\
+        \midrule
+        S1 & 20ft Standard & 14.46 & 100.00 & 50 & 275.4 \\
+         & 40ft Standard & 7.09 & 100.00 & 50 & 262.6 \\
+         & 40ft High Cube & 6.29 & 100.00 & 50 & 262.2 \\
+        \midrule
+        S2 & 20ft Standard & 20.24 & 100.00 & 100 & 1240.8 \\
+         & 40ft Standard & 9.92 & 100.00 & 100 & 1212.5 \\
+         & 40ft High Cube & 8.80 & 100.00 & 100 & 1211.3 \\
+        \midrule
+        S3 & 20ft Standard & 57.12 & 100.00 & 150 & 6345.0 \\
+         & 40ft Standard & 28.00 & 100.00 & 150 & 3450.1 \\
+         & 40ft High Cube & 24.83 & 100.00 & 150 & 3460.8 \\
+        \midrule
+        S4 & 20ft Standard & 71.99 & 83.50 & 167 & 24155.6 \\
+         & 40ft Standard & 39.97 & 100.00 & 200 & 7461.9 \\
+         & 40ft High Cube & 35.45 & 100.00 & 200 & 7308.1 \\
+        \midrule
+        S5 & 20ft Standard & 88.14 & 47.33 & 142 & 36057.2 \\
+         & 40ft Standard & 62.30 & 100.00 & 300 & 24312.4 \\
+         & 40ft High Cube & 55.26 & 100.00 & 300 & 25004.0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}

@@ -1,0 +1,4 @@
+Scenario,Container,Variant,Total Items,Avg Fitted,Avg Volume Util (%),Std Volume Util,Avg Weight Util (%),Avg Fill Rate (%),Avg Time (ms),Std Time (ms)
+S3,40ft High Cube,baseline,150,150.0,24.83,0.00,11.15,100.00,3620.0,184.49
+S3,40ft High Cube,no_stability,150,150.0,24.83,0.00,11.15,100.00,3638.1,188.20
+S3,40ft High Cube,smaller_first,150,131.0,17.37,0.00,7.92,87.33,25143.7,167.06

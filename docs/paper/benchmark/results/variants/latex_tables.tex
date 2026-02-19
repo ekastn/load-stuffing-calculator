@@ -1,0 +1,72 @@
+% Auto-generated LaTeX tables from benchmark results
+% Generated at: 2026-02-19T17:56:14.012563
+
+% =============================================================================
+% TABLE 1: Main Performance Results (Baseline, 40ft High Cube)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Hasil Pengujian Performa Algoritma pada Kontainer 40ft High Cube}
+    \label{tab:results}
+    \small
+    \begin{tabular}{lrrrrr}
+        \toprule
+        \textbf{Skenario} & \textbf{Item} & \textbf{Vol. Util. (\%)} & \textbf{Berat Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Waktu (ms)} \\
+        \midrule
+        S3 & 150 & 24.83 $\pm$ 0.00 & 11.15 $\pm$ 0.00 & 100.00 & 3620.0 $\pm$ 184.5 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE 2: Algorithm Variant Comparison (S3, 40ft High Cube)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Perbandingan Varian Algoritma pada Skenario S3 (150 item)}
+    \label{tab:variants}
+    \small
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Varian} & \textbf{Vol. Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Waktu (ms)} & \textbf{Item Termuat} \\
+        \midrule
+        Baseline (Bigger First + Stability) & 24.83 & 100.00 & 3620.0 & 150 \\
+        Tanpa Pemeriksaan Stabilitas & 24.83 & 100.00 & 3638.1 & 150 \\
+        Smaller First + Stability & 17.37 & 87.33 & 25143.7 & 131 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE 3: Scalability Analysis (Baseline, 40ft High Cube)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Analisis Skalabilitas Waktu Komputasi}
+    \label{tab:scalability}
+    \small
+    \begin{tabular}{lrrrr}
+        \toprule
+        \textbf{Skenario} & \textbf{Jumlah Item} & \textbf{Min (ms)} & \textbf{Rata-rata (ms)} & \textbf{Max (ms)} \\
+        \midrule
+        S3 & 150 & 3403 & 3620.0 & 4118 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% =============================================================================
+% TABLE 4: Multi-Container Comparison (Baseline variant, all containers)
+% =============================================================================
+\begin{table}[H]
+    \centering
+    \caption{Perbandingan Performa Algoritma pada Berbagai Tipe Kontainer}
+    \label{tab:multicontainer}
+    \small
+    \begin{tabular}{llrrrr}
+        \toprule
+        \textbf{Skenario} & \textbf{Kontainer} & \textbf{Vol. Util. (\%)} & \textbf{Fill Rate (\%)} & \textbf{Item Termuat} & \textbf{Waktu (ms)} \\
+        \midrule
+         & 40ft High Cube & 24.83 & 100.00 & 150 & 3620.0 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
