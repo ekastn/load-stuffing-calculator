@@ -114,7 +114,7 @@ export default function ShipmentDetailPage() {
         if (!map.has(key)) {
             map.set(key, { 
               name: key, 
-              sku: item.sku || item.product_sku || "N/A",
+              sku: item.product_sku || "N/A",
               qty: 0, 
               vol: 0, 
               weight: 0,
