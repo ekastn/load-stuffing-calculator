@@ -16,6 +16,7 @@ export function toStuffingPlanData(plan: PlanDetailResponse): StuffingPlanData {
     items: plan.items.map((item) => ({
       item_id: item.item_id,
       label: item.label || "Item",
+      sku: item.product_sku || undefined,
       length_mm: item.length_mm,
       width_mm: item.width_mm,
       height_mm: item.height_mm,

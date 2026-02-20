@@ -217,7 +217,7 @@ export class ReportGenerator {
                 (item.length_mm * item.width_mm * item.height_mm * count) / 1_000_000_000;
             const totalWeight = item.weight_kg * count;
             const unitDims = `${item.length_mm}×${item.width_mm}×${item.height_mm}`;
-            const sku = item.sku || item.product_sku || "N/A";
+            const sku = item.sku || "N/A";
 
             doc.text(sku, colSKU, rightY);
             doc.text(item.label.substring(0, 20), colName, rightY);
@@ -449,7 +449,7 @@ export class ReportGenerator {
 
         if (currentItem) {
             const dims = this.getDimsForRotation(currentItem, placement.rotation);
-            const sku = currentItem.sku || currentItem.product_sku || "N/A";
+            const sku = currentItem.sku || "N/A";
             
             // Line 1: SKU and Unit Weight
             doc.text(`SKU: ${sku}   Unit Weight: ${currentItem.weight_kg} kg`, margin, infoY + 6);
