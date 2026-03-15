@@ -6,7 +6,6 @@ import { CreatePermissionRequest, PermissionResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 import { usePermissions } from "@/hooks/use-permissions"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Plus, Trash2, MoreHorizontal, Edit } from "lucide-react"
 import {
@@ -18,9 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { RouteGuard } from "@/lib/route-guard"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -32,6 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 
 export default function DevPermissionsPage() {
   const { isLoading: authLoading } = useAuth()
@@ -110,7 +110,7 @@ export default function DevPermissionsPage() {
         const permission = row.original
 
         return (
-          <div className="text-right">
+          <div className="text-right" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -156,59 +156,47 @@ export default function DevPermissionsPage() {
   return (
     <RouteGuard requiredPermissions={["permission:*"]}>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Permissions</h1>
-            <p className="mt-1 text-muted-foreground">Manage system access permissions</p>
-          </div>
-          <Button onClick={openNewForm} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Permission
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Permissions</h1>
+          <p className="mt-1 text-muted-foreground">Manage system access permissions</p>
         </div>
 
-        {showForm && (
-          <Card className="border-border/50 bg-card/50">
-            <CardHeader>
-              <CardTitle>{editingId ? "Edit Permission" : "Create New Permission"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">
-                      Name
-                    </label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g. read:reports"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="description" className="text-sm font-medium">
-                      Description
-                    </label>
-                    <Input
-                      id="description"
-                      value={formData.description || ""}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      placeholder="Optional description"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
+        {/* Create/Edit Permission Dialog */}
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingId ? "Edit Permission" : "Create Permission"}</DialogTitle>
+              <DialogDescription>
+                {editingId ? "Update the permission details." : "Add a new system permission."}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="name" className="text-sm font-medium">Name</label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g. read:reports"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">Description</label>
+                <Input
+                  id="description"
+                  value={formData.description || ""}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Optional description"
+                />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+                <Button type="submit">{editingId ? "Update" : "Create"}</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {dataLoading ? (
           <div className="text-center py-8">
@@ -217,7 +205,17 @@ export default function DevPermissionsPage() {
           </div>
         ) : (
           <div className="rounded-md border border-border/50 bg-card/50">
-            <DataTable columns={columns} data={permissions} />
+            <DataTable 
+              columns={columns} 
+              data={permissions} 
+              onRowClick={handleEdit}
+              toolbar={
+                <Button onClick={openNewForm} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  New Permission
+                </Button>
+              }
+            />
           </div>
         )}
 

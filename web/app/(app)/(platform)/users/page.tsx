@@ -3,12 +3,11 @@
 import { useState } from "react"
 
 import { useUsers } from "@/hooks/use-users"
-import { CreateUserRequest, UpdateUserRequest, ChangePasswordRequest, UserResponse } from "@/lib/types"
+import { UserResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Plus, Trash2, MoreHorizontal, Edit, Key } from "lucide-react"
+import { Plus, Trash2, MoreHorizontal, Edit, Key, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { RouteGuard } from "@/lib/route-guard"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 import {
   Select,
@@ -46,53 +45,17 @@ export default function DevUsersPage() {
   const { isLoading: authLoading } = useAuth()
   const { users, isLoading: dataLoading, error, createUser, updateUser, deleteUser, changePassword } = useUsers()
 
-  const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState<CreateUserRequest | UpdateUserRequest>({
-    username: "",
-    email: "",
-    password: "",
-    role: "planner",
-  })
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [showChangePasswordDialog, setShowChangePasswordDialog] = useState(false)
-  const [passwordFormData, setPasswordFormData] = useState<ChangePasswordRequest>({ password: "", confirm_password: "" })
+  const [passwordFormData, setPasswordFormData] = useState({ password: "", confirm_password: "" })
   const [targetUserIdForPassword, setTargetUserIdForPassword] = useState<string | null>(null)
 
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    let success = false
-    try {
-      if (editingId) {
-        const updateData: UpdateUserRequest = {
-          username: (formData as CreateUserRequest).username,
-          email: (formData as CreateUserRequest).email,
-          role: (formData as CreateUserRequest).role,
-        }
-        success = await updateUser(editingId, updateData)
-        if (success) toast.success("User updated successfully!")
-      } else {
-        success = await createUser(formData as CreateUserRequest)
-        if (success) toast.success("User created successfully!")
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save user")
-    }
-
-    if (success) {
-      setFormData({ username: "", email: "", password: "", role: "planner" })
-      setEditingId(null)
-      setShowForm(false)
-    }
-  }
-
-  const handleEdit = (user: UserResponse) => {
-    setFormData({ username: user.username, email: user.email, role: user.role })
-    setEditingId(user.id)
-    setShowForm(true)
-  }
+  const [showUserForm, setShowUserForm] = useState(false)
+  const [editingUser, setEditingUser] = useState<UserResponse | null>(null)
+  const [userForm, setUserForm] = useState({ username: "", email: "", role: "planner", password: "" })
+  const [isSubmittingUser, setIsSubmittingUser] = useState(false)
 
   const handleDelete = (id: string) => {
     setUserToDelete(id)
@@ -109,12 +72,6 @@ export default function DevUsersPage() {
     }
     setShowConfirmDelete(false)
     setUserToDelete(null)
-  }
-
-  const openNewUserForm = () => {
-    setFormData({ username: "", email: "", password: "", role: "planner" })
-    setEditingId(null)
-    setShowForm(true)
   }
 
   const openChangePasswordDialog = (userId: string) => {
@@ -139,6 +96,47 @@ export default function DevUsersPage() {
     } else {
       toast.error("Failed to change password")
     }
+  }
+
+  const openCreateDialog = () => {
+    setEditingUser(null)
+    setUserForm({ username: "", email: "", role: "planner", password: "" })
+    setShowUserForm(true)
+  }
+
+  const openEditDialog = (user: UserResponse) => {
+    setEditingUser(user)
+    setUserForm({ username: user.username, email: user.email, role: user.role, password: "" })
+    setShowUserForm(true)
+  }
+
+  const handleUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!userForm.username || !userForm.email || !userForm.role) {
+      toast.error("Please fill in all required fields")
+      return
+    }
+    if (!editingUser && !userForm.password) {
+      toast.error("Password is required for new users")
+      return
+    }
+
+    setIsSubmittingUser(true)
+    let success = false
+    try {
+      if (editingUser) {
+        success = await updateUser(editingUser.id, { username: userForm.username, email: userForm.email, role: userForm.role })
+        if (success) toast.success("User updated successfully!")
+      } else {
+        success = await createUser({ username: userForm.username, email: userForm.email, role: userForm.role, password: userForm.password })
+        if (success) toast.success("User created successfully!")
+      }
+    } catch {
+      toast.error("Failed to save user")
+    }
+    setIsSubmittingUser(false)
+
+    if (success) setShowUserForm(false)
   }
 
   const roleColors: Record<string, string> = {
@@ -178,7 +176,7 @@ export default function DevUsersPage() {
         const user = row.original
 
         return (
-          <div className="text-right">
+          <div className="text-right" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -190,7 +188,7 @@ export default function DevUsersPage() {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>Copy ID</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => handleEdit(user)}>
+                <DropdownMenuItem onClick={() => openEditDialog(user)}>
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
@@ -228,89 +226,10 @@ export default function DevUsersPage() {
   return (
     <RouteGuard requiredPermissions={["user:*"]}>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">User Management</h1>
-            <p className="mt-1 text-muted-foreground">Manage system users and roles</p>
-          </div>
-          <Button onClick={openNewUserForm} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New User
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+          <p className="mt-1 text-muted-foreground">Manage system users and roles</p>
         </div>
-
-        {showForm && (
-          <Card className="border-border/50 bg-card/50">
-            <CardHeader>
-              <CardTitle>{editingId ? "Edit User" : "Create New User"}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Username</label>
-                    <Input
-                      value={(formData as CreateUserRequest).username || ""}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      placeholder="john_doe"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Email</label>
-                    <Input
-                      type="email"
-                      value={(formData as CreateUserRequest).email || ""}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="john@example.com"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Role</label>
-                    <Select
-                      value={(formData as CreateUserRequest).role || "planner"}
-                      onValueChange={(value) => setFormData({ ...formData, role: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="planner">Planner</SelectItem>
-                        <SelectItem value="operator">Operator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {!editingId && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Password</label>
-                      <Input
-                        type="password"
-                        value={(formData as CreateUserRequest).password || ""}
-                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        placeholder="••••••••"
-                        required
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-3">
-                  <Button type="submit" className="flex-1">
-                    {editingId ? "Update User" : "Create User"}
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1">
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
 
         {dataLoading ? (
           <div className="text-center py-8">
@@ -319,9 +238,88 @@ export default function DevUsersPage() {
           </div>
         ) : (
           <div className="rounded-md border border-border/50 bg-card/50">
-            <DataTable columns={columns} data={users} />
+            <DataTable 
+              columns={columns} 
+              data={users} 
+              onRowClick={(user) => openEditDialog(user)}
+              toolbar={
+                <Button onClick={openCreateDialog} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  New User
+                </Button>
+              }
+            />
           </div>
         )}
+
+        {/* Create/Edit User Dialog */}
+        <Dialog open={showUserForm} onOpenChange={setShowUserForm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingUser ? "Edit User" : "Create User"}</DialogTitle>
+              <DialogDescription>
+                {editingUser ? "Update the user details." : "Add a new system user."}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUserSubmit} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Username</label>
+                  <Input
+                    value={userForm.username}
+                    onChange={(e) => setUserForm({ ...userForm, username: e.target.value })}
+                    placeholder="john_doe"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email</label>
+                  <Input
+                    type="email"
+                    value={userForm.email}
+                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                    placeholder="john@example.com"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Role</label>
+                  <Select value={userForm.role} onValueChange={(value) => setUserForm({ ...userForm, role: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="planner">Planner</SelectItem>
+                      <SelectItem value="operator">Operator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {!editingUser && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Password</label>
+                    <Input
+                      type="password"
+                      value={userForm.password}
+                      onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowUserForm(false)}>Cancel</Button>
+                <Button type="submit" disabled={isSubmittingUser}>
+                  {isSubmittingUser && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingUser ? "Update" : "Create"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showChangePasswordDialog} onOpenChange={setShowChangePasswordDialog}>
           <DialogContent>
