@@ -13,7 +13,7 @@ export function ProductPreview() {
         {/* Mock Window Controls */}
         <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
           <div className="flex gap-2">
-            <div className="h-3 w-3 rounded-full bg-red-400/80" />
+            <div className="h-3 w-3 rounded-full bg-primary/80" />
             <div className="h-3 w-3 rounded-full bg-yellow-400/80" />
             <div className="h-3 w-3 rounded-full bg-green-400/80" />
           </div>
@@ -45,7 +45,7 @@ export function ProductPreview() {
              </div>
              {/* Box 2: Bottom Right */}
              <div className="absolute bottom-0 right-0 w-1/2 h-1/4 p-1">
-                <Cube color="bg-orange-400" height="h-8" />
+                <Cube color="bg-primary" height="h-8" />
              </div>
              
              {/* Box 3: Center */}
@@ -63,7 +63,7 @@ export function ProductPreview() {
           {/* Overlay UI (Flat) */}
           <div className="absolute left-6 bottom-20 space-y-3 pointer-events-none">
              <StatCard label="Volume" value="78%" color="text-primary" />
-             <StatCard label="Weight" value="64%" color="text-orange-400" />
+             <StatCard label="Weight" value="64%" color="text-primary" />
           </div>
 
           <div className="absolute right-6 top-20 flex flex-col gap-2">

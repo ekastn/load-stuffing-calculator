@@ -7,13 +7,26 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Plus } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { ArrowRight, Plus, Search } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { useState, useMemo } from "react"
 
 import { hasAnyPermission } from "@/lib/permissions"
+
+const STATUS_OPTIONS = ["ALL", "DRAFT", "PLANNED", "IN_PROGRESS", "COMPLETED", "FAILED", "PARTIAL", "CANCELLED"]
 
 export default function ShipmentsPage() {
   const { user, permissions } = useAuth()
   const { plans, isLoading, error } = usePlans()
+  const [search, setSearch] = useState("")
+  const [statusFilter, setStatusFilter] = useState("ALL")
 
   const canCreatePlan = hasAnyPermission(permissions ?? [], ["plan:create"])
   const router = useRouter()
@@ -26,32 +39,70 @@ export default function ShipmentsPage() {
     FAILED: "bg-destructive/10 text-destructive",
   }
 
+  const filteredPlans = useMemo(() => {
+    return plans.filter((plan) => {
+      const matchesSearch =
+        search === "" ||
+        (plan.title || "").toLowerCase().includes(search.toLowerCase()) ||
+        plan.plan_code.toLowerCase().includes(search.toLowerCase())
+      const matchesStatus = statusFilter === "ALL" || plan.status === statusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [plans, search, statusFilter])
+
   const handleShipmentClick = (shipmentId: string) => {
     router.push(`/shipments/${shipmentId}`)
   }
 
   return (
     <RouteGuard requiredPermissions={["plan:read"]}>
-      <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Shipments</h1>
-              <p className="mt-1 text-muted-foreground">
-                {user?.role === "planner" && "Manage all load plans"}
-                {user?.role === "operator" && "View shipment details"}
-                {user?.role === "admin" && "View all shipments"}
-              </p>
-            </div>
-            {canCreatePlan && (
-              <Button onClick={() => router.push("/shipments/new")} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Create Shipment
-              </Button>
-            )}
+      <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Shipments</h1>
+            <p className="mt-1 text-muted-foreground">
+              {user?.role === "planner" && "Manage all load plans"}
+              {user?.role === "operator" && "View shipment details"}
+              {user?.role === "admin" && "View all shipments"}
+            </p>
           </div>
 
+          {/* Filter Bar */}
+          <Card className="border-border/50 bg-white shadow-sm">
+            <CardContent className="p-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by title or plan code..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s === "ALL" ? "All Statuses" : s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {canCreatePlan && (
+                  <Button onClick={() => router.push("/shipments/new")} className="gap-1.5">
+                    <Plus className="h-4 w-4" />
+                    Create Shipment
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <div className="flex flex-col items-center justify-center py-12 gap-4">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
               <p className="text-muted-foreground text-sm">Loading shipments...</p>
             </div>
@@ -61,11 +112,13 @@ export default function ShipmentsPage() {
                 {error}
               </CardContent>
             </Card>
-          ) : plans.length === 0 ? (
+          ) : filteredPlans.length === 0 ? (
             <Card className="border-border/50 bg-card/50">
               <CardContent className="pt-6 text-center">
-                <p className="text-muted-foreground">No shipments found</p>
-                {canCreatePlan && (
+                <p className="text-muted-foreground">
+                  {plans.length === 0 ? "No shipments found" : "No shipments match your filter"}
+                </p>
+                {plans.length === 0 && canCreatePlan && (
                   <Button onClick={() => router.push("/shipments/new")} className="mt-4">
                     Create First Shipment
                   </Button>
@@ -74,7 +127,7 @@ export default function ShipmentsPage() {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {plans.map((plan) => (
+              {filteredPlans.map((plan) => (
                 <Card
                   key={plan.plan_id}
                   className="border-border/50 bg-card/50 cursor-pointer hover:bg-card/70 transition-colors group"
