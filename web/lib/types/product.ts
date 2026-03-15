@@ -27,4 +27,5 @@ export interface ProductResponse {
   height_mm: number
   weight_kg: number
   color_hex?: string
+  images?: string[]
 }
