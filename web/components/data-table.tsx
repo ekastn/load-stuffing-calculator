@@ -27,14 +27,20 @@ import { DataTableViewOptions } from "./data-table-view-options"
 import { Input } from "@/components/ui/input" // Added Input import
 import { Button } from "@/components/ui/button" // Ensure Button is imported
 
+import React from "react"
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  onRowClick?: (data: TData) => void
+  toolbar?: React.ReactNode
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  onRowClick,
+  toolbar,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -62,7 +68,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="p-4">
-      <div className="flex items-center pb-4">
+      <div className="flex items-center justify-between pb-4">
         <Input
           placeholder="Filter names..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -71,7 +77,10 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
-        <DataTableViewOptions table={table} />
+        <div className="flex items-center gap-2">
+          <DataTableViewOptions table={table} />
+          {toolbar}
+        </div>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -99,6 +108,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  onClick={() => onRowClick?.(row.original)}
+                  className={onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
