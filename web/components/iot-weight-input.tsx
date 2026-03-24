@@ -5,6 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/numeric-input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useExecution } from "@/lib/execution-context"
 import { AlertCircle, CheckCircle, Scale } from "lucide-react"
@@ -91,14 +92,12 @@ export function IoTWeightInput({
           <div className="space-y-2">
             <label className="text-sm font-medium">Actual Weight (kg)</label>
             <div className="flex gap-2">
-              <Input
-                type="number"
-                step="0.01"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
+              <NumericInput
+                required
+                value={Number(weight) || ""}
+                onChange={(val) => setWeight(val ? val.toString() : "")}
                 placeholder="0.00"
                 disabled={isSimulating}
-                required
               />
               <Button type="button" variant="outline" onClick={handleSimulateIoT} disabled={isSimulating}>
                 {isSimulating ? "Reading..." : "Scan IoT"}

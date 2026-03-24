@@ -53,7 +53,7 @@ function EmbedViewerContent() {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <p className="text-red-600 font-semibold">Error loading plan</p>
+          <p className="text-destructive font-semibold">Error loading plan</p>
           <p className="text-sm text-gray-600 mt-2">{error || "Plan not found"}</p>
         </div>
       </div>
