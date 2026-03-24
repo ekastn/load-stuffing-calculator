@@ -209,7 +209,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-bold">3. Visualize & Adjust</h3>
                   <p className="text-muted-foreground mt-2">Interact with the 3D plan. Rotate, zoom, and verify item placement. Make manual adjustments if needed.</p>
                 </div>
-                <div className="absolute left-0 sm:left-1/2 sm:-ml-4 flex h-8 w-8 items-center justify-center rounded-full border-4 border-background bg-orange-500 text-white shadow-lg z-10">
+                <div className="absolute left-0 sm:left-1/2 sm:-ml-4 flex h-8 w-8 items-center justify-center rounded-full border-4 border-background bg-primary text-white shadow-lg z-10">
                    <Cuboid className="h-4 w-4" />
                 </div>
                  <div className="sm:w-1/2 order-2">

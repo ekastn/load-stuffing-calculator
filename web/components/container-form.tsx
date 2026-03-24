@@ -4,8 +4,11 @@ import type React from "react"
 
 import { useState } from "react"
 import type { Container } from "@/lib/storage-context"
+import { MAX_DIM_MM, MAX_WEIGHT_KG } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/numeric-input"
+import { DimensionInputGroup } from "@/components/dimension-input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ContainerFormProps {
@@ -69,69 +72,34 @@ export function ContainerForm({ container, onSubmit, onCancel }: ContainerFormPr
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-foreground">Interior Dimensions (cm)</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Length</label>
-                <Input
-                  type="number"
-                  value={formData.dimensionsInside.length}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      dimensionsInside: {
-                        ...formData.dimensionsInside,
-                        length: Number.parseFloat(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Width</label>
-                <Input
-                  type="number"
-                  value={formData.dimensionsInside.width}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      dimensionsInside: {
-                        ...formData.dimensionsInside,
-                        width: Number.parseFloat(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Height</label>
-                <Input
-                  type="number"
-                  value={formData.dimensionsInside.height}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      dimensionsInside: {
-                        ...formData.dimensionsInside,
-                        height: Number.parseFloat(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-              </div>
-            </div>
+            <h3 className="font-semibold text-foreground">Interior Dimensions</h3>
+            <DimensionInputGroup
+              length_mm={formData.dimensionsInside.length || 0}
+              width_mm={formData.dimensionsInside.width || 0}
+              height_mm={formData.dimensionsInside.height || 0}
+              onChange={(dims) =>
+                setFormData({
+                  ...formData,
+                  dimensionsInside: {
+                    length: dims.length_mm,
+                    width: dims.width_mm,
+                    height: dims.height_mm,
+                  },
+                })
+              }
+              required
+              maxLength_mm={MAX_DIM_MM}
+              maxWidth_mm={MAX_DIM_MM}
+              maxHeight_mm={MAX_DIM_MM}
+            />
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Max Weight (kg)</label>
-            <Input
-              type="number"
-              value={formData.maxWeight}
-              onChange={(e) => setFormData({ ...formData, maxWeight: Number.parseFloat(e.target.value) })}
+            <NumericInput
               required
+              value={formData.maxWeight || ""}
+              onChange={(val) => setFormData({ ...formData, maxWeight: val || 0 })}
             />
           </div>
 

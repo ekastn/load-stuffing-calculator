@@ -4,8 +4,11 @@ import type React from "react"
 
 import { useState } from "react"
 import type { Product } from "@/lib/storage-context"
+import { MAX_DIM_MM, MAX_WEIGHT_KG } from "@/lib/constants"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/numeric-input"
+import { DimensionInputGroup } from "@/components/dimension-input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface ProductFormProps {
@@ -62,85 +65,50 @@ export function ProductForm({ product, onSubmit, onCancel }: ProductFormProps) {
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-semibold text-foreground">Dimensions (cm)</h3>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Length</label>
-                <Input
-                  type="number"
-                  value={formData.dimensions.length}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      dimensions: {
-                        ...formData.dimensions,
-                        length: Number.parseFloat(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Width</label>
-                <Input
-                  type="number"
-                  value={formData.dimensions.width}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      dimensions: {
-                        ...formData.dimensions,
-                        width: Number.parseFloat(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Height</label>
-                <Input
-                  type="number"
-                  value={formData.dimensions.height}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      dimensions: {
-                        ...formData.dimensions,
-                        height: Number.parseFloat(e.target.value),
-                      },
-                    })
-                  }
-                  required
-                />
-              </div>
-            </div>
+            <h3 className="font-semibold text-foreground">Dimensions</h3>
+            <DimensionInputGroup
+              length_mm={formData.dimensions.length || 0}
+              width_mm={formData.dimensions.width || 0}
+              height_mm={formData.dimensions.height || 0}
+              onChange={(dims) =>
+                setFormData({
+                  ...formData,
+                  dimensions: {
+                    length: dims.length_mm,
+                    width: dims.width_mm,
+                    height: dims.height_mm,
+                  },
+                })
+              }
+              required
+              maxLength_mm={MAX_DIM_MM}
+              maxWidth_mm={MAX_DIM_MM}
+              maxHeight_mm={MAX_DIM_MM}
+            />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Weight (kg)</label>
-              <Input
-                type="number"
-                value={formData.weight}
-                onChange={(e) => setFormData({ ...formData, weight: Number.parseFloat(e.target.value) })}
+              <NumericInput
                 required
+                value={formData.weight || ""}
+                onChange={(val) => setFormData({ ...formData, weight: val || 0 })}
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Max Stack Height</label>
-              <Input
-                type="number"
-                value={formData.maxStackHeight}
-                onChange={(e) =>
+              <NumericInput
+                required
+                allowDecimals={false}
+                value={formData.maxStackHeight || ""}
+                onChange={(val) =>
                   setFormData({
                     ...formData,
-                    maxStackHeight: Number.parseFloat(e.target.value),
+                    maxStackHeight: val || 1,
                   })
                 }
-                required
               />
             </div>
           </div>

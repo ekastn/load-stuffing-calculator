@@ -2,12 +2,10 @@
 
 import { useState } from "react"
 import { useContainers } from "@/hooks/use-containers"
-import { CreateContainerRequest, ContainerResponse, UpdateContainerRequest } from "@/lib/types"
+import { ContainerResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Plus, Trash2, MoreHorizontal, Edit } from "lucide-react"
+import { Plus, Trash2, MoreHorizontal, Edit, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,11 +15,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { RouteGuard } from "@/lib/route-guard"
-import { isUuidV4 } from "@/lib/utils"
-import { DataTable } from "@/components/ui/data-table"
+import { formatDim } from "@/lib/utils"
+import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,73 +33,15 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function ContainersPage() {
-  const { user, isLoading: authLoading } = useAuth()
-  const { containers, isLoading: dataLoading, error, createContainer, updateContainer, deleteContainer } = useContainers()
-
-  const [createWorkspaceId, setCreateWorkspaceId] = useState("")
-  const isFounder = user?.role === "founder"
-  
-  const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState<CreateContainerRequest>({
-    name: "",
-    inner_length_mm: 0,
-    inner_width_mm: 0,
-    inner_height_mm: 0,
-    max_weight_kg: 0,
-    description: ""
-  })
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const { isLoading: authLoading } = useAuth()
+  const { containers, isLoading: dataLoading, error, deleteContainer } = useContainers()
+  const router = useRouter()
   
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [containerToDelete, setContainerToDelete] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    let success = false
-    try {
-      if (editingId) {
-        success = await updateContainer(editingId, formData)
-        if (success) toast.success("Container updated successfully!")
-      } else {
-        const trimmedWorkspaceId = createWorkspaceId.trim()
-        if (isFounder && trimmedWorkspaceId !== "" && !isUuidV4(trimmedWorkspaceId)) {
-          toast.error("workspace_id must be a valid UUIDv4")
-          return
-        }
-
-        const workspaceId = isFounder ? (trimmedWorkspaceId || null) : undefined
-        success = await createContainer(formData, workspaceId)
-        if (success) toast.success("Container created successfully!")
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save container")
-    }
-
-    if (success) {
-      setFormData({
-        name: "",
-        inner_length_mm: 0,
-        inner_width_mm: 0,
-        inner_height_mm: 0,
-        max_weight_kg: 0,
-        description: ""
-      })
-      setEditingId(null)
-      setShowForm(false)
-    }
-  }
-
   const handleEdit = (container: ContainerResponse) => {
-    setFormData({
-      name: container.name || "",
-      inner_length_mm: container.inner_length_mm || 0,
-      inner_width_mm: container.inner_width_mm || 0,
-      inner_height_mm: container.inner_height_mm || 0,
-      max_weight_kg: container.max_weight_kg || 0,
-      description: container.description || ""
-    })
-    setEditingId(container.id)
-    setShowForm(true)
+    router.push(`/containers/${container.id}/edit`)
   }
 
   const handleDelete = (id: string) => {
@@ -120,19 +61,6 @@ export default function ContainersPage() {
     setContainerToDelete(null)
   }
 
-  const openNewForm = () => {
-    setFormData({
-        name: "",
-        inner_length_mm: 0,
-        inner_width_mm: 0,
-        inner_height_mm: 0,
-        max_weight_kg: 0,
-        description: ""
-    })
-    setEditingId(null)
-    setShowForm(true)
-  }
-
   const columns: ColumnDef<ContainerResponse>[] = [
     {
       accessorKey: "name",
@@ -142,17 +70,22 @@ export default function ContainersPage() {
     },
     {
       accessorKey: "dimensions",
-      header: "Dimensions (LxWxH mm)",
+      header: "Dims (mm)",
       cell: ({ row }) => {
           const c = row.original
-          return `${c.inner_length_mm} x ${c.inner_width_mm} x ${c.inner_height_mm}`
+          return (
+            <span className="text-xs font-mono">
+              {formatDim(c.inner_length_mm)}x{formatDim(c.inner_width_mm)}x{formatDim(c.inner_height_mm)}
+            </span>
+          )
       }
     },
     {
       accessorKey: "max_weight_kg",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Max Weight (kg)" />
+        <DataTableColumnHeader column={column} title="Max Wt (kg)" />
       ),
+      cell: ({ row }) => row.original.max_weight_kg.toLocaleString()
     },
     {
       id: "actions",
@@ -160,7 +93,7 @@ export default function ContainersPage() {
         const container = row.original
 
         return (
-          <div className="text-right">
+          <div className="text-right" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -197,9 +130,9 @@ export default function ContainersPage() {
 
   if (authLoading) {
     return (
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-[60vh] items-center justify-center">
             <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+            <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" />
             <p className="text-muted-foreground">Loading...</p>
             </div>
         </div>
@@ -208,7 +141,7 @@ export default function ContainersPage() {
 
   if (error) {
       return (
-        <div className="flex h-screen items-center justify-center text-destructive">
+        <div className="flex h-[60vh] items-center justify-center text-destructive">
             Error: {error}
         </div>
       )
@@ -217,115 +150,29 @@ export default function ContainersPage() {
   return (
     <RouteGuard requiredPermissions={["container:read"]}>
       <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Container Profiles</h1>
-              <p className="mt-1 text-muted-foreground">Manage container types and specifications</p>
-            </div>
-            <Button onClick={openNewForm} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Container
-            </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Container Profiles</h1>
+            <p className="mt-1 text-muted-foreground">Manage container types and specifications</p>
           </div>
-
-          {showForm && (
-            <Card className="border-border/50 bg-card/50">
-              <CardHeader>
-                <CardTitle>{editingId ? "Edit Container" : "New Container"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {isFounder && !editingId && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Workspace Override (optional)</label>
-                      <Input
-                        value={createWorkspaceId}
-                        onChange={(e) => setCreateWorkspaceId(e.target.value)}
-                        placeholder="Paste workspace_id UUID to create in that workspace (leave blank for global)"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Founder accounts create global presets by default. Provide a workspace_id to scope this container to that workspace.
-                      </p>
-                    </div>
-                  )}
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Name</label>
-                      <Input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="20ft Standard"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Max Weight (kg)</label>
-                      <Input
-                        type="number"
-                        value={formData.max_weight_kg || ""}
-                        onChange={(e) => setFormData({ ...formData, max_weight_kg: Number(e.target.value) })}
-                        placeholder="28000"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Length (mm)</label>
-                        <Input
-                            type="number"
-                            value={formData.inner_length_mm || ""}
-                            onChange={(e) => setFormData({ ...formData, inner_length_mm: Number(e.target.value) })}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Width (mm)</label>
-                        <Input
-                            type="number"
-                            value={formData.inner_width_mm || ""}
-                            onChange={(e) => setFormData({ ...formData, inner_width_mm: Number(e.target.value) })}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Height (mm)</label>
-                        <Input
-                            type="number"
-                            value={formData.inner_height_mm || ""}
-                            onChange={(e) => setFormData({ ...formData, inner_height_mm: Number(e.target.value) })}
-                            required
-                        />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                      <label className="text-sm font-medium">Description</label>
-                      <Input
-                        value={formData.description || ""}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        placeholder="Optional description"
-                      />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
 
           {dataLoading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+              <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mb-4" />
               <p className="text-muted-foreground">Loading containers...</p>
             </div>
           ) : (
-            <div className="rounded-md border border-border/50 bg-card/50">
-              <DataTable columns={columns} data={containers} />
+            <div className="rounded-md border border-border/50 bg-card/50 overflow-hidden">
+              <DataTable 
+                columns={columns} 
+                data={containers} 
+                onRowClick={(container) => router.push(`/containers/${container.id}/edit`)}
+                toolbar={
+                  <Button onClick={() => router.push("/containers/new")} className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" />
+                    New Container
+                  </Button>
+                }
+              />
             </div>
           )}
 

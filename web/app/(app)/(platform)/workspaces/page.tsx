@@ -4,14 +4,13 @@ import { useState } from "react"
 
 import type { ColumnDef } from "@tanstack/react-table"
 
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from "@/components/data-table"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { RouteGuard } from "@/lib/route-guard"
 import { useWorkspaces } from "@/hooks/use-workspaces"
 import type { CreateWorkspaceRequest, UpdateWorkspaceRequest, WorkspaceResponse } from "@/lib/types"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
@@ -32,7 +31,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Edit, MoreHorizontal, Plus, Trash2 } from "lucide-react"
+import { Edit, MoreHorizontal, Plus, Trash2, Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +43,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+
+const MOCK_USERS = [
+  { id: "usr-001", username: "admin", email: "admin@example.com" },
+  { id: "usr-002", username: "ahmad.fauzi", email: "ahmad.fauzi@example.com" },
+  { id: "usr-003", username: "budi.santoso", email: "budi.santoso@example.com" },
+  { id: "usr-004", username: "citra.wulandari", email: "citra.wulandari@example.com" },
+  { id: "usr-005", username: "dewi.anggraini", email: "dewi.anggraini@example.com" },
+  { id: "usr-006", username: "eko.prasetyo", email: "eko.prasetyo@example.com" },
+  { id: "usr-007", username: "fitri.handayani", email: "fitri.handayani@example.com" },
+  { id: "usr-008", username: "gunawan.wijaya", email: "gunawan.wijaya@example.com" },
+  { id: "usr-009", username: "hani.safitri", email: "hani.safitri@example.com" },
+  { id: "usr-010", username: "indra.kusuma", email: "indra.kusuma@example.com" },
+  { id: "usr-011", username: "joko.widodo", email: "joko.widodo@example.com" },
+  { id: "usr-012", username: "kartika.sari", email: "kartika.sari@example.com" },
+  { id: "usr-013", username: "lukman.hakim", email: "lukman.hakim@example.com" },
+  { id: "usr-014", username: "mayasari.putri", email: "mayasari.putri@example.com" },
+  { id: "usr-015", username: "nando.pratama", email: "nando.pratama@example.com" },
+  { id: "usr-016", username: "oktavia.rini", email: "oktavia.rini@example.com" },
+  { id: "usr-017", username: "putra.lesmana", email: "putra.lesmana@example.com" },
+  { id: "usr-018", username: "ratna.dewi", email: "ratna.dewi@example.com" },
+  { id: "usr-019", username: "surya.aditya", email: "surya.aditya@example.com" },
+  { id: "usr-020", username: "tari.puspita", email: "tari.puspita@example.com" },
+]
 
 export default function PlatformWorkspacesPage() {
   const { workspaces, isLoading, error, createWorkspace, updateWorkspace, deleteWorkspace } = useWorkspaces()
@@ -55,6 +80,7 @@ export default function PlatformWorkspacesPage() {
 
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string | null>(null)
+  const [ownerPopoverOpen, setOwnerPopoverOpen] = useState(false)
 
   const openCreate = () => {
     setEditingId(null)
@@ -204,25 +230,23 @@ export default function PlatformWorkspacesPage() {
   return (
     <RouteGuard requiredPermissions={["workspace:*"]}>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Workspace Management</h1>
-            <p className="mt-1 text-muted-foreground">Manage all workspaces globally</p>
-          </div>
-          <Button onClick={openCreate} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Workspace
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Workspace Management</h1>
+          <p className="mt-1 text-muted-foreground">Manage all workspaces globally</p>
         </div>
 
-        <Card className="border-border/50 bg-card/50">
-          <CardHeader>
-            <CardTitle>Workspaces</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DataTable columns={columns} data={workspaces} />
-          </CardContent>
-        </Card>
+        <div className="rounded-md border border-border/50 bg-card/50">
+            <DataTable
+              columns={columns}
+              data={workspaces}
+              toolbar={
+                <Button onClick={openCreate} className="gap-1.5">
+                  <Plus className="h-4 w-4" />
+                  New Workspace
+                </Button>
+              }
+            />
+        </div>
 
         <Dialog open={showForm} onOpenChange={(open) => setShowForm(open)}>
           <DialogContent>
@@ -265,24 +289,86 @@ export default function PlatformWorkspacesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Owner User ID</label>
-                    <Input
-                      value={(formData as any).owner_user_id || ""}
-                      onChange={(e) => setFormData({ ...formData, owner_user_id: e.target.value })}
-                      placeholder="uuid"
-                    />
+                    <label className="text-sm font-medium">Owner</label>
+                    <Popover open={ownerPopoverOpen} onOpenChange={setOwnerPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" aria-expanded={ownerPopoverOpen} className="w-full justify-between font-normal">
+                          {(formData as any).owner_user_id
+                            ? MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
+                            : "Select owner..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search user..." />
+                          <CommandList>
+                            <CommandEmpty>No user found.</CommandEmpty>
+                            <CommandGroup>
+                              {MOCK_USERS.map((user) => (
+                                <CommandItem
+                                  key={user.id}
+                                  value={user.username + " " + user.email}
+                                  onSelect={() => {
+                                    setFormData({ ...formData, owner_user_id: user.id })
+                                    setOwnerPopoverOpen(false)
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", (formData as any).owner_user_id === user.id ? "opacity-100" : "opacity-0")} />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-medium">{user.username}</span>
+                                    <span className="text-xs text-muted-foreground">{user.email}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               )}
 
               {editingId && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Owner User ID (transfer)</label>
-                  <Input
-                    value={(formData as any).owner_user_id || ""}
-                    onChange={(e) => setFormData({ ...formData, owner_user_id: e.target.value })}
-                    placeholder="uuid"
-                  />
+                  <label className="text-sm font-medium">Owner (transfer)</label>
+                  <Popover open={ownerPopoverOpen} onOpenChange={setOwnerPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={ownerPopoverOpen} className="w-full justify-between font-normal">
+                        {(formData as any).owner_user_id
+                          ? MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
+                          : "Select new owner..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search user..." />
+                        <CommandList>
+                          <CommandEmpty>No user found.</CommandEmpty>
+                          <CommandGroup>
+                            {MOCK_USERS.map((user) => (
+                              <CommandItem
+                                key={user.id}
+                                value={user.username + " " + user.email}
+                                onSelect={() => {
+                                  setFormData({ ...formData, owner_user_id: user.id })
+                                  setOwnerPopoverOpen(false)
+                                }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", (formData as any).owner_user_id === user.id ? "opacity-100" : "opacity-0")} />
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">{user.username}</span>
+                                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 
