@@ -66,7 +66,6 @@ class SingleRunResult:
     volume_utilization_pct: float
     weight_utilization_pct: float
     fill_rate_pct: float
-
     # Raw placement data (for validation)
     placements: list[dict] = field(default_factory=list)
 
@@ -83,7 +82,6 @@ class AggregatedResult:
     total_items: int
     avg_fitted: float
     std_fitted: float
-
     # Utilization stats
     avg_volume_util: float
     std_volume_util: float
@@ -115,7 +113,6 @@ def calculate_volume_utilization(
 ) -> float:
     """
     Calculate volume utilization percentage.
-
     Volume utilization = (sum of fitted item volumes) / container_volume * 100
     """
     # Build item dimension lookup (item_id -> dimensions in mm)
@@ -127,7 +124,6 @@ def calculate_volume_utilization(
             item["height"],
             item["weight"],
         )
-
     # Calculate fitted volume
     fitted_volume_mm3 = 0.0
     for p in placements:
@@ -151,14 +147,12 @@ def calculate_weight_utilization(
 ) -> float:
     """
     Calculate weight utilization percentage.
-
     Weight utilization = (sum of fitted item weights) / max_weight * 100
     """
     # Build item weight lookup
     item_weights: dict[str, float] = {}
     for item in request_items:
         item_weights[item["item_id"]] = item["weight"]
-
     # Calculate fitted weight
     fitted_weight_kg = 0.0
     for p in placements:
@@ -192,12 +186,10 @@ def run_single_benchmark(
         check_stable=check_stable,
         support_surface_ratio=support_surface_ratio,
     )
-
     # Run packing
     start_time = time.perf_counter()
     result = pack_request(request)
     total_time_ms = int((time.perf_counter() - start_time) * 1000)
-
     # Extract stats
     data = result["data"]
     stats = data["stats"]
@@ -305,7 +297,6 @@ def save_json_results(
     output_dir: Path,
 ) -> None:
     """Save results to JSON file."""
-
     # Convert to serializable format
     runs_data = []
     for r in all_runs:
@@ -323,7 +314,6 @@ def save_json_results(
             "weight_utilization_pct": round(r.weight_utilization_pct, 2),
             "fill_rate_pct": round(r.fill_rate_pct, 2),
         })
-
     agg_data = []
     for a in aggregated:
         agg_data.append({
@@ -347,7 +337,6 @@ def save_json_results(
             "min_time_ms": round(a.min_time, 1),
             "max_time_ms": round(a.max_time, 1),
         })
-
     output = {
         "generated_at": datetime.now().isoformat(),
         "total_runs": len(all_runs),
@@ -398,7 +387,6 @@ def save_csv_results(aggregated: list[AggregatedResult], output_dir: Path) -> No
                 f"{a.avg_time:.1f}",
                 f"{a.std_time:.2f}",
             ])
-
     print(f"  Saved CSV results to {output_path}")
 
 
@@ -445,7 +433,6 @@ def generate_latex_tables(aggregated: list[AggregatedResult], output_dir: Path) 
             f"{a.avg_fill_rate:.2f} & "
             f"{a.avg_time:.1f} $\\pm$ {a.std_time:.1f} \\\\"
         )
-
     lines.append(r"        \bottomrule")
     lines.append(r"    \end{tabular}")
     lines.append(r"\end{table}")
@@ -486,7 +473,6 @@ def generate_latex_tables(aggregated: list[AggregatedResult], output_dir: Path) 
             f"{a.avg_time:.1f} & "
             f"{a.avg_fitted:.0f} \\\\"
         )
-
     lines.append(r"        \bottomrule")
     lines.append(r"    \end{tabular}")
     lines.append(r"\end{table}")
@@ -686,7 +672,6 @@ def main():
         description="Run 3D Bin Packing Benchmark",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-
     parser.add_argument(
         "-i", "--iterations",
         type=int,
@@ -717,14 +702,12 @@ def main():
         default=None,
         help="Comma-separated list of variant names (default: all)",
     )
-
     parser.add_argument(
         "-o", "--output",
         type=str,
         default=None,
         help="Output directory (default: results/)",
     )
-
     parser.add_argument(
         "--no-plots",
         action="store_true",
@@ -781,14 +764,12 @@ def main():
         print("\n" + "=" * 70)
         print("GENERATING PLOTS")
         print("=" * 70)
-
         try:
             from plot_results import generate_all_plots
             generate_all_plots(aggregated, output_dir / "figures")
         except ImportError as e:
             print(f"  Warning: Could not import plot_results: {e}")
             print("  Skipping plot generation. Run plot_results.py separately.")
-
     print("\n" + "=" * 70)
     print("BENCHMARK COMPLETE")
     print("=" * 70)
