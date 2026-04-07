@@ -1,4 +1,4 @@
-import { OrthographicCamera, WebGLRenderer, Vector2, Vector3, Quaternion } from "three";
+import { OrthographicCamera, WebGLRenderer, Vector2, Vector3, Quaternion, Box3 } from "three";
 import type { ContainerData } from "../types";
 
 export class CameraManager {
@@ -26,7 +26,9 @@ export class CameraManager {
     }
 
     public setDefaultPosition(): void {
-        this.camera.position.set(15, 8, -10);
+        // Position: Right (+X), Up (+Y), Front (+Z)
+        // Matches the "Door" view of the container
+        this.camera.position.set(15, 10, 15);
         this.camera.zoom = 1;
         this.camera.lookAt(0, 0, 0);
     }
@@ -46,6 +48,56 @@ export class CameraManager {
 
     public getCamera(): OrthographicCamera {
         return this.camera;
+    }
+
+    public fitToContainer(container: ContainerData): void {
+        // Reset to default angle (Front-Right-Top)
+        this.camera.position.set(15, 10, 15);
+        this.camera.lookAt(0, 0, 0);
+
+        // Convert dimensions to meters
+        const length = container.length_mm / 1000;
+        const width = container.width_mm / 1000;
+        const height = container.height_mm / 1000;
+
+        // Find maximum dimension to fit in frustum
+        // Frustum size is hardcoded to 20 in constructor
+        const maxDim = Math.max(length, width, height);
+        
+        // Calculate zoom needed. 
+        // Frustum size 20 covers 20 units.
+        // We want container (maxDim) to fill ~70% of screen.
+        // 20 / zoom = maxDim / 0.7  => zoom = (20 * 0.7) / maxDim = 14 / maxDim
+        const targetZoom = 14 / Math.max(maxDim, 1); // Prevent division by zero
+
+        this.camera.zoom = targetZoom;
+        this.camera.updateProjectionMatrix();
+    }
+
+    public focusOnBox(box: Box3, padding = 1.2): void {
+        const center = new Vector3();
+        box.getCenter(center);
+        
+        const size = new Vector3();
+        box.getSize(size);
+        
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        // Use a fixed distance to maintain consistent view of the container
+        // This ensures we see the container context, not just the focused item
+        const distance = 25;
+        
+        // Straight front view - looking directly into the container
+        const offsetDirection = new Vector3(0.8, 0.4, -1);
+        const offset = offsetDirection.multiplyScalar(distance);
+        this.camera.position.copy(center).add(offset);
+        
+        this.camera.up.set(0, 1, 0);
+        this.camera.updateMatrixWorld();
+        this.camera.lookAt(center);
+        
+        this.camera.zoom = 3;
+        this.camera.updateProjectionMatrix();
     }
 
     public setupForScreenshot(
@@ -75,8 +127,8 @@ export class CameraManager {
         this.camera.top = frustumSize / 2;
         this.camera.bottom = -frustumSize / 2;
 
-        // Set isometric view
-        this.camera.position.set(15, 8, -10);
+        // Set isometric view (Front-Right-Top)
+        this.camera.position.set(15, 10, 15);
         this.camera.lookAt(0, 0, 0);
 
         // Calculate zoom to fit container

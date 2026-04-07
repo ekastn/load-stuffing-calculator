@@ -1,5 +1,21 @@
 # Agent Notes (load-stuffing-calculator)
 
+## Quick Reference
+
+Multi-tenant 3D container load planning system with Go backend, Next.js web client, and Flutter mobile client. Implements bin packing algorithms, role-based access control, workspace management, and real-time 3D visualization.
+
+**Tech Stack:**
+- Backend: Go 1.24+ (Gin), PostgreSQL 14+ (SQLC + Goose), Python 3.10+ (packing service)
+- Web: Next.js 16, React 19, TypeScript 5, Three.js, Tailwind CSS 4, shadcn/ui
+- Mobile: Flutter 3.9+, Dart 3.9+, Material 3, Provider state management
+
+**Key Metrics:**
+- Backend test coverage: 95.6% (cache/config/env/middleware/response/types: 100%)
+- Web test coverage: Service layer only (8 test files, no component/E2E tests)
+- Mobile test coverage: 0% (no tests implemented)
+- StuffingVisualizer: 1731 lines, 14 files (Three.js visualization engine)
+- Total Dart code (mobile): ~10,262 lines across 72 source files
+
 ## Project Overview
 This repo implements a Load Planning / Container Stuffing system:
 - Admin manages users/roles/permissions and master data (products, containers).

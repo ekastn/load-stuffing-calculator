@@ -16,20 +16,22 @@ const createProduct = `-- name: CreateProduct :one
 INSERT INTO products (
     workspace_id,
     name,
+    sku,
     length_mm,
     width_mm,
     height_mm,
     weight_kg,
     color_hex
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 )
-RETURNING product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
+RETURNING product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id, sku
 `
 
 type CreateProductParams struct {
 	WorkspaceID *uuid.UUID     `json:"workspace_id"`
 	Name        string         `json:"name"`
+	Sku         *string        `json:"sku"`
 	LengthMm    pgtype.Numeric `json:"length_mm"`
 	WidthMm     pgtype.Numeric `json:"width_mm"`
 	HeightMm    pgtype.Numeric `json:"height_mm"`
@@ -41,6 +43,7 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 	row := q.db.QueryRow(ctx, createProduct,
 		arg.WorkspaceID,
 		arg.Name,
+		arg.Sku,
 		arg.LengthMm,
 		arg.WidthMm,
 		arg.HeightMm,
@@ -59,6 +62,7 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.WorkspaceID,
+		&i.Sku,
 	)
 	return i, err
 }
@@ -90,7 +94,7 @@ func (q *Queries) DeleteProductAny(ctx context.Context, productID uuid.UUID) err
 }
 
 const getProduct = `-- name: GetProduct :one
-SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id, sku
 FROM products
 WHERE product_id = $1
   AND (workspace_id = $2 OR workspace_id IS NULL)
@@ -115,12 +119,13 @@ func (q *Queries) GetProduct(ctx context.Context, arg GetProductParams) (Product
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.WorkspaceID,
+		&i.Sku,
 	)
 	return i, err
 }
 
 const getProductAny = `-- name: GetProductAny :one
-SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id, sku
 FROM products
 WHERE product_id = $1
 `
@@ -139,12 +144,13 @@ func (q *Queries) GetProductAny(ctx context.Context, productID uuid.UUID) (Produ
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.WorkspaceID,
+		&i.Sku,
 	)
 	return i, err
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id, sku
 FROM products
 WHERE workspace_id = $1 OR workspace_id IS NULL
 ORDER BY (workspace_id IS NULL) DESC, name
@@ -177,6 +183,7 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.WorkspaceID,
+			&i.Sku,
 		); err != nil {
 			return nil, err
 		}
@@ -189,7 +196,7 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 }
 
 const listProductsAll = `-- name: ListProductsAll :many
-SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id
+SELECT product_id, name, length_mm, width_mm, height_mm, weight_kg, color_hex, created_at, updated_at, workspace_id, sku
 FROM products
 ORDER BY (workspace_id IS NULL) DESC, name
 LIMIT $1 OFFSET $2
@@ -220,6 +227,7 @@ func (q *Queries) ListProductsAll(ctx context.Context, arg ListProductsAllParams
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.WorkspaceID,
+			&i.Sku,
 		); err != nil {
 			return nil, err
 		}
@@ -235,11 +243,12 @@ const updateProduct = `-- name: UpdateProduct :exec
 UPDATE products
 SET
     name = $3,
-    length_mm = $4,
-    width_mm = $5,
-    height_mm = $6,
-    weight_kg = $7,
-    color_hex = $8,
+    sku = $4,
+    length_mm = $5,
+    width_mm = $6,
+    height_mm = $7,
+    weight_kg = $8,
+    color_hex = $9,
     updated_at = NOW()
 WHERE product_id = $1
   AND workspace_id = $2
@@ -249,6 +258,7 @@ type UpdateProductParams struct {
 	ProductID   uuid.UUID      `json:"product_id"`
 	WorkspaceID *uuid.UUID     `json:"workspace_id"`
 	Name        string         `json:"name"`
+	Sku         *string        `json:"sku"`
 	LengthMm    pgtype.Numeric `json:"length_mm"`
 	WidthMm     pgtype.Numeric `json:"width_mm"`
 	HeightMm    pgtype.Numeric `json:"height_mm"`
@@ -261,6 +271,7 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) er
 		arg.ProductID,
 		arg.WorkspaceID,
 		arg.Name,
+		arg.Sku,
 		arg.LengthMm,
 		arg.WidthMm,
 		arg.HeightMm,
@@ -274,11 +285,12 @@ const updateProductAny = `-- name: UpdateProductAny :exec
 UPDATE products
 SET
     name = $2,
-    length_mm = $3,
-    width_mm = $4,
-    height_mm = $5,
-    weight_kg = $6,
-    color_hex = $7,
+    sku = $3,
+    length_mm = $4,
+    width_mm = $5,
+    height_mm = $6,
+    weight_kg = $7,
+    color_hex = $8,
     updated_at = NOW()
 WHERE product_id = $1
 `
@@ -286,6 +298,7 @@ WHERE product_id = $1
 type UpdateProductAnyParams struct {
 	ProductID uuid.UUID      `json:"product_id"`
 	Name      string         `json:"name"`
+	Sku       *string        `json:"sku"`
 	LengthMm  pgtype.Numeric `json:"length_mm"`
 	WidthMm   pgtype.Numeric `json:"width_mm"`
 	HeightMm  pgtype.Numeric `json:"height_mm"`
@@ -297,6 +310,7 @@ func (q *Queries) UpdateProductAny(ctx context.Context, arg UpdateProductAnyPara
 	_, err := q.db.Exec(ctx, updateProductAny,
 		arg.ProductID,
 		arg.Name,
+		arg.Sku,
 		arg.LengthMm,
 		arg.WidthMm,
 		arg.HeightMm,

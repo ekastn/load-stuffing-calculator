@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,8 +54,17 @@ export function LoginForm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background px-4">
       <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold text-foreground">Load & Stuffing</h1>
+        <div className="flex flex-col items-center text-center space-y-2">
+          <div className="relative w-20 h-20 mb-2">
+            <Image 
+              src="/logo.png" 
+              alt="LoadIQ Logo" 
+              fill
+              className="object-contain rounded-xl"
+              priority
+            />
+          </div>
+          <h1 className="text-4xl font-bold text-foreground">LoadIQ</h1>
           <p className="text-muted-foreground">Container Optimization System</p>
         </div>
 

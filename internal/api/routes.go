@@ -131,6 +131,9 @@ func (a *App) setupRoutes(r *gin.Engine) {
 			plans.DELETE("/:id/items/:itemId", perm.Require("plan_item:*"), a.planHandler.DeletePlanItem)
 
 			plans.POST("/:id/calculate", perm.Require("plan:calculate"), a.planHandler.CalculatePlan)
+
+			plans.GET("/:id/barcodes", perm.Require("plan:read"), a.planHandler.GetPlanBarcodes)
+			plans.POST("/:id/validations", perm.Require("plan:read"), a.planHandler.ValidatePlanBarcode)
 		}
 	}
 }

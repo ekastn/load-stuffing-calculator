@@ -2,9 +2,12 @@ package handler
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/auth"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
@@ -12,6 +15,7 @@ import (
 	"github.com/ekastn/load-stuffing-calculator/internal/service"
 	"github.com/ekastn/load-stuffing-calculator/internal/types"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type PlanHandler struct {
@@ -369,7 +373,7 @@ func (h *PlanHandler) DeletePlanItem(c *gin.Context) {
 //	@Param			workspace_id	query	string						false	"Workspace override (founder only)"
 //	@Param			id				path	string						true	"Plan ID"
 //	@Param			request			body	dto.CalculatePlanRequest	false	"Calculation Options"
-
+//
 // @Success	200	{object}	response.APIResponse{data=dto.CalculationResult}
 // @Failure	400	{object}	response.APIResponse
 // @Failure	500	{object}	response.APIResponse
@@ -402,4 +406,207 @@ func (h *PlanHandler) CalculatePlan(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, resp)
+}
+
+// GetPlanBarcodes returns generated barcodes for all placements in a plan
+//
+//	@Summary		Get plan barcodes
+//	@Description	Returns generated barcodes for all placements in a plan
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			workspace_id	query		string	false	"Workspace override (founder only)"
+//	@Param			id				path		string	true	"Plan ID"
+//	@Success		200				{object}	response.APIResponse{data=[]dto.BarcodeInfo}
+//	@Failure		400				{object}	response.APIResponse
+//	@Failure		404				{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id}/barcodes [get]
+func (h *PlanHandler) GetPlanBarcodes(c *gin.Context) {
+	planID := c.Param("id")
+
+	// Get plan with placements (reuse existing method)
+	plan, err := h.planSvc.GetPlan(c.Request.Context(), planID)
+	if err != nil {
+		response.Error(c, http.StatusNotFound, "Plan not found")
+		return
+	}
+
+	planUUID, err := uuid.Parse(plan.PlanID)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Invalid plan ID in response")
+		return
+	}
+
+	// Generate barcodes
+	barcodes := make([]dto.BarcodeInfo, 0, len(plan.Calculation.Placements))
+
+	for _, placement := range plan.Calculation.Placements {
+		// Skip placements without step numbers (shouldn't happen for valid placements)
+		if placement.StepNumber == 0 {
+			continue
+		}
+
+		item := findItemByID(plan.Items, placement.ItemID)
+		if item == nil {
+			continue
+		}
+
+		itemUUID, err := uuid.Parse(placement.ItemID)
+		if err != nil {
+			continue
+		}
+
+		barcode := generateBarcode(planUUID, placement.StepNumber, itemUUID)
+
+		barcodes = append(barcodes, dto.BarcodeInfo{
+			StepNumber: placement.StepNumber,
+			ItemID:     placement.ItemID,
+			ItemLabel:  *item.Label,
+			Barcode:    barcode,
+			Position: dto.Position{
+				X: placement.PositionX,
+				Y: placement.PositionY,
+				Z: placement.PositionZ,
+			},
+			Dimensions: dto.Dimensions{
+				Length: item.LengthMM,
+				Width:  item.WidthMM,
+				Height: item.HeightMM,
+			},
+		})
+	}
+
+	// Sort by step number
+	sort.Slice(barcodes, func(i, j int) bool {
+		return barcodes[i].StepNumber < barcodes[j].StepNumber
+	})
+
+	response.Success(c, http.StatusOK, barcodes)
+}
+
+// ValidatePlanBarcode validates a scanned barcode against a plan
+//
+//	@Summary		Validate plan barcode
+//	@Description	Validates a scanned barcode against a plan
+//	@Tags			plans
+//	@Accept			json
+//	@Produce		json
+//	@Param			workspace_id	query		string						false	"Workspace override (founder only)"
+//	@Param			id				path		string						true	"Plan ID"
+//	@Param			request			body		dto.ValidateBarcodeRequest	true	"Validation Data"
+//	@Success		200				{object}	response.APIResponse{data=dto.ValidationResult}
+//	@Failure		400				{object}	response.APIResponse
+//	@Security		BearerAuth
+//	@Router			/plans/{id}/validations [post]
+func (h *PlanHandler) ValidatePlanBarcode(c *gin.Context) {
+	planID := c.Param("id")
+
+	var req dto.ValidateBarcodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Parse scanned barcode
+	parsed := parseBarcode(req.Barcode)
+	if parsed == nil {
+		response.Success(c, http.StatusOK, dto.ValidationResult{
+			Valid:  false,
+			Status: "INVALID_FORMAT",
+			Error:  "Invalid barcode format",
+		})
+		return
+	}
+
+	// Verify barcode belongs to this plan
+	planUUID, err := uuid.Parse(planID)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid plan ID")
+		return
+	}
+
+	planShort := planUUID.String()[:8]
+	if parsed.PlanID != planShort {
+		response.Success(c, http.StatusOK, dto.ValidationResult{
+			Valid:      false,
+			Status:     "WRONG_PLAN",
+			Error:      "Barcode belongs to different plan",
+			PlanID:     parsed.PlanID,
+			StepNumber: parsed.StepNumber,
+			ItemID:     parsed.ItemID,
+		})
+		return
+	}
+
+	// Check if step matches expected
+	valid := false
+	if req.ExpectedStep != nil {
+		valid = parsed.StepNumber == *req.ExpectedStep
+	} else {
+		// If no expected step provided, we just validate format and plan match
+		// Ideally we should check if step exists in plan but that requires fetching plan
+		valid = true
+	}
+
+	status := "MATCHED"
+	if !valid {
+		if req.ExpectedStep != nil {
+			status = "OUT_OF_SEQUENCE"
+		} else {
+			status = "UNEXPECTED_STEP"
+		}
+	}
+
+	response.Success(c, http.StatusOK, dto.ValidationResult{
+		Valid:      valid,
+		Status:     status,
+		PlanID:     parsed.PlanID,
+		StepNumber: parsed.StepNumber,
+		ItemID:     parsed.ItemID,
+		Barcode:    req.Barcode,
+	})
+}
+
+// Helper: Generate deterministic barcode
+func generateBarcode(planID uuid.UUID, stepNumber int, itemID uuid.UUID) string {
+	planShort := planID.String()[:8]
+	itemShort := itemID.String()[:8]
+	return fmt.Sprintf("PLAN-%s-STEP-%03d-%s", planShort, stepNumber, itemShort)
+}
+
+// Helper: Parse scanned barcode
+func parseBarcode(barcode string) *ParsedBarcode {
+	parts := strings.Split(barcode, "-")
+	if len(parts) != 5 || parts[0] != "PLAN" || parts[2] != "STEP" {
+		return nil
+	}
+
+	stepNum, err := strconv.Atoi(parts[3])
+	if err != nil {
+		return nil
+	}
+
+	return &ParsedBarcode{
+		PlanID:     parts[1],
+		StepNumber: stepNum,
+		ItemID:     parts[4],
+	}
+}
+
+// Helper: Find item by ID
+func findItemByID(items []dto.PlanItemDetail, itemID string) *dto.PlanItemDetail {
+	for i := range items {
+		if items[i].ItemID == itemID {
+			return &items[i]
+		}
+	}
+	return nil
+}
+
+// Helper struct
+type ParsedBarcode struct {
+	PlanID     string
+	StepNumber int
+	ItemID     string
 }

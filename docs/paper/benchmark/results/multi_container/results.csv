@@ -1,0 +1,16 @@
+Scenario,Container,Variant,Total Items,Avg Fitted,Avg Volume Util (%),Std Volume Util,Avg Weight Util (%),Avg Fill Rate (%),Avg Time (ms),Std Time (ms)
+S1,20ft Standard,baseline,50,50.0,14.46,0.00,3.45,100.00,275.4,6.77
+S2,20ft Standard,baseline,100,100.0,20.24,0.00,5.05,100.00,1240.8,34.49
+S3,20ft Standard,baseline,150,150.0,57.12,0.00,13.55,100.00,6345.0,18.95
+S4,20ft Standard,baseline,200,167.0,71.99,0.00,17.48,83.50,24155.6,144.20
+S5,20ft Standard,baseline,300,142.0,88.14,0.00,20.99,47.33,36057.2,141.52
+S1,40ft Standard,baseline,50,50.0,7.09,0.00,2.81,100.00,262.6,3.01
+S2,40ft Standard,baseline,100,100.0,9.92,0.00,4.12,100.00,1212.5,5.22
+S3,40ft Standard,baseline,150,150.0,28.00,0.00,11.06,100.00,3450.1,30.94
+S4,40ft Standard,baseline,200,200.0,39.97,0.00,16.12,100.00,7461.9,23.37
+S5,40ft Standard,baseline,300,300.0,62.30,0.00,25.11,100.00,24312.4,126.55
+S1,40ft High Cube,baseline,50,50.0,6.29,0.00,2.83,100.00,262.2,2.77
+S2,40ft High Cube,baseline,100,100.0,8.80,0.00,4.16,100.00,1211.3,5.68
+S3,40ft High Cube,baseline,150,150.0,24.83,0.00,11.15,100.00,3460.8,35.98
+S4,40ft High Cube,baseline,200,200.0,35.45,0.00,16.25,100.00,7308.1,13.28
+S5,40ft High Cube,baseline,300,300.0,55.26,0.00,25.32,100.00,25004.0,1483.96

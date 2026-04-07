@@ -2,13 +2,14 @@
 INSERT INTO products (
     workspace_id,
     name,
+    sku,
     length_mm,
     width_mm,
     height_mm,
     weight_kg,
     color_hex
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 )
 RETURNING *;
 
@@ -40,11 +41,12 @@ LIMIT $2 OFFSET $3;
 UPDATE products
 SET
     name = $3,
-    length_mm = $4,
-    width_mm = $5,
-    height_mm = $6,
-    weight_kg = $7,
-    color_hex = $8,
+    sku = $4,
+    length_mm = $5,
+    width_mm = $6,
+    height_mm = $7,
+    weight_kg = $8,
+    color_hex = $9,
     updated_at = NOW()
 WHERE product_id = $1
   AND workspace_id = $2;
@@ -53,11 +55,12 @@ WHERE product_id = $1
 UPDATE products
 SET
     name = $2,
-    length_mm = $3,
-    width_mm = $4,
-    height_mm = $5,
-    weight_kg = $6,
-    color_hex = $7,
+    sku = $3,
+    length_mm = $4,
+    width_mm = $5,
+    height_mm = $6,
+    weight_kg = $7,
+    color_hex = $8,
     updated_at = NOW()
 WHERE product_id = $1;
 

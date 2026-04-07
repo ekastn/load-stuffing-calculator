@@ -1,0 +1,66 @@
+sequenceDiagram
+    actor User as Planner
+    participant Frontend as Next.js Frontend
+    participant API as Go API (Gin)
+    participant Middleware as JWT + Permission
+    participant Handler as PlanHandler
+    participant Service as PlanService
+    participant DB as PostgreSQL
+
+    User->>Frontend: Item action in plan
+    Frontend->>API: Request to /api/v1/plans/:plan_id/items
+
+    API->>Middleware: Validate request
+    Middleware-->>API: Authorization OK
+
+    alt POST /items (Add)
+        Note over Middleware: Check "plan:update"
+        API->>Handler: AddItemToPlan(ctx)
+        Handler->>Service: AddItemToPlan(ctx, plan_id, req)
+        Note over Service: Verify plan is DRAFT/PARTIAL
+        Service->>DB: Check plan status (workspace scoped)
+        alt Plan not editable
+            Handler-->>Frontend: 400 Bad Request
+        else Plan editable
+            alt Product ID provided
+                Note over Service: Snapshot Pattern: Copy product dimensions
+                Service->>DB: Query product & snapshot to load_items
+            else Custom dimensions
+                Service->>DB: Insert with custom dimensions
+            end
+            Handler-->>Frontend: 201 Created
+        end
+
+    else GET /plans/:id (List via Get Plan)
+        Note over Middleware: Check "plan:read"
+        API->>Handler: GetPlan(ctx)
+        Handler->>Service: GetPlan(ctx, id)
+        Service->>DB: Query plan + items + calculation + placements
+        Handler-->>Frontend: 200 OK {plan, items[], placements[]}
+
+    else PUT /items/:id (Update)
+        Note over Middleware: Check "plan:update"
+        API->>Handler: UpdateItem(ctx)
+        Handler->>Service: UpdateItem(ctx, plan_id, item_id, req)
+        Service->>DB: Check plan status
+        alt Plan not editable
+            Handler-->>Frontend: 400 Bad Request
+        else Plan editable
+            Service->>DB: Update item (invalidate calculation if exists)
+            Handler-->>Frontend: 200 OK
+        end
+
+    else DELETE /items/:id (Delete)
+        Note over Middleware: Check "plan:update"
+        API->>Handler: DeleteItem(ctx)
+        Handler->>Service: DeleteItem(ctx, plan_id, item_id)
+        Service->>DB: Check plan status
+        alt Plan not editable
+            Handler-->>Frontend: 400 Bad Request
+        else Plan editable
+            Service->>DB: Delete item (invalidate calculation if exists)
+            Handler-->>Frontend: 204 No Content
+        end
+    end
+
+    Frontend-->>User: Display result

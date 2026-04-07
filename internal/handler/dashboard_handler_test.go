@@ -29,7 +29,7 @@ func TestDashboardHandler_GetStats(t *testing.T) {
 			},
 		}
 
-		mockSvc.On("GetStats", mock.Anything, "admin").Return(expected, nil)
+		mockSvc.On("GetStats", mock.Anything, "admin", mock.AnythingOfType("*uuid.UUID")).Return(expected, nil)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -55,7 +55,7 @@ func TestDashboardHandler_GetStats(t *testing.T) {
 			},
 		}
 
-		mockSvc.On("GetStats", mock.Anything, "planner").Return(expected, nil)
+		mockSvc.On("GetStats", mock.Anything, "planner", mock.AnythingOfType("*uuid.UUID")).Return(expected, nil)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -81,7 +81,7 @@ func TestDashboardHandler_GetStats(t *testing.T) {
 			},
 		}
 
-		mockSvc.On("GetStats", mock.Anything, "operator").Return(expected, nil)
+		mockSvc.On("GetStats", mock.Anything, "operator", mock.AnythingOfType("*uuid.UUID")).Return(expected, nil)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -100,7 +100,7 @@ func TestDashboardHandler_GetStats(t *testing.T) {
 
 		expected := &dto.DashboardStatsResponse{}
 
-		mockSvc.On("GetStats", mock.Anything, "").Return(expected, nil)
+		mockSvc.On("GetStats", mock.Anything, "", mock.AnythingOfType("*uuid.UUID")).Return(expected, nil)
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
@@ -117,7 +117,7 @@ func TestDashboardHandler_GetStats(t *testing.T) {
 		mockSvc := new(MockDashboardService)
 		h := handler.NewDashboardHandler(mockSvc)
 
-		mockSvc.On("GetStats", mock.Anything, "admin").Return((*dto.DashboardStatsResponse)(nil), errors.New("database error"))
+		mockSvc.On("GetStats", mock.Anything, "admin", mock.AnythingOfType("*uuid.UUID")).Return((*dto.DashboardStatsResponse)(nil), errors.New("database error"))
 
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)

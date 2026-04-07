@@ -1,0 +1,101 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam ActivityDiamondFontSize 11
+skinparam ActivityFontSize 11
+skinparam partitionBorderColor #333333
+skinparam defaultTextAlignment center
+skinparam ArrowColor #555555
+
+|User|
+start
+:Access Plan Detail page;
+:View items list;
+:Select action
+(Create/Update/Delete item);
+
+note right
+  **Item Input Methods:**
+  - From Catalog: Search product,
+    auto-fill attributes (snapshot)
+  - Custom: Manual input
+    (name, dimensions, weight, quantity)
+  
+  **Snapshot Pattern:**
+  Product attributes copied without reference.
+  Future changes to product catalog
+  won't affect existing plan items.
+  
+  **Status Restrictions:**
+  Cannot modify items if plan
+  status = COMPLETED
+end note
+
+:Fill/edit item form;
+:Submit;
+
+|Frontend|
+:Validate input format;
+
+if (Valid?) then (yes)
+  :Send HTTP request;
+  
+  |Backend|
+  :Validate authentication
+  and authorization;
+  
+  if (Authorized?) then (yes)
+    |Database|
+    :Retrieve plan status;
+    
+    |Backend|
+    if (Editable?) then (yes)
+      |Database|
+      :Execute operation
+      (Create/Update/Delete);
+      
+      |Backend|
+      if (Modified?) then (yes)
+        |Database|
+        :Clear previous calculation;
+        :Set plan status to DRAFT;
+        
+        |Backend|
+      endif
+      
+      :Return success;
+      
+      |Frontend|
+      :Show success message;
+      :Refresh items list;
+      
+      if (Calculation cleared?) then (yes)
+        :Show "Recalculate needed"
+        warning;
+      endif
+      
+    else (no - COMPLETED)
+      |Backend|
+      :Return error;
+      
+      |Frontend|
+      :Show error
+      "Cannot modify completed plan";
+    endif
+    
+  else (no)
+    :Return 403 Forbidden;
+    
+    |Frontend|
+    :Show permission error;
+  endif
+  
+else (no)
+  :Show validation error;
+endif
+
+|User|
+:View result;
+stop
+
+@enduml

@@ -127,6 +127,7 @@ export interface PlanListItem {
 }
 
 export interface UpdatePlanRequest {
+  title?: string
   status?: string
   container?: CreatePlanContainer
 }
@@ -148,4 +149,36 @@ export interface CalculatePlanRequest {
   strategy?: string
   goal?: string
   gravity?: boolean
+}
+
+export interface BarcodeInfo {
+  step_number: number
+  item_id: string
+  item_label: string
+  barcode: string
+  position: {
+    x: number
+    y: number
+    z: number
+  }
+  dimensions: {
+    length: number
+    width: number
+    height: number
+  }
+}
+
+export interface ValidateBarcodeRequest {
+  barcode: string
+  expected_step?: number
+}
+
+export interface ValidationResult {
+  valid: boolean
+  status: string // MATCHED, OUT_OF_SEQUENCE, WRONG_PLAN, INVALID_FORMAT
+  plan_id?: string
+  step_number?: number
+  item_id?: string
+  barcode?: string
+  error?: string
 }
