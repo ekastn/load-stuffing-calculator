@@ -92,7 +92,10 @@ export function StuffingViewer({ data }: StuffingViewerProps) {
 
         const unsubHover = visualizer.onItemHover((item, x, y) => {
             setHoveredItem(item);
-            setMousePosition({ x, y });
+            if (containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                setMousePosition({ x: x - rect.left, y: y - rect.top });
+            }
         });
 
         // Load data

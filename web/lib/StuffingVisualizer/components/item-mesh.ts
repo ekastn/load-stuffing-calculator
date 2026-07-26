@@ -15,6 +15,7 @@ export class ItemMesh {
     private group: Group;
     private itemData: ItemData;
     private placement: PlacementData;
+    private mesh: Mesh | null = null;
 
     private getRotatedDims(): { length_mm: number; width_mm: number; height_mm: number } {
         const l = this.itemData.length_mm;
@@ -87,6 +88,7 @@ export class ItemMesh {
             step_number: this.placement.step_number,
         };
 
+        this.mesh = mesh;
 
         // Create wireframe edges
         const edges = new EdgesGeometry(geometry);
@@ -124,8 +126,26 @@ export class ItemMesh {
         return this.group;
     }
 
+    public getLabel(): string {
+        return this.itemData.label;
+    }
+
     public getStepNumber(): number {
         return this.placement.step_number;
+    }
+
+    public setHighlighted(highlighted: boolean): void {
+        if (!this.mesh) return;
+        const material = this.mesh.material as MeshStandardMaterial;
+        if (highlighted) {
+            const highlightColor = new Color(this.itemData.color_hex);
+            highlightColor.offsetHSL(0, 0, 0.2);
+            material.emissive = highlightColor;
+            material.emissiveIntensity = 0.4;
+        } else {
+            material.emissive = new Color(0x000000);
+            material.emissiveIntensity = 0;
+        }
     }
 
     public dispose(): void {

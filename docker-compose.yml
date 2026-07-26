@@ -29,6 +29,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.packing
+    image: fzymorn/load-iq-pack:prod
     environment:
       PACKING_HOST: "${PACKING_HOST:-0.0.0.0}"
       PACKING_PORT: "${PACKING_PORT:-5051}"
@@ -44,6 +45,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+    image: fzymorn/load-iq-api:prod
     environment:
       SRV_ADDR: "${SRV_ADDR:-:8080}"
       SRV_ENV: "${SRV_ENV:-prod}"
@@ -61,11 +63,16 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        NEXT_PUBLIC_API_BASE_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}"
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:8080/api/v1}"
+    image: fzymorn/load-iq-web:prod
     environment:
       NODE_ENV: "${NODE_ENV:-production}"
     ports:
       - "${WEB_EXPOSE_PORT:-3000}:3000"
+    develop:
+      watch:
+        - path: ./web
+          action: rebuild
 
 volumes:
   pgdata:
