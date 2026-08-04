@@ -45,7 +45,7 @@ func TestUserService_CreateUser(t *testing.T) {
 				Username:  "newuser",
 				Email:     "new@example.com",
 				RoleID:    validRoleID,
-				CreatedAt: time.Now(),
+				CreatedAt: timePtr(time.Now()),
 			},
 			wantErr: false,
 		},
@@ -428,7 +428,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 						Email:     "user@example.com",
 						RoleID:    roleID,
 						RoleName:  types.RoleUser.String(),
-						CreatedAt: time.Now(),
+						CreatedAt: timePtr(time.Now()),
 					}, nil
 				}
 				mq.UpdateUserFunc = func(ctx context.Context, arg store.UpdateUserParams) error {
@@ -454,7 +454,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 						Email:     "oldemail@example.com",
 						RoleID:    roleID,
 						RoleName:  types.RoleUser.String(),
-						CreatedAt: time.Now(),
+						CreatedAt: timePtr(time.Now()),
 					}, nil
 				}
 				mq.UpdateUserFunc = func(ctx context.Context, arg store.UpdateUserParams) error {
@@ -480,7 +480,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 						Email:     "user@example.com",
 						RoleID:    roleID,
 						RoleName:  types.RoleUser.String(),
-						CreatedAt: time.Now(),
+						CreatedAt: timePtr(time.Now()),
 					}, nil
 				}
 				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
@@ -517,7 +517,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 						Email:     "oldemail@example.com",
 						RoleID:    roleID,
 						RoleName:  types.RoleUser.String(),
-						CreatedAt: time.Now(),
+						CreatedAt: timePtr(time.Now()),
 					}, nil
 				}
 				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
@@ -575,7 +575,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 						Email:     "user@example.com",
 						RoleID:    roleID,
 						RoleName:  types.RoleUser.String(),
-						CreatedAt: time.Now(),
+						CreatedAt: timePtr(time.Now()),
 					}, nil
 				}
 			},
@@ -595,7 +595,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 						Email:     "user@example.com",
 						RoleID:    roleID,
 						RoleName:  types.RoleUser.String(),
-						CreatedAt: time.Now(),
+						CreatedAt: timePtr(time.Now()),
 					}, nil
 				}
 				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
@@ -618,7 +618,7 @@ func TestUserService_UpdateUser(t *testing.T) {
 						Email:     "user@example.com",
 						RoleID:    roleID,
 						RoleName:  types.RoleUser.String(),
-						CreatedAt: time.Now(),
+						CreatedAt: timePtr(time.Now()),
 					}, nil
 				}
 				mq.UpdateUserFunc = func(ctx context.Context, arg store.UpdateUserParams) error {

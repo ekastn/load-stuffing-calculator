@@ -31,10 +31,10 @@ type Invite struct {
 	RoleID          uuid.UUID  `json:"role_id"`
 	TokenHash       string     `json:"token_hash"`
 	InvitedByUserID uuid.UUID  `json:"invited_by_user_id"`
-	ExpiresAt       *time.Time `json:"expires_at"`
-	AcceptedAt      time.Time  `json:"accepted_at"`
-	RevokedAt       time.Time  `json:"revoked_at"`
-	CreatedAt       time.Time  `json:"created_at"`
+	ExpiresAt       time.Time  `json:"expires_at"`
+	AcceptedAt      *time.Time `json:"accepted_at"`
+	RevokedAt       *time.Time `json:"revoked_at"`
+	CreatedAt       *time.Time `json:"created_at"`
 }
 
 type LoadItem struct {
@@ -66,19 +66,19 @@ type LoadPlan struct {
 }
 
 type Member struct {
-	MemberID    uuid.UUID `json:"member_id"`
-	WorkspaceID uuid.UUID `json:"workspace_id"`
-	UserID      uuid.UUID `json:"user_id"`
-	RoleID      uuid.UUID `json:"role_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	MemberID    uuid.UUID  `json:"member_id"`
+	WorkspaceID uuid.UUID  `json:"workspace_id"`
+	UserID      uuid.UUID  `json:"user_id"`
+	RoleID      uuid.UUID  `json:"role_id"`
+	CreatedAt   *time.Time `json:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at"`
 }
 
 type Permission struct {
-	PermissionID uuid.UUID `json:"permission_id"`
-	Name         string    `json:"name"`
-	Description  *string   `json:"description"`
-	CreatedAt    time.Time `json:"created_at"`
+	PermissionID uuid.UUID  `json:"permission_id"`
+	Name         string     `json:"name"`
+	Description  *string    `json:"description"`
+	CreatedAt    *time.Time `json:"created_at"`
 }
 
 type PlanPlacement struct {
@@ -102,9 +102,9 @@ type PlanResult struct {
 }
 
 type PlatformMember struct {
-	UserID    uuid.UUID `json:"user_id"`
-	RoleID    uuid.UUID `json:"role_id"`
-	CreatedAt time.Time `json:"created_at"`
+	UserID    uuid.UUID  `json:"user_id"`
+	RoleID    uuid.UUID  `json:"role_id"`
+	CreatedAt *time.Time `json:"created_at"`
 }
 
 type Product struct {
@@ -124,18 +124,18 @@ type Product struct {
 type RefreshToken struct {
 	Token       string     `json:"token"`
 	UserID      uuid.UUID  `json:"user_id"`
-	ExpiresAt   *time.Time `json:"expires_at"`
-	RevokedAt   time.Time  `json:"revoked_at"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	ExpiresAt   time.Time  `json:"expires_at"`
+	RevokedAt   *time.Time `json:"revoked_at"`
+	CreatedAt   *time.Time `json:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at"`
 	WorkspaceID *uuid.UUID `json:"workspace_id"`
 }
 
 type Role struct {
-	RoleID      uuid.UUID `json:"role_id"`
-	Name        string    `json:"name"`
-	Description *string   `json:"description"`
-	CreatedAt   time.Time `json:"created_at"`
+	RoleID      uuid.UUID  `json:"role_id"`
+	Name        string     `json:"name"`
+	Description *string    `json:"description"`
+	CreatedAt   *time.Time `json:"created_at"`
 }
 
 type RolePermission struct {
@@ -144,13 +144,13 @@ type RolePermission struct {
 }
 
 type User struct {
-	UserID       uuid.UUID `json:"user_id"`
-	RoleID       uuid.UUID `json:"role_id"`
-	Username     string    `json:"username"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"password_hash"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	UserID       uuid.UUID  `json:"user_id"`
+	RoleID       uuid.UUID  `json:"role_id"`
+	Username     string     `json:"username"`
+	Email        string     `json:"email"`
+	PasswordHash string     `json:"password_hash"`
+	CreatedAt    *time.Time `json:"created_at"`
+	UpdatedAt    *time.Time `json:"updated_at"`
 }
 
 type UserProfile struct {
@@ -162,14 +162,14 @@ type UserProfile struct {
 	PhoneNumber *string     `json:"phone_number"`
 	Address     *string     `json:"address"`
 	AvatarUrl   *string     `json:"avatar_url"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	UpdatedAt   *time.Time  `json:"updated_at"`
 }
 
 type Workspace struct {
-	WorkspaceID uuid.UUID `json:"workspace_id"`
-	Type        string    `json:"type"`
-	Name        string    `json:"name"`
-	OwnerUserID uuid.UUID `json:"owner_user_id"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	WorkspaceID uuid.UUID  `json:"workspace_id"`
+	Type        string     `json:"type"`
+	Name        string     `json:"name"`
+	OwnerUserID uuid.UUID  `json:"owner_user_id"`
+	CreatedAt   *time.Time `json:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at"`
 }

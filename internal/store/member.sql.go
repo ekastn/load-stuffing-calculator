@@ -151,15 +151,15 @@ type ListMembersByWorkspaceParams struct {
 }
 
 type ListMembersByWorkspaceRow struct {
-	MemberID    uuid.UUID `json:"member_id"`
-	WorkspaceID uuid.UUID `json:"workspace_id"`
-	UserID      uuid.UUID `json:"user_id"`
-	RoleID      uuid.UUID `json:"role_id"`
-	RoleName    string    `json:"role_name"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	MemberID    uuid.UUID  `json:"member_id"`
+	WorkspaceID uuid.UUID  `json:"workspace_id"`
+	UserID      uuid.UUID  `json:"user_id"`
+	RoleID      uuid.UUID  `json:"role_id"`
+	RoleName    string     `json:"role_name"`
+	Username    string     `json:"username"`
+	Email       string     `json:"email"`
+	CreatedAt   *time.Time `json:"created_at"`
+	UpdatedAt   *time.Time `json:"updated_at"`
 }
 
 func (q *Queries) ListMembersByWorkspace(ctx context.Context, arg ListMembersByWorkspaceParams) ([]ListMembersByWorkspaceRow, error) {

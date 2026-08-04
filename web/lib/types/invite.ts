@@ -6,8 +6,8 @@ export interface InviteResponse {
   invited_by_user_id: string
   invited_by_username: string
   expires_at?: string | null
-  accepted_at: string
-  revoked_at: string
+  accepted_at: string | null
+  revoked_at: string | null
   created_at: string
 }
 

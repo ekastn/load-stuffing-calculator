@@ -30,7 +30,7 @@ type CreateRefreshTokenParams struct {
 	Token       string     `json:"token"`
 	UserID      uuid.UUID  `json:"user_id"`
 	WorkspaceID *uuid.UUID `json:"workspace_id"`
-	ExpiresAt   *time.Time `json:"expires_at"`
+	ExpiresAt   time.Time  `json:"expires_at"`
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error {
@@ -84,8 +84,8 @@ WHERE token = $1
 type GetRefreshTokenRow struct {
 	UserID      uuid.UUID  `json:"user_id"`
 	WorkspaceID *uuid.UUID `json:"workspace_id"`
-	ExpiresAt   *time.Time `json:"expires_at"`
-	RevokedAt   time.Time  `json:"revoked_at"`
+	ExpiresAt   time.Time  `json:"expires_at"`
+	RevokedAt   *time.Time `json:"revoked_at"`
 }
 
 func (q *Queries) GetRefreshToken(ctx context.Context, token string) (GetRefreshTokenRow, error) {

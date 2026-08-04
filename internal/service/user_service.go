@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/auth"
 	"github.com/ekastn/load-stuffing-calculator/internal/dto"
@@ -60,7 +59,7 @@ func (s *userService) CreateUser(ctx context.Context, req dto.CreateUserRequest)
 		Username:  user.Username,
 		Email:     user.Email,
 		Role:      req.Role,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		CreatedAt: formatStoreTime(user.CreatedAt),
 	}, nil
 }
 
@@ -80,7 +79,7 @@ func (s *userService) GetUserByID(ctx context.Context, id string) (*dto.UserResp
 		Username:  user.Username,
 		Email:     user.Email,
 		Role:      user.RoleName,
-		CreatedAt: user.CreatedAt.Format(time.RFC3339),
+		CreatedAt: formatStoreTime(user.CreatedAt),
 	}
 
 	if user.FullName != nil {
@@ -126,7 +125,7 @@ func (s *userService) ListUsers(ctx context.Context, page, limit int32) ([]dto.U
 			Username:  u.Username,
 			Email:     u.Email,
 			Role:      u.RoleName,
-			CreatedAt: u.CreatedAt.Format(time.RFC3339),
+			CreatedAt: formatStoreTime(u.CreatedAt),
 		}
 
 		if u.FullName != nil {

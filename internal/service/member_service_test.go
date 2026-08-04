@@ -42,7 +42,7 @@ func TestMemberService_ListMembers(t *testing.T) {
 				}
 				mq.ListMembersByWorkspaceFunc = func(ctx context.Context, arg store.ListMembersByWorkspaceParams) ([]store.ListMembersByWorkspaceRow, error) {
 					return []store.ListMembersByWorkspaceRow{
-						{MemberID: memberID, WorkspaceID: workspaceID, UserID: userID, RoleName: types.RoleUser.String(), Username: "test", Email: "test@example.com", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+						{MemberID: memberID, WorkspaceID: workspaceID, UserID: userID, RoleName: types.RoleUser.String(), Username: "test", Email: "test@example.com", CreatedAt: timePtr(time.Now()), UpdatedAt: timePtr(time.Now())},
 					}, nil
 				}
 			},
@@ -182,7 +182,7 @@ func TestMemberService_AddMember(t *testing.T) {
 					return store.GetUserByUsernameRow{UserID: targetUserID, Username: "testuser", Email: "test@example.com"}, nil
 				}
 				mq.CreateMemberFunc = func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
-					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: targetUserID, RoleID: roleID, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: targetUserID, RoleID: roleID, CreatedAt: timePtr(time.Now()), UpdatedAt: timePtr(time.Now())}, nil
 				}
 			},
 			wantErr: false,
@@ -209,7 +209,7 @@ func TestMemberService_AddMember(t *testing.T) {
 					return store.GetUserByEmailRow{UserID: targetUserID, Username: "testuser", Email: "test@example.com", PasswordHash: "hash"}, nil
 				}
 				mq.CreateMemberFunc = func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
-					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: targetUserID, RoleID: roleID, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: targetUserID, RoleID: roleID, CreatedAt: timePtr(time.Now()), UpdatedAt: timePtr(time.Now())}, nil
 				}
 			},
 			wantErr: false,
@@ -236,7 +236,7 @@ func TestMemberService_AddMember(t *testing.T) {
 					return store.GetUserByIDRow{UserID: targetUserID, Username: "testuser", Email: "test@example.com"}, nil
 				}
 				mq.CreateMemberFunc = func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
-					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: targetUserID, RoleID: roleID, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: targetUserID, RoleID: roleID, CreatedAt: timePtr(time.Now()), UpdatedAt: timePtr(time.Now())}, nil
 				}
 			},
 			wantErr: false,
@@ -499,7 +499,7 @@ func TestMemberService_UpdateMemberRole(t *testing.T) {
 					return types.RoleOwner.String(), nil
 				}
 				mq.GetMemberFunc = func(ctx context.Context, id uuid.UUID) (store.Member, error) {
-					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: userID, RoleID: roleID, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+					return store.Member{MemberID: memberID, WorkspaceID: workspaceID, UserID: userID, RoleID: roleID, CreatedAt: timePtr(time.Now()), UpdatedAt: timePtr(time.Now())}, nil
 				}
 				mq.GetRoleByNameFunc = func(ctx context.Context, name string) (store.GetRoleByNameRow, error) {
 					return store.GetRoleByNameRow{RoleID: roleID, Name: name}, nil

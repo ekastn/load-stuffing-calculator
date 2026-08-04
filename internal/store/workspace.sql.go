@@ -112,14 +112,14 @@ type ListWorkspacesAllParams struct {
 }
 
 type ListWorkspacesAllRow struct {
-	WorkspaceID   uuid.UUID `json:"workspace_id"`
-	Type          string    `json:"type"`
-	Name          string    `json:"name"`
-	OwnerUserID   uuid.UUID `json:"owner_user_id"`
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	OwnerUsername string    `json:"owner_username"`
-	OwnerEmail    string    `json:"owner_email"`
+	WorkspaceID   uuid.UUID  `json:"workspace_id"`
+	Type          string     `json:"type"`
+	Name          string     `json:"name"`
+	OwnerUserID   uuid.UUID  `json:"owner_user_id"`
+	CreatedAt     *time.Time `json:"created_at"`
+	UpdatedAt     *time.Time `json:"updated_at"`
+	OwnerUsername string     `json:"owner_username"`
+	OwnerEmail    string     `json:"owner_email"`
 }
 
 func (q *Queries) ListWorkspacesAll(ctx context.Context, arg ListWorkspacesAllParams) ([]ListWorkspacesAllRow, error) {

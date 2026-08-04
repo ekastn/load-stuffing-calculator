@@ -46,12 +46,12 @@ RETURNING invite_id, workspace_id, email, role_id, token_hash, invited_by_user_i
 `
 
 type CreateInviteParams struct {
-	WorkspaceID     uuid.UUID  `json:"workspace_id"`
-	Email           string     `json:"email"`
-	RoleID          uuid.UUID  `json:"role_id"`
-	TokenHash       string     `json:"token_hash"`
-	InvitedByUserID uuid.UUID  `json:"invited_by_user_id"`
-	ExpiresAt       *time.Time `json:"expires_at"`
+	WorkspaceID     uuid.UUID `json:"workspace_id"`
+	Email           string    `json:"email"`
+	RoleID          uuid.UUID `json:"role_id"`
+	TokenHash       string    `json:"token_hash"`
+	InvitedByUserID uuid.UUID `json:"invited_by_user_id"`
+	ExpiresAt       time.Time `json:"expires_at"`
 }
 
 func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) (Invite, error) {
@@ -141,10 +141,10 @@ type ListInvitesByWorkspaceRow struct {
 	RoleName          string     `json:"role_name"`
 	InvitedByUserID   uuid.UUID  `json:"invited_by_user_id"`
 	InvitedByUsername string     `json:"invited_by_username"`
-	ExpiresAt         *time.Time `json:"expires_at"`
-	AcceptedAt        time.Time  `json:"accepted_at"`
-	RevokedAt         time.Time  `json:"revoked_at"`
-	CreatedAt         time.Time  `json:"created_at"`
+	ExpiresAt         time.Time  `json:"expires_at"`
+	AcceptedAt        *time.Time `json:"accepted_at"`
+	RevokedAt         *time.Time `json:"revoked_at"`
+	CreatedAt         *time.Time `json:"created_at"`
 }
 
 func (q *Queries) ListInvitesByWorkspace(ctx context.Context, arg ListInvitesByWorkspaceParams) ([]ListInvitesByWorkspaceRow, error) {

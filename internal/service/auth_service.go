@@ -144,7 +144,7 @@ func (s *authService) Register(ctx context.Context, req dto.RegisterRequest) (*d
 		Token:       refresh,
 		UserID:      user.UserID,
 		WorkspaceID: &ws.WorkspaceID,
-		ExpiresAt:   &refreshExpires,
+		ExpiresAt:   refreshExpires,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create refresh token in store: %w", err)
 	}
@@ -197,7 +197,7 @@ func (s *authService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 		Token:       refresh,
 		UserID:      user.UserID,
 		WorkspaceID: &workspaceID,
-		ExpiresAt:   &expiresAt,
+		ExpiresAt:   expiresAt,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create refresh token in store: %w", err)
 	}
@@ -226,10 +226,10 @@ func (s *authService) RefreshToken(ctx context.Context, oldToken string) (*dto.L
 		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}
 
-	if !tokenInfo.RevokedAt.IsZero() {
+	if tokenInfo.RevokedAt != nil {
 		return nil, fmt.Errorf("refresh token revoked")
 	}
-	if tokenInfo.ExpiresAt != nil && tokenInfo.ExpiresAt.Before(time.Now()) {
+	if tokenInfo.ExpiresAt.Before(time.Now()) {
 		_ = s.q.RevokeRefreshToken(ctx, oldToken)
 		return nil, fmt.Errorf("refresh token expired")
 	}
@@ -268,7 +268,7 @@ func (s *authService) RefreshToken(ctx context.Context, oldToken string) (*dto.L
 		Token:       newRefresh,
 		UserID:      user.UserID,
 		WorkspaceID: &activeWorkspaceID,
-		ExpiresAt:   &expiresAt,
+		ExpiresAt:   expiresAt,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to create refresh token in store: %w", err)
 	}

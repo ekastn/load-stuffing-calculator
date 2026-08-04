@@ -9,10 +9,10 @@ type InviteResponse struct {
 	Role              string     `json:"role"`
 	InvitedByUserID   string     `json:"invited_by_user_id"`
 	InvitedByUsername string     `json:"invited_by_username"`
-	ExpiresAt         *time.Time `json:"expires_at"`
-	AcceptedAt        time.Time  `json:"accepted_at"`
-	RevokedAt         time.Time  `json:"revoked_at"`
-	CreatedAt         time.Time  `json:"created_at"`
+	ExpiresAt         time.Time  `json:"expires_at"`
+	AcceptedAt        *time.Time `json:"accepted_at"`
+	RevokedAt         *time.Time `json:"revoked_at"`
+	CreatedAt         *time.Time `json:"created_at"`
 }
 
 type CreateInviteRequest struct {

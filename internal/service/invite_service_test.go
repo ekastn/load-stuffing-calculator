@@ -50,7 +50,7 @@ func TestInviteService_ListInvites(t *testing.T) {
 							RoleName:          types.RoleOperator.String(),
 							InvitedByUserID:   invitedByUserID,
 							InvitedByUsername: "admin",
-							CreatedAt:         time.Now(),
+							CreatedAt:         timePtr(time.Now()),
 						},
 					}, nil
 				}
@@ -190,8 +190,8 @@ func TestInviteService_CreateInvite(t *testing.T) {
 						RoleID:          arg.RoleID,
 						TokenHash:       arg.TokenHash,
 						InvitedByUserID: arg.InvitedByUserID,
-						ExpiresAt:       &expiresAt,
-						CreatedAt:       time.Now(),
+						ExpiresAt:       expiresAt,
+						CreatedAt:       timePtr(time.Now()),
 					}, nil
 				}
 				mq.GetUserByIDFunc = func(ctx context.Context, id uuid.UUID) (store.GetUserByIDRow, error) {
@@ -334,8 +334,8 @@ func TestInviteService_CreateInvite(t *testing.T) {
 						RoleID:          arg.RoleID,
 						TokenHash:       arg.TokenHash,
 						InvitedByUserID: arg.InvitedByUserID,
-						ExpiresAt:       &expiresAt,
-						CreatedAt:       time.Now(),
+						ExpiresAt:       expiresAt,
+						CreatedAt:       timePtr(time.Now()),
 					}, nil
 				}
 				// GetUserByID fails (best-effort), should not affect invite creation

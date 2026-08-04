@@ -138,7 +138,7 @@ type GetUserByIDRow struct {
 	Email       string      `json:"email"`
 	RoleID      uuid.UUID   `json:"role_id"`
 	RoleName    string      `json:"role_name"`
-	CreatedAt   time.Time   `json:"created_at"`
+	CreatedAt   *time.Time  `json:"created_at"`
 	FullName    *string     `json:"full_name"`
 	Gender      *string     `json:"gender"`
 	DateOfBirth pgtype.Date `json:"date_of_birth"`
@@ -219,13 +219,13 @@ type ListUsersParams struct {
 }
 
 type ListUsersRow struct {
-	UserID      uuid.UUID `json:"user_id"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	RoleName    string    `json:"role_name"`
-	FullName    *string   `json:"full_name"`
-	PhoneNumber *string   `json:"phone_number"`
-	CreatedAt   time.Time `json:"created_at"`
+	UserID      uuid.UUID  `json:"user_id"`
+	Username    string     `json:"username"`
+	Email       string     `json:"email"`
+	RoleName    string     `json:"role_name"`
+	FullName    *string    `json:"full_name"`
+	PhoneNumber *string    `json:"phone_number"`
+	CreatedAt   *time.Time `json:"created_at"`
 }
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]ListUsersRow, error) {

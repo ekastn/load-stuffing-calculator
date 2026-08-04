@@ -643,6 +643,7 @@ func TestAuthService_RefreshToken(t *testing.T) {
 	validRefreshToken := "valid_refresh_token"
 	expiredTime := time.Now().Add(-1 * time.Hour)
 	futureTime := time.Now().Add(24 * time.Hour)
+	revokedTime := time.Now()
 
 	tests := []struct {
 		name             string
@@ -661,8 +662,8 @@ func TestAuthService_RefreshToken(t *testing.T) {
 					return store.GetRefreshTokenRow{
 						UserID:      userID,
 						WorkspaceID: &workspaceID,
-						ExpiresAt:   &futureTime,
-						RevokedAt:   time.Time{}, // Zero value = not revoked
+						ExpiresAt:   futureTime,
+						RevokedAt:   nil, // Zero value = not revoked
 					}, nil
 				}
 				mq.GetUserByIDFunc = func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
@@ -708,8 +709,8 @@ func TestAuthService_RefreshToken(t *testing.T) {
 				mq.GetRefreshTokenFunc = func(ctx context.Context, token string) (store.GetRefreshTokenRow, error) {
 					return store.GetRefreshTokenRow{
 						UserID:    userID,
-						RevokedAt: time.Now(), // Token is revoked
-						ExpiresAt: &futureTime,
+						RevokedAt: &revokedTime, // Token is revoked
+						ExpiresAt: futureTime,
 					}, nil
 				}
 			},
@@ -724,8 +725,8 @@ func TestAuthService_RefreshToken(t *testing.T) {
 				mq.GetRefreshTokenFunc = func(ctx context.Context, token string) (store.GetRefreshTokenRow, error) {
 					return store.GetRefreshTokenRow{
 						UserID:    userID,
-						ExpiresAt: &expiredTime, // Token is expired
-						RevokedAt: time.Time{},
+						ExpiresAt: expiredTime, // Token is expired
+						RevokedAt: nil,
 					}, nil
 				}
 				mq.RevokeRefreshTokenFunc = func(ctx context.Context, token string) error {
@@ -743,8 +744,8 @@ func TestAuthService_RefreshToken(t *testing.T) {
 				mq.GetRefreshTokenFunc = func(ctx context.Context, token string) (store.GetRefreshTokenRow, error) {
 					return store.GetRefreshTokenRow{
 						UserID:    userID,
-						ExpiresAt: &futureTime,
-						RevokedAt: time.Time{},
+						ExpiresAt: futureTime,
+						RevokedAt: nil,
 					}, nil
 				}
 				mq.GetUserByIDFunc = func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
@@ -763,8 +764,8 @@ func TestAuthService_RefreshToken(t *testing.T) {
 					return store.GetRefreshTokenRow{
 						UserID:      userID,
 						WorkspaceID: nil, // No workspace ID
-						ExpiresAt:   &futureTime,
-						RevokedAt:   time.Time{},
+						ExpiresAt:   futureTime,
+						RevokedAt:   nil,
 					}, nil
 				}
 				mq.GetUserByIDFunc = func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
@@ -885,7 +886,7 @@ func TestAuthService_SwitchWorkspace(t *testing.T) {
 					}
 					return store.GetRefreshTokenRow{
 						UserID:    userID,
-						RevokedAt: time.Time{},
+						RevokedAt: nil,
 					}, nil
 				}
 				mq.UpdateRefreshTokenWorkspaceFunc = func(ctx context.Context, arg store.UpdateRefreshTokenWorkspaceParams) error {
@@ -1007,7 +1008,7 @@ func TestAuthService_SwitchWorkspace(t *testing.T) {
 				mq.GetRefreshTokenFunc = func(ctx context.Context, token string) (store.GetRefreshTokenRow, error) {
 					return store.GetRefreshTokenRow{
 						UserID:    uuid.New(), // Different user
-						RevokedAt: time.Time{},
+						RevokedAt: nil,
 					}, nil
 				}
 			},
@@ -1737,8 +1738,8 @@ func TestAuthService_RefreshToken_ErrorCases(t *testing.T) {
 				return store.GetRefreshTokenRow{
 					UserID:      userID,
 					WorkspaceID: &workspaceID,
-					ExpiresAt:   &futureTime,
-					RevokedAt:   time.Time{},
+					ExpiresAt:   futureTime,
+					RevokedAt:   nil,
 				}, nil
 			},
 			GetUserByIDFunc: func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
@@ -1772,8 +1773,8 @@ func TestAuthService_RefreshToken_ErrorCases(t *testing.T) {
 				return store.GetRefreshTokenRow{
 					UserID:      userID,
 					WorkspaceID: &workspaceID,
-					ExpiresAt:   &futureTime,
-					RevokedAt:   time.Time{},
+					ExpiresAt:   futureTime,
+					RevokedAt:   nil,
 				}, nil
 			},
 			GetUserByIDFunc: func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
@@ -1810,8 +1811,8 @@ func TestAuthService_RefreshToken_ErrorCases(t *testing.T) {
 				return store.GetRefreshTokenRow{
 					UserID:      userID,
 					WorkspaceID: nil, // No workspace in token, needs resolution
-					ExpiresAt:   &futureTime,
-					RevokedAt:   time.Time{},
+					ExpiresAt:   futureTime,
+					RevokedAt:   nil,
 				}, nil
 			},
 			GetUserByIDFunc: func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
@@ -1836,8 +1837,8 @@ func TestAuthService_RefreshToken_ErrorCases(t *testing.T) {
 				return store.GetRefreshTokenRow{
 					UserID:      userID,
 					WorkspaceID: &workspaceID,
-					ExpiresAt:   &futureTime,
-					RevokedAt:   time.Time{},
+					ExpiresAt:   futureTime,
+					RevokedAt:   nil,
 				}, nil
 			},
 			GetUserByIDFunc: func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
@@ -1874,7 +1875,7 @@ func TestAuthService_SwitchWorkspace_ErrorCases(t *testing.T) {
 			GetRefreshTokenFunc: func(ctx context.Context, token string) (store.GetRefreshTokenRow, error) {
 				return store.GetRefreshTokenRow{
 					UserID:    userID,
-					RevokedAt: time.Time{},
+					RevokedAt: nil,
 				}, nil
 			},
 			UpdateRefreshTokenWorkspaceFunc: func(ctx context.Context, arg store.UpdateRefreshTokenWorkspaceParams) error {
