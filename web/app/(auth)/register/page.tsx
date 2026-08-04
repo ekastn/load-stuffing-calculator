@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import Image from "next/image"
 
 import { AlertCircle } from "lucide-react"
@@ -218,6 +219,18 @@ function RegisterForm() {
                 </div>
               </div>
             )}
+          </CardContent>
+          <CardContent className="space-y-4 pt-0">
+            <p className="text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                Sign in instead
+              </Link>
+            </p>
+
+            <Link href="/" className="block text-center text-sm text-muted-foreground hover:text-primary hover:underline">
+              Go to home
+            </Link>
           </CardContent>
         </Card>
       </div>

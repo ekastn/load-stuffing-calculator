@@ -117,6 +117,10 @@ export function LoginForm() {
                 </Link>
               </p>
             </form>
+
+            <Link href="/" className="block text-center text-sm text-muted-foreground hover:text-primary hover:underline">
+              Go to home
+            </Link>
           </CardContent>
         </Card>
       </div>
