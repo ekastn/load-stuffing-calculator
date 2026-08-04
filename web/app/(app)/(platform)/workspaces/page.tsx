@@ -8,6 +8,7 @@ import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { RouteGuard } from "@/lib/route-guard"
 import { useWorkspaces } from "@/hooks/use-workspaces"
+import { useUsers } from "@/hooks/use-users"
 import type { CreateWorkspaceRequest, UpdateWorkspaceRequest, WorkspaceResponse } from "@/lib/types"
 
 import { Button } from "@/components/ui/button"
@@ -44,31 +45,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-const MOCK_USERS = [
-  { id: "usr-001", username: "admin", email: "admin@example.com" },
-  { id: "usr-002", username: "ahmad.fauzi", email: "ahmad.fauzi@example.com" },
-  { id: "usr-003", username: "budi.santoso", email: "budi.santoso@example.com" },
-  { id: "usr-004", username: "citra.wulandari", email: "citra.wulandari@example.com" },
-  { id: "usr-005", username: "dewi.anggraini", email: "dewi.anggraini@example.com" },
-  { id: "usr-006", username: "eko.prasetyo", email: "eko.prasetyo@example.com" },
-  { id: "usr-007", username: "fitri.handayani", email: "fitri.handayani@example.com" },
-  { id: "usr-008", username: "gunawan.wijaya", email: "gunawan.wijaya@example.com" },
-  { id: "usr-009", username: "hani.safitri", email: "hani.safitri@example.com" },
-  { id: "usr-010", username: "indra.kusuma", email: "indra.kusuma@example.com" },
-  { id: "usr-011", username: "joko.widodo", email: "joko.widodo@example.com" },
-  { id: "usr-012", username: "kartika.sari", email: "kartika.sari@example.com" },
-  { id: "usr-013", username: "lukman.hakim", email: "lukman.hakim@example.com" },
-  { id: "usr-014", username: "mayasari.putri", email: "mayasari.putri@example.com" },
-  { id: "usr-015", username: "nando.pratama", email: "nando.pratama@example.com" },
-  { id: "usr-016", username: "oktavia.rini", email: "oktavia.rini@example.com" },
-  { id: "usr-017", username: "putra.lesmana", email: "putra.lesmana@example.com" },
-  { id: "usr-018", username: "ratna.dewi", email: "ratna.dewi@example.com" },
-  { id: "usr-019", username: "surya.aditya", email: "surya.aditya@example.com" },
-  { id: "usr-020", username: "tari.puspita", email: "tari.puspita@example.com" },
-]
-
 export default function PlatformWorkspacesPage() {
   const { workspaces, isLoading, error, createWorkspace, updateWorkspace, deleteWorkspace } = useWorkspaces()
+  const {
+    users,
+    isLoading: isUsersLoading,
+    error: usersError,
+  } = useUsers({ limit: 1000 })
 
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -293,8 +276,10 @@ export default function PlatformWorkspacesPage() {
                     <Popover open={ownerPopoverOpen} onOpenChange={setOwnerPopoverOpen}>
                       <PopoverTrigger asChild>
                         <Button variant="outline" role="combobox" aria-expanded={ownerPopoverOpen} className="w-full justify-between font-normal">
-                          {(formData as any).owner_user_id
-                            ? MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
+                        {(formData as any).owner_user_id
+                          ? users.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + users.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
+                          : isUsersLoading
+                            ? "Loading users..."
                             : "Select owner..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -303,9 +288,9 @@ export default function PlatformWorkspacesPage() {
                         <Command>
                           <CommandInput placeholder="Search user..." />
                           <CommandList>
-                            <CommandEmpty>No user found.</CommandEmpty>
+                            <CommandEmpty>{isUsersLoading ? "Loading users..." : usersError ? usersError : "No user found."}</CommandEmpty>
                             <CommandGroup>
-                              {MOCK_USERS.map((user) => (
+                              {users.map((user) => (
                                 <CommandItem
                                   key={user.id}
                                   value={user.username + " " + user.email}
@@ -337,8 +322,10 @@ export default function PlatformWorkspacesPage() {
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" aria-expanded={ownerPopoverOpen} className="w-full justify-between font-normal">
                         {(formData as any).owner_user_id
-                          ? MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + MOCK_USERS.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
-                          : "Select new owner..."}
+                          ? users.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + users.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
+                          : isUsersLoading
+                            ? "Loading users..."
+                            : "Select new owner..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
@@ -346,9 +333,9 @@ export default function PlatformWorkspacesPage() {
                       <Command>
                         <CommandInput placeholder="Search user..." />
                         <CommandList>
-                          <CommandEmpty>No user found.</CommandEmpty>
+                          <CommandEmpty>{isUsersLoading ? "Loading users..." : usersError ? usersError : "No user found."}</CommandEmpty>
                           <CommandGroup>
-                            {MOCK_USERS.map((user) => (
+                            {users.map((user) => (
                               <CommandItem
                                 key={user.id}
                                 value={user.username + " " + user.email}
