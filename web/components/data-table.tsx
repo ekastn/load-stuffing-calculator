@@ -33,6 +33,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   onRowClick?: (data: TData) => void
+  getRowClassName?: (data: TData) => string
   toolbar?: React.ReactNode
 }
 
@@ -40,6 +41,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   onRowClick,
+  getRowClassName,
   toolbar,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([])
@@ -109,7 +111,7 @@ export function DataTable<TData, TValue>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() => onRowClick?.(row.original)}
-                  className={onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
+                  className={`${onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""} ${getRowClassName?.(row.original) ?? ""}`}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
