@@ -1,0 +1,212 @@
+@startuml
+title Plan Lifecycle & Calculation Flow
+
+actor "Planner" as User
+
+box "Web Client" #EAF3FA
+  boundary "Web Page (React)" as Page
+  control "Service/API Layer" as WebSvc
+end box
+
+box "Go API Backend" #E8F0FE
+  control "JWT & RBAC Middleware" as Mw
+  control "Plan Service/Handlers" as PlanSvc
+  control "Packing Gateway" as GW
+end box
+
+box "Packing Service" #FFF2CC
+  boundary "Flask API" as Flask
+  control "Packer Service" as PackerSvc
+  control "py3dbp Packer" as Packer
+  entity "py3dbp Bin/Item" as Model
+end box
+
+database "PostgreSQL" as DB
+
+== Dashboard & List Plans ==
+
+User -> Page : View Dashboard
+activate User
+activate Page
+Page -> WebSvc : DashboardService.getStats()
+activate WebSvc
+WebSvc -> Mw : GET /dashboard (Bearer token)
+activate Mw
+Mw -> Mw : Verify JWT & RBAC (perm: dashboard:read)
+Mw -> PlanSvc : DashboardStats()
+activate PlanSvc
+PlanSvc -> DB : Workspace-scoped queries
+activate DB
+DB --> PlanSvc : stats (plans, items, utilization)
+deactivate DB
+PlanSvc --> Mw : dashboard stats
+deactivate PlanSvc
+Mw --> WebSvc : 200 OK stats
+deactivate Mw
+WebSvc --> Page : stats
+deactivate WebSvc
+Page --> User : Render dashboard stats
+deactivate Page
+
+User -> Page : View Shipments List
+activate Page
+Page -> WebSvc : PlanService.listPlans()
+activate WebSvc
+WebSvc -> Mw : GET /plans?page=&limit= (Bearer token)
+activate Mw
+Mw -> Mw : Verify JWT & RBAC (perm: plan:read)
+Mw -> PlanSvc : ListPlans()
+activate PlanSvc
+PlanSvc -> DB : SELECT load_plans (workspace-scoped)
+activate DB
+DB --> PlanSvc : plan summaries
+deactivate DB
+PlanSvc --> Mw : paginated plans
+deactivate PlanSvc
+Mw --> WebSvc : 200 OK plan list
+deactivate Mw
+WebSvc --> Page : PlanListItem[]
+deactivate WebSvc
+Page --> User : Display plan list
+deactivate Page
+deactivate User
+
+== Load Plan Details ==
+
+User -> Page : View Plan Details
+activate User
+activate Page
+Page -> WebSvc : PlanService.getPlan(id)
+activate WebSvc
+WebSvc -> Mw : GET /plans/:id (Bearer token)
+activate Mw
+Mw -> Mw : Verify JWT & RBAC (perm: plan:read)
+Mw -> PlanSvc : GetPlan(id)
+activate PlanSvc
+PlanSvc -> DB : Fetch plan + items + result + placements (ORDER BY step)
+activate DB
+DB --> PlanSvc : full plan data
+deactivate DB
+PlanSvc --> Mw : PlanDetailResponse
+deactivate PlanSvc
+Mw --> WebSvc : 200 OK plan detail
+deactivate Mw
+WebSvc --> Page : plan detail
+deactivate WebSvc
+Page -> Page : toStuffingPlanData() -> map to PackedItem[]
+Page --> User : Display plan detail with 3D placements
+deactivate Page
+deactivate User
+
+== Create & Calculate Plan ==
+
+User -> Page : Fill create-plan form (container + items)
+activate User
+activate Page
+Page -> WebSvc : PlanService.createPlan(data)
+activate WebSvc
+WebSvc -> Mw : POST /plans (Bearer token)
+activate Mw
+Mw -> Mw : Verify JWT & RBAC (perm: plan:create)
+Mw -> PlanSvc : CreateCompletePlan(req)
+activate PlanSvc
+
+opt Trial user
+  PlanSvc -> DB : Count existing plans
+  activate DB
+  DB --> PlanSvc : plan count
+  deactivate DB
+  PlanSvc -> PlanSvc : Enforce limit (max 3 plans)
+end
+
+alt Container preset
+  PlanSvc -> DB : GetContainer(id)
+  activate DB
+  DB --> PlanSvc : container dims (mm)
+  deactivate DB
+else Custom container
+  PlanSvc -> PlanSvc : Use dimensions from request
+end
+PlanSvc -> PlanSvc : Snapshot dims to load_plans (no FK reference)
+
+PlanSvc -> DB : INSERT load_plans + load_items
+activate DB
+DB --> PlanSvc : plan_id + item_ids
+deactivate DB
+
+opt auto_calculate (default)
+  PlanSvc -> DB : Fetch plan + items (workspace-scoped)
+  activate DB
+  DB --> PlanSvc : plan, items (mm, kg)
+  deactivate DB
+  PlanSvc -> GW : PackRequest(units, container, items)
+  activate GW
+  GW -> Flask : POST /pack
+  activate Flask
+
+  Flask -> PackerSvc : pack_request(body)
+  activate PackerSvc
+  PackerSvc -> PackerSvc : parse_request()\nnormalize units to cm_int
+
+  create Packer
+  PackerSvc -> Packer : new Packer()
+  activate Packer
+  Packer --> PackerSvc : packer instance
+
+  create Model
+  PackerSvc -> Model : new Bin(WHD=(L,H,W), max_weight, put_type)
+  activate Model
+  Model --> PackerSvc : bin instance
+  PackerSvc -> Packer : addBin(bin)
+
+  loop Each item (expanded by quantity)
+    PackerSvc -> Model : new Item(WHD=(L,H,W), weight)
+    Model --> PackerSvc : item instance
+    PackerSvc -> Packer : addItem(item)
+  end
+  deactivate Model
+
+  PackerSvc -> Packer : pack(bigger_first, check_stable, support_surface_ratio)
+  activate Packer
+  Note over Packer : Run 3D bin packing algorithm
+  Packer --> PackerSvc : packing finished
+  deactivate Packer
+
+  PackerSvc -> PackerSvc : Retrieve packer.bins[0].items
+  PackerSvc -> PackerSvc : Axis remap back (x=L, y=W, z=H) & calculate rotation codes
+  PackerSvc --> Flask : PackSuccessResponse
+  deactivate PackerSvc
+
+  Flask --> GW : 200 OK (placements, unfitted, stats)
+  deactivate Flask
+  GW --> PlanSvc : PackResult
+  deactivate GW
+  PlanSvc -> PlanSvc : Sort + apply rotation, recompute utilization
+  alt is_feasible
+    PlanSvc -> PlanSvc : status = COMPLETED
+  else has unfitted items
+    PlanSvc -> PlanSvc : status = PARTIAL
+  end
+  PlanSvc -> DB : Persist: DELETE & INSERT plan_results,\nCopyFrom plan_placements,\nUPDATE load_plans status
+  activate DB
+  DB --> PlanSvc : ok
+  deactivate DB
+end
+
+PlanSvc --> Mw : CreatePlanResponse
+deactivate PlanSvc
+Mw --> WebSvc : 201 Created
+deactivate Mw
+WebSvc --> Page : CreatePlanResponse
+deactivate WebSvc
+
+note over WebSvc, PlanSvc
+  POST /plans
+  req: { "title", "auto_calculate": true, "container": {...}, "items": [...] }
+  res: { "plan_id", "status", "total_items", "calculation": { "placements": [...], "utilization_pct" } }
+end note
+
+Page --> User : Redirect to plan detail
+deactivate Page
+deactivate User
+@enduml

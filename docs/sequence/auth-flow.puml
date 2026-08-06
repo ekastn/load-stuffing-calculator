@@ -1,0 +1,98 @@
+@startuml
+title User Authentication Flow
+
+actor "Planner" as User
+
+box "Web Client" #EAF3FA
+  boundary "Web Page (React)" as Page
+  control "Auth Context" as AuthCtx
+  control "Service/API Layer" as WebSvc
+end box
+
+box "Go API Backend" #E8F0FE
+  control "JWT Middleware" as Mw
+  control "Auth Service/Handlers" as AuthSvc
+end box
+
+database "PostgreSQL" as DB
+
+== Authentication ==
+
+User -> Page : Enter credentials
+activate User
+activate Page
+Page -> AuthCtx : login(username, password)
+activate AuthCtx
+AuthCtx -> WebSvc : AuthService.login()
+activate WebSvc
+WebSvc -> Mw : POST /auth/login\n(public, no token)
+activate Mw
+Mw -> AuthSvc : LoginHandler
+activate AuthSvc
+
+alt Registered user
+  AuthSvc -> DB : GetUserByUsername + VerifyPassword
+  activate DB
+  DB --> AuthSvc : user (active workspace, role)
+  deactivate DB
+  AuthSvc -> AuthSvc : Resolve role + default workspace
+  AuthSvc -> AuthSvc : GenerateAccessToken (JWT) & GenerateRefreshToken
+  AuthSvc -> DB : INSERT refresh_tokens
+  activate DB
+  DB --> AuthSvc : ok
+  deactivate DB
+  AuthSvc --> Mw : tokens + user + permissions
+else Guest trial
+  AuthSvc -> AuthSvc : GuestToken()
+  AuthSvc -> AuthSvc : Generate 30-day JWT\n(role: trial, 3-plan limit)
+  AuthSvc --> Mw : trial access token
+end
+
+note over WebSvc, AuthSvc
+  POST /auth/login
+  req: { "username", "password", "guest_token"? }
+  res: { "access_token", "refresh_token", "active_workspace_id", "user": { "id", "role" } }
+end note
+
+Mw --> WebSvc : 200 OK (tokens + user)
+deactivate AuthSvc
+deactivate Mw
+WebSvc --> AuthCtx : LoginResponse
+deactivate WebSvc
+AuthCtx -> AuthCtx : Save session to localStorage
+AuthCtx --> Page : session ready
+deactivate AuthCtx
+Page --> User : Redirect to /dashboard
+deactivate Page
+deactivate User
+
+== Session Verification ==
+
+User -> Page : Reload / refresh page
+activate User
+activate Page
+Page -> AuthCtx : refreshSession()
+activate AuthCtx
+AuthCtx -> WebSvc : AuthService.me()
+activate WebSvc
+WebSvc -> Mw : GET /auth/me\n(Bearer access_token)
+activate Mw
+Mw -> Mw : Verify JWT + load permissions
+Mw -> AuthSvc : MeHandler
+activate AuthSvc
+AuthSvc -> DB : Get workspace & user profile
+activate DB
+DB --> AuthSvc : user profile
+deactivate DB
+AuthSvc --> Mw : user + permissions
+deactivate AuthSvc
+Mw --> WebSvc : 200 OK (profile data)
+deactivate Mw
+WebSvc --> AuthCtx : AuthMeResponse
+deactivate WebSvc
+AuthCtx --> Page : profile ready
+deactivate AuthCtx
+Page --> User : Display authorized views
+deactivate Page
+deactivate User
+@enduml
