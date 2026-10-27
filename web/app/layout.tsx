@@ -15,15 +15,6 @@ export const metadata: Metadata = {
   applicationName: "LoadIQ",
   authors: [{ name: "LoadIQ Team" }],
   keywords: ["container loading", "3D bin packing", "logistics", "supply chain", "optimization", "stuffing calculator"],
-  icons: {
-    icon: [
-      {
-        url: "/logo.png",
-        href: "/logo.png",
-      },
-    ],
-    apple: "/logo.png",
-  },
 }
 
 export default function RootLayout({

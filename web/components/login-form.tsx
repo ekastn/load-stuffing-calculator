@@ -5,13 +5,13 @@ import { useEffect, useState } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { LogoMark } from "@/components/brand/logo-mark"
 
 export function LoginForm() {
   const [username, setUsername] = useState("")
@@ -55,15 +55,7 @@ export function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="relative w-20 h-20 mb-2">
-            <Image 
-              src="/logo.png" 
-              alt="LoadIQ Logo" 
-              fill
-              className="object-contain rounded-xl"
-              priority
-            />
-          </div>
+          <LogoMark className="mb-2 size-20 text-foreground" />
           <h1 className="text-4xl font-bold text-foreground">LoadIQ</h1>
           <p className="text-muted-foreground">Container Optimization System</p>
         </div>
