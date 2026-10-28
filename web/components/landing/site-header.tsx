@@ -22,7 +22,7 @@ export function SiteHeader() {
   const closeMenu = () => setIsMenuOpen(false)
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-ink/15 bg-yard/90 backdrop-blur-sm">
+    <header className="fixed inset-x-0 top-[var(--api-banner-offset,0px)] z-50 border-b border-ink/15 bg-yard/90 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-[90rem] items-center justify-between gap-6 px-4 md:px-8">
         <Link
           href="/"
