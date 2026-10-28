@@ -1,6 +1,6 @@
 # LoadIQ Design System
 
-This is the visual and interaction system for LoadIQ. The landing page (`web/app/(public)/page.tsx`) already uses it. The rest of the web app (dashboard, plans, master data, auth) still uses the original shadcn defaults and is meant to move to this system. Section 13 is the migration checklist.
+This is the visual and interaction system for LoadIQ. The landing page (`web/app/(public)/page.tsx`) and the auth pages (`/login`, `/register`) already use it. The rest of the web app (dashboard, plans, master data) still uses the original shadcn defaults and is meant to move to this system. Section 13 is the migration checklist.
 
 Direction name: **industrial manifest**. The product plans how cargo goes into shipping containers, so the visual language comes from that world: container door stencils, cargo manifests, kraft boxes, safety markings, measured dimensions.
 
@@ -191,7 +191,7 @@ A container end view (ink frame with four corner castings) with one orange box s
 
 - The frame uses `currentColor`; the box is always `#ff5b14`.
 - Pair it with the "LoadIQ" wordmark in the stencil face at about 70% of the mark's height. Gap 10px.
-- Sizes: 16px favicon, 32px sidebar, 36px landing header, 80px auth pages.
+- Sizes: 16px favicon, 32px sidebar, 36px landing header and auth pages.
 - Pass `title` only when the mark appears without the wordmark.
 - Browser icons: `web/app/icon.svg` (mark on a `yard` tile), `apple-icon.png`, `favicon.ico`.
 - Don't recolor the box, add effects, put it on orange, or rotate it.
@@ -229,6 +229,16 @@ Square, 12px Archivo 600, `px-2 py-0.5`. Variants follow the status table in 2.4
 Landing: fixed 64px bar, `bg-yard/90` with blur, bottom rule `ink/15`, wordmark left, section links centre, Sign in + ink button right. Below `md`, a menu button opens a full-width panel (Escape closes it).
 
 App sidebar (proposed): `form` surface, group titles in Label style sentence case (replacing the current all-caps "OVERVIEW", "WORKSPACE"), active item with `ink` text and a 3px `signal` left bar instead of a filled pill.
+
+### 6.10 Auth screens (`components/auth/`)
+
+Login and register share `AuthShell`: a full-height split with no header bar.
+
+- **Left column** (`yard`, 5/12): logo mark and wordmark top-left (36px mark, links to `/`), then the stencil page title (Display M), one line of steel text, a hairline rule, the fields, one `signal` button, a second rule, and a links row. The links row holds the link to the other auth screen on the left and "Go to home" on the right.
+- **No form card.** Fields sit directly on `yard` with the raised `form` fill, separated by hairline rules (`AUTH_FORM_CLASS`). Choice rows (account type) are square, divided by rules, and mark the selected row with a 3px `signal` left bar.
+- **Right column** (`ink`, 7/12, `lg` and up only): the hero load plays once (boxes 1 to 58, about 6s), then holds. A manifest readout sits under it. Phones and reduced-motion viewers get no 3D (the poster only under reduced motion), and the panel's code is not loaded below `lg`.
+- Register shows a mono "Step 1 of 2" counter above the title, since it is a real sequence.
+- Shared layout: `app/(public)/layout.tsx` provides fonts, background, skip link and the main landmark for the landing page and the auth screens. `/embed/*` lives in `(embed)` and gets none of it.
 
 ---
 
@@ -323,7 +333,7 @@ Suggested order. Each step should leave the app working.
 5. **Forms.** Inputs, selects, dimension inputs per 6.8. Fix the field border contrast.
 6. **Plan detail.** `web/app/shipments/[id]/page.tsx` and `StuffingVisualizer`: readout, meters, cargo rows, and the product color decision from 8.
 7. **Icons.** Replace `lucide-react` with Solar screen by screen.
-8. **Auth pages.** Login and register: remove the gradient background and card shadow, use the stencil wordmark.
+8. **Auth pages.** Done. See 6.10.
 9. **Reports and tables.** Mono right-aligned numbers, status badges, row rules.
 
 ---
