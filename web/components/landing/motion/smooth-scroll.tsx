@@ -8,11 +8,25 @@ import "lenis/dist/lenis.css"
 
 gsap.registerPlugin(ScrollTrigger)
 
-const ScrollToContext = createContext<(hash: string) => void>(() => {})
+const ScrollToContext = createContext<((hash: string) => void) | null>(null)
 
-/** Scrolls to an in-page anchor through Lenis when it is running. */
+/** Scrolls to an in-page anchor through Lenis when it is running. Null outside the provider. */
 export function useScrollTo() {
   return useContext(ScrollToContext)
+}
+
+/**
+ * Anchor scrolling without Lenis: used by the provider when the viewer prefers
+ * reduced motion, and by hash links rendered outside the provider (the shared
+ * header sits above it in the layout).
+ */
+export function scrollToHashNatively(hash: string) {
+  const target = document.querySelector<HTMLElement>(hash)
+  if (!target) return
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  target.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" })
+  window.history.pushState(null, "", hash)
+  target.focus({ preventScroll: true })
 }
 
 /**
@@ -48,16 +62,15 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
   }, [])
 
   const scrollTo = useCallback((hash: string) => {
-    const target = document.querySelector<HTMLElement>(hash)
-    if (!target) return
     if (lenisRef.current) {
+      const target = document.querySelector<HTMLElement>(hash)
+      if (!target) return
       lenisRef.current.scrollTo(target)
-    } else {
-      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      target.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" })
+      window.history.pushState(null, "", hash)
+      target.focus({ preventScroll: true })
+      return
     }
-    window.history.pushState(null, "", hash)
-    target.focus({ preventScroll: true })
+    scrollToHashNatively(hash)
   }, [])
 
   return <ScrollToContext.Provider value={scrollTo}>{children}</ScrollToContext.Provider>

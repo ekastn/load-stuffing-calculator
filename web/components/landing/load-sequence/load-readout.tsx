@@ -16,6 +16,8 @@ type LoadReadoutProps = {
   containerName: string
   volumeUsedPct: number
   totalWeightKg: number
+  /** `dark` is for the panel on `ink`, where the default ink text would disappear. */
+  tone?: "light" | "dark"
   className?: string
 }
 
@@ -27,7 +29,7 @@ function describeBox(step: number) {
 }
 
 /** The manifest line under the 3D container, tracking the box being loaded. */
-export function LoadReadout({ ref, totalBoxes, containerName, volumeUsedPct, totalWeightKg, className }: LoadReadoutProps) {
+export function LoadReadout({ ref, totalBoxes, containerName, volumeUsedPct, totalWeightKg, tone = "light", className }: LoadReadoutProps) {
   const counterRef = useRef<HTMLSpanElement>(null)
   const labelRef = useRef<HTMLSpanElement>(null)
   const sizeRef = useRef<HTMLSpanElement>(null)
@@ -47,12 +49,15 @@ export function LoadReadout({ ref, totalBoxes, containerName, volumeUsedPct, tot
   }))
 
   const { container } = HERO_LOAD
+  const isDark = tone === "dark"
+  const mutedText = isDark ? "text-form/75" : "text-steel"
 
   return (
     <div
       aria-hidden="true"
       className={cn(
-        "grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-1 border-t border-ink/25 pt-3 text-sm text-ink",
+        "grid grid-cols-[auto_1fr] items-baseline gap-x-6 gap-y-1 border-t pt-3 text-sm",
+        isDark ? "border-form/30 text-form" : "border-ink/25 text-ink",
         className,
       )}
     >
@@ -61,9 +66,9 @@ export function LoadReadout({ ref, totalBoxes, containerName, volumeUsedPct, tot
       </span>
       <span className="truncate">
         <span ref={labelRef} className="font-semibold">{finalBox.label}</span>{" "}
-        <span ref={sizeRef} className="font-figures text-steel">{finalBox.size}</span>
+        <span ref={sizeRef} className={cn("ml-1.5 font-figures", mutedText)}>{finalBox.size}</span>
       </span>
-      <span className="col-span-2 truncate font-figures text-xs text-steel md:text-sm">
+      <span className={cn("col-span-2 truncate font-figures text-xs md:text-sm", mutedText)}>
         {containerName}, {container.length} × {container.width} × {container.height} mm
         <span className="hidden sm:inline">, {totalWeightKg.toLocaleString("en-US")} kg, {volumeUsedPct}% of volume used</span>
       </span>

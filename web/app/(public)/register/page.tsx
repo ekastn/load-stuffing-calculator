@@ -1,32 +1,51 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useState, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import Link from "next/link"
 
-import { AlertCircle } from "lucide-react"
-
-import { LogoMark } from "@/components/brand/logo-mark"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { AuthError } from "@/components/auth/auth-error"
+import { AuthField } from "@/components/auth/auth-field"
+import { AuthFooterLinks } from "@/components/auth/auth-footer-links"
+import { AUTH_FORM_CLASS, AuthShell } from "@/components/auth/auth-shell"
+import { landingButtonClass } from "@/components/landing/landing-link"
+import { RedirectIfAuthed } from "@/components/redirect-if-authed"
 import { useAuth } from "@/lib/auth-context"
-import { cn } from "@/lib/utils"
 
-function RedirectIfAuthed() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+const ACCOUNT_TYPES = [
+  { value: "personal", title: "Personal", body: "Your own workspace for trying things out." },
+  { value: "organization", title: "Organization", body: "Invite teammates and share plans." },
+] as const
 
-  useEffect(() => {
-    if (isLoading) return
-    if (!user) return
+type AccountType = (typeof ACCOUNT_TYPES)[number]["value"]
 
-    const next = searchParams.get("next")
-    router.replace(next || "/dashboard")
-  }, [isLoading, router, searchParams, user])
+const DEFAULT_WORKSPACE_NAME = "my workspace"
 
-  return null
+function AccountTypeOption({
+  option,
+  checked,
+  disabled,
+  onChange,
+}: {
+  option: (typeof ACCOUNT_TYPES)[number]
+  checked: boolean
+  disabled: boolean
+  onChange: () => void
+}) {
+  return (
+    <label className="flex cursor-pointer flex-col gap-1 border-l-[3px] border-l-transparent p-4 transition-colors has-[:checked]:border-l-signal has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-signal has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-60">
+      <input
+        type="radio"
+        name="accountType"
+        value={option.value}
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        className="peer sr-only"
+      />
+      <span className="font-landing text-sm font-semibold text-steel peer-checked:text-ink">{option.title}</span>
+      <span className="text-sm text-steel">{option.body}</span>
+    </label>
+  )
 }
 
 function RegisterForm() {
@@ -36,8 +55,8 @@ function RegisterForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const [accountType, setAccountType] = useState<"personal" | "organization">("personal")
-  const [workspaceName, setWorkspaceName] = useState("my workspace")
+  const [accountType, setAccountType] = useState<AccountType>("personal")
+  const [workspaceName, setWorkspaceName] = useState(DEFAULT_WORKSPACE_NAME)
 
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -50,7 +69,8 @@ function RegisterForm() {
 
   const canContinue = username.trim() !== "" && email.trim() !== "" && password.trim() !== ""
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
     setError(null)
     setIsLoading(true)
 
@@ -60,7 +80,7 @@ function RegisterForm() {
         email: email.trim(),
         password,
         accountType,
-        workspaceName: workspaceName.trim() === "my workspace" ? undefined : workspaceName.trim(),
+        workspaceName: workspaceName.trim() === DEFAULT_WORKSPACE_NAME ? undefined : workspaceName.trim(),
       })
 
       router.push(nextPath || "/dashboard")
@@ -72,170 +92,106 @@ function RegisterForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="flex flex-col items-center text-center space-y-2">
-          <LogoMark className="mb-2 size-20 text-foreground" />
-          <h1 className="text-4xl font-bold text-foreground">LoadIQ</h1>
-          <p className="text-muted-foreground">Container Optimization System</p>
-        </div>
+    <AuthShell>
+      <p className="font-figures text-sm text-steel">Step {step} of 2</p>
+      <h1 className="mt-1 font-stencil text-4xl font-bold leading-none text-ink md:text-5xl">Create account</h1>
 
-        <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle>Create account</CardTitle>
-            <CardDescription>
-              {step === 1 ? "Step 1 of 2: account details" : "Step 2 of 2: workspace setup"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="flex gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+      {step === 1 ? (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (canContinue) setStep(2)
+          }}
+          className={AUTH_FORM_CLASS}
+        >
+          {error && <AuthError message={error} />}
 
-            {step === 1 && (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Username</label>
-                  <Input
-                    type="text"
-                    placeholder="jdoe"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    disabled={isLoading}
-                    className="bg-input/50"
-                  />
-                </div>
+          <AuthField
+            id="username"
+            label="Username"
+            value={username}
+            onChange={setUsername}
+            autoComplete="username"
+            disabled={isLoading}
+          />
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Email</label>
-                  <Input
-                    type="email"
-                    placeholder="jdoe@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                    className="bg-input/50"
-                  />
-                </div>
+          <AuthField
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            autoComplete="email"
+            disabled={isLoading}
+          />
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Password</label>
-                  <Input
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading}
-                    className="bg-input/50"
-                  />
-                </div>
+          <AuthField
+            id="password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={setPassword}
+            autoComplete="new-password"
+            disabled={isLoading}
+          />
 
-                <Button className="w-full" disabled={!canContinue || isLoading} onClick={() => setStep(2)}>
-                  Continue
-                </Button>
-              </div>
-            )}
+          <button type="submit" className={landingButtonClass("signal")} disabled={!canContinue || isLoading}>
+            Continue
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleSubmit} className={AUTH_FORM_CLASS}>
+          {error && <AuthError message={error} />}
 
-            {step === 2 && (
-              <div className="space-y-5">
-                <fieldset className="space-y-2">
-                  <legend className="text-sm font-medium">Account type</legend>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <label
-                      className={cn(
-                        "relative flex cursor-pointer flex-col gap-1 rounded-md border bg-background/40 p-3 text-left transition-all",
-                        "hover:bg-accent/40",
-                        "has-[:disabled]:pointer-events-none has-[:disabled]:opacity-50"
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="accountType"
-                        value="personal"
-                        checked={accountType === "personal"}
-                        onChange={() => setAccountType("personal")}
-                        disabled={isLoading}
-                        className="peer sr-only"
-                      />
-                      <span className="text-sm font-medium peer-checked:text-primary">Personal</span>
-                      <span className="text-xs text-muted-foreground">Your own workspace for trying things out.</span>
-                      <span className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-transparent peer-checked:ring-primary/40" />
-                    </label>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="font-landing text-sm font-semibold text-ink">Account type</legend>
+            <div className="divide-y divide-ink/15 border border-ink/20">
+              {ACCOUNT_TYPES.map((option) => (
+                <AccountTypeOption
+                  key={option.value}
+                  option={option}
+                  checked={accountType === option.value}
+                  disabled={isLoading}
+                  onChange={() => setAccountType(option.value)}
+                />
+              ))}
+            </div>
+          </fieldset>
 
-                    <label
-                      className={cn(
-                        "relative flex cursor-pointer flex-col gap-1 rounded-md border bg-background/40 p-3 text-left transition-all",
-                        "hover:bg-accent/40",
-                        "has-[:disabled]:pointer-events-none has-[:disabled]:opacity-50"
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        name="accountType"
-                        value="organization"
-                        checked={accountType === "organization"}
-                        onChange={() => setAccountType("organization")}
-                        disabled={isLoading}
-                        className="peer sr-only"
-                      />
-                      <span className="text-sm font-medium peer-checked:text-primary">Organization</span>
-                      <span className="text-xs text-muted-foreground">Invite teammates and share plans.</span>
-                      <span className="pointer-events-none absolute inset-0 rounded-md ring-2 ring-transparent peer-checked:ring-primary/40" />
-                    </label>
-                  </div>
-                </fieldset>
+          <AuthField
+            id="workspace-name"
+            label="Workspace name"
+            value={workspaceName}
+            onChange={setWorkspaceName}
+            help={`Defaults to “${DEFAULT_WORKSPACE_NAME}”.`}
+            disabled={isLoading}
+          />
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Workspace name</label>
-                  <Input
-                    type="text"
-                    placeholder="my workspace"
-                    value={workspaceName}
-                    onChange={(e) => setWorkspaceName(e.target.value)}
-                    disabled={isLoading}
-                    className="bg-input/50"
-                  />
-                  <p className="text-xs text-muted-foreground">Defaults to “my workspace”.</p>
-                </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              className={landingButtonClass("outline", "w-full sm:flex-1")}
+              disabled={isLoading}
+              onClick={() => setStep(1)}
+            >
+              Back
+            </button>
+            <button type="submit" className={landingButtonClass("signal", "w-full sm:flex-1")} disabled={isLoading}>
+              {isLoading ? "Creating..." : "Create account"}
+            </button>
+          </div>
+        </form>
+      )}
 
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button variant="outline" className="w-full sm:flex-1" disabled={isLoading} onClick={() => setStep(1)}>
-                    Back
-                  </Button>
-                  <Button className="w-full sm:flex-1" disabled={isLoading} onClick={handleSubmit}>
-                    {isLoading ? "Creating..." : "Create account"}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-          <CardContent className="space-y-4 pt-0">
-            <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/login" className="text-primary hover:underline">
-                Sign in instead
-              </Link>
-            </p>
-
-            <Link href="/" className="block text-center text-sm text-muted-foreground hover:text-primary hover:underline">
-              Go to home
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      <AuthFooterLinks href="/login" label="Sign in" />
+    </AuthShell>
   )
 }
 
 export default function RegisterPage() {
   return (
     <>
-      <Suspense fallback={null}>
-        <RedirectIfAuthed />
-      </Suspense>
+      <RedirectIfAuthed />
       <Suspense fallback={null}>
         <RegisterForm />
       </Suspense>

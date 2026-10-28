@@ -164,6 +164,8 @@
   --color-signal: #ff5b14;
   --color-signal-text: #a8380a;
   --color-kraft: #b8895a;
+  --color-field: #7d8480;
+  --color-danger: #b42318;
 }
 
 @theme inline {
@@ -203,5 +205,29 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Cross-fade between the landing page and the auth screens (see app/(public)/layout.tsx). */
+html:has(.landing),
+html:has(.landing) body {
+  background: var(--color-yard);
+}
+
+::view-transition-group(.page-fade) {
+  background: var(--color-yard);
+}
+
+::view-transition-old(.page-fade),
+::view-transition-new(.page-fade) {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
