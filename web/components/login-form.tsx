@@ -2,16 +2,15 @@
 
 import type React from "react"
 import { useEffect, useState } from "react"
-import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
-import Image from "next/image"
-
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+
+import { AuthError } from "@/components/auth/auth-error"
+import { AuthField } from "@/components/auth/auth-field"
+import { AuthFooterLinks } from "@/components/auth/auth-footer-links"
+import { AUTH_FORM_CLASS, AuthShell } from "@/components/auth/auth-shell"
+import { landingButtonClass } from "@/components/landing/landing-link"
+import { useAuth } from "@/lib/auth-context"
 
 export function LoginForm() {
   const [username, setUsername] = useState("")
@@ -52,78 +51,38 @@ export function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-background px-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="relative w-20 h-20 mb-2">
-            <Image 
-              src="/logo.png" 
-              alt="LoadIQ Logo" 
-              fill
-              className="object-contain rounded-xl"
-              priority
-            />
-          </div>
-          <h1 className="text-4xl font-bold text-foreground">LoadIQ</h1>
-          <p className="text-muted-foreground">Container Optimization System</p>
-        </div>
+    <AuthShell>
+      <h1 className="font-stencil text-4xl font-bold leading-none text-ink md:text-5xl">Sign in</h1>
+      <p className="mt-3 text-steel">Use your LoadIQ username and password.</p>
 
-        <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
-          <CardHeader className="space-y-1">
-            <CardTitle>Sign In</CardTitle>
-            <CardDescription>Enter your credentials to access the system</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {error && (
-              <div className="flex gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                <AlertCircle className="h-5 w-5 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+      <form onSubmit={handleSubmit} className={AUTH_FORM_CLASS}>
+        {error && <AuthError message={error} />}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Username</label>
-                <Input
-                  type="text"
-                  placeholder="admin"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={isLoading}
-                  className="bg-input/50"
-                />
-              </div>
+        <AuthField
+          id="username"
+          label="Username"
+          value={username}
+          onChange={setUsername}
+          autoComplete="username"
+          disabled={isLoading}
+        />
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="bg-input/50"
-                />
-              </div>
+        <AuthField
+          id="password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          disabled={isLoading}
+        />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
+        <button type="submit" className={landingButtonClass("signal")} disabled={isLoading}>
+          {isLoading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
 
-              <p className="text-center text-sm text-muted-foreground">
-                Don&apos;t have an account?{" "}
-                <Link href="/register" className="text-primary hover:underline">
-                  Create one
-                </Link>
-              </p>
-            </form>
-
-            <Link href="/" className="block text-center text-sm text-muted-foreground hover:text-primary hover:underline">
-              Go to home
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+      <AuthFooterLinks href="/register" label="Create account" />
+    </AuthShell>
   )
 }
