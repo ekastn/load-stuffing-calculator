@@ -4199,6 +4199,9 @@ const docTemplate = `{
                     "maxLength": 150,
                     "minLength": 2
                 },
+                "sku": {
+                    "type": "string"
+                },
                 "weight_kg": {
                     "type": "number"
                 },
@@ -4697,6 +4700,9 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "sku": {
+                    "type": "string"
+                },
                 "weight_kg": {
                     "type": "number"
                 },
@@ -4907,6 +4913,10 @@ const docTemplate = `{
                 "container": {
                     "$ref": "#/definitions/dto.CreatePlanContainer"
                 },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 500
+                },
                 "status": {
                     "type": "string",
                     "enum": [
@@ -4917,6 +4927,10 @@ const docTemplate = `{
                         "FAILED",
                         "CANCELLED"
                     ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 150
                 }
             }
         },
@@ -4943,6 +4957,9 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 150,
                     "minLength": 2
+                },
+                "sku": {
+                    "type": "string"
                 },
                 "weight_kg": {
                     "type": "number"

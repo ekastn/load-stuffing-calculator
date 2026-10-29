@@ -71,9 +71,13 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 			},
 			CreateLoadPlanFunc: func(ctx context.Context, arg store.CreateLoadPlanParams) (store.LoadPlan, error) {
 				assert.Equal(t, contName, *arg.ContLabel)
+				assert.Equal(t, "Test Plan", *arg.Title)
+				assert.Equal(t, "Test Notes", *arg.Notes)
 				return store.LoadPlan{
 					PlanID:      planID,
 					PlanCode:    arg.PlanCode,
+					Title:       arg.Title,
+					Notes:       arg.Notes,
 					Status:      arg.Status,
 					ContLabel:   arg.ContLabel,
 					LengthMm:    arg.LengthMm,
@@ -92,6 +96,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.CreatePlanRequest{
 			Title: "Test Plan",
+			Notes: stringPtr("Test Notes"),
 			Container: dto.CreatePlanContainer{
 				ContainerID: stringPtr(contID.String()),
 			},
@@ -103,6 +108,7 @@ func TestPlanService_CreateCompletePlan(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, planID.String(), resp.PlanID)
+		assert.Equal(t, "Test Plan", resp.Title)
 		assert.Equal(t, types.PlanStatusDraft.String(), resp.Status)
 	})
 
@@ -385,6 +391,8 @@ func TestPlanService_GetPlan(t *testing.T) {
 				return store.LoadPlan{
 					PlanID:      planID,
 					PlanCode:    "CODE",
+					Title:       stringPtr("Plan Title"),
+					Notes:       stringPtr("Plan Notes"),
 					ContLabel:   stringPtr("Test Container"),
 					LengthMm:    toNumeric(1000),
 					WidthMm:     toNumeric(1000),
@@ -410,6 +418,9 @@ func TestPlanService_GetPlan(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, resp)
 		assert.Equal(t, planID.String(), resp.PlanID)
+		assert.Equal(t, "Plan Title", resp.Title)
+		assert.NotNil(t, resp.Notes)
+		assert.Equal(t, "Plan Notes", *resp.Notes)
 		assert.Len(t, resp.Items, 1)
 		assert.Equal(t, 2, resp.Stats.TotalItems)
 	})
@@ -598,7 +609,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 			ListLoadPlansFunc: func(ctx context.Context, arg store.ListLoadPlansParams) ([]store.LoadPlan, error) {
 				fmt.Println("DEBUG: Mock ListLoadPlansFunc called")
 				return []store.LoadPlan{
-					{PlanID: uuid.New(), PlanCode: "P1", CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true}, Status: stringPtr("DRAFT"), ContLabel: stringPtr("Cont1"), LengthMm: toNumeric(100), WidthMm: toNumeric(100), HeightMm: toNumeric(100), MaxWeightKg: toNumeric(1000)},
+					{PlanID: uuid.New(), PlanCode: "P1", Title: stringPtr("Listed Plan Title"), CreatedAt: pgtype.Timestamp{Time: time.Now(), Valid: true}, Status: stringPtr("DRAFT"), ContLabel: stringPtr("Cont1"), LengthMm: toNumeric(100), WidthMm: toNumeric(100), HeightMm: toNumeric(100), MaxWeightKg: toNumeric(1000)},
 				}, nil
 			},
 			// Need to mock ListLoadItems for stats aggregation
@@ -615,6 +626,7 @@ func TestPlanService_ListPlans(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, resp, 1)
 		assert.Equal(t, "P1", resp[0].PlanCode)
+		assert.Equal(t, "Listed Plan Title", resp[0].Title)
 		assert.Equal(t, types.PlanStatusDraft.String(), resp[0].Status)
 		assert.Equal(t, 0, resp[0].TotalItems)
 		assert.Equal(t, 0.0, resp[0].TotalWeightKG)
@@ -762,6 +774,8 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 			UpdateLoadPlanFunc: func(ctx context.Context, arg store.UpdateLoadPlanParams) error {
 				assert.Equal(t, planID, arg.PlanID)
 				assert.Equal(t, "OLD_CODE", arg.PlanCode)
+				assert.Equal(t, "Updated Plan Title", *arg.Title)
+				assert.Equal(t, "Updated Plan Notes", *arg.Notes)
 				assert.Equal(t, statusNew, *arg.Status)
 				return nil
 			},
@@ -769,6 +783,8 @@ func TestPlanService_UpdatePlan(t *testing.T) {
 
 		s := service.NewPlanService(mockQ, packer.NewPacker())
 		req := dto.UpdatePlanRequest{
+			Title:  stringPtr("Updated Plan Title"),
+			Notes:  stringPtr("Updated Plan Notes"),
 			Status: stringPtr(statusNew),
 		}
 		err := s.UpdatePlan(authedPlannerCtx(), planID.String(), req)

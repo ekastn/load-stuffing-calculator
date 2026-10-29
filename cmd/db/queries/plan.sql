@@ -2,6 +2,8 @@
 INSERT INTO load_plans (
     workspace_id,
     plan_code,
+    title,
+    notes,
     status,
     cont_label,
     length_mm,
@@ -11,7 +13,7 @@ INSERT INTO load_plans (
     created_by_type,
     created_by_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
 )
 RETURNING *;
 
@@ -108,12 +110,14 @@ WHERE plan_id = $1 AND item_id = $2;
 UPDATE load_plans
 SET
     plan_code = $3,
-    cont_label = $4,
-    length_mm = $5,
-    width_mm = $6,
-    height_mm = $7,
-    max_weight_kg = $8,
-    status = $9
+    title = $4,
+    notes = $5,
+    cont_label = $6,
+    length_mm = $7,
+    width_mm = $8,
+    height_mm = $9,
+    max_weight_kg = $10,
+    status = $11
 WHERE plan_id = $1
   AND workspace_id IS NOT DISTINCT FROM $2;
 

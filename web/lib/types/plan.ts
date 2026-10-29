@@ -128,6 +128,7 @@ export interface PlanListItem {
 
 export interface UpdatePlanRequest {
   title?: string
+  notes?: string
   status?: string
   container?: CreatePlanContainer
 }
