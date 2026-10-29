@@ -56,7 +56,7 @@ async function defaultGenerateThumbnail(data: StuffingPlanData): Promise<string 
   camera.top = frustumSize / 2
   camera.bottom = -frustumSize / 2
 
-  camera.position.set(15, 10, 15)
+  camera.position.set(15, 10, -15)
   camera.lookAt(0, 0, 0)
 
   const maxDim = Math.max(
@@ -64,7 +64,7 @@ async function defaultGenerateThumbnail(data: StuffingPlanData): Promise<string 
     data.container.width_mm,
     data.container.height_mm
   ) / 1000
-  camera.zoom = 16 / Math.max(maxDim, 1)
+  camera.zoom = 20 / Math.max(maxDim, 1)
   camera.updateProjectionMatrix()
 
   const canvas = offscreenHost?.querySelector("canvas")

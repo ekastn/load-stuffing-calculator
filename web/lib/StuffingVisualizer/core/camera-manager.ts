@@ -26,9 +26,9 @@ export class CameraManager {
     }
 
     public setDefaultPosition(): void {
-        // Position: Right (+X), Up (+Y), Front (+Z)
-        // Matches the "Door" view of the container
-        this.camera.position.set(15, 10, 15);
+        // Position: Right (+X), Up (+Y), Open Front (-Z)
+        // Looks into the open front side of the packed cargo
+        this.camera.position.set(15, 10, -15);
         this.camera.zoom = 1;
         this.camera.lookAt(0, 0, 0);
     }
@@ -51,8 +51,8 @@ export class CameraManager {
     }
 
     public fitToContainer(container: ContainerData): void {
-        // Reset to default angle (Front-Right-Top)
-        this.camera.position.set(15, 10, 15);
+        // Reset to default angle (Front-Right-Top looking at open cargo face)
+        this.camera.position.set(15, 10, -15);
         this.camera.lookAt(0, 0, 0);
 
         // Convert dimensions to meters
@@ -127,8 +127,8 @@ export class CameraManager {
         this.camera.top = frustumSize / 2;
         this.camera.bottom = -frustumSize / 2;
 
-        // Set isometric view (Front-Right-Top)
-        this.camera.position.set(15, 10, 15);
+        // Set isometric view (Front-Right-Top looking at open cargo face)
+        this.camera.position.set(15, 10, -15);
         this.camera.lookAt(0, 0, 0);
 
         // Calculate zoom to fit container
