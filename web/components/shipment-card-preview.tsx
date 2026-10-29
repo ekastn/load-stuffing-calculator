@@ -1,16 +1,27 @@
 "use client"
 
-import { Box, AlertCircle } from "lucide-react"
+import { ArrowRight, Box, AlertCircle } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge, getStatusBadgeVariant } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { usePlanThumbnail } from "@/hooks/use-plan-thumbnail"
+import { usePlanThumbnail, type PlanThumbnailStatus } from "@/hooks/use-plan-thumbnail"
+import type { PlanDetailResponse, PlanListItem } from "@/lib/types"
+import type { RefObject } from "react"
 
 interface ShipmentCardPreviewProps {
   planId: string
   title: string
+  state?: {
+    ref: RefObject<HTMLDivElement | null>
+    status: PlanThumbnailStatus
+    thumbnailUrl: string | null
+    detail: PlanDetailResponse | null
+  }
 }
 
-export function ShipmentCardPreview({ planId, title }: ShipmentCardPreviewProps) {
-  const { ref, status, thumbnailUrl, detail } = usePlanThumbnail(planId)
+export function ShipmentCardPreview({ planId, title, state }: ShipmentCardPreviewProps) {
+  const internalState = usePlanThumbnail(state ? "" : planId)
+  const { ref, status, thumbnailUrl, detail } = state ?? internalState
 
   const isLoading = status === "idle" || status === "fetching" || status === "rendering"
   const placementCount = detail?.calculation?.placements?.length ?? 0
@@ -78,5 +89,75 @@ export function ShipmentCardPreview({ planId, title }: ShipmentCardPreviewProps)
         </div>
       )}
     </div>
+  )
+}
+
+interface ShipmentCardProps {
+  plan: PlanListItem
+  onClick: (planId: string) => void
+}
+
+export function ShipmentCard({ plan, onClick }: ShipmentCardProps) {
+  const thumbnailState = usePlanThumbnail(plan.plan_id)
+  const { detail, status } = thumbnailState
+
+  const isWaitingForDetail = !detail && (status === "idle" || status === "fetching")
+  const totalItems = detail?.stats?.total_items ?? plan.total_items
+  const totalWeightKg = detail?.stats?.total_weight_kg ?? plan.total_weight_kg
+  const displayTitle = plan.title || detail?.title || plan.plan_code
+
+  return (
+    <Card
+      className="border-border bg-card cursor-pointer hover:shadow-xs hover:border-foreground/20 transition-all group overflow-hidden pt-0"
+      onClick={() => onClick(plan.plan_id)}
+    >
+      <ShipmentCardPreview
+        planId={plan.plan_id}
+        title={displayTitle}
+        state={thumbnailState}
+      />
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="group-hover:text-signal transition-colors">
+              {displayTitle}
+            </CardTitle>
+            <CardDescription>{plan.plan_code}</CardDescription>
+          </div>
+          <Badge variant={getStatusBadgeVariant(plan.status)}>
+            {plan.status}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1 text-sm">
+            {isWaitingForDetail && plan.total_items === 0 ? (
+              <Skeleton
+                data-testid="shipment-stats-skeleton"
+                className="h-4 w-28 rounded"
+              />
+            ) : (
+              <p className="text-muted-foreground">
+                {totalItems} items
+                {totalWeightKg > 0 && (
+                  <span>
+                    {" • "}
+                    {totalWeightKg.toLocaleString(undefined, {
+                      maximumFractionDigits: 1,
+                    })}{" "}
+                    kg
+                  </span>
+                )}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground/70">
+              {new Date(plan.created_at).toLocaleDateString()}
+            </p>
+          </div>
+          <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-signal transition-colors" />
+        </div>
+      </CardContent>
+    </Card>
   )
 }

@@ -4,12 +4,11 @@ import { RouteGuard } from "@/lib/route-guard"
 import { useAuth } from "@/lib/auth-context"
 import { usePlans } from "@/hooks/use-plans"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge, getStatusBadgeVariant } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { ArrowRight, Plus, Search } from "lucide-react"
-import { ShipmentCardPreview } from "@/components/shipment-card-preview"
+import { Plus, Search } from "lucide-react"
+import { ShipmentCard } from "@/components/shipment-card-preview"
 import {
   Select,
   SelectContent,
@@ -121,40 +120,11 @@ export default function ShipmentsPage() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredPlans.map((plan) => (
-                <Card
+                <ShipmentCard
                   key={plan.plan_id}
-                  className="border-border bg-card cursor-pointer hover:shadow-xs hover:border-foreground/20 transition-all group overflow-hidden pt-0"
-                  onClick={() => handleShipmentClick(plan.plan_id)}
-                >
-                  <ShipmentCardPreview
-                    planId={plan.plan_id}
-                    title={plan.title || plan.plan_code}
-                  />
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="group-hover:text-signal transition-colors">
-                          {plan.title || plan.plan_code}
-                        </CardTitle>
-                        <CardDescription>{plan.plan_code}</CardDescription>
-                      </div>
-                      <Badge variant={getStatusBadgeVariant(plan.status)}>
-                        {plan.status}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1 text-sm">
-                        <p className="text-muted-foreground">{plan.total_items} items</p>
-                        <p className="text-xs text-muted-foreground/70">
-                          {new Date(plan.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-signal transition-colors" />
-                    </div>
-                  </CardContent>
-                </Card>
+                  plan={plan}
+                  onClick={handleShipmentClick}
+                />
               ))}
             </div>
           )}

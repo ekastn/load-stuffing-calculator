@@ -76,6 +76,7 @@ export function usePlanThumbnail(planId: string) {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
+    if (!planId) return
     if (getCachedThumbnail(planId)) {
       setIsVisible(true)
       return
@@ -102,7 +103,7 @@ export function usePlanThumbnail(planId: string) {
   }, [planId])
 
   useEffect(() => {
-    if (!isVisible) return
+    if (!isVisible || !planId) return
 
     let cancelled = false
 

@@ -9,7 +9,19 @@ vi.mock("@/hooks/use-plan-thumbnail", () => ({
   usePlanThumbnail: (planId: string) => mockUsePlanThumbnail(planId),
 }))
 
-import { ShipmentCardPreview } from "@/components/shipment-card-preview"
+import { ShipmentCardPreview, ShipmentCard } from "@/components/shipment-card-preview"
+import type { PlanListItem } from "@/lib/types"
+
+const sampleListItem: PlanListItem = {
+  plan_id: "plan-1",
+  plan_code: "PLD-20261030-001",
+  title: "Export Tokyo",
+  status: "COMPLETED",
+  total_items: 0,
+  total_weight_kg: 0,
+  created_by: "",
+  created_at: "2026-10-30T00:00:00Z",
+}
 
 const sampleDetail: PlanDetailResponse = {
   plan_id: "plan-1",
@@ -116,5 +128,32 @@ describe("ShipmentCardPreview", () => {
     render(<ShipmentCardPreview planId="plan-1" title="Export Tokyo" />)
 
     expect(screen.getByText(/Preview unavailable/i)).toBeDefined()
+  })
+
+  it("populates total items and weight on ShipmentCard from fetched detail when list item has 0", () => {
+    mockUsePlanThumbnail.mockReturnValue({
+      ref: { current: null },
+      status: "ready",
+      thumbnailUrl: "data:image/webp;base64,fake-preview",
+      detail: sampleDetail,
+    })
+
+    render(<ShipmentCard plan={sampleListItem} onClick={vi.fn()} />)
+
+    expect(screen.getByText(/120 items/i)).toBeDefined()
+    expect(screen.getByText(/4,800 kg/i)).toBeDefined()
+  })
+
+  it("renders a skeleton for card stats while detail is still fetching", () => {
+    mockUsePlanThumbnail.mockReturnValue({
+      ref: { current: null },
+      status: "fetching",
+      thumbnailUrl: null,
+      detail: null,
+    })
+
+    render(<ShipmentCard plan={sampleListItem} onClick={vi.fn()} />)
+
+    expect(screen.getByTestId("shipment-stats-skeleton")).toBeDefined()
   })
 })
