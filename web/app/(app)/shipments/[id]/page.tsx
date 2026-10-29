@@ -41,6 +41,7 @@ export default function ShipmentDetailPage() {
   const [showAddItem, setShowAddItem] = useState(false)
   const [showEditTitle, setShowEditTitle] = useState(false)
   const [editTitleValue, setEditTitleValue] = useState("")
+  const [editNotesValue, setEditNotesValue] = useState("")
 
   const [showAdvancedCalc, setShowAdvancedCalc] = useState(false)
   const [calcStrategy, setCalcStrategy] = useState("bestfitdecreasing")
@@ -62,6 +63,7 @@ export default function ShipmentDetailPage() {
   useEffect(() => {
     if (currentPlan) {
       setEditTitleValue(currentPlan.title || currentPlan.plan_code)
+      setEditNotesValue(currentPlan.notes || "")
     }
   }, [currentPlan])
 
@@ -71,9 +73,12 @@ export default function ShipmentDetailPage() {
       return
     }
 
-    const success = await updatePlan(shipmentId, { title: editTitleValue })
+    const success = await updatePlan(shipmentId, {
+      title: editTitleValue.trim(),
+      notes: editNotesValue.trim() ? editNotesValue.trim() : undefined,
+    })
     if (success) {
-      toast.success("Shipment renamed successfully")
+      toast.success("Shipment updated successfully")
       setShowEditTitle(false)
     }
   }
@@ -176,6 +181,11 @@ export default function ShipmentDetailPage() {
               <Button variant="ghost" size="icon" className="h-5 w-5 2xl:h-6 2xl:w-6 text-muted-foreground hover:text-foreground shrink-0" onClick={() => setShowEditTitle(true)}>
                 <Edit2 className="h-3 w-3" />
               </Button>
+            )}
+            {currentPlan.notes && (
+              <span className="text-[11px] 2xl:text-xs text-muted-foreground truncate hidden lg:inline max-w-[200px]" title={currentPlan.notes}>
+                ({currentPlan.notes})
+              </span>
             )}
             <span className="text-[11px] 2xl:text-xs text-muted-foreground font-mono hidden md:flex items-center gap-1 shrink-0">
               <Box className="h-3 w-3" />
@@ -480,15 +490,22 @@ export default function ShipmentDetailPage() {
       <Dialog open={showEditTitle} onOpenChange={setShowEditTitle}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Shipment Title</DialogTitle>
-            <DialogDescription>Update the human-readable name for this plan.</DialogDescription>
+            <DialogTitle>Edit Shipment Details</DialogTitle>
+            <DialogDescription>Update the title and notes for this plan.</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Input value={editTitleValue} onChange={(e) => setEditTitleValue(e.target.value)} placeholder="e.g. Special Cargo 001" autoFocus />
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Title</label>
+              <Input value={editTitleValue} onChange={(e) => setEditTitleValue(e.target.value)} placeholder="e.g. Special Cargo 001" autoFocus />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
+              <Input value={editNotesValue} onChange={(e) => setEditNotesValue(e.target.value)} placeholder="e.g. Loading priority notes" maxLength={500} />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowEditTitle(false)}>Cancel</Button>
-            <Button onClick={handleUpdateTitle}>Save Title</Button>
+            <Button onClick={handleUpdateTitle}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

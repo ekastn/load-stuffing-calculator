@@ -76,6 +76,7 @@ export function ShipmentWizard() {
   const [workspacePopoverOpen, setWorkspacePopoverOpen] = useState(false)
 
   const [shipmentName, setShipmentName] = useState("")
+  const [notes, setNotes] = useState("")
   const [containerMode, setContainerMode] = useState<"preset" | "custom">("preset")
   const [selectedContainerId, setSelectedContainerId] = useState("")
   const [customContainer, setCustomContainer] = useState<CreatePlanContainer>({
@@ -244,6 +245,7 @@ export function ShipmentWizard() {
     setIsSubmitting(true)
     const payload: CreatePlanRequest = {
       title: shipmentName,
+      notes: notes.trim() ? notes.trim() : undefined,
       container,
       items,
       auto_calculate: true
@@ -360,6 +362,18 @@ export function ShipmentWizard() {
                   </TabsList>
                 </Tabs>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Notes <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <Input
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g., Fragile electronics, handle with care"
+                maxLength={500}
+              />
             </div>
 
             {containerMode === "preset" ? (

@@ -1,5 +1,6 @@
 import { ViewTransition, type ReactNode } from "react"
 
+import { ApiStatusBanner } from "@/components/api-status-banner"
 import { landingFontVariables } from "@/components/landing/fonts"
 
 /**
@@ -11,6 +12,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     <div
       className={`landing ${landingFontVariables} min-h-screen bg-yard font-landing text-ink antialiased selection:bg-signal selection:text-ink`}
     >
+      <ApiStatusBanner />
       <a
         href="#main"
         className="sr-only z-[60] bg-signal px-4 py-3 font-semibold text-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4"

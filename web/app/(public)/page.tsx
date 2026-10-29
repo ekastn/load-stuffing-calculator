@@ -14,7 +14,7 @@ export default function LandingPage() {
     <SmoothScroll>
       <RedirectIfAuthed />
       <SiteHeader />
-      <div className="pt-16">
+      <div className="pt-[calc(4rem+var(--api-banner-offset,0px))]">
         <LoadSequence />
         <DemoSection />
         <ProductSection />

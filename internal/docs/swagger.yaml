@@ -353,6 +353,8 @@ definitions:
         maxLength: 150
         minLength: 2
         type: string
+      sku:
+        type: string
       weight_kg:
         type: number
       width_mm:
@@ -692,6 +694,8 @@ definitions:
         type: number
       name:
         type: string
+      sku:
+        type: string
       weight_kg:
         type: number
       width_mm:
@@ -835,6 +839,9 @@ definitions:
     properties:
       container:
         $ref: '#/definitions/dto.CreatePlanContainer'
+      notes:
+        maxLength: 500
+        type: string
       status:
         enum:
         - DRAFT
@@ -843,6 +850,9 @@ definitions:
         - PARTIAL
         - FAILED
         - CANCELLED
+        type: string
+      title:
+        maxLength: 150
         type: string
     type: object
   dto.UpdateProductRequest:
@@ -856,6 +866,8 @@ definitions:
       name:
         maxLength: 150
         minLength: 2
+        type: string
+      sku:
         type: string
       weight_kg:
         type: number
