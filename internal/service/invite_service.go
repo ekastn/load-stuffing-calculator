@@ -110,7 +110,7 @@ func (s *inviteService) CreateInvite(ctx context.Context, req dto.CreateInviteRe
 		RoleID:          roleID,
 		TokenHash:       th,
 		InvitedByUserID: invitedByUserID,
-		ExpiresAt:       &expiresAt,
+		ExpiresAt:       expiresAt,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create invite: %w", err)

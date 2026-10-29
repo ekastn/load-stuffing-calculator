@@ -11,8 +11,8 @@ type WorkspaceResponse struct {
 	OwnerUsername *string `json:"owner_username,omitempty"`
 	OwnerEmail    *string `json:"owner_email,omitempty"`
 
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt *time.Time `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
 }
 
 type CreateWorkspaceRequest struct {

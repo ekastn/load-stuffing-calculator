@@ -3,8 +3,9 @@ import { UserService } from "@/lib/services/users"
 import { CreateUserRequest, UpdateUserRequest, ChangePasswordRequest, UserResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 
-export function useUsers() {
+export function useUsers(options?: { limit?: number }) {
   const { user } = useAuth()
+  const limit = options?.limit ?? 10
   const [users, setUsers] = useState<UserResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -13,7 +14,7 @@ export function useUsers() {
     if (!user) return
     try {
       setIsLoading(true)
-      const data = await UserService.listUsers()
+      const data = await UserService.listUsers(1, limit)
       setUsers(data)
       setError(null)
     } catch (err) {
@@ -21,7 +22,7 @@ export function useUsers() {
     } finally {
       setIsLoading(false)
     }
-  }, [user])
+  }, [user, limit])
 
   useEffect(() => {
     fetchUsers()

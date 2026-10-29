@@ -4,14 +4,14 @@ import { useState } from "react"
 
 import type { ColumnDef } from "@tanstack/react-table"
 
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from "@/components/data-table"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { RouteGuard } from "@/lib/route-guard"
 import { useWorkspaces } from "@/hooks/use-workspaces"
+import { useUsers } from "@/hooks/use-users"
 import type { CreateWorkspaceRequest, UpdateWorkspaceRequest, WorkspaceResponse } from "@/lib/types"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
@@ -32,7 +32,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Edit, MoreHorizontal, Plus, Trash2 } from "lucide-react"
+import { Edit, MoreHorizontal, Plus, Trash2, Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +47,11 @@ import {
 
 export default function PlatformWorkspacesPage() {
   const { workspaces, isLoading, error, createWorkspace, updateWorkspace, deleteWorkspace } = useWorkspaces()
+  const {
+    users,
+    isLoading: isUsersLoading,
+    error: usersError,
+  } = useUsers({ limit: 1000 })
 
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -55,6 +63,7 @@ export default function PlatformWorkspacesPage() {
 
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string | null>(null)
+  const [ownerPopoverOpen, setOwnerPopoverOpen] = useState(false)
 
   const openCreate = () => {
     setEditingId(null)
@@ -204,25 +213,23 @@ export default function PlatformWorkspacesPage() {
   return (
     <RouteGuard requiredPermissions={["workspace:*"]}>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Workspace Management</h1>
-            <p className="mt-1 text-muted-foreground">Manage all workspaces globally</p>
-          </div>
-          <Button onClick={openCreate} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New Workspace
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Workspace Management</h1>
+          <p className="mt-1 text-muted-foreground">Manage all workspaces globally</p>
         </div>
 
-        <Card className="border-border/50 bg-card/50">
-          <CardHeader>
-            <CardTitle>Workspaces</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DataTable columns={columns} data={workspaces} />
-          </CardContent>
-        </Card>
+        <div className="rounded-md border border-border/50 bg-card/50">
+            <DataTable
+              columns={columns}
+              data={workspaces}
+              toolbar={
+                <Button onClick={openCreate} className="gap-1.5">
+                  <Plus className="h-4 w-4" />
+                  New Workspace
+                </Button>
+              }
+            />
+        </div>
 
         <Dialog open={showForm} onOpenChange={(open) => setShowForm(open)}>
           <DialogContent>
@@ -265,24 +272,90 @@ export default function PlatformWorkspacesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Owner User ID</label>
-                    <Input
-                      value={(formData as any).owner_user_id || ""}
-                      onChange={(e) => setFormData({ ...formData, owner_user_id: e.target.value })}
-                      placeholder="uuid"
-                    />
+                    <label className="text-sm font-medium">Owner</label>
+                    <Popover open={ownerPopoverOpen} onOpenChange={setOwnerPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" aria-expanded={ownerPopoverOpen} className="w-full justify-between font-normal">
+                        {(formData as any).owner_user_id
+                          ? users.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + users.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
+                          : isUsersLoading
+                            ? "Loading users..."
+                            : "Select owner..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search user..." />
+                          <CommandList>
+                            <CommandEmpty>{isUsersLoading ? "Loading users..." : usersError ? usersError : "No user found."}</CommandEmpty>
+                            <CommandGroup>
+                              {users.map((user) => (
+                                <CommandItem
+                                  key={user.id}
+                                  value={user.username + " " + user.email}
+                                  onSelect={() => {
+                                    setFormData({ ...formData, owner_user_id: user.id })
+                                    setOwnerPopoverOpen(false)
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", (formData as any).owner_user_id === user.id ? "opacity-100" : "opacity-0")} />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-medium">{user.username}</span>
+                                    <span className="text-xs text-muted-foreground">{user.email}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
               )}
 
               {editingId && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Owner User ID (transfer)</label>
-                  <Input
-                    value={(formData as any).owner_user_id || ""}
-                    onChange={(e) => setFormData({ ...formData, owner_user_id: e.target.value })}
-                    placeholder="uuid"
-                  />
+                  <label className="text-sm font-medium">Owner (transfer)</label>
+                  <Popover open={ownerPopoverOpen} onOpenChange={setOwnerPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={ownerPopoverOpen} className="w-full justify-between font-normal">
+                        {(formData as any).owner_user_id
+                          ? users.find((u) => u.id === (formData as any).owner_user_id)?.username + " (" + users.find((u) => u.id === (formData as any).owner_user_id)?.email + ")"
+                          : isUsersLoading
+                            ? "Loading users..."
+                            : "Select new owner..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search user..." />
+                        <CommandList>
+                          <CommandEmpty>{isUsersLoading ? "Loading users..." : usersError ? usersError : "No user found."}</CommandEmpty>
+                          <CommandGroup>
+                            {users.map((user) => (
+                              <CommandItem
+                                key={user.id}
+                                value={user.username + " " + user.email}
+                                onSelect={() => {
+                                  setFormData({ ...formData, owner_user_id: user.id })
+                                  setOwnerPopoverOpen(false)
+                                }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4", (formData as any).owner_user_id === user.id ? "opacity-100" : "opacity-0")} />
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">{user.username}</span>
+                                  <span className="text-xs text-muted-foreground">{user.email}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               )}
 

@@ -1,0 +1,71 @@
+@startuml
+title 3D Stuffing Visualization Flow
+
+actor "Planner" as User
+
+box "Web Client" #EAF3FA
+  boundary "Web Page (React)" as Page
+  boundary "StuffingVisualizer" as Viewer
+end box
+
+box "StuffingVisualizer Core (Three.js)" #D9E9F7
+  control "Scene Manager" as Scene
+  control "Mesh Builder" as Builder
+  control "Animation/Render Loop" as Engine3D
+end box
+
+== Visualization Scene Load ==
+
+User -> Page : 3D viewport loads
+activate User
+activate Page
+Page -> Viewer : loadData(toStuffingPlanData(plan))
+activate Viewer
+
+Viewer -> Builder : Create ContainerMesh(container)
+activate Builder
+Builder --> Viewer : containerGroup (mesh group)
+deactivate Builder
+Viewer -> Scene : add(containerGroup)
+activate Scene
+Scene --> Viewer : container added
+deactivate Scene
+
+loop Each placement step
+  Viewer -> Builder : Create ItemMesh(item, placement)
+  activate Builder
+  Builder -> Builder : getRotatedDims()
+  Builder -> Builder : containerToThreeCoords()
+  note over Builder
+    containerToThreeCoords (conversions.ts):
+    API (x=length, y=width, z=height) ->
+    Three.js (x, -z, y), mm -> meters,
+    origin front-left-bottom -> container center
+  end note
+  Builder --> Viewer : itemGroup (mesh group)
+  deactivate Builder
+  Viewer -> Scene : add(itemGroup)
+  activate Scene
+  Scene --> Viewer : scene updated
+  deactivate Scene
+end
+
+Viewer -> Engine3D : setMaxStep() & setCurrentStep(maxStep)
+activate Engine3D
+Engine3D --> Viewer : step initialized
+deactivate Engine3D
+
+Viewer -> Viewer : fitToContainer() (camera auto-fit)
+Viewer -> Viewer : updateVisibleItems(maxStep)
+
+Viewer -> Engine3D : start render loop
+activate Engine3D
+Engine3D --> Viewer : animating (rAF)
+deactivate Engine3D
+
+Viewer --> Page : rendered scene
+deactivate Viewer
+Page --> User : Show fully loaded container
+deactivate Page
+deactivate User
+@enduml

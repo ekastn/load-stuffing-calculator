@@ -213,9 +213,16 @@ func (s *planService) CreateCompletePlan(ctx context.Context, req dto.CreatePlan
 		return nil, err
 	}
 
+	var title *string
+	if req.Title != "" {
+		title = &req.Title
+	}
+
 	plan, err := s.q.CreateLoadPlan(ctx, store.CreateLoadPlanParams{
 		WorkspaceID:   workspaceID,
 		PlanCode:      planCode,
+		Title:         title,
+		Notes:         req.Notes,
 		Status:        &status,
 		ContLabel:     &contLabel,
 		LengthMm:      toNumeric(lengthMM),
@@ -413,9 +420,16 @@ func (s *planService) GetPlan(ctx context.Context, id string) (*dto.PlanDetailRe
 		}
 	}
 
+	var title string
+	if plan.Title != nil {
+		title = *plan.Title
+	}
+
 	return &dto.PlanDetailResponse{
 		PlanID:   plan.PlanID.String(),
 		PlanCode: plan.PlanCode,
+		Title:    title,
+		Notes:    plan.Notes,
 		Status:   getString(plan.Status),
 		Container: dto.PlanContainerInfo{
 			Name:        plan.ContLabel,
@@ -472,9 +486,14 @@ func (s *planService) ListPlans(ctx context.Context, page, limit int32) ([]dto.P
 
 	var result []dto.PlanListItem
 	for _, p := range plans {
+		var title string
+		if p.Title != nil {
+			title = *p.Title
+		}
 		result = append(result, dto.PlanListItem{
 			PlanID:    p.PlanID.String(),
 			PlanCode:  p.PlanCode,
+			Title:     title,
 			Status:    getString(p.Status),
 			CreatedAt: p.CreatedAt.Time.Format(time.RFC3339),
 			// TODO: Stats are 0 for now as they require aggregation
@@ -505,12 +524,22 @@ func (s *planService) UpdatePlan(ctx context.Context, id string, req dto.UpdateP
 		PlanID:      planUUID,
 		WorkspaceID: workspaceIDForWrite,
 		PlanCode:    plan.PlanCode,
+		Title:       plan.Title,
+		Notes:       plan.Notes,
 		ContLabel:   plan.ContLabel,
 		LengthMm:    plan.LengthMm,
 		WidthMm:     plan.WidthMm,
 		HeightMm:    plan.HeightMm,
 		MaxWeightKg: plan.MaxWeightKg,
 		Status:      plan.Status,
+	}
+
+	if req.Title != nil {
+		params.Title = req.Title
+	}
+
+	if req.Notes != nil {
+		params.Notes = req.Notes
 	}
 
 	if req.Status != nil {

@@ -33,5 +33,5 @@ export interface UserResponse {
   email: string
   role: string
   profile?: UserProfileResponse
-  created_at: string
+  created_at: string | null
 }

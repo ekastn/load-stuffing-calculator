@@ -4192,6 +4192,9 @@
                     "maxLength": 150,
                     "minLength": 2
                 },
+                "sku": {
+                    "type": "string"
+                },
                 "weight_kg": {
                     "type": "number"
                 },
@@ -4690,6 +4693,9 @@
                 "name": {
                     "type": "string"
                 },
+                "sku": {
+                    "type": "string"
+                },
                 "weight_kg": {
                     "type": "number"
                 },
@@ -4900,6 +4906,10 @@
                 "container": {
                     "$ref": "#/definitions/dto.CreatePlanContainer"
                 },
+                "notes": {
+                    "type": "string",
+                    "maxLength": 500
+                },
                 "status": {
                     "type": "string",
                     "enum": [
@@ -4910,6 +4920,10 @@
                         "FAILED",
                         "CANCELLED"
                     ]
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 150
                 }
             }
         },
@@ -4936,6 +4950,9 @@
                     "type": "string",
                     "maxLength": 150,
                     "minLength": 2
+                },
+                "sku": {
+                    "type": "string"
                 },
                 "weight_kg": {
                     "type": "number"

@@ -26,6 +26,8 @@ export class StuffingVisualizer {
     private camera: OrthographicCamera;
     private config: SceneConfig;
     private loadingMode: boolean = false;
+    private highlightedItem: ItemMesh | null = null;
+    private unsubHover: (() => void) | null = null;
 
     constructor(config: SceneConfig = {}) {
         this.config = config;
@@ -122,6 +124,23 @@ export class StuffingVisualizer {
         
         // Update interaction manager
         this.interactionManager.setSceneChildren(this.sceneManager.getScene().children);
+
+        // Wire up hover highlighting
+        this.unsubHover = this.interactionManager.onHover((item) => {
+            if (this.highlightedItem) {
+                this.highlightedItem.setHighlighted(false);
+                this.highlightedItem = null;
+            }
+            if (item) {
+                const found = this.itemMeshes.find(
+                    (im) => im.getLabel() === item.label && im.getStepNumber() === item.step_number
+                );
+                if (found) {
+                    found.setHighlighted(true);
+                    this.highlightedItem = found;
+                }
+            }
+        });
     }
 
     public setStep(step: number): void {
@@ -183,6 +202,13 @@ export class StuffingVisualizer {
     }
 
     public clear(): void {
+        // Unsubscribe hover highlight
+        if (this.unsubHover) {
+            this.unsubHover();
+            this.unsubHover = null;
+        }
+        this.highlightedItem = null;
+
         // Dispose container
         if (this.containerMesh) {
             this.containerMesh.dispose();

@@ -134,6 +134,8 @@ type PlanListItem struct {
 }
 
 type UpdatePlanRequest struct {
+	Title     *string              `json:"title,omitempty" binding:"omitempty,max=150"`
+	Notes     *string              `json:"notes,omitempty" binding:"omitempty,max=500"`
 	Status    *string              `json:"status,omitempty" binding:"omitempty,oneof=DRAFT IN_PROGRESS COMPLETED PARTIAL FAILED CANCELLED"`
 	Container *CreatePlanContainer `json:"container,omitempty"`
 }

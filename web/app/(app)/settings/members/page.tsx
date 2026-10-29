@@ -7,14 +7,15 @@ import { useMembers } from "@/hooks/use-members"
 import type { AddMemberRequest, MemberResponse, UpdateMemberRoleRequest } from "@/lib/types"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from "@/components/data-table"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { ColumnDef } from "@tanstack/react-table"
 import { toast } from "sonner"
+import { Plus, Trash2 } from "lucide-react"
 import {
   Select,
   SelectContent,
@@ -87,7 +88,7 @@ export default function MembersPage() {
           <div className="flex items-center gap-3">
             <Badge className="bg-primary/10 text-primary capitalize">{member.role}</Badge>
             <Select value={member.role} onValueChange={handleChangeRole}>
-              <SelectTrigger size="sm" className="w-[140px]">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Change role" />
               </SelectTrigger>
               <SelectContent>
@@ -120,11 +121,13 @@ export default function MembersPage() {
             <Button
               variant="destructive"
               size="sm"
+              className="gap-1.5"
               onClick={() => {
                 setMemberToDelete(member)
                 setShowConfirmDelete(true)
               }}
             >
+              <Trash2 className="h-3.5 w-3.5" />
               Remove
             </Button>
           </div>
@@ -140,60 +143,10 @@ export default function MembersPage() {
   return (
     <RouteGuard requiredPermissions={["member:read"]}>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Members</h1>
-            <p className="mt-1 text-muted-foreground">Manage workspace memberships</p>
-          </div>
-          <Button onClick={() => setShowAddForm((v) => !v)}>{showAddForm ? "Close" : "Add Member"}</Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Members</h1>
+          <p className="mt-1 text-muted-foreground">Manage workspace memberships</p>
         </div>
-
-        {showAddForm && (
-          <Card className="border-border/50 bg-card/50">
-            <CardHeader>
-              <CardTitle>Add member</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAdd} className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">User (email / username / id)</p>
-                    <Input
-                      value={addForm.user_identifier}
-                      onChange={(e) => setAddForm({ ...addForm, user_identifier: e.target.value })}
-                      placeholder="jane@example.com"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Role</p>
-                    <Select
-                      value={addForm.role}
-                      onValueChange={(role) => setAddForm({ ...addForm, role })}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((r) => (
-                          <SelectItem key={r} value={r}>
-                            {r}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex gap-3">
-                  <Button type="submit">Add</Button>
-                  <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
 
         {isLoading ? (
           <div className="text-center py-8">
@@ -202,9 +155,56 @@ export default function MembersPage() {
           </div>
         ) : (
           <div className="rounded-md border border-border/50 bg-card/50">
-            <DataTable columns={columns} data={members} />
+              <DataTable
+                columns={columns}
+                data={members}
+                toolbar={
+                  <Button className="gap-1.5" onClick={() => setShowAddForm(true)}>
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Member
+                  </Button>
+                }
+              />
           </div>
         )}
+
+        {/* Add Member Dialog */}
+        <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Member</DialogTitle>
+              <DialogDescription>Invite a user to join this workspace.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAdd} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">User (email / username / id)</label>
+                <Input
+                  value={addForm.user_identifier}
+                  onChange={(e) => setAddForm({ ...addForm, user_identifier: e.target.value })}
+                  placeholder="jane@example.com"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Role</label>
+                <Select value={addForm.role} onValueChange={(role) => setAddForm({ ...addForm, role })}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((r) => (
+                      <SelectItem key={r} value={r}>{r}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>Cancel</Button>
+                <Button type="submit">Add</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         <AlertDialog open={showConfirmDelete} onOpenChange={setShowConfirmDelete}>
           <AlertDialogContent>

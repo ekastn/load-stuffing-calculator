@@ -5,8 +5,8 @@ export interface MemberResponse {
   role: string
   username: string
   email: string
-  created_at: string
-  updated_at: string
+  created_at: string | null
+  updated_at: string | null
 }
 
 export interface AddMemberRequest {

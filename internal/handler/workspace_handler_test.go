@@ -30,16 +30,16 @@ func TestWorkspaceHandler_ListWorkspaces(t *testing.T) {
 				Name:          "My Workspace",
 				OwnerUserID:   "user-1",
 				OwnerUsername: stringPtr("owner"),
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
+				CreatedAt:     timePtr(time.Now()),
+				UpdatedAt:     timePtr(time.Now()),
 			},
 			{
 				WorkspaceID: "ws-456",
 				Type:        "personal",
 				Name:        "Personal WS",
 				OwnerUserID: "user-1",
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				CreatedAt:   timePtr(time.Now()),
+				UpdatedAt:   timePtr(time.Now()),
 			},
 		}
 
@@ -123,8 +123,8 @@ func TestWorkspaceHandler_CreateWorkspace(t *testing.T) {
 			Name:          "New Workspace",
 			OwnerUserID:   "user-123",
 			OwnerUsername: stringPtr("owner"),
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			CreatedAt:     timePtr(time.Now()),
+			UpdatedAt:     timePtr(time.Now()),
 		}
 
 		mockSvc.On("CreateWorkspace", mock.Anything, req).Return(expected, nil)
@@ -241,8 +241,8 @@ func TestWorkspaceHandler_UpdateWorkspace(t *testing.T) {
 			Name:          "Updated Workspace",
 			OwnerUserID:   "user-456",
 			OwnerUsername: stringPtr("newowner"),
-			CreatedAt:     time.Now(),
-			UpdatedAt:     time.Now(),
+			CreatedAt:     timePtr(time.Now()),
+			UpdatedAt:     timePtr(time.Now()),
 		}
 
 		mockSvc.On("UpdateWorkspace", mock.Anything, workspaceID, req).Return(expected, nil)

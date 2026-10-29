@@ -6,6 +6,10 @@ import { useProducts } from "@/hooks/use-products"
 import { usePlans } from "@/hooks/use-plans"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/numeric-input"
+import { DimensionInputGroup } from "@/components/dimension-input"
+import { WeightInputGroup } from "@/components/weight-input"
+import { MAX_WEIGHT_KG } from "@/lib/constants"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus } from "lucide-react"
 import { AddPlanItemRequest } from "@/lib/types"
@@ -15,9 +19,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface ItemInputFormProps {
   shipmentId: string
   onSuccess?: () => void
+  maxLength_mm?: number
+  maxWidth_mm?: number
+  maxHeight_mm?: number
 }
 
-export function ItemInputForm({ shipmentId, onSuccess }: ItemInputFormProps) {
+export function ItemInputForm({ shipmentId, onSuccess, maxLength_mm, maxWidth_mm, maxHeight_mm }: ItemInputFormProps) {
   const { products } = useProducts()
   const { addPlanItem } = usePlans()
   const [activeTab, setActiveTab] = useState("catalog")
@@ -112,11 +119,10 @@ export function ItemInputForm({ shipmentId, onSuccess }: ItemInputFormProps) {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Quantity</label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={catalogQuantity}
-                  onChange={(e) => setCatalogQuantity(e.target.value)}
+                <NumericInput
+                  allowDecimals={false}
+                  value={parseInt(catalogQuantity) || ""}
+                  onChange={(val) => setCatalogQuantity(val ? val.toString() : "1")}
                   required
                 />
               </div>
@@ -140,30 +146,36 @@ export function ItemInputForm({ shipmentId, onSuccess }: ItemInputFormProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                    <label className="text-xs">Length (mm)</label>
-                    <Input type="number" value={manualForm.length_mm || ""} onChange={e => setManualForm({...manualForm, length_mm: parseFloat(e.target.value) || 0})} required />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-xs">Width (mm)</label>
-                    <Input type="number" value={manualForm.width_mm || ""} onChange={e => setManualForm({...manualForm, width_mm: parseFloat(e.target.value) || 0})} required />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-xs">Height (mm)</label>
-                    <Input type="number" value={manualForm.height_mm || ""} onChange={e => setManualForm({...manualForm, height_mm: parseFloat(e.target.value) || 0})} required />
-                </div>
+              <div className="space-y-4">
+                <label className="text-sm font-medium">Dimensions</label>
+                <DimensionInputGroup
+                    length_mm={manualForm.length_mm}
+                    width_mm={manualForm.width_mm}
+                    height_mm={manualForm.height_mm}
+                    onChange={(dims) => setManualForm({
+                        ...manualForm,
+                        length_mm: dims.length_mm,
+                        width_mm: dims.width_mm,
+                        height_mm: dims.height_mm
+                    })}
+                    className="grid gap-4 md:grid-cols-4"
+                    required
+                    maxLength_mm={maxLength_mm}
+                    maxWidth_mm={maxWidth_mm}
+                    maxHeight_mm={maxHeight_mm}
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Weight (kg)</label>
-                    <Input type="number" value={manualForm.weight_kg || ""} onChange={e => setManualForm({...manualForm, weight_kg: parseFloat(e.target.value) || 0})} required />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Quantity</label>
-                    <Input type="number" value={manualForm.quantity} onChange={e => setManualForm({...manualForm, quantity: parseInt(e.target.value) || 1})} required />
-                </div>
+              <WeightInputGroup
+                weight_kg={manualForm.weight_kg || 0}
+                onChange={val => setManualForm({...manualForm, weight_kg: val.weight_kg})}
+                required
+                    maxWeight_kg={MAX_WEIGHT_KG}
+                className="flex gap-3"
+              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Quantity</label>
+                <NumericInput allowDecimals={false} required value={manualForm.quantity || ""} onChange={val => setManualForm({...manualForm, quantity: val || 1})} />
               </div>
 
               <Button type="submit" className="w-full gap-2" disabled={isAdding}>

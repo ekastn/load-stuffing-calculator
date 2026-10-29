@@ -10,6 +10,7 @@ export interface ContainerData {
 export interface ItemData {
     item_id: string;
     label: string;
+    sku?: string;
     length_mm: number;
     width_mm: number;
     height_mm: number;

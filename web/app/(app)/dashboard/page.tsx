@@ -40,31 +40,31 @@ export default function DashboardPage() {
     if (!user) return null
 
   const statsAdmin = dashboardStats?.admin ? [
-    { title: user.role === 'founder' ? "Total Users" : "Total Members", value: dashboardStats.admin.total_users.toString(), icon: Users },
-    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck },
-    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package },
-    { title: "Success Rate", value: `${dashboardStats.admin.success_rate}%`, icon: BarChart3 },
+    { title: user.role === 'founder' ? "Total Users" : "Total Members", value: dashboardStats.admin.total_users.toString(), icon: Users, color: "text-blue-500" },
+    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck, color: "text-primary" },
+    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package, color: "text-violet-500" },
+    { title: "Success Rate", value: `${dashboardStats.admin.success_rate}%`, icon: BarChart3, color: "text-green-500" },
   ] : []
 
   const statsPlanner = dashboardStats?.planner ? [
-    { title: "Pending Plans", value: dashboardStats.planner.pending_plans.toString(), icon: Truck },
-    { title: "Completed Today", value: dashboardStats.planner.completed_today.toString(), icon: Package },
-    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3 },
-    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Package },
+    { title: "Pending Plans", value: dashboardStats.planner.pending_plans.toString(), icon: Truck, color: "text-primary" },
+    { title: "Completed Today", value: dashboardStats.planner.completed_today.toString(), icon: Package, color: "text-green-500" },
+    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3, color: "text-blue-500" },
+    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Activity, color: "text-violet-500" },
   ] : []
 
   const statsOperator = dashboardStats?.operator ? [
-    { title: "Active Loads", value: dashboardStats.operator.active_loads.toString(), icon: Truck },
-    { title: "Completed", value: dashboardStats.operator.completed.toString(), icon: Package },
-    { title: "Failed Validations", value: dashboardStats.operator.failed_validations.toString(), icon: AlertCircle },
-    { title: "Avg Time/Load", value: dashboardStats.operator.avg_time_per_load, icon: Activity },
+    { title: "Active Loads", value: dashboardStats.operator.active_loads.toString(), icon: Truck, color: "text-primary" },
+    { title: "Completed", value: dashboardStats.operator.completed.toString(), icon: Package, color: "text-green-500" },
+    { title: "Failed Validations", value: dashboardStats.operator.failed_validations.toString(), icon: AlertCircle, color: "text-destructive" },
+    { title: "Avg Time/Load", value: dashboardStats.operator.avg_time_per_load, icon: Activity, color: "text-blue-500" },
   ] : []
 
   const statsPersonal = dashboardStats?.admin && dashboardStats?.planner ? [
-    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck },
-    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3 },
-    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Package },
-    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package },
+    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck, color: "text-primary" },
+    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3, color: "text-blue-500" },
+    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Package, color: "text-violet-500" },
+    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package, color: "text-green-500" },
   ] : []
 
   const stats =
@@ -134,7 +134,7 @@ export default function DashboardPage() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                    <Icon className="h-4 w-4 text-accent" />
+                    <Icon className={`h-4 w-4 ${stat.color}`} />
                   </div>
                 </CardHeader>
                 <CardContent>

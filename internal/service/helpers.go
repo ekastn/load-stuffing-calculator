@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/auth"
 	"github.com/google/uuid"
@@ -37,4 +38,11 @@ func getString(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+func formatStoreTime(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format(time.RFC3339)
 }

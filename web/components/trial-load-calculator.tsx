@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Trash2 } from "lucide-react"
 
+import { formatDim } from "@/lib/utils"
+import { MAX_DIM_MM, MAX_WEIGHT_KG } from "@/lib/constants"
 import { ContainerService } from "@/lib/services/containers"
 import { ProductService } from "@/lib/services/products"
 import type {
@@ -23,6 +25,8 @@ import { StuffingViewer } from "@/components/stuffing-viewer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { NumericInput } from "@/components/numeric-input"
+import { DimensionInputGroup } from "@/components/dimension-input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -120,6 +124,17 @@ export function TrialLoadCalculator() {
     [containers, selectedContainerId],
   )
 
+  // Max item dimensions based on selected container (for clamping inputs)
+  const containerDims = useMemo(() => {
+    if (containerMode === "preset" && selectedContainer) {
+      return { length_mm: selectedContainer.inner_length_mm, width_mm: selectedContainer.inner_width_mm, height_mm: selectedContainer.inner_height_mm }
+    }
+    if (containerMode === "custom" && customContainer.length_mm && customContainer.width_mm && customContainer.height_mm) {
+      return { length_mm: customContainer.length_mm, width_mm: customContainer.width_mm, height_mm: customContainer.height_mm }
+    }
+    return null
+  }, [containerMode, selectedContainer, customContainer])
+
   const selectedProduct = useMemo(
     () => (selectedProductId ? products.find((p) => p.id === selectedProductId) ?? null : null),
     [products, selectedProductId],
@@ -136,8 +151,14 @@ export function TrialLoadCalculator() {
     if (manualForm.quantity <= 0) return false
     if (manualForm.length_mm <= 0 || manualForm.width_mm <= 0 || manualForm.height_mm <= 0) return false
     if (manualForm.weight_kg < 0) return false
+    // Check against container dims
+    if (containerDims) {
+      if (manualForm.length_mm > containerDims.length_mm) return false
+      if (manualForm.width_mm > containerDims.width_mm) return false
+      if (manualForm.height_mm > containerDims.height_mm) return false
+    }
     return true
-  }, [manualForm.height_mm, manualForm.label, manualForm.length_mm, manualForm.quantity, manualForm.weight_kg, manualForm.width_mm])
+  }, [manualForm.height_mm, manualForm.label, manualForm.length_mm, manualForm.quantity, manualForm.weight_kg, manualForm.width_mm, containerDims])
 
   const isReadyToCalculate = useMemo(() => {
     if (items.length === 0) return false
@@ -335,10 +356,9 @@ export function TrialLoadCalculator() {
                        {selectedContainer && (
                          <div className="rounded-lg border border-border/50 bg-muted/30 p-3 text-sm text-muted-foreground">
                            <div className="space-y-1">
-                             <p>
-                               <span className="font-medium text-foreground">Inside:</span> {selectedContainer.inner_length_mm} ×{" "}
-                               {selectedContainer.inner_width_mm} × {selectedContainer.inner_height_mm} mm
-                             </p>
+                              <p>
+                                <span className="font-medium text-foreground">Inside:</span> {formatDim(selectedContainer.inner_length_mm)} × {formatDim(selectedContainer.inner_width_mm)} × {formatDim(selectedContainer.inner_height_mm)} mm
+                              </p>
                              <p>
                                <span className="font-medium text-foreground">Max weight:</span> {selectedContainer.max_weight_kg} kg
                              </p>
@@ -349,53 +369,40 @@ export function TrialLoadCalculator() {
 
 
                      <TabsContent value="custom" className="space-y-3 pt-3">
-                       <p className="text-xs font-medium text-muted-foreground">Custom container (inside dimensions)</p>
+                       <p className="text-xs font-medium text-muted-foreground mb-3">Custom container (inside dimensions)</p>
 
-                       <div className="grid gap-2 sm:grid-cols-2">
-                         <div className="space-y-1">
-                           <label className="text-xs font-medium text-muted-foreground">Length (mm)</label>
-                           <Input
-                             type="number"
-                             value={customContainer.length_mm ?? ""}
-                             onChange={(e) =>
-                               setCustomContainer((prev) => ({ ...prev, length_mm: numberOrZero(e.target.value) }))
-                             }
-                           />
-                         </div>
-                         <div className="space-y-1">
-                           <label className="text-xs font-medium text-muted-foreground">Width (mm)</label>
-                           <Input
-                             type="number"
-                             value={customContainer.width_mm ?? ""}
-                             onChange={(e) =>
-                               setCustomContainer((prev) => ({ ...prev, width_mm: numberOrZero(e.target.value) }))
-                             }
-                           />
-                         </div>
-                         <div className="space-y-1">
-                           <label className="text-xs font-medium text-muted-foreground">Height (mm)</label>
-                           <Input
-                             type="number"
-                             value={customContainer.height_mm ?? ""}
-                             onChange={(e) =>
-                               setCustomContainer((prev) => ({ ...prev, height_mm: numberOrZero(e.target.value) }))
-                             }
-                           />
-                         </div>
-                         <div className="space-y-1">
-                           <label className="text-xs font-medium text-muted-foreground">Max weight (kg)</label>
-                           <Input
-                             type="number"
-                             value={customContainer.max_weight_kg ?? ""}
-                             onChange={(e) =>
-                               setCustomContainer((prev) => ({ ...prev, max_weight_kg: numberOrZero(e.target.value) }))
-                             }
-                           />
-                         </div>
-                       </div>
+                        <DimensionInputGroup
+                          length_mm={customContainer.length_mm || 0}
+                          width_mm={customContainer.width_mm || 0}
+                          height_mm={customContainer.height_mm || 0}
+                          onChange={(dims) =>
+                            setCustomContainer({
+                              ...customContainer,
+                              length_mm: dims.length_mm,
+                              width_mm: dims.width_mm,
+                              height_mm: dims.height_mm,
+                            })
+                          }
+                          className="grid gap-4 sm:grid-cols-2"
+                          required
+                          maxLength_mm={MAX_DIM_MM}
+                          maxWidth_mm={MAX_DIM_MM}
+                          maxHeight_mm={MAX_DIM_MM}
+                        />
 
-                       <div className="rounded-lg border border-border/50 bg-muted/30 p-3 text-xs text-muted-foreground">
-                         Tip: Enter inside dimensions in millimeters.
+                        <div className="space-y-1 mt-4">
+                          <label className="text-xs font-medium text-muted-foreground">Max weight (kg)</label>
+                          <NumericInput
+                            value={customContainer.max_weight_kg ?? ""}
+                            onChange={(val) =>
+                              setCustomContainer((prev) => ({ ...prev, max_weight_kg: val || 0 }))
+                            }
+                            max={MAX_WEIGHT_KG}
+                          />
+                        </div>
+
+                       <div className="rounded-lg border border-border/50 bg-muted/30 p-3 text-xs text-muted-foreground mt-4">
+                         Tip: Select dimensions unit to automatically convert the input values.
                        </div>
                      </TabsContent>
 
@@ -437,21 +444,19 @@ export function TrialLoadCalculator() {
 
                          <div className="space-y-1">
                            <p className="text-xs font-medium text-muted-foreground">Quantity</p>
-                           <Input
-                             type="number"
-                             value={catalogQuantity}
-                             onChange={(e) => setCatalogQuantity(e.target.value)}
-                             min={1}
+                           <NumericInput
+                             allowDecimals={false}
+                             value={parseInt(catalogQuantity) || ""}
+                             onChange={(val) => setCatalogQuantity(val ? val.toString() : "1")}
                            />
                          </div>
                        </div>
 
                        {selectedProduct && (
                          <div className="rounded-lg border border-border/50 bg-muted/30 p-3 text-xs text-muted-foreground">
-                           <p>
-                             <span className="font-medium text-foreground">Size:</span> {selectedProduct.length_mm} × {selectedProduct.width_mm} ×{" "}
-                             {selectedProduct.height_mm} mm
-                           </p>
+                            <p>
+                              <span className="font-medium text-foreground">Size:</span> {formatDim(selectedProduct.length_mm)} × {formatDim(selectedProduct.width_mm)} × {formatDim(selectedProduct.height_mm)} mm
+                            </p>
                            <p className="mt-1">
                              <span className="font-medium text-foreground">Weight:</span> {selectedProduct.weight_kg} kg each
                            </p>
@@ -477,59 +482,57 @@ export function TrialLoadCalculator() {
 
                          <div className="space-y-1">
                            <p className="text-xs font-medium text-muted-foreground">Quantity</p>
-                           <Input
-                             type="number"
-                             value={manualForm.quantity}
-                             onChange={(e) =>
+                           <NumericInput
+                             allowDecimals={false}
+                             value={manualForm.quantity || ""}
+                             onChange={(val) =>
                                setManualForm((prev) => ({
                                  ...prev,
-                                 quantity: Math.max(1, Math.floor(numberOrZero(e.target.value))),
+                                 quantity: val || 1,
                                }))
                              }
-                             min={1}
                            />
                          </div>
 
                          <div className="space-y-1">
                            <p className="text-xs font-medium text-muted-foreground">Weight (kg)</p>
-                           <Input
-                             type="number"
+                           <NumericInput
                              value={manualForm.weight_kg || ""}
-                             onChange={(e) => setManualForm((prev) => ({ ...prev, weight_kg: numberOrZero(e.target.value) }))}
-                             min={0}
+                             onChange={(val) => setManualForm((prev) => ({ ...prev, weight_kg: val || 0 }))}
                            />
                          </div>
 
-                         <div className="space-y-1">
-                           <p className="text-xs font-medium text-muted-foreground">Length (mm)</p>
-                           <Input
-                             type="number"
-                             value={manualForm.length_mm || ""}
-                             onChange={(e) => setManualForm((prev) => ({ ...prev, length_mm: numberOrZero(e.target.value) }))}
-                             min={0}
-                           />
-                         </div>
-
-                         <div className="space-y-1">
-                           <p className="text-xs font-medium text-muted-foreground">Width (mm)</p>
-                           <Input
-                             type="number"
-                             value={manualForm.width_mm || ""}
-                             onChange={(e) => setManualForm((prev) => ({ ...prev, width_mm: numberOrZero(e.target.value) }))}
-                             min={0}
-                           />
-                         </div>
-
-                         <div className="space-y-1">
-                           <p className="text-xs font-medium text-muted-foreground">Height (mm)</p>
-                           <Input
-                             type="number"
-                             value={manualForm.height_mm || ""}
-                             onChange={(e) => setManualForm((prev) => ({ ...prev, height_mm: numberOrZero(e.target.value) }))}
-                             min={0}
-                           />
+                         <div className="space-y-1 sm:col-span-2 mt-4">
+                           <p className="text-xs font-medium text-muted-foreground mb-3">Dimensions</p>
+                            <DimensionInputGroup
+                              length_mm={manualForm.length_mm || 0}
+                              width_mm={manualForm.width_mm || 0}
+                              height_mm={manualForm.height_mm || 0}
+                              onChange={(dims) =>
+                                setManualForm((prev) => ({
+                                  ...prev,
+                                  length_mm: dims.length_mm,
+                                  width_mm: dims.width_mm,
+                                  height_mm: dims.height_mm,
+                                }))
+                              }
+                              className="grid gap-4 sm:grid-cols-2"
+                              required
+                              maxLength_mm={MAX_DIM_MM}
+                              maxWidth_mm={MAX_DIM_MM}
+                              maxHeight_mm={MAX_DIM_MM}
+                            />
                          </div>
                        </div>
+
+                       {/* Container validation */}
+                       {containerDims && (
+                         (manualForm.length_mm || 0) > containerDims.length_mm ||
+                         (manualForm.width_mm || 0) > containerDims.width_mm ||
+                         (manualForm.height_mm || 0) > containerDims.height_mm
+                       ) && (
+                         <p className="text-xs text-destructive">Item exceeds container ({formatDim(containerDims.length_mm)}×{formatDim(containerDims.width_mm)}×{formatDim(containerDims.height_mm)} mm)</p>
+                       )}
 
                        <Button type="button" variant="secondary" onClick={handleAddManual} disabled={!canAddManual}>
                          Add item
@@ -550,7 +553,8 @@ export function TrialLoadCalculator() {
                        <p className="text-xs text-muted-foreground">Review your current load items.</p>
                      </div>
 
-                     <Button type="button" variant="ghost" size="sm" onClick={handleClearItems} disabled={items.length === 0}>
+                     <Button type="button" variant="ghost" size="sm" onClick={handleClearItems} disabled={items.length === 0} className="gap-1.5 text-destructive hover:text-destructive">
+                       <Trash2 className="h-3.5 w-3.5" />
                        Clear all
                      </Button>
                    </div>
@@ -577,7 +581,7 @@ export function TrialLoadCalculator() {
                                    {item.label}
                                  </div>
                                  <div className="mt-1 text-xs text-muted-foreground sm:hidden">
-                                   {item.length_mm}×{item.width_mm}×{item.height_mm} mm • {item.weight_kg} kg each
+                                    {formatDim(item.length_mm)}×{formatDim(item.width_mm)}×{formatDim(item.height_mm)} mm • {item.weight_kg} kg each
                                  </div>
                                </TableCell>
                                <TableCell className="whitespace-nowrap">
@@ -585,7 +589,7 @@ export function TrialLoadCalculator() {
                                  <span className="text-muted-foreground">×</span>
                                </TableCell>
                                <TableCell className="whitespace-nowrap max-sm:hidden">
-                                 {item.length_mm}×{item.width_mm}×{item.height_mm}
+                                  {formatDim(item.length_mm)}×{formatDim(item.width_mm)}×{formatDim(item.height_mm)}
                                </TableCell>
                                <TableCell className="whitespace-nowrap max-sm:hidden">{item.weight_kg} kg</TableCell>
                                <TableCell className="text-right">
@@ -631,7 +635,7 @@ export function TrialLoadCalculator() {
                      </div>
                    )}
 
-                   {calcError && <p className="mt-3 text-sm text-red-600">{calcError}</p>}
+                   {calcError && <p className="mt-3 text-sm text-destructive">{calcError}</p>}
 
                    <Button
                      type="button"
@@ -688,7 +692,7 @@ export function TrialLoadCalculator() {
                       <p className="text-xs font-medium text-muted-foreground">Container</p>
                       <p className="mt-1 text-sm font-medium text-foreground">{plan.container.name || "Container"}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {plan.container.length_mm} × {plan.container.width_mm} × {plan.container.height_mm} mm
+                        {formatDim(plan.container.length_mm)} × {formatDim(plan.container.width_mm)} × {formatDim(plan.container.height_mm)} mm
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">Max weight: {plan.container.max_weight_kg} kg</p>
                     </div>

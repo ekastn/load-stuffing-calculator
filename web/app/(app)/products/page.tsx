@@ -2,12 +2,10 @@
 
 import { useState } from "react"
 import { useProducts } from "@/hooks/use-products"
-import { CreateProductRequest, ProductResponse } from "@/lib/types"
+import { ProductResponse } from "@/lib/types"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Plus, Trash2, MoreHorizontal, Edit } from "lucide-react"
+import { Plus, Trash2, MoreHorizontal, Edit, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,11 +15,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { RouteGuard } from "@/lib/route-guard"
-import { isUuidV4 } from "@/lib/utils"
-import { DataTable } from "@/components/ui/data-table"
+import { formatDim } from "@/lib/utils"
+import { DataTable } from "@/components/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,76 +33,15 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function ProductsPage() {
-  const { user, isLoading: authLoading } = useAuth()
-  const { products, isLoading: dataLoading, error, createProduct, updateProduct, deleteProduct } = useProducts()
-
-  const [createWorkspaceId, setCreateWorkspaceId] = useState("")
-  const isFounder = user?.role === "founder"
-  
-  const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState<CreateProductRequest>({
-    name: "",
-    sku: "",
-    length_mm: 0,
-    width_mm: 0,
-    height_mm: 0,
-    weight_kg: 0,
-    color_hex: "#3498db"
-  })
-  const [editingId, setEditingId] = useState<string | null>(null)
+  const { isLoading: authLoading } = useAuth()
+  const { products, isLoading: dataLoading, error, deleteProduct } = useProducts()
+  const router = useRouter()
   
   const [showConfirmDelete, setShowConfirmDelete] = useState(false)
   const [productToDelete, setProductToDelete] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    let success = false
-    try {
-      if (editingId) {
-        success = await updateProduct(editingId, formData)
-        if (success) toast.success("Product updated successfully!")
-      } else {
-        const trimmedWorkspaceId = createWorkspaceId.trim()
-        if (isFounder && trimmedWorkspaceId !== "" && !isUuidV4(trimmedWorkspaceId)) {
-          toast.error("workspace_id must be a valid UUIDv4")
-          return
-        }
-
-        const workspaceId = isFounder ? (trimmedWorkspaceId || null) : undefined
-        success = await createProduct(formData, workspaceId)
-        if (success) toast.success("Product created successfully!")
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save product")
-    }
-
-    if (success) {
-      setFormData({
-        name: "",
-        sku: "",
-        length_mm: 0,
-        width_mm: 0,
-        height_mm: 0,
-        weight_kg: 0,
-        color_hex: "#3498db"
-      })
-      setEditingId(null)
-      setShowForm(false)
-    }
-  }
-
   const handleEdit = (product: ProductResponse) => {
-    setFormData({
-      name: product.name,
-      sku: product.sku ?? "",
-      length_mm: product.length_mm,
-      width_mm: product.width_mm,
-      height_mm: product.height_mm,
-      weight_kg: product.weight_kg,
-      color_hex: product.color_hex || "#3498db"
-    })
-    setEditingId(product.id)
-    setShowForm(true)
+    router.push(`/products/${product.id}/edit`)
   }
 
   const handleDelete = (id: string) => {
@@ -121,20 +59,6 @@ export default function ProductsPage() {
     }
     setShowConfirmDelete(false)
     setProductToDelete(null)
-  }
-
-  const openNewForm = () => {
-    setFormData({
-        name: "",
-        sku: "",
-        length_mm: 0,
-        width_mm: 0,
-        height_mm: 0,
-        weight_kg: 0,
-        color_hex: "#3498db"
-    })
-    setEditingId(null)
-    setShowForm(true)
   }
 
   const columns: ColumnDef<ProductResponse>[] = [
@@ -155,17 +79,22 @@ export default function ProductsPage() {
     },
     {
       accessorKey: "dimensions",
-      header: "Dimensions (LxWxH mm)",
+      header: "Dims (mm)",
       cell: ({ row }) => {
           const p = row.original
-          return `${p.length_mm} x ${p.width_mm} x ${p.height_mm}`
+          return (
+            <span className="text-xs font-mono">
+              {formatDim(p.length_mm)}x{formatDim(p.width_mm)}x{formatDim(p.height_mm)}
+            </span>
+          )
       }
     },
     {
       accessorKey: "weight_kg",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Weight (kg)" />
+        <DataTableColumnHeader column={column} title="Wt (kg)" />
       ),
+      cell: ({ row }) => row.original.weight_kg.toLocaleString()
     },
     {
       accessorKey: "color_hex",
@@ -173,7 +102,7 @@ export default function ProductsPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full border border-border" style={{ backgroundColor: row.original.color_hex || "#3498db" }} />
-            <span className="text-xs text-muted-foreground">{row.original.color_hex}</span>
+            <span className="text-[10px] font-mono text-muted-foreground">{row.original.color_hex}</span>
         </div>
       )
     },
@@ -183,7 +112,7 @@ export default function ProductsPage() {
         const product = row.original
 
         return (
-          <div className="text-right">
+          <div className="text-right" onClick={(e) => e.stopPropagation()}>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -220,9 +149,9 @@ export default function ProductsPage() {
 
   if (authLoading) {
     return (
-        <div className="flex h-screen items-center justify-center">
+        <div className="flex h-[60vh] items-center justify-center">
             <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
+            <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" />
             <p className="text-muted-foreground">Loading...</p>
             </div>
         </div>
@@ -231,7 +160,7 @@ export default function ProductsPage() {
 
   if (error) {
       return (
-        <div className="flex h-screen items-center justify-center text-destructive">
+        <div className="flex h-[60vh] items-center justify-center text-destructive">
             Error: {error}
         </div>
       )
@@ -240,131 +169,29 @@ export default function ProductsPage() {
   return (
     <RouteGuard requiredPermissions={["product:read"]}>
       <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Product Catalog</h1>
-              <p className="mt-1 text-muted-foreground">Manage products and their specifications</p>
-            </div>
-            <Button onClick={openNewForm} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New Product
-            </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Product Catalog</h1>
+            <p className="mt-1 text-muted-foreground">Manage products and their specifications</p>
           </div>
-
-          {showForm && (
-            <Card className="border-border/50 bg-card/50">
-              <CardHeader>
-                <CardTitle>{editingId ? "Edit Product" : "New Product"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {isFounder && !editingId && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Workspace Override (optional)</label>
-                      <Input
-                        value={createWorkspaceId}
-                        onChange={(e) => setCreateWorkspaceId(e.target.value)}
-                        placeholder="Paste workspace_id UUID to create in that workspace (leave blank for global)"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Founder accounts create global presets by default. Provide a workspace_id to scope this product to that workspace.
-                      </p>
-                    </div>
-                  )}
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Name</label>
-                      <Input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Product Name"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">SKU</label>
-                      <Input
-                        value={formData.sku}
-                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                        placeholder="e.g., BOX-001"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Weight (kg)</label>
-                    <Input
-                      type="number"
-                      value={formData.weight_kg || ""}
-                      onChange={(e) => setFormData({ ...formData, weight_kg: Number(e.target.value) })}
-                      placeholder="0.0"
-                      required
-                    />
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Length (mm)</label>
-                        <Input
-                            type="number"
-                            value={formData.length_mm || ""}
-                            onChange={(e) => setFormData({ ...formData, length_mm: Number(e.target.value) })}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Width (mm)</label>
-                        <Input
-                            type="number"
-                            value={formData.width_mm || ""}
-                            onChange={(e) => setFormData({ ...formData, width_mm: Number(e.target.value) })}
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Height (mm)</label>
-                        <Input
-                            type="number"
-                            value={formData.height_mm || ""}
-                            onChange={(e) => setFormData({ ...formData, height_mm: Number(e.target.value) })}
-                            required
-                        />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                      <label className="text-sm font-medium">Color</label>
-                      <div className="flex gap-2">
-                        <Input
-                            type="color"
-                            value={formData.color_hex || "#3498db"}
-                            onChange={(e) => setFormData({ ...formData, color_hex: e.target.value })}
-                            className="w-12 p-1 h-10"
-                        />
-                        <Input 
-                            value={formData.color_hex || ""}
-                            onChange={(e) => setFormData({ ...formData, color_hex: e.target.value })}
-                            placeholder="#3498db"
-                        />
-                      </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                    <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
 
           {dataLoading ? (
             <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+              <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto mb-4" />
               <p className="text-muted-foreground">Loading products...</p>
             </div>
           ) : (
-            <div className="rounded-md border border-border/50 bg-card/50">
-              <DataTable columns={columns} data={products} />
+            <div className="rounded-md border border-border/50 bg-card/50 overflow-hidden">
+              <DataTable 
+                columns={columns} 
+                data={products} 
+                onRowClick={(product) => router.push(`/products/${product.id}/edit`)}
+                toolbar={
+                  <Button onClick={() => router.push("/products/new")} className="gap-1.5">
+                    <Plus className="h-3.5 w-3.5" />
+                    New Product
+                  </Button>
+                }
+              />
             </div>
           )}
 
@@ -373,7 +200,7 @@ export default function ProductsPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the product.
+                This action cannot be undone. This will permanently delete the product specification.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

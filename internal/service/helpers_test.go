@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ekastn/load-stuffing-calculator/internal/auth"
 	"github.com/google/uuid"
@@ -48,4 +49,9 @@ func boolPtr(b bool) *bool {
 // floatPtr is a test helper to return a pointer to a float64.
 func floatPtr(f float64) *float64 {
 	return &f
+}
+
+// timePtr is a test helper to return a pointer to a time.Time.
+func timePtr(t time.Time) *time.Time {
+	return &t
 }

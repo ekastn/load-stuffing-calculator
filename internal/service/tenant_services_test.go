@@ -112,11 +112,11 @@ func TestInviteService_AcceptInvite_ReturnsNewAccessToken(t *testing.T) {
 	ctx := auth.WithUserID(auth.WithRole(auth.WithWorkspaceID(context.Background(), workspaceID.String()), types.RolePlanner.String()), userID.String())
 
 	expires := time.Now().Add(24 * time.Hour)
-	inv := store.Invite{InviteID: inviteID, WorkspaceID: workspaceID, Email: "x@example.com", RoleID: roleID, TokenHash: "", InvitedByUserID: uuid.New(), ExpiresAt: &expires}
+	inv := store.Invite{InviteID: inviteID, WorkspaceID: workspaceID, Email: "x@example.com", RoleID: roleID, TokenHash: "", InvitedByUserID: uuid.New(), ExpiresAt: expires}
 
 	mockQ := &MockQuerier{
 		GetUserByIDFunc: func(ctx context.Context, uid uuid.UUID) (store.GetUserByIDRow, error) {
-			return store.GetUserByIDRow{UserID: uid, Username: "u", Email: "x@example.com", RoleID: uuid.New(), RoleName: types.RolePlanner.String(), CreatedAt: time.Now()}, nil
+			return store.GetUserByIDRow{UserID: uid, Username: "u", Email: "x@example.com", RoleID: uuid.New(), RoleName: types.RolePlanner.String(), CreatedAt: timePtr(time.Now())}, nil
 		},
 		GetInviteByTokenHashFunc: func(ctx context.Context, tokenHash string) (store.Invite, error) {
 			return inv, nil
@@ -131,7 +131,7 @@ func TestInviteService_AcceptInvite_ReturnsNewAccessToken(t *testing.T) {
 			return store.Member{}, sql.ErrNoRows
 		},
 		CreateMemberFunc: func(ctx context.Context, arg store.CreateMemberParams) (store.Member, error) {
-			return store.Member{MemberID: uuid.New(), WorkspaceID: arg.WorkspaceID, UserID: arg.UserID, RoleID: arg.RoleID, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+			return store.Member{MemberID: uuid.New(), WorkspaceID: arg.WorkspaceID, UserID: arg.UserID, RoleID: arg.RoleID, CreatedAt: timePtr(time.Now()), UpdatedAt: timePtr(time.Now())}, nil
 		},
 		AcceptInviteFunc: func(ctx context.Context, arg store.AcceptInviteParams) error {
 			return nil

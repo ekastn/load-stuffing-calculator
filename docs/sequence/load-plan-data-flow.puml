@@ -1,0 +1,22 @@
+@startuml
+title Full User Journey: Load Plan Data Flow (Overview)
+
+actor "Planner" as User
+boundary "Web Client" as Web
+control "Go API (Gin)" as API
+boundary "Packing Engine" as Engine
+database "PostgreSQL" as DB
+
+== Authentication ==
+ref over User, Web, API, DB : See auth-flow.puml for token acquisition and session verification
+
+== Dashboard & Shipments ==
+ref over User, Web, API, DB : See plan-lifecycle-flow.puml for stats loading and listing plans
+
+== Read & Create Plan ==
+ref over User, Web, API, Engine, DB : See plan-lifecycle-flow.puml for container packing & persistence details
+
+== Visualize ==
+ref over User, Web : See visualization-flow.puml for 3D Three.js scene setup & coordinate mapping
+
+@enduml
