@@ -118,6 +118,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-sidebar text-sidebar-foreground transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:flex flex-col`}
       >
+        {/* Sidebar Header */}
         <div className="flex h-16 items-center border-b border-border px-6 gap-3">
           <LogoMark className="size-8 flex-shrink-0 text-foreground" />
           <h1 className="text-lg font-bold text-foreground">LoadIQ</h1>
@@ -161,40 +162,48 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           })}
         </nav>
 
-        <div className="border-t border-border p-4">
+        {/* Sidebar Footer */}
+        <div className="border-t border-border p-3 space-y-2.5">
           {canReadWorkspaces && workspaces.length > 0 && user?.role !== "founder" && (
-            <div className="mb-3">
-              <Select value={activeWorkspaceId ?? undefined} onValueChange={(val) => switchWorkspace(val)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select workspace" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workspaces.map((ws) => (
-                    <SelectItem key={ws.workspace_id} value={ws.workspace_id}>
-                      {ws.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={activeWorkspaceId ?? undefined} onValueChange={(val) => switchWorkspace(val)}>
+              <SelectTrigger className="w-full h-8 text-xs bg-card border-border shadow-2xs font-medium">
+                <SelectValue placeholder="Select workspace" />
+              </SelectTrigger>
+              <SelectContent>
+                {workspaces.map((ws) => (
+                  <SelectItem key={ws.workspace_id} value={ws.workspace_id} className="text-xs">
+                    {ws.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
 
-          <div className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-accent/50">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-2xs">
+          {/* User Profile */}
+          <div className="flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-accent/40">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold shadow-2xs">
               {user?.username?.[0]?.toUpperCase() || "U"}
             </div>
-            <div className="flex min-w-0 flex-1 items-baseline gap-2">
-              <span className="truncate text-sm font-medium text-foreground">{user?.username}</span>
-              <span className="shrink-0 text-xs text-muted-foreground capitalize">({user?.role})</span>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="truncate text-xs font-semibold text-foreground leading-tight">{user?.username}</span>
+              <span className="truncate text-[11px] text-muted-foreground capitalize leading-tight">{user?.role}</span>
             </div>
-            <ThemeToggle />
+          </div>
+
+          {/* Utility Strip */}
+          <div className="flex items-center justify-between pt-1 border-t border-border/60 px-1">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <ThemeToggle />
+              <span className="text-[11px]">Theme</span>
+            </div>
             <Button
               onClick={handleLogout}
               variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive gap-1.5"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Log out</span>
             </Button>
           </div>
         </div>
