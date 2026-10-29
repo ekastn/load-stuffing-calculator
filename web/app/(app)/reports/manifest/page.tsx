@@ -92,7 +92,7 @@ Generated: ${new Date().toLocaleString()}
           </div>
 
           {shipments.length === 0 ? (
-            <Card className="border-border/50 bg-card/50">
+            <Card className="bg-card border-border shadow-xs">
               <CardContent className="pt-6 text-center">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <p className="text-muted-foreground">No shipments available</p>
@@ -105,7 +105,7 @@ Generated: ${new Date().toLocaleString()}
                 const totalWeight = shipment.items.reduce((sum, item) => sum + item.weight * item.quantity, 0)
 
                 return (
-                  <Card key={shipment.id} className="border-border/50 bg-card/50 hover:bg-card/70 transition-colors">
+                  <Card key={shipment.id} className="bg-card border-border shadow-xs hover:border-border/80 transition-colors">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div>

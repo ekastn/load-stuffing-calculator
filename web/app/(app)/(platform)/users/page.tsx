@@ -142,7 +142,7 @@ export default function DevUsersPage() {
   const roleColors: Record<string, string> = {
     admin: "bg-destructive/10 text-destructive",
     planner: "bg-primary/10 text-primary",
-    operator: "bg-accent/10 text-accent",
+    operator: "bg-muted text-muted-foreground",
   }
 
   const columns: ColumnDef<UserResponse>[] = [
@@ -237,7 +237,7 @@ export default function DevUsersPage() {
             <p className="text-muted-foreground">Loading users...</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border/50 bg-card/50">
+          <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
             <DataTable 
               columns={columns} 
               data={users} 

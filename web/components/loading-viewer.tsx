@@ -34,7 +34,6 @@ export const LoadingViewer = forwardRef<LoadingViewerRef, LoadingViewerProps>(
             // Initialize visualizer with minimalist settings
             if (!visualizerRef.current) {
                 visualizerRef.current = new StuffingVisualizer({
-                    backgroundColor: "#f9fafb", // slate-50
                     cameraFar: 100000
                 });
                 // Enable loading mode for step-by-step focus
@@ -68,14 +67,14 @@ export const LoadingViewer = forwardRef<LoadingViewerRef, LoadingViewerProps>(
         }, [step, isLoaded]);
 
         return (
-            <div className="w-full h-full relative overflow-hidden bg-slate-50">
+            <div className="w-full h-full relative overflow-hidden bg-muted">
                 <div ref={containerRef} className="w-full h-full" />
                 
                 {!isLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-50">
+                    <div className="absolute inset-0 flex items-center justify-center bg-muted">
                         <div className="flex flex-col items-center gap-3">
                             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-                            <p className="text-slate-500 text-sm font-medium">Initializing viewer...</p>
+                            <p className="text-muted-foreground text-sm font-medium">Initializing viewer...</p>
                         </div>
                     </div>
                 )}

@@ -3,9 +3,13 @@ import { Scene, Color, Object3D } from "three";
 export class SceneManager {
     public scene: Scene;
 
-    constructor(backgroundColor = "#1a1a1a") {
+    constructor(backgroundColor?: string) {
         this.scene = new Scene();
-        this.scene.background = new Color(backgroundColor);
+        if (backgroundColor && backgroundColor !== "transparent") {
+            this.scene.background = new Color(backgroundColor);
+        } else {
+            this.scene.background = null;
+        }
     }
 
     public add(object: Object3D): void {

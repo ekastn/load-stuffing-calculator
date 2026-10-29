@@ -6,7 +6,7 @@ import { usePlans } from "@/hooks/use-plans"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Badge, getStatusBadgeVariant } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ArrowRight, Plus, Search } from "lucide-react"
 import {
@@ -30,14 +30,6 @@ export default function ShipmentsPage() {
 
   const canCreatePlan = hasAnyPermission(permissions ?? [], ["plan:create"])
   const router = useRouter()
-
-  const statusColors: Record<string, string> = {
-    DRAFT: "bg-muted text-muted-foreground",
-    PLANNED: "bg-primary/10 text-primary",
-    PARTIAL: "bg-yellow-500/10 text-yellow-500",
-    COMPLETED: "bg-green-500/10 text-green-500",
-    FAILED: "bg-destructive/10 text-destructive",
-  }
 
   const filteredPlans = useMemo(() => {
     return plans.filter((plan) => {
@@ -67,7 +59,7 @@ export default function ShipmentsPage() {
           </div>
 
           {/* Filter Bar */}
-          <Card className="border-border/50 bg-white shadow-sm">
+          <Card className="border-border bg-card shadow-xs">
             <CardContent className="p-3">
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
@@ -107,13 +99,13 @@ export default function ShipmentsPage() {
               <p className="text-muted-foreground text-sm">Loading shipments...</p>
             </div>
           ) : error ? (
-            <Card className="border-destructive/50 bg-destructive/5">
-              <CardContent className="pt-6 text-center text-destructive">
+            <Card className="border-destructive/30 bg-status-danger-bg">
+              <CardContent className="pt-6 text-center text-status-danger-fg">
                 {error}
               </CardContent>
             </Card>
           ) : filteredPlans.length === 0 ? (
-            <Card className="border-border/50 bg-card/50">
+            <Card className="border-border bg-card">
               <CardContent className="pt-6 text-center">
                 <p className="text-muted-foreground">
                   {plans.length === 0 ? "No shipments found" : "No shipments match your filter"}
@@ -130,18 +122,18 @@ export default function ShipmentsPage() {
               {filteredPlans.map((plan) => (
                 <Card
                   key={plan.plan_id}
-                  className="border-border/50 bg-card/50 cursor-pointer hover:bg-card/70 transition-colors group"
+                  className="border-border bg-card cursor-pointer hover:shadow-xs hover:border-foreground/20 transition-all group"
                   onClick={() => handleShipmentClick(plan.plan_id)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="group-hover:text-primary transition-colors">
+                        <CardTitle className="group-hover:text-signal transition-colors">
                           {plan.title || plan.plan_code}
                         </CardTitle>
                         <CardDescription>{plan.plan_code}</CardDescription>
                       </div>
-                      <Badge className={statusColors[plan.status] || "bg-muted text-muted-foreground"}>
+                      <Badge variant={getStatusBadgeVariant(plan.status)}>
                         {plan.status}
                       </Badge>
                     </div>
@@ -154,7 +146,7 @@ export default function ShipmentsPage() {
                           {new Date(plan.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-signal transition-colors" />
                     </div>
                   </CardContent>
                 </Card>

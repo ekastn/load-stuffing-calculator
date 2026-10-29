@@ -22,3 +22,6 @@ aux/
 *.fls
 *.fdb_latexmk
 *.bak*
+.agents/
+skills-lock.json
+

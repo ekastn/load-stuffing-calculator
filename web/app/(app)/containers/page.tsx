@@ -161,7 +161,7 @@ export default function ContainersPage() {
               <p className="text-muted-foreground">Loading containers...</p>
             </div>
           ) : (
-            <div className="rounded-md border border-border/50 bg-card/50 overflow-hidden">
+            <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
               <DataTable 
                 columns={columns} 
                 data={containers} 

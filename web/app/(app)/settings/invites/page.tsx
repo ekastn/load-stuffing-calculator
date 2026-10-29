@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTable } from "@/components/data-table"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
-import { Badge } from "@/components/ui/badge"
+import { Badge, type BadgeVariant } from "@/components/ui/badge"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { ColumnDef } from "@tanstack/react-table"
@@ -44,11 +44,11 @@ export default function InvitesPage() {
     return "pending"
   }
 
-  const statusConfig: Record<string, { label: string; badgeClass: string }> = {
-    pending: { label: "Pending", badgeClass: "bg-amber-500/10 text-amber-600" },
-    expired: { label: "Expired", badgeClass: "bg-muted text-muted-foreground" },
-    accepted: { label: "Accepted", badgeClass: "bg-emerald-500/10 text-emerald-600" },
-    revoked: { label: "Revoked", badgeClass: "bg-destructive/10 text-destructive" },
+  const statusConfig: Record<string, { label: string; variant: BadgeVariant }> = {
+    pending: { label: "Pending", variant: "partial" },
+    expired: { label: "Expired", variant: "secondary" },
+    accepted: { label: "Accepted", variant: "completed" },
+    revoked: { label: "Revoked", variant: "failed" },
   }
 
   const submit = async (e: React.FormEvent) => {
@@ -88,7 +88,7 @@ export default function InvitesPage() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Role" />,
       cell: ({ row }) => {
         const role = row.getValue("role") as string
-        return <Badge className="bg-primary/10 text-primary capitalize">{role}</Badge>
+        return <Badge variant="secondary" className="capitalize">{role}</Badge>
       },
     },
     {
@@ -126,7 +126,7 @@ export default function InvitesPage() {
               ? new Date(invite.accepted_at).toLocaleDateString()
               : ""
         return (
-          <Badge className={cn("capitalize", cfg.badgeClass)}>
+          <Badge variant={cfg.variant} className="capitalize">
             {cfg.label}
             {dateStr ? ` · ${dateStr}` : ""}
           </Badge>
@@ -172,12 +172,12 @@ export default function InvitesPage() {
         </div>
 
         {lastCreated?.token && getInviteStatus(lastCreated.invite) === "pending" && (
-          <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
+          <div className="rounded-lg border border-border bg-card shadow-xs p-4">
             <p className="text-sm font-medium text-foreground mb-2">Invite link</p>
             <p className="text-sm text-muted-foreground mb-3">
               Copy the invite link and send it to the invitee (email delivery not implemented yet).
             </p>
-            <code className="block rounded-md border border-border/50 bg-background/60 px-3 py-2 font-mono text-xs break-all">
+            <code className="block rounded-md border border-border bg-muted/50 px-3 py-2 font-mono text-xs break-all">
               {window.location.origin}/invites/accept?token={lastCreated.token}
             </code>
             <div className="mt-3 flex gap-2">
@@ -203,7 +203,7 @@ export default function InvitesPage() {
             <p className="text-muted-foreground text-sm">Loading invites...</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border/50 bg-card/50">
+          <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
             <DataTable
               columns={columns}
               data={invites}

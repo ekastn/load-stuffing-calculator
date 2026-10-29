@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RefreshCw, Box, Info, Plus, AlertTriangle, Link2, QrCode, ArrowLeft, Edit2 } from "lucide-react"
 import { StuffingViewer } from "@/components/stuffing-viewer"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
+import { Badge, getStatusBadgeVariant } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -161,7 +161,7 @@ export default function ShipmentDetailPage() {
     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full lg:h-[calc(100vh-4rem)]">
 
       {/* Header: title + tabs */}
-      <div className="shrink-0 border border-border/50 bg-white rounded-lg overflow-hidden">
+      <div className="shrink-0 border border-border bg-card rounded-lg overflow-hidden shadow-xs">
         {/* Row 1: title info + actions */}
         <div className="flex items-center justify-between px-3 py-2 gap-3 2xl:px-4 2xl:py-2.5">
           <div className="flex items-center gap-2 2xl:gap-3 min-w-0">
@@ -171,7 +171,7 @@ export default function ShipmentDetailPage() {
               </Link>
             </Button>
             <h1 className="text-sm 2xl:text-base font-bold text-foreground uppercase tracking-tight truncate">{currentPlan.title || currentPlan.plan_code}</h1>
-            <Badge className={calc ? "bg-green-600 text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0 shrink-0" : "text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0 shrink-0"}>{currentPlan.status}</Badge>
+            <Badge variant={getStatusBadgeVariant(currentPlan.status)} className="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0 shrink-0">{currentPlan.status}</Badge>
             {canCalculatePlan && (
               <Button variant="ghost" size="icon" className="h-5 w-5 2xl:h-6 2xl:w-6 text-muted-foreground hover:text-foreground shrink-0" onClick={() => setShowEditTitle(true)}>
                 <Edit2 className="h-3 w-3" />
@@ -211,7 +211,7 @@ export default function ShipmentDetailPage() {
         </div>
 
         {/* Row 2: Tabs */}
-        <div className="border-t border-border/50 px-3 2xl:px-4">
+        <div className="border-t border-border px-3 2xl:px-4 bg-muted/20">
           <TabsList className="h-8 2xl:h-9 bg-transparent p-0 justify-start">
             <TabsTrigger value="simulation" className="text-[11px] 2xl:text-xs 2xl:px-3">3D Simulation</TabsTrigger>
             <TabsTrigger value="breakdown" className="text-[11px] 2xl:text-xs 2xl:px-3">Cargo Breakdown</TabsTrigger>
@@ -224,8 +224,8 @@ export default function ShipmentDetailPage() {
       <div className="flex-1 flex flex-col min-h-0 mt-2">
 
         {/* 3D Simulation */}
-        <TabsContent value="simulation" className="flex-1 min-h-0 mt-0 bg-slate-50/50 data-[state=active]:flex data-[state=active]:flex-col">
-          <Card className="border-border/50 bg-white shadow-sm flex-1 flex flex-col overflow-hidden">
+        <TabsContent value="simulation" className="flex-1 min-h-0 mt-0 bg-muted/40 data-[state=active]:flex data-[state=active]:flex-col">
+          <Card className="border-border bg-muted shadow-xs flex-1 flex flex-col overflow-hidden py-0 gap-0">
             <CardContent className="flex-1 p-0 relative min-h-0">
               <StuffingViewer data={toStuffingPlanData(currentPlan)} />
             {/* Copy Embed - small icon button */}
@@ -245,13 +245,13 @@ export default function ShipmentDetailPage() {
               Copy Embed
             </Button>
             {(!calc?.placements?.length || error) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[2px]">
-                <div className="max-w-sm rounded-lg border border-border/50 bg-white p-3 shadow-sm">
+              <div className="absolute inset-0 flex items-center justify-center bg-card/60 backdrop-blur-[2px]">
+                <div className="max-w-sm rounded-lg border border-border bg-card p-3 shadow-md">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 text-amber-600 shrink-0" />
+                    <AlertTriangle className="mt-0.5 h-4 w-4 text-status-warn-fg shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{error ? "Simulation error" : "No simulation data"}</p>
-                      <p className="mt-0.5 text-xs text-slate-600">{error || "Recalculate the plan to generate placements."}</p>
+                      <p className="text-sm font-semibold text-foreground">{error ? "Simulation error" : "No simulation data"}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{error || "Recalculate the plan to generate placements."}</p>
                       <Button variant="secondary" size="sm" onClick={handleCalculate} disabled={!canCalculatePlan || isCalculating || currentPlan.items.length === 0} className="gap-1.5 mt-2 h-7 text-xs">
                         {isCalculating ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                         Recalculate
@@ -266,9 +266,9 @@ export default function ShipmentDetailPage() {
         </TabsContent>
 
         {/* Cargo Breakdown - Full Width */}
-        <TabsContent value="breakdown" className="flex-1 min-h-0 mt-0 overflow-y-auto bg-slate-50/50 data-[state=active]:flex data-[state=active]:flex-col">
+        <TabsContent value="breakdown" className="flex-1 min-h-0 mt-0 overflow-y-auto bg-muted/40 data-[state=active]:flex data-[state=active]:flex-col">
           <div className="space-y-3">
-          <Card className="border-border/50 bg-white shadow-sm">
+          <Card className="border-border bg-card shadow-xs">
             <CardContent className="p-4">
             {/* Donut + Legend */}
             <div className="flex items-start gap-6 mb-4">
@@ -291,7 +291,7 @@ export default function ShipmentDetailPage() {
                 {skuStats.map((sku) => (
                   <div key={sku.name} className="flex items-center gap-1.5 text-xs">
                     <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: sku.color }} />
-                    <span className="text-slate-600">{sku.name}</span>
+                    <span className="text-foreground">{sku.name}</span>
                     <span className="text-muted-foreground">({sku.vol.toFixed(2)})</span>
                   </div>
                 ))}
@@ -301,7 +301,7 @@ export default function ShipmentDetailPage() {
             {/* Full Width Table */}
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b text-left uppercase font-semibold text-slate-400">
+                <tr className="border-b border-border text-left uppercase font-semibold text-muted-foreground">
                   <th className="pb-2 pr-3 w-8"></th>
                   <th className="pb-2 pr-3">Item</th>
                   <th className="pb-2 pr-3">SKU</th>
@@ -314,17 +314,17 @@ export default function ShipmentDetailPage() {
               </thead>
               <tbody>
                 {skuStats.map((sku) => (
-                  <tr key={sku.name} className="border-b border-slate-50 last:border-0">
+                  <tr key={sku.name} className="border-b border-border/50 last:border-0 hover:bg-muted/40 transition-colors">
                     <td className="py-2 pr-3">
                       <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sku.color }} />
                     </td>
-                    <td className="py-2 pr-3 font-medium text-slate-700">{sku.name}</td>
-                    <td className="py-2 pr-3 text-slate-500 font-mono">{sku.sku}</td>
-                    <td className="py-2 pr-3 text-slate-600 font-mono">{sku.dims}</td>
-                    <td className="py-2 pr-3 text-right text-slate-600">{sku.qty}</td>
-                    <td className="py-2 pr-3 text-right text-slate-600">{sku.unitWeight}kg</td>
-                    <td className="py-2 pr-3 text-right text-slate-600 font-medium">{sku.weight.toFixed(1)}kg</td>
-                    <td className="py-2 text-right text-slate-600 font-medium">{sku.vol.toFixed(2)}</td>
+                    <td className="py-2 pr-3 font-medium text-foreground">{sku.name}</td>
+                    <td className="py-2 pr-3 text-muted-foreground font-mono">{sku.sku}</td>
+                    <td className="py-2 pr-3 text-muted-foreground font-mono">{sku.dims}</td>
+                    <td className="py-2 pr-3 text-right text-foreground">{sku.qty}</td>
+                    <td className="py-2 pr-3 text-right text-muted-foreground">{sku.unitWeight}kg</td>
+                    <td className="py-2 pr-3 text-right text-foreground font-medium">{sku.weight.toFixed(1)}kg</td>
+                    <td className="py-2 text-right text-foreground font-medium">{sku.vol.toFixed(2)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -335,40 +335,40 @@ export default function ShipmentDetailPage() {
         </TabsContent>
 
         {/* Summary - Compact Cards */}
-        <TabsContent value="summary" className="flex-1 min-h-0 mt-0 overflow-y-auto bg-slate-50/50 data-[state=active]:flex data-[state=active]:flex-col">
+        <TabsContent value="summary" className="flex-1 min-h-0 mt-0 overflow-y-auto bg-muted/40 data-[state=active]:flex data-[state=active]:flex-col">
             <div className="space-y-3">
               <div className="grid gap-3 md:grid-cols-3">
-              <Card className="border-border/50 bg-white shadow-sm">
+              <Card className="border-border bg-card shadow-xs">
                 <CardContent className="p-3">
-                  <p className="text-[11px] font-medium text-slate-500 mb-0.5">Total Packages</p>
-                  <p className="text-2xl font-bold text-slate-900">{currentPlan.items.reduce((s,i)=>s+i.quantity,0)}</p>
+                  <p className="text-[11px] font-medium text-muted-foreground mb-0.5">Total Packages</p>
+                  <p className="text-2xl font-bold text-foreground">{currentPlan.items.reduce((s,i)=>s+i.quantity,0)}</p>
                 </CardContent>
               </Card>
-              <Card className="border-border/50 bg-white shadow-sm">
+              <Card className="border-border bg-card shadow-xs">
                 <CardContent className="p-3">
-                  <p className="text-[11px] font-medium text-slate-500 mb-0.5">Cargo Volume</p>
-                  <p className="text-2xl font-bold text-blue-600">{totalVolume}<span className="text-sm ml-1">m³</span></p>
+                  <p className="text-[11px] font-medium text-muted-foreground mb-0.5">Cargo Volume</p>
+                  <p className="text-2xl font-bold text-signal">{totalVolume.toFixed(2)}<span className="text-sm ml-1 text-muted-foreground">m³</span></p>
                   <div className="mt-2">
                     <div className="flex justify-between text-[10px] mb-0.5">
                       <span className="text-muted-foreground">Utilization</span>
-                      <span className="font-medium">{volUtil}%</span>
+                      <span className="font-medium text-foreground">{volUtil}%</span>
                     </div>
-                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-blue-500 h-full transition-all duration-500" style={{ width: `${volUtil}%` }} />
+                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-signal h-full transition-all duration-500" style={{ width: `${volUtil}%` }} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-border/50 bg-white shadow-sm">
+              <Card className="border-border bg-card shadow-xs">
                 <CardContent className="p-3">
-                  <p className="text-[11px] font-medium text-slate-500 mb-0.5">Cargo Weight</p>
-                  <p className="text-2xl font-bold text-primary">{totalWeight.toFixed(0)}<span className="text-sm ml-1">kg</span></p>
+                  <p className="text-[11px] font-medium text-muted-foreground mb-0.5">Cargo Weight</p>
+                  <p className="text-2xl font-bold text-foreground">{totalWeight.toFixed(0)}<span className="text-sm ml-1 text-muted-foreground">kg</span></p>
                   <div className="mt-2">
                     <div className="flex justify-between text-[10px] mb-0.5">
                       <span className="text-muted-foreground">Utilization</span>
-                      <span className="font-medium">{weightUtil.toFixed(1)}%</span>
+                      <span className="font-medium text-foreground">{weightUtil.toFixed(1)}%</span>
                     </div>
-                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
                       <div className="bg-primary h-full transition-all duration-500" style={{ width: `${weightUtil}%` }} />
                     </div>
                   </div>
@@ -376,11 +376,11 @@ export default function ShipmentDetailPage() {
               </Card>
             </div>
 
-            <Card className="border-border/50 bg-white shadow-sm mt-3">
+            <Card className="border-border bg-card shadow-xs mt-3">
               <CardContent className="p-0">
                 <table className="w-full text-xs">
                   <thead>
-                    <tr className="border-b text-left uppercase font-semibold text-slate-400">
+                    <tr className="border-b border-border text-left uppercase font-semibold text-muted-foreground">
                       <th className="py-2 px-3">Item</th>
                       <th className="py-2 px-2 text-right">Qty</th>
                       <th className="py-2 px-2 text-right">Vol (m³)</th>
@@ -389,21 +389,21 @@ export default function ShipmentDetailPage() {
                   </thead>
                   <tbody>
                     {skuStats.map((sku) => (
-                      <tr key={sku.name} className="border-b border-slate-50 last:border-0">
+                      <tr key={sku.name} className="border-b border-border/50 last:border-0 hover:bg-muted/40 transition-colors">
                         <td className="py-1.5 px-3 flex items-center gap-1.5">
                           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: sku.color }} />
-                          <span className="font-medium text-slate-700">{sku.name}</span>
+                          <span className="font-medium text-foreground">{sku.name}</span>
                         </td>
-                        <td className="py-1.5 px-2 text-right text-slate-600">{sku.qty}</td>
-                        <td className="py-1.5 px-2 text-right text-slate-600">{sku.vol.toFixed(2)}</td>
-                        <td className="py-1.5 px-2 text-right text-slate-600 font-medium">{sku.weight.toFixed(1)}</td>
+                        <td className="py-1.5 px-2 text-right text-foreground">{sku.qty}</td>
+                        <td className="py-1.5 px-2 text-right text-muted-foreground">{sku.vol.toFixed(2)}</td>
+                        <td className="py-1.5 px-2 text-right text-muted-foreground font-medium">{sku.weight.toFixed(1)}</td>
                       </tr>
                     ))}
-                    <tr className="bg-slate-50 font-bold">
-                      <td className="py-1.5 px-3">Total</td>
-                      <td className="py-1.5 px-2 text-right">{currentPlan.items.reduce((s,i)=>s+i.quantity,0)}</td>
-                      <td className="py-1.5 px-2 text-right">{totalVolume}</td>
-                      <td className="py-1.5 px-2 text-right">{totalWeight.toFixed(1)}</td>
+                    <tr className="bg-muted/50 font-bold border-t border-border">
+                      <td className="py-1.5 px-3 text-foreground">Total</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{currentPlan.items.reduce((s,i)=>s+i.quantity,0)}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{totalVolume.toFixed(2)}</td>
+                      <td className="py-1.5 px-2 text-right text-foreground">{totalWeight.toFixed(1)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -450,9 +450,9 @@ export default function ShipmentDetailPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center justify-between rounded-md border border-border/50 bg-slate-50/50 p-3 cursor-pointer hover:bg-slate-100/80 transition-colors" onClick={() => setCalcGravity(!calcGravity)}>
+            <div className="flex items-center justify-between rounded-md border border-border bg-muted/40 p-3 cursor-pointer hover:bg-muted/70 transition-colors" onClick={() => setCalcGravity(!calcGravity)}>
               <div>
-                <p className="text-sm font-medium">Gravity settling</p>
+                <p className="text-sm font-medium text-foreground">Gravity settling</p>
                 <p className="text-xs text-muted-foreground">Drops items to the floor/support to reduce floating.</p>
               </div>
               <Checkbox checked={calcGravity} onCheckedChange={(checked) => setCalcGravity(checked === true)} onClick={(e) => e.stopPropagation()} />

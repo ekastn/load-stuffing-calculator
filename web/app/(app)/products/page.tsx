@@ -180,7 +180,7 @@ export default function ProductsPage() {
               <p className="text-muted-foreground">Loading products...</p>
             </div>
           ) : (
-            <div className="rounded-md border border-border/50 bg-card/50 overflow-hidden">
+            <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
               <DataTable 
                 columns={columns} 
                 data={products} 

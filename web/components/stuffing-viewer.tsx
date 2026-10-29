@@ -74,7 +74,6 @@ export function StuffingViewer({ data }: StuffingViewerProps) {
         // Initialize visualizer
         if (!visualizerRef.current) {
             visualizerRef.current = new StuffingVisualizer({
-                backgroundColor: "#fff",
                 cameraFar: 100000
             });
         }
@@ -142,12 +141,12 @@ export function StuffingViewer({ data }: StuffingViewerProps) {
     };
 
     return (
-        <div className="w-full h-full relative">
+        <div className="w-full h-full relative bg-muted">
             <div ref={containerRef} className="w-full h-full" />
             
             {!isLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white">
-                    <p className="text-zinc-600">Loading visualization...</p>
+                <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                    <p className="text-muted-foreground text-sm">Loading visualization...</p>
                 </div>
             )}
 
@@ -162,12 +161,12 @@ export function StuffingViewer({ data }: StuffingViewerProps) {
             )}
 
             {isDownloading && (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm z-[2000] flex flex-col items-center justify-center gap-4">
-                    <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
-                    <p className="text-lg font-medium text-zinc-900">
+                <div className="absolute inset-0 bg-card/80 backdrop-blur-sm z-[2000] flex flex-col items-center justify-center gap-4">
+                    <Loader2 className="h-10 w-10 animate-spin text-signal" />
+                    <p className="text-lg font-medium text-foreground">
                         Generating PDF Instructions...
                     </p>
-                    <p className="text-sm text-zinc-500 text-center max-w-xs">
+                    <p className="text-sm text-muted-foreground text-center max-w-xs">
                         Capturing 3D steps and calculating layout. This may take a few moments.
                     </p>
                 </div>
@@ -187,15 +186,15 @@ export function StuffingViewer({ data }: StuffingViewerProps) {
             
             {hoveredItem && (
                 <div
-                    className="absolute bg-white p-2 rounded shadow-lg"
+                    className="absolute bg-card border border-border p-2 rounded shadow-md text-foreground text-xs"
                     style={{
                         left: mousePosition.x + 10,
                         top: mousePosition.y + 10,
                         pointerEvents: "none",
                     }}
                 >
-                    <p className="font-bold">{hoveredItem.label}</p>
-                    <p>Step: {hoveredItem.step_number}</p>
+                    <p className="font-semibold text-foreground">{hoveredItem.label}</p>
+                    <p className="text-muted-foreground font-mono">Step: {hoveredItem.step_number}</p>
                 </div>
             )}
         </div>

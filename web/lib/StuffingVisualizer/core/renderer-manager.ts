@@ -10,9 +10,10 @@ export class RendererManager {
     constructor() {
         this.renderer = new WebGLRenderer({
             antialias: true,
-            alpha: false, // Ensure solid background for visibility
+            alpha: true,
             preserveDrawingBuffer: true,
         });
+        this.renderer.setClearColor(0x000000, 0);
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         
         // Ensure canvas fills its container correctly

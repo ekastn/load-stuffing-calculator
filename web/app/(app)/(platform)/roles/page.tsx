@@ -216,7 +216,7 @@ export default function DevRolesPage() {
             <p className="text-muted-foreground">Loading roles...</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border/50 bg-card/50">
+          <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
               <DataTable 
               columns={columns} 
               data={roles} 
@@ -296,7 +296,7 @@ export default function DevRolesPage() {
               {permissions.map((permission) => (
                 <div 
                   key={permission.id} 
-                  className="flex items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors"
+                  className="flex items-start space-x-3 space-y-0 rounded-md border border-border bg-card p-4 shadow-2xs cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleTogglePermission(permission.id)}
                 >
                   <Checkbox

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { RouteGuard } from "@/lib/route-guard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Package, Truck, Users, BarChart3, Activity } from "lucide-react"
+import { Package, Truck, Users, BarChart3, Activity, AlertCircle } from "lucide-react"
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -40,31 +40,31 @@ export default function DashboardPage() {
     if (!user) return null
 
   const statsAdmin = dashboardStats?.admin ? [
-    { title: user.role === 'founder' ? "Total Users" : "Total Members", value: dashboardStats.admin.total_users.toString(), icon: Users, color: "text-blue-500" },
-    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck, color: "text-primary" },
-    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package, color: "text-violet-500" },
-    { title: "Success Rate", value: `${dashboardStats.admin.success_rate}%`, icon: BarChart3, color: "text-green-500" },
+    { title: user.role === 'founder' ? "Total Users" : "Total Members", value: dashboardStats.admin.total_users.toString(), icon: Users, color: "text-muted-foreground" },
+    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck, color: "text-signal" },
+    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package, color: "text-muted-foreground" },
+    { title: "Success Rate", value: `${dashboardStats.admin.success_rate}%`, icon: BarChart3, color: "text-status-ok-fg" },
   ] : []
 
   const statsPlanner = dashboardStats?.planner ? [
-    { title: "Pending Plans", value: dashboardStats.planner.pending_plans.toString(), icon: Truck, color: "text-primary" },
-    { title: "Completed Today", value: dashboardStats.planner.completed_today.toString(), icon: Package, color: "text-green-500" },
-    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3, color: "text-blue-500" },
-    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Activity, color: "text-violet-500" },
+    { title: "Pending Plans", value: dashboardStats.planner.pending_plans.toString(), icon: Truck, color: "text-signal" },
+    { title: "Completed Today", value: dashboardStats.planner.completed_today.toString(), icon: Package, color: "text-status-ok-fg" },
+    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3, color: "text-signal" },
+    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Activity, color: "text-muted-foreground" },
   ] : []
 
   const statsOperator = dashboardStats?.operator ? [
-    { title: "Active Loads", value: dashboardStats.operator.active_loads.toString(), icon: Truck, color: "text-primary" },
-    { title: "Completed", value: dashboardStats.operator.completed.toString(), icon: Package, color: "text-green-500" },
+    { title: "Active Loads", value: dashboardStats.operator.active_loads.toString(), icon: Truck, color: "text-signal" },
+    { title: "Completed", value: dashboardStats.operator.completed.toString(), icon: Package, color: "text-status-ok-fg" },
     { title: "Failed Validations", value: dashboardStats.operator.failed_validations.toString(), icon: AlertCircle, color: "text-destructive" },
-    { title: "Avg Time/Load", value: dashboardStats.operator.avg_time_per_load, icon: Activity, color: "text-blue-500" },
+    { title: "Avg Time/Load", value: dashboardStats.operator.avg_time_per_load, icon: Activity, color: "text-muted-foreground" },
   ] : []
 
   const statsPersonal = dashboardStats?.admin && dashboardStats?.planner ? [
-    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck, color: "text-primary" },
-    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3, color: "text-blue-500" },
-    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Package, color: "text-violet-500" },
-    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package, color: "text-green-500" },
+    { title: "Active Shipments", value: dashboardStats.admin.active_shipments.toString(), icon: Truck, color: "text-signal" },
+    { title: "Avg Utilization", value: `${dashboardStats.planner.avg_utilization.toFixed(1)}%`, icon: BarChart3, color: "text-signal" },
+    { title: "Items Processed", value: dashboardStats.planner.items_processed.toString(), icon: Activity, color: "text-muted-foreground" },
+    { title: "Container Types", value: dashboardStats.admin.container_types.toString(), icon: Package, color: "text-status-ok-fg" },
   ] : []
 
   const stats =
@@ -130,7 +130,7 @@ export default function DashboardPage() {
           {stats.map((stat, idx) => {
             const Icon = stat.icon
             return (
-              <Card key={idx} className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <Card key={idx}>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
@@ -146,7 +146,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <Card>
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Common tasks for your role</CardDescription>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                   key={idx}
                   onClick={() => router.push(action.path)}
                   variant="outline"
-                  className="h-auto flex-col gap-2 py-4"
+                  className="h-auto flex-col gap-2 py-4 hover:border-signal/40"
                 >
                   <span className="font-medium">{action.label}</span>
                 </Button>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Recent Activity */}
-        <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+        <Card>
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription>Latest operations in the system</CardDescription>
@@ -189,25 +189,4 @@ export default function DashboardPage() {
       </div>
     )
   }
-}
-
-function AlertCircle(props: any) {
-    return (
-      <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" x2="12" y1="8" y2="12" />
-        <line x1="12" x2="12.01" y1="16" y2="16" />
-      </svg>
-    )
 }

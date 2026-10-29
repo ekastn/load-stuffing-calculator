@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LoadIQ Portal — Token &amp; UI Polish Mockup (Existing Layouts)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       1. SEMANTIC CSS VARIABLES (web/app/globals.css)
+       Keeps the exact warm-stone sidebar & background you liked, and applies
+       subtle, modern shadcn/ui styling to the existing portal layouts.
+       ========================================================================== */
+    :root {
+      color-scheme: light;
+
+      /* Page & Sidebar Surfaces (the warm stone pairing you liked) */
+      --background: #f8f8f6;
+      --foreground: #16181b;
+      --sidebar: #f2f3ef;
+      --sidebar-foreground: #16181b;
+
+      /* Card & Control Surfaces */
+      --card: #ffffff;
+      --card-foreground: #16181b;
+      --popover: #ffffff;
+      --popover-foreground: #16181b;
+
+      /* Brand & Interactive */
+      --primary: #16181b;
+      --primary-foreground: #f5f5f2;
+      --signal: #ff5b14;
+      --signal-foreground: #16181b;
+      --signal-soft: rgba(255, 91, 20, 0.10);
+      --signal-text: #c23d06;
+
+      --secondary: #f1f2ee;
+      --secondary-foreground: #16181b;
+      --muted: #f1f2ee;
+      --muted-foreground: #525860;
+      --accent: #eaece6;
+      --accent-foreground: #16181b;
+
+      /* Borders, Inputs & Ring */
+      --border: #e3e5e0;
+      --border-subtle: #eff0ec;
+      --input: #d2d5cf;
+      --ring: #ff5b14;
+
+      /* Semantic Status Tokens */
+      --destructive: #d92d20;
+      --destructive-foreground: #ffffff;
+
+      --status-draft-bg: #f3f4f6;
+      --status-draft-fg: #4b5563;
+      --status-draft-border: #e5e7eb;
+
+      --status-planned-bg: #fff4ed;
+      --status-planned-fg: #c23d06;
+      --status-planned-border: #ffd6bd;
+
+      --status-ok-bg: #ecfdf3;
+      --status-ok-fg: #067647;
+      --status-ok-border: #abefc6;
+
+      --status-warn-bg: #fffaeb;
+      --status-warn-fg: #b54708;
+      --status-warn-border: #fedf89;
+
+      --status-danger-bg: #fef3f2;
+      --status-danger-fg: #b42318;
+      --status-danger-border: #fecdca;
+
+      /* Typography & Radii */
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 10px;
+      --shadow-2xs: 0 1px 2px 0 rgba(16, 24, 40, 0.03);
+      --shadow-xs: 0 1px 3px 0 rgba(16, 24, 40, 0.05), 0 1px 2px -1px rgba(16, 24, 40, 0.04);
+    }
+
+    html.dark {
+      color-scheme: dark;
+
+      --background: #0f1114;
+      --foreground: #f3f4f6;
+      --sidebar: #121519;
+      --sidebar-foreground: #f3f4f6;
+
+      --card: #16191e;
+      --card-foreground: #f3f4f6;
+      --popover: #16191e;
+      --popover-foreground: #f3f4f6;
+
+      --primary: #f3f4f6;
+      --primary-foreground: #16181b;
+      --signal: #ff5b14;
+      --signal-foreground: #16181b;
+      --signal-soft: rgba(255, 91, 20, 0.15);
+      --signal-text: #ff854d;
+
+      --secondary: #20242b;
+      --secondary-foreground: #f3f4f6;
+      --muted: #1c2026;
+      --muted-foreground: #949ca6;
+      --accent: #22262e;
+      --accent-foreground: #f3f4f6;
+
+      --border: #262a32;
+      --border-subtle: #1e2229;
+      --input: #323741;
+      --ring: #ff5b14;
+
+      --status-draft-bg: rgba(148, 156, 166, 0.12);
+      --status-draft-fg: #d1d5db;
+      --status-draft-border: rgba(148, 156, 166, 0.25);
+
+      --status-planned-bg: rgba(255, 91, 20, 0.14);
+      --status-planned-fg: #ff9466;
+      --status-planned-border: rgba(255, 91, 20, 0.30);
+
+      --status-ok-bg: rgba(23, 178, 106, 0.14);
+      --status-ok-fg: #75e0a7;
+      --status-ok-border: rgba(23, 178, 106, 0.30);
+
+      --status-warn-bg: rgba(247, 144, 9, 0.14);
+      --status-warn-fg: #fec84b;
+      --status-warn-border: rgba(247, 144, 9, 0.30);
+
+      --status-danger-bg: rgba(240, 68, 56, 0.14);
+      --status-danger-fg: #fda29b;
+      --status-danger-border: rgba(240, 68, 56, 0.30);
+
+      --shadow-2xs: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+      --shadow-xs: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    /* ==========================================================================
+       2. BASE RESET
+       ========================================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--background);
+      color: var(--foreground);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    button, input, select { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+    .font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .text-muted { color: var(--muted-foreground); }
+    .text-right { text-align: right; }
+
+    /* ==========================================================================
+       3. TOP PROTOTYPE SWITCHER
+       ========================================================================== */
+    .proto-bar {
+      background: #16181b;
+      color: #f3f4f6;
+      border-bottom: 1px solid #2e333b;
+      padding: 8px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .proto-group { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .proto-label { font-family: var(--font-mono); font-size: 11px; color: #949ca6; margin-right: 2px; }
+    .proto-pill {
+      background: #23272f;
+      color: #d1d5db;
+      border: 1px solid #343942;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .proto-pill.is-active { background: var(--signal); color: #ffffff; border-color: var(--signal); }
+
+    /* ==========================================================================
+       4. EXISTING SIDEBAR + MAIN SHELL (web/components/dashboard-layout.tsx)
+       ========================================================================== */
+    .app-shell {
+      display: grid;
+      grid-template-columns: 256px 1fr;
+      flex: 1;
+      min-height: calc(100vh - 45px);
+    }
+
+    .sidebar {
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar-header {
+      height: 64px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--foreground);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .nav-group-label {
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted-foreground);
+    }
+
+    .nav-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      font-size: 14px;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: all 140ms ease;
+    }
+
+    .nav-item:hover {
+      background: var(--accent);
+      color: var(--foreground);
+    }
+
+    .nav-item.is-active {
+      background: var(--card);
+      color: var(--foreground);
+      border-color: var(--border);
+      box-shadow: var(--shadow-2xs);
+      font-weight: 600;
+    }
+
+    .nav-item.is-active svg {
+      color: var(--signal);
+    }
+
+    .nav-item svg {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px;
+      border-radius: var(--radius-sm);
+    }
+
+    .user-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: var(--signal-soft);
+      color: var(--signal-text);
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .main-area {
+      padding: 24px;
+      max-width: 1400px;
+      width: 100%;
+    }
+
+    /* ==========================================================================
+       5. SHADCN / UI COMPONENTS (Card, Button, Badge, Input, Select, Tabs, Table)
+       ========================================================================== */
+    .card {
+      background: var(--card);
+      color: var(--card-foreground);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-xs);
+    }
+
+    .card-header {
+      padding: 18px 20px 10px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .card-description {
+      font-size: 13px;
+      color: var(--muted-foreground);
+      margin-top: 2px;
+    }
+
+    .card-content {
+      padding: 0 20px 20px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 14px;
+      font-size: 13.5px;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 140ms ease;
+    }
+    .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-sm { height: 30px; padding: 0 10px; font-size: 12px; }
+    .btn-icon { width: 32px; height: 32px; padding: 0; }
+
+    .btn-default,
+    .btn-signal {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      box-shadow: var(--shadow-2xs);
+    }
+    .btn-default:hover,
+    .btn-signal:hover {
+      background: var(--signal);
+      color: var(--signal-foreground);
+    }
+
+    .btn-outline {
+      background: var(--card);
+      border-color: var(--border);
+      color: var(--foreground);
+      box-shadow: var(--shadow-2xs);
+    }
+    .btn-outline:hover { background: var(--muted); }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--secondary-foreground);
+    }
+    .btn-secondary:hover { background: var(--accent); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted-foreground);
+    }
+    .btn-ghost:hover { background: var(--muted); color: var(--foreground); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+    }
+    .badge-completed { background: var(--status-ok-bg); color: var(--status-ok-fg); border-color: var(--status-ok-border); }
+    .badge-planned { background: var(--status-planned-bg); color: var(--status-planned-fg); border-color: var(--status-planned-border); }
+    .badge-partial { background: var(--status-warn-bg); color: var(--status-warn-fg); border-color: var(--status-warn-border); }
+    .badge-draft { background: var(--status-draft-bg); color: var(--status-draft-fg); border-color: var(--status-draft-border); }
+    .badge-failed { background: var(--status-danger-bg); color: var(--status-danger-fg); border-color: var(--status-danger-border); }
+
+    /* Inputs & Selects */
+    .input, .select {
+      height: 36px;
+      padding: 0 12px;
+      background: var(--card);
+      border: 1px solid var(--input);
+      border-radius: var(--radius-sm);
+      color: var(--foreground);
+      font-size: 13.5px;
+      width: 100%;
+      box-shadow: var(--shadow-2xs);
+    }
+    .input::placeholder { color: var(--muted-foreground); opacity: 0.75; }
+
+    /* Tabs (matches existing shipments/[id]/page.tsx) */
+    .tabs-list {
+      display: inline-flex;
+      height: 32px;
+      background: transparent;
+      gap: 4px;
+      align-items: center;
+    }
+    .tabs-trigger {
+      padding: 4px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted-foreground);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .tabs-trigger.is-active {
+      background: var(--muted);
+      color: var(--foreground);
+      border-color: var(--border);
+      font-weight: 600;
+    }
+
+    /* Tables */
+    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .table th {
+      text-align: left;
+      padding: 10px 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--muted-foreground);
+      border-bottom: 1px solid var(--border);
+    }
+    .table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .table tbody tr:last-child td { border-bottom: 0; }
+    .table tbody tr.hover-row:hover { background: var(--muted); cursor: pointer; }
+
+    .screen { display: none; flex-direction: column; gap: 24px; }
+    .screen.is-active { display: flex; }
+
+    @media (max-width: 1024px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP SWITCHER -->
+  <header class="proto-bar">
+    <div class="proto-group">
+      <span class="proto-label">EXISTING SCREENS WITH NEW TOKENS:</span>
+      <button type="button" class="proto-pill is-active" data-screen="dashboard">1. Dashboard</button>
+      <button type="button" class="proto-pill" data-screen="shipments">2. Shipments (Card Grid)</button>
+      <button type="button" class="proto-pill" data-screen="detail">3. Shipment Detail (3 Tabs)</button>
+      <button type="button" class="proto-pill" data-screen="products">4. Product Catalog (DataTable)</button>
+    </div>
+    <div class="proto-group">
+      <span class="proto-label">COLOR-SCHEME:</span>
+      <button type="button" class="proto-pill is-active" data-theme="light">Light (:root)</button>
+      <button type="button" class="proto-pill" data-theme="dark">Dark (.dark)</button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <!-- ======================================================================
+         SIDEBAR (Existing DashboardLayout structure + warm-stone tokens)
+         ====================================================================== -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <svg viewBox="0 0 36 36" width="30" height="30" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="32" height="32" stroke="currentColor" stroke-width="2.5" />
+          <rect x="2" y="2" width="5" height="5" fill="currentColor" />
+          <rect x="29" y="2" width="5" height="5" fill="currentColor" />
+          <rect x="2" y="29" width="5" height="5" fill="currentColor" />
+          <rect x="29" y="29" width="5" height="5" fill="currentColor" />
+          <rect x="6" y="18" width="12" height="12" fill="#ff5b14" />
+        </svg>
+        <span class="sidebar-title">LoadIQ</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div>
+          <div class="nav-group-label">Overview</div>
+          <button type="button" class="nav-item is-active" data-nav="dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Dashboard
+          </button>
+        </div>
+
+        <div>
+          <div class="nav-group-label">Workspace</div>
+          <button type="button" class="nav-item" data-nav="products">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Members
+          </button>
+        </div>
+
+        <div>
+          <div class="nav-group-label">Master Data</div>
+          <button type="button" class="nav-item" data-nav="products">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            Products
+          </button>
+          <button type="button" class="nav-item" data-nav="products">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+            Containers
+          </button>
+        </div>
+
+        <div>
+          <div class="nav-group-label">Shipments</div>
+          <button type="button" class="nav-item" data-nav="shipments">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+            All Shipments
+          </button>
+          <button type="button" class="nav-item" data-nav="detail">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+            Create Shipment
+          </button>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <select class="select" aria-label="Select workspace">
+          <option>Tanjung Priok Workspace</option>
+          <option>Surabaya Depot</option>
+        </select>
+
+        <div class="user-row">
+          <div class="user-avatar">R</div>
+          <div style="flex:1; min-width:0;">
+            <span style="font-size:14px; font-weight:500;">reza</span>
+            <span class="text-muted" style="font-size:12px; margin-left:4px;">(planner)</span>
+          </div>
+          <button type="button" class="btn btn-ghost btn-icon" aria-label="Sign out">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ======================================================================
+         MAIN PAGE CONTENT
+         ====================================================================== -->
+    <main class="main-area">
+
+      <!-- ====================================================================
+           1. DASHBOARD (Exact existing layout in web/app/(app)/dashboard/page.tsx)
+           ==================================================================== -->
+      <section class="screen is-active" id="screen-dashboard">
+        <div>
+          <h1 style="font-size:26px; font-weight:700; letter-spacing:-0.02em;">Welcome, reza!</h1>
+          <p class="text-muted" style="margin-top:4px;">Plan and optimize container loads</p>
+        </div>
+
+        <!-- Existing 4-Card Stats Grid -->
+        <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:16px;">
+          <div class="card">
+            <div class="card-header" style="padding-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+              <span class="text-muted" style="font-size:13.5px; font-weight:500;">Pending Plans</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--signal)" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+            </div>
+            <div class="card-content">
+              <p style="font-size:24px; font-weight:700;">4</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header" style="padding-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+              <span class="text-muted" style="font-size:13.5px; font-weight:500;">Completed Today</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--status-ok-fg)" stroke-width="2"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/></svg>
+            </div>
+            <div class="card-content">
+              <p style="font-size:24px; font-weight:700;">12</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header" style="padding-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+              <span class="text-muted" style="font-size:13.5px; font-weight:500;">Avg Utilization</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <div class="card-content">
+              <p style="font-size:24px; font-weight:700;">74.2%</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header" style="padding-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+              <span class="text-muted" style="font-size:13.5px; font-weight:500;">Items Processed</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="card-content">
+              <p style="font-size:24px; font-weight:700;">1,284</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing Quick Actions Card -->
+        <div class="card">
+          <div class="card-header" style="padding-bottom:14px;">
+            <div class="card-title">Quick Actions</div>
+            <div class="card-description">Common tasks for your role</div>
+          </div>
+          <div class="card-content">
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+              <button type="button" class="btn btn-outline" style="height:auto; padding:16px;" onclick="switchScreen('detail')">
+                Create Shipment
+              </button>
+              <button type="button" class="btn btn-outline" style="height:auto; padding:16px;" onclick="switchScreen('shipments')">
+                View Shipments
+              </button>
+              <button type="button" class="btn btn-outline" style="height:auto; padding:16px;">
+                Generate Manifest
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Existing Recent Activity Card -->
+        <div class="card">
+          <div class="card-header" style="padding-bottom:14px;">
+            <div class="card-title">Recent Activity</div>
+            <div class="card-description">Latest operations in the system</div>
+          </div>
+          <div class="card-content" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:12px;">
+              <span>System initialized</span>
+              <span class="text-muted">Just now</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:12px;">
+              <span>Welcome to LoadIQ</span>
+              <span class="text-muted">Real-time Dashboard</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           2. SHIPMENTS (Exact existing Filter Bar + 3-Col Card Grid)
+           ==================================================================== -->
+      <section class="screen" id="screen-shipments">
+        <div>
+          <h1 style="font-size:26px; font-weight:700; letter-spacing:-0.02em;">Shipments</h1>
+          <p class="text-muted" style="margin-top:4px;">Manage all load plans</p>
+        </div>
+
+        <!-- Existing Filter Bar Card -->
+        <div class="card" style="padding:12px;">
+          <div style="display:flex; gap:12px; align-items:center;">
+            <input type="search" class="input" placeholder="Search by title or plan code..." style="flex:1;" />
+            <select class="select" style="width:180px;">
+              <option>All Statuses</option>
+              <option>COMPLETED</option>
+              <option>PLANNED</option>
+              <option>PARTIAL</option>
+              <option>DRAFT</option>
+              <option>FAILED</option>
+            </select>
+            <button type="button" class="btn btn-signal" onclick="switchScreen('detail')">
+              + Create Shipment
+            </button>
+          </div>
+        </div>
+
+        <!-- Existing 3-Column Shipment Cards Grid -->
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:16px;">
+          <div class="card" style="cursor:pointer;" onclick="switchScreen('detail')">
+            <div class="card-header" style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:12px;">
+              <div>
+                <div class="card-title">Jakarta – Rotterdam Spare Parts</div>
+                <div class="card-description font-mono" style="font-size:12px;">PLD-20261027-2259</div>
+              </div>
+              <span class="badge badge-completed">COMPLETED</span>
+            </div>
+            <div class="card-content" style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <p class="text-muted" style="font-size:13.5px;">58 items</p>
+                <p class="text-muted" style="font-size:12px; opacity:0.8;">10/27/2026</p>
+              </div>
+              <span class="text-muted">→</span>
+            </div>
+          </div>
+
+          <div class="card" style="cursor:pointer;" onclick="switchScreen('detail')">
+            <div class="card-header" style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:12px;">
+              <div>
+                <div class="card-title">Surabaya Cold Chain Batch #4</div>
+                <div class="card-description font-mono" style="font-size:12px;">PLD-20261028-0914</div>
+              </div>
+              <span class="badge badge-planned">PLANNED</span>
+            </div>
+            <div class="card-content" style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <p class="text-muted" style="font-size:13.5px;">142 items</p>
+                <p class="text-muted" style="font-size:12px; opacity:0.8;">10/28/2026</p>
+              </div>
+              <span class="text-muted">→</span>
+            </div>
+          </div>
+
+          <div class="card" style="cursor:pointer;" onclick="switchScreen('detail')">
+            <div class="card-header" style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:12px;">
+              <div>
+                <div class="card-title">Bandung Textile Export Lot B</div>
+                <div class="card-description font-mono" style="font-size:12px;">PLD-20261028-1640</div>
+              </div>
+              <span class="badge badge-partial">PARTIAL</span>
+            </div>
+            <div class="card-content" style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <p class="text-muted" style="font-size:13.5px;">110 items</p>
+                <p class="text-muted" style="font-size:12px; opacity:0.8;">10/28/2026</p>
+              </div>
+              <span class="text-muted">→</span>
+            </div>
+          </div>
+
+          <div class="card" style="cursor:pointer;" onclick="switchScreen('detail')">
+            <div class="card-header" style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:12px;">
+              <div>
+                <div class="card-title">Semarang Machinery Crates</div>
+                <div class="card-description font-mono" style="font-size:12px;">PLD-20261029-0802</div>
+              </div>
+              <span class="badge badge-draft">DRAFT</span>
+            </div>
+            <div class="card-content" style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <p class="text-muted" style="font-size:13.5px;">32 items</p>
+                <p class="text-muted" style="font-size:12px; opacity:0.8;">10/29/2026</p>
+              </div>
+              <span class="text-muted">→</span>
+            </div>
+          </div>
+
+          <div class="card" style="cursor:pointer;" onclick="switchScreen('detail')">
+            <div class="card-header" style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:12px;">
+              <div>
+                <div class="card-title">Heavy Dynamo Overweight Test</div>
+                <div class="card-description font-mono" style="font-size:12px;">PLD-20261029-1920</div>
+              </div>
+              <span class="badge badge-failed">FAILED</span>
+            </div>
+            <div class="card-content" style="display:flex; align-items:center; justify-content:space-between;">
+              <div>
+                <p class="text-muted" style="font-size:13.5px;">18 items</p>
+                <p class="text-muted" style="font-size:12px; opacity:0.8;">10/29/2026</p>
+              </div>
+              <span class="text-muted">→</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           3. SHIPMENT DETAIL (Exact existing 2-row Header + 3 Tabs)
+           ==================================================================== -->
+      <section class="screen" id="screen-detail" style="gap:10px;">
+        <!-- Existing 2-row Header Card -->
+        <div class="card" style="overflow:hidden;">
+          <!-- Row 1: Title + Actions -->
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 16px; gap:12px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button type="button" class="btn btn-ghost btn-icon" onclick="switchScreen('shipments')">←</button>
+              <h1 style="font-size:15px; font-weight:700; text-transform:uppercase; letter-spacing:-0.01em;">
+                Jakarta – Rotterdam Spare Parts
+              </h1>
+              <span class="badge badge-completed">COMPLETED</span>
+              <span class="font-mono text-muted" style="font-size:12px; margin-left:4px;">
+                20ft Standard — 5898×2352×2393mm
+              </span>
+            </div>
+
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-outline btn-sm">+ Add Items</button>
+              <button type="button" class="btn btn-signal btn-sm">↻ Recalculate</button>
+              <button type="button" class="btn btn-outline btn-sm">Advanced</button>
+              <button type="button" class="btn btn-outline btn-sm">Barcodes</button>
+            </div>
+          </div>
+
+          <!-- Row 2: Tabs (3D Simulation / Cargo Breakdown / Summary) -->
+          <div style="border-top:1px solid var(--border); padding:4px 16px;">
+            <div class="tabs-list">
+              <button type="button" class="tabs-trigger is-active" data-detail-tab="simulation">3D Simulation</button>
+              <button type="button" class="tabs-trigger" data-detail-tab="breakdown">Cargo Breakdown</button>
+              <button type="button" class="tabs-trigger" data-detail-tab="summary">Summary</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 1: 3D Simulation -->
+        <div id="tab-simulation" class="card" style="height:480px; position:relative; display:flex; flex-direction:column; overflow:hidden;">
+          <div style="flex:1; background:var(--muted); display:flex; align-items:center; justify-content:center; position:relative;">
+            <button type="button" class="btn btn-secondary btn-sm" style="position:absolute; top:10px; right:10px;">
+              Copy Embed
+            </button>
+            <!-- 3D Viewer Canvas Representation -->
+            <svg viewBox="0 0 680 320" width="100%" height="100%" style="max-width:600px;">
+              <polygon points="90,240 430,285 600,195 260,150" fill="var(--border)" />
+              <polygon points="90,70 430,115 430,285 90,240" fill="none" stroke="var(--muted-foreground)" stroke-width="1.2" opacity="0.5" />
+              <polygon points="90,70 260,25 260,150 90,240" fill="none" stroke="var(--muted-foreground)" stroke-width="1.2" opacity="0.5" />
+              <g stroke="rgba(22,24,27,0.3)" stroke-width="1">
+                <polygon points="110,155 215,170 215,240 110,225" fill="#b8895a" />
+                <polygon points="215,170 265,142 265,212 215,240" fill="#8a6845" />
+                <polygon points="110,155 215,170 265,142 160,127" fill="#cfa874" />
+                <polygon points="215,175 325,190 325,255 215,240" fill="#8a6845" />
+                <polygon points="325,190 375,162 375,227 325,255" fill="#b8895a" />
+                <polygon points="215,175 325,190 375,162 265,147" fill="#cfa874" />
+                <polygon points="325,195 415,208 415,267 325,255" fill="#ff5b14" />
+                <polygon points="415,208 465,180 465,239 415,267" fill="#e04806" />
+                <polygon points="325,195 415,208 465,180 375,167" fill="#ff7338" />
+              </g>
+              <polygon points="430,115 600,70 600,195 430,285" fill="none" stroke="var(--foreground)" stroke-width="1.5" opacity="0.6" />
+            </svg>
+            <!-- Floating AnimationControls (matches web/components/animation-controls.tsx) -->
+            <div style="position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 4px 12px rgba(16,24,40,0.08); padding:10px 14px; display:flex; align-items:center; gap:14px; width:calc(100% - 2rem); max-width:480px;">
+              <div style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-outline btn-icon" id="anim-play-btn" aria-label="Play" style="border-radius:8px; width:36px; height:36px;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+                </button>
+                <button type="button" class="btn btn-outline btn-icon" id="anim-reset-btn" aria-label="Reset" style="border-radius:8px; width:36px; height:36px;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                </button>
+                <button type="button" class="btn btn-outline btn-icon" aria-label="Download PDF" style="border-radius:8px; width:36px; height:36px;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+              </div>
+              <div style="flex:1; display:flex; align-items:center; gap:12px;">
+                <input type="range" id="anim-step-slider" min="0" max="62" value="62" style="flex:1; accent-color:var(--primary); cursor:pointer;" aria-label="Playback step" />
+                <span class="font-mono" id="anim-step-text" style="font-size:13px; font-weight:500; min-width:56px; text-align:right; color:var(--foreground);">
+                  62 / 62
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Cargo Breakdown (Existing Donut + Full-Width Table) -->
+        <div id="tab-breakdown" class="card" style="display:none; padding:18px;">
+          <div style="display:flex; align-items:center; gap:24px; margin-bottom:18px;">
+            <svg width="120" height="120" viewBox="0 0 42 42">
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#b8895a" stroke-width="6" stroke-dasharray="40 60" stroke-dashoffset="25"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#ff5b14" stroke-width="6" stroke-dasharray="35 65" stroke-dashoffset="85"></circle>
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#4f585f" stroke-width="6" stroke-dasharray="25 75" stroke-dashoffset="50"></circle>
+            </svg>
+            <div style="display:flex; flex-wrap:wrap; gap:18px;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:12.5px;">
+                <span style="width:10px; height:10px; border-radius:999px; background:#b8895a;"></span>
+                <span>Corrugated box A</span>
+                <span class="text-muted">(4.80)</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:12.5px;">
+                <span style="width:10px; height:10px; border-radius:999px; background:#ff5b14;"></span>
+                <span>Compressor crate</span>
+                <span class="text-muted">(6.14)</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:12.5px;">
+                <span style="width:10px; height:10px; border-radius:999px; background:#4f585f;"></span>
+                <span>Export carton B</span>
+                <span class="text-muted">(4.41)</span>
+              </div>
+            </div>
+          </div>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:30px;"></th>
+                <th>Item</th>
+                <th>SKU</th>
+                <th>Dims (mm)</th>
+                <th class="text-right">Qty</th>
+                <th class="text-right">Unit Wt</th>
+                <th class="text-right">Total Wt</th>
+                <th class="text-right">Vol (m³)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span style="display:inline-block; width:10px; height:10px; border-radius:999px; background:#b8895a;"></span></td>
+                <td style="font-weight:500;">Corrugated box A</td>
+                <td class="font-mono text-muted">SKU-CBX-101</td>
+                <td class="font-mono">800×600×500</td>
+                <td class="text-right">20</td>
+                <td class="text-right">35kg</td>
+                <td class="text-right" style="font-weight:500;">700.0kg</td>
+                <td class="text-right" style="font-weight:500;">4.80</td>
+              </tr>
+              <tr>
+                <td><span style="display:inline-block; width:10px; height:10px; border-radius:999px; background:#ff5b14;"></span></td>
+                <td style="font-weight:500;">Compressor crate</td>
+                <td class="font-mono text-muted">SKU-CMP-204</td>
+                <td class="font-mono">800×800×600</td>
+                <td class="text-right">16</td>
+                <td class="text-right">65kg</td>
+                <td class="text-right" style="font-weight:500;">1040.0kg</td>
+                <td class="text-right" style="font-weight:500;">6.14</td>
+              </tr>
+              <tr>
+                <td><span style="display:inline-block; width:10px; height:10px; border-radius:999px; background:#4f585f;"></span></td>
+                <td style="font-weight:500;">Export carton B</td>
+                <td class="font-mono text-muted">SKU-EXP-309</td>
+                <td class="font-mono">900×700×500</td>
+                <td class="text-right">22</td>
+                <td class="text-right">45kg</td>
+                <td class="text-right" style="font-weight:500;">1210.0kg</td>
+                <td class="text-right" style="font-weight:500;">7.29</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TAB 3: Summary (Existing 3 Compact Cards + Table) -->
+        <div id="tab-summary" style="display:none; flex-direction:column; gap:12px;">
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:12px;">
+            <div class="card" style="padding:14px;">
+              <p class="text-muted" style="font-size:11.5px; font-weight:500;">Total Packages</p>
+              <p style="font-size:24px; font-weight:700; margin-top:2px;">58</p>
+            </div>
+            <div class="card" style="padding:14px;">
+              <p class="text-muted" style="font-size:11.5px; font-weight:500;">Cargo Volume</p>
+              <p style="font-size:24px; font-weight:700; color:var(--signal-text); margin-top:2px;">18.23 <span style="font-size:14px;">m³</span></p>
+              <div style="margin-top:8px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                  <span class="text-muted">Utilization</span>
+                  <span style="font-weight:600;">54.9%</span>
+                </div>
+                <div style="height:6px; background:var(--muted); border-radius:999px; overflow:hidden;">
+                  <div style="width:54.9%; height:100%; background:var(--signal);"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="padding:14px;">
+              <p class="text-muted" style="font-size:11.5px; font-weight:500;">Cargo Weight</p>
+              <p style="font-size:24px; font-weight:700; margin-top:2px;">2,950 <span style="font-size:14px;">kg</span></p>
+              <div style="margin-top:8px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                  <span class="text-muted">Utilization</span>
+                  <span style="font-weight:600;">10.5%</span>
+                </div>
+                <div style="height:6px; background:var(--muted); border-radius:999px; overflow:hidden;">
+                  <div style="width:10.5%; height:100%; background:var(--primary);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="text-right">Qty</th>
+                  <th class="text-right">Vol (m³)</th>
+                  <th class="text-right">Wt (kg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Corrugated box A</td>
+                  <td class="text-right">20</td>
+                  <td class="text-right">4.80</td>
+                  <td class="text-right" style="font-weight:500;">700.0</td>
+                </tr>
+                <tr>
+                  <td>Compressor crate</td>
+                  <td class="text-right">16</td>
+                  <td class="text-right">6.14</td>
+                  <td class="text-right" style="font-weight:500;">1040.0</td>
+                </tr>
+                <tr>
+                  <td>Export carton B</td>
+                  <td class="text-right">22</td>
+                  <td class="text-right">7.29</td>
+                  <td class="text-right" style="font-weight:500;">1210.0</td>
+                </tr>
+                <tr style="background:var(--muted); font-weight:700;">
+                  <td>Total</td>
+                  <td class="text-right">58</td>
+                  <td class="text-right">18.23</td>
+                  <td class="text-right">2950.0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           4. PRODUCT CATALOG (Exact existing DataTable layout)
+           ==================================================================== -->
+      <section class="screen" id="screen-products">
+        <div>
+          <h1 style="font-size:26px; font-weight:700; letter-spacing:-0.02em;">Product Catalog</h1>
+          <p class="text-muted" style="margin-top:4px;">Manage products and their specifications</p>
+        </div>
+
+        <div class="card" style="padding:16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;">
+            <input type="search" class="input" placeholder="Filter names..." style="max-width:320px;" />
+            <div style="display:flex; gap:8px;">
+              <button type="button" class="btn btn-outline">View</button>
+              <button type="button" class="btn btn-default">+ New Product</button>
+            </div>
+          </div>
+
+          <div style="border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden;">
+            <table class="table">
+              <thead style="background:var(--muted);">
+                <tr>
+                  <th>Name</th>
+                  <th>SKU</th>
+                  <th>Dims (mm)</th>
+                  <th>Wt (kg)</th>
+                  <th>Color</th>
+                  <th class="text-right"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="hover-row">
+                  <td style="font-weight:500;">Corrugated box A</td>
+                  <td class="text-muted">SKU-CBX-101</td>
+                  <td class="font-mono" style="font-size:12px;">800x600x500</td>
+                  <td>35</td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="width:14px; height:14px; border-radius:999px; background:#b8895a; border:1px solid var(--border);"></span>
+                      <span class="font-mono text-muted" style="font-size:11px;">#b8895a</span>
+                    </div>
+                  </td>
+                  <td class="text-right"><button type="button" class="btn btn-ghost btn-icon">⋯</button></td>
+                </tr>
+                <tr class="hover-row">
+                  <td style="font-weight:500;">Compressor crate</td>
+                  <td class="text-muted">SKU-CMP-204</td>
+                  <td class="font-mono" style="font-size:12px;">800x800x600</td>
+                  <td>65</td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="width:14px; height:14px; border-radius:999px; background:#ff5b14; border:1px solid var(--border);"></span>
+                      <span class="font-mono text-muted" style="font-size:11px;">#ff5b14</span>
+                    </div>
+                  </td>
+                  <td class="text-right"><button type="button" class="btn btn-ghost btn-icon">⋯</button></td>
+                </tr>
+                <tr class="hover-row">
+                  <td style="font-weight:500;">Export carton B</td>
+                  <td class="text-muted">SKU-EXP-309</td>
+                  <td class="font-mono" style="font-size:12px;">900x700x500</td>
+                  <td>45</td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="width:14px; height:14px; border-radius:999px; background:#4f585f; border:1px solid var(--border);"></span>
+                      <span class="font-mono text-muted" style="font-size:11px;">#4f585f</span>
+                    </div>
+                  </td>
+                  <td class="text-right"><button type="button" class="btn btn-ghost btn-icon">⋯</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="padding-top:14px; display:flex; align-items:center; justify-content:space-between; font-size:12.5px;" class="text-muted">
+            <span>0 of 3 row(s) selected.</span>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn btn-outline btn-sm" disabled>Previous</button>
+              <button type="button" class="btn btn-outline btn-sm" disabled>Next</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    function switchScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(el => {
+        el.classList.toggle('is-active', el.id === 'screen-' + screenId);
+      });
+      document.querySelectorAll('[data-screen]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.dataset.screen === screenId);
+      });
+      document.querySelectorAll('[data-nav]').forEach(btn => {
+        btn.classList.toggle('is-active', btn.dataset.nav === screenId);
+      });
+    }
+
+    document.querySelectorAll('[data-screen]').forEach(btn => {
+      btn.addEventListener('click', () => switchScreen(btn.dataset.screen));
+    });
+    document.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => switchScreen(btn.dataset.nav));
+    });
+
+    document.querySelectorAll('[data-theme]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark', btn.dataset.theme === 'dark');
+        document.querySelectorAll('[data-theme]').forEach(b => b.classList.toggle('is-active', b === btn));
+      });
+    });
+
+    document.querySelectorAll('[data-detail-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.detailTab;
+        document.querySelectorAll('[data-detail-tab]').forEach(b => b.classList.toggle('is-active', b === btn));
+        document.getElementById('tab-simulation').style.display = tab === 'simulation' ? 'flex' : 'none';
+        document.getElementById('tab-breakdown').style.display = tab === 'breakdown' ? 'block' : 'none';
+        document.getElementById('tab-summary').style.display = tab === 'summary' ? 'flex' : 'none';
+      });
+    });
+
+    const animSlider = document.getElementById('anim-step-slider');
+    const animStepText = document.getElementById('anim-step-text');
+    const animResetBtn = document.getElementById('anim-reset-btn');
+    if (animSlider && animStepText) {
+      animSlider.addEventListener('input', () => {
+        animStepText.textContent = `${animSlider.value} / 62`;
+      });
+    }
+    if (animResetBtn && animSlider && animStepText) {
+      animResetBtn.addEventListener('click', () => {
+        animSlider.value = 0;
+        animStepText.textContent = '0 / 62';
+      });
+    }
+  </script>
+</body>
+</html>

@@ -204,7 +204,7 @@ export default function DevPermissionsPage() {
             <p className="text-muted-foreground">Loading permissions...</p>
           </div>
         ) : (
-          <div className="rounded-md border border-border/50 bg-card/50">
+          <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
             <DataTable 
               columns={columns} 
               data={permissions} 

@@ -16,7 +16,19 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+          "text-foreground border-border [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+        completed:
+          "border-transparent bg-status-ok-bg text-status-ok-fg",
+        in_progress:
+          "border-transparent bg-status-progress-bg text-status-progress-fg",
+        partial:
+          "border-transparent bg-status-warn-bg text-status-warn-fg",
+        draft:
+          "border-transparent bg-status-draft-bg text-status-draft-fg",
+        failed:
+          "border-transparent bg-status-danger-bg text-status-danger-fg",
+        planned:
+          "border-transparent bg-status-planned-bg text-status-planned-fg",
       },
     },
     defaultVariants: {
@@ -24,6 +36,40 @@ const badgeVariants = cva(
     },
   }
 )
+
+export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>["variant"]>
+
+function getStatusBadgeVariant(status?: string | null): BadgeVariant {
+  if (!status) return "secondary"
+  const normalized = status.toUpperCase().trim().replace(/[\s-]+/g, "_")
+  switch (normalized) {
+    case "COMPLETED":
+    case "COMPLETE":
+    case "SUCCESS":
+      return "completed"
+    case "IN_PROGRESS":
+    case "PACKING":
+    case "CALCULATING":
+    case "RUNNING":
+      return "in_progress"
+    case "PARTIAL":
+    case "PARTIALLY_PACKED":
+      return "partial"
+    case "DRAFT":
+      return "draft"
+    case "FAILED":
+    case "ERROR":
+    case "CANCELLED":
+    case "CANCELED":
+      return "failed"
+    case "PLANNED":
+    case "READY":
+    case "QUEUED":
+      return "planned"
+    default:
+      return "secondary"
+  }
+}
 
 function Badge({
   className,
@@ -43,4 +89,4 @@ function Badge({
   )
 }
 
-export { Badge, badgeVariants }
+export { Badge, badgeVariants, getStatusBadgeVariant }

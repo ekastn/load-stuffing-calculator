@@ -22,13 +22,13 @@ export default function AuditLogsPage() {
   }, [user, filterAction, getLogs])
 
   const actionColors: Record<string, string> = {
-    CREATE: "bg-green-500/10 text-green-500",
-    UPDATE: "bg-blue-500/10 text-blue-500",
-    DELETE: "bg-destructive/10 text-destructive",
+    CREATE: "bg-status-ok-bg text-status-ok-fg",
+    UPDATE: "bg-signal-soft text-signal-text",
+    DELETE: "bg-status-danger-bg text-status-danger-fg",
     LOGIN: "bg-primary/10 text-primary",
-    LOGOUT: "bg-muted/10 text-muted-foreground",
-    VIEW: "bg-accent/10 text-accent",
-    VALIDATE: "bg-accent/10 text-accent",
+    LOGOUT: "bg-muted text-muted-foreground",
+    VIEW: "bg-muted text-muted-foreground",
+    VALIDATE: "bg-signal-soft text-signal-text",
   }
 
   const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "VIEW", "VALIDATE"]
@@ -42,7 +42,7 @@ export default function AuditLogsPage() {
           </div>
 
           {/* Filters */}
-          <Card className="border-border/50 bg-card/50">
+          <Card className="bg-card border-border shadow-xs">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Filter by Action</CardTitle>
             </CardHeader>
@@ -50,10 +50,10 @@ export default function AuditLogsPage() {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setFilterAction("")}
-                  className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                     filterAction === ""
                       ? "bg-primary text-primary-foreground"
-                      : "bg-border/50 text-foreground hover:bg-border"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                   }`}
                 >
                   All
@@ -62,10 +62,10 @@ export default function AuditLogsPage() {
                   <button
                     key={action}
                     onClick={() => setFilterAction(action)}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                       filterAction === action
                         ? "bg-primary text-primary-foreground"
-                        : "bg-border/50 text-foreground hover:bg-border"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
                     }`}
                   >
                     {action}
@@ -77,7 +77,7 @@ export default function AuditLogsPage() {
 
           {/* Logs */}
           {auditLogs.length === 0 ? (
-            <Card className="border-border/50 bg-card/50">
+            <Card className="bg-card border-border shadow-xs">
               <CardContent className="pt-6 text-center">
                 <Shield className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                 <p className="text-muted-foreground">No audit logs</p>
@@ -86,12 +86,12 @@ export default function AuditLogsPage() {
           ) : (
             <div className="space-y-3">
               {auditLogs.map((log) => (
-                <Card key={log.id} className="border-border/50 bg-card/50 hover:bg-card/70 transition-colors">
+                <Card key={log.id} className="bg-card border-border shadow-xs hover:border-border/80 transition-colors">
                   <CardContent className="pt-6">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3 flex-1">
-                          <Badge className={actionColors[log.action] || "bg-muted/10"}>{log.action}</Badge>
+                          <Badge className={actionColors[log.action] || "bg-muted text-muted-foreground"}>{log.action}</Badge>
                           <div>
                             <p className="font-semibold text-foreground">
                               {log.userName}
@@ -113,7 +113,7 @@ export default function AuditLogsPage() {
                       </div>
 
                       {Object.keys(log.details).length > 0 && (
-                        <div className="text-xs text-muted-foreground bg-background/50 rounded p-2 font-mono">
+                        <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2 font-mono">
                           {JSON.stringify(log.details)}
                         </div>
                       )}

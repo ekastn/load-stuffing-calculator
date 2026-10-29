@@ -115,12 +115,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div
         className={`${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-card transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:flex flex-col`}
+        } fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-sidebar text-sidebar-foreground transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:flex flex-col`}
       >
         <div className="flex h-16 items-center border-b border-border px-6 gap-3">
           <LogoMark className="size-8 flex-shrink-0 text-foreground" />
-          <h1 className="text-lg font-bold text-primary">LoadIQ</h1>
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground ml-auto">
+          <h1 className="text-lg font-bold text-foreground">LoadIQ</h1>
+          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-muted-foreground hover:text-foreground ml-auto">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -144,10 +144,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                         router.push(item.path)
                         setSidebarOpen(false)
                       }}
-                      className={`w-full flex items-center gap-3 rounded-md px-4 py-2 text-left text-sm font-medium transition-colors ${
+                      className={`w-full flex items-center gap-3 rounded-md px-4 py-2 text-left text-sm transition-colors ${
                         activePath === item.path
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground/70 hover:bg-card/50 hover:text-foreground"
+                          ? "bg-card text-foreground shadow-2xs border border-border/80 [&_svg]:text-signal font-medium"
+                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground border border-transparent"
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -178,8 +178,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           )}
 
-          <div className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-muted/50">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+          <div className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-accent/50">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-2xs">
               {user?.username?.[0]?.toUpperCase() || "U"}
             </div>
             <div className="flex min-w-0 flex-1 items-baseline gap-2">
@@ -201,8 +201,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-border bg-card/50 px-6 backdrop-blur-sm lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="rounded-md p-2 hover:bg-card/50">
+        <div className="flex h-16 items-center justify-between border-b border-border bg-background px-6 lg:hidden">
+          <button onClick={() => setSidebarOpen(true)} className="rounded-md p-2 text-foreground hover:bg-accent/60">
             <Menu className="h-5 w-5" />
           </button>
 

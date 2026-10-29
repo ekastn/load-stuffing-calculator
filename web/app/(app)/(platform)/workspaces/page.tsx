@@ -218,7 +218,7 @@ export default function PlatformWorkspacesPage() {
           <p className="mt-1 text-muted-foreground">Manage all workspaces globally</p>
         </div>
 
-        <div className="rounded-md border border-border/50 bg-card/50">
+        <div className="rounded-lg border border-border bg-card shadow-xs overflow-hidden">
             <DataTable
               columns={columns}
               data={workspaces}

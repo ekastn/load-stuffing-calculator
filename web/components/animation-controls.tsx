@@ -28,13 +28,13 @@ export function AnimationControls({
     onDownload,
 }: AnimationControlsProps) {
     return (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg border border-zinc-200 p-4 flex flex-col sm:flex-row items-center gap-4 w-[calc(100%-2rem)] max-w-[500px]">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-card/95 backdrop-blur-sm rounded-lg shadow-md border border-border p-4 flex flex-col sm:flex-row items-center gap-4 w-[calc(100%-2rem)] max-w-[500px] text-foreground">
             <div className="flex gap-2 w-full sm:w-auto justify-center">
                 <Button
                     variant="outline"
                     size="icon"
                     onClick={isPlaying ? onPause : onPlay}
-                    className="h-9 w-9 bg-transparent"
+                    className="h-9 w-9 bg-card hover:bg-accent text-foreground border-border"
                 >
                     {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </Button>
@@ -42,7 +42,7 @@ export function AnimationControls({
                     variant="outline"
                     size="icon"
                     onClick={onReset}
-                    className="h-9 w-9 bg-transparent"
+                    className="h-9 w-9 bg-card hover:bg-accent text-foreground border-border"
                 >
                     <RotateCcw className="h-4 w-4" />
                 </Button>
@@ -51,10 +51,10 @@ export function AnimationControls({
                     size="icon"
                     onClick={onDownload}
                     disabled={isDownloading}
-                    className="h-9 w-9 bg-transparent"
+                    className="h-9 w-9 bg-card hover:bg-accent text-foreground border-border"
                 >
                     {isDownloading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin text-signal" />
                     ) : (
                         <Download className="h-4 w-4" />
                     )}
@@ -70,7 +70,7 @@ export function AnimationControls({
                     onValueChange={(value) => onStepChange(value[0])}
                     className="flex-1"
                 />
-                <span className="text-sm font-medium text-zinc-700 min-w-[60px] text-right">
+                <span className="text-sm font-mono tabular-nums text-foreground min-w-[60px] text-right">
                     {currentStep} / {maxStep}
                 </span>
             </div>
