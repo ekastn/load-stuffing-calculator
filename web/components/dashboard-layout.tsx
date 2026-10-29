@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select"
 import { hasAnyPermission } from "@/lib/permissions"
 import { LogoMark } from "@/components/brand/logo-mark"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 type Permission = string
 
@@ -186,6 +187,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <span className="truncate text-sm font-medium text-foreground">{user?.username}</span>
               <span className="shrink-0 text-xs text-muted-foreground capitalize">({user?.role})</span>
             </div>
+            <ThemeToggle />
             <Button
               onClick={handleLogout}
               variant="ghost"
@@ -208,12 +210,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           <div className="flex-1" />
 
-          <div className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-            })}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <div className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "short",
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
           </div>
         </div>
 
