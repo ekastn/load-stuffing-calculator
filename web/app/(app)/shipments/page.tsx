@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Badge, getStatusBadgeVariant } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { ArrowRight, Plus, Search } from "lucide-react"
+import { ShipmentCardPreview } from "@/components/shipment-card-preview"
 import {
   Select,
   SelectContent,
@@ -122,9 +123,13 @@ export default function ShipmentsPage() {
               {filteredPlans.map((plan) => (
                 <Card
                   key={plan.plan_id}
-                  className="border-border bg-card cursor-pointer hover:shadow-xs hover:border-foreground/20 transition-all group"
+                  className="border-border bg-card cursor-pointer hover:shadow-xs hover:border-foreground/20 transition-all group overflow-hidden pt-0"
                   onClick={() => handleShipmentClick(plan.plan_id)}
                 >
+                  <ShipmentCardPreview
+                    planId={plan.plan_id}
+                    title={plan.title || plan.plan_code}
+                  />
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div>
